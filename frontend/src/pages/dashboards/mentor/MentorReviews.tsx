@@ -1,0 +1,137 @@
+import React, { useState } from 'react';
+import { Search, Clock } from 'lucide-react';
+
+const MentorReviews: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('Pending');
+  const [search, setSearch] = useState('');
+
+  return (
+    <div className="animate-fade-in-up">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Startups to Review</h1>
+        <p className="text-gray-500 mt-1">Evaluate AI-generated reports and provide expert feedback to founders.</p>
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button 
+            onClick={() => setActiveTab('Pending')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg ${activeTab === 'Pending' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+          >
+            Pending (3)
+          </button>
+          <button 
+            onClick={() => setActiveTab('Completed')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg ${activeTab === 'Completed' ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+          >
+            Completed (12)
+          </button>
+        </div>
+        <div className="flex gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+            <input 
+              type="text" 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search startups..." 
+              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Startups List */}
+      <div className="space-y-4">
+        {/* Review Card 1 */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-yellow-400"></div>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-xl font-bold text-gray-900">HealthTech AI Companion</h3>
+                <span className="px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">Action Required</span>
+              </div>
+              <p className="text-sm text-gray-500 mb-3 line-clamp-2">An AI-powered mobile app designed to help elderly patients manage chronic conditions through natural language conversations and daily check-ins.</p>
+              
+              <div className="flex flex-wrap items-center gap-4 text-sm">
+                <div className="flex items-center text-gray-600">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                  Healthcare
+                </div>
+                <div className="flex items-center text-gray-600 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                  <span className="font-semibold mr-1 text-gray-900">AI Score:</span> 88/100
+                </div>
+                <div className="flex items-center text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-100">
+                  <Clock size={14} className="mr-1" />
+                  Due in 2 days
+                </div>
+              </div>
+            </div>
+            
+            <div className="w-full md:w-auto flex flex-col gap-2 shrink-0">
+              <button 
+                onClick={() => window.alert('Opening HealthTech AI Companion review...')}
+                className="w-full md:w-48 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-lg font-bold text-sm transition-colors shadow-sm"
+              >
+                Review Startup
+              </button>
+              <button 
+                onClick={() => window.alert('Generating AI Report...')}
+                className="w-full md:w-48 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-bold text-sm transition-colors shadow-sm"
+              >
+                View AI Report
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Review Card 2 */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-yellow-400"></div>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-xl font-bold text-gray-900">FinFlow AI</h3>
+                <span className="px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">Action Required</span>
+              </div>
+              <p className="text-sm text-gray-500 mb-3 line-clamp-2">Automated financial forecasting for SaaS companies using LLM-based data extraction from existing accounting tools.</p>
+              
+              <div className="flex flex-wrap items-center gap-4 text-sm">
+                <div className="flex items-center text-gray-600">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500 mr-2"></span>
+                  FinTech
+                </div>
+                <div className="flex items-center text-gray-600 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                  <span className="font-semibold mr-1 text-gray-900">AI Score:</span> 85/100
+                </div>
+                <div className="flex items-center text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-100">
+                  <Clock size={14} className="mr-1" />
+                  Due in 4 days
+                </div>
+              </div>
+            </div>
+            
+            <div className="w-full md:w-auto flex flex-col gap-2 shrink-0">
+              <button 
+                onClick={() => window.alert('Opening FinFlow AI review...')}
+                className="w-full md:w-48 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-lg font-bold text-sm transition-colors shadow-sm"
+              >
+                Review Startup
+              </button>
+              <button 
+                onClick={() => window.alert('Generating AI Report...')}
+                className="w-full md:w-48 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-bold text-sm transition-colors shadow-sm"
+              >
+                View AI Report
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MentorReviews;
