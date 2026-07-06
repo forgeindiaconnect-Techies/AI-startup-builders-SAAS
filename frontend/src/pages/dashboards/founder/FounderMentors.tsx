@@ -34,7 +34,6 @@ const FounderMentors: React.FC = () => {
         id: Date.now(),
         title: 'Feedback Accepted',
         message: `Founder accepted feedback for ${startup.startupName}.`,
-        details: startup.mentorReview?.feedback,
         type: 'mentor_review',
         time: 'Just now',
         unread: true
@@ -52,7 +51,6 @@ const FounderMentors: React.FC = () => {
         id: Date.now(),
         title: 'Feedback Rejected',
         message: `Founder rejected feedback for ${startup.startupName}.`,
-        details: startup.mentorReview?.feedback,
         type: 'mentor_review',
         time: 'Just now',
         unread: true
@@ -76,8 +74,7 @@ const FounderMentors: React.FC = () => {
       addNotification({
         id: Date.now(),
         title: 'Clarification Requested',
-        message: `Founder asked for clarification on ${startup.startupName}.`,
-        details: msg,
+        message: `Founder asked for clarification on ${startup.startupName}: "${msg}"`,
         type: 'mentor_review',
         time: 'Just now',
         unread: true

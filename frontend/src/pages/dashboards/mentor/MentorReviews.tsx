@@ -52,8 +52,7 @@ const MentorReviews: React.FC = () => {
     addNotification({
       id: Date.now(),
       title: 'New Mentor Review',
-      message: `${review.mentorName} provided a review for "${updated.startupName}".`,
-      details: review.feedback,
+      message: `Elena Rodriguez provided a review for "${updated.startupName}": "${feedback}"`,
       type: 'mentor_review',
       time: 'Just now',
       unread: true

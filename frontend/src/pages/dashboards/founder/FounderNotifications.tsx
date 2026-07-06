@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bell, CheckCheck, Star, MessageSquare, TrendingUp, Users, Rocket, Info } from 'lucide-react';
 import { getNotifications, addNotification } from '../../../utils/localStorageHelper';
 
-type Notif = { id: number; icon: React.ElementType; color: string; bg: string; title: string; desc: string; details?: string; time: string; read: boolean };
+type Notif = { id: number; icon: React.ElementType; color: string; bg: string; title: string; desc: string; time: string; read: boolean };
 
 const initialNotifs: Notif[] = [
   { id: 1, icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-50', title: 'New Mentor Match!', desc: 'Alex Rivera has been matched as your mentor based on your startup profile.', time: '2 minutes ago', read: false },
@@ -28,7 +28,6 @@ const FounderNotifications: React.FC = () => {
       id: n.id || Date.now(),
       title: n.title,
       desc: n.message || n.desc,
-      details: n.details,
       time: n.time || 'Just now',
       read: !n.unread,
       ...getTypeStyles(n.type)
@@ -86,11 +85,6 @@ const FounderNotifications: React.FC = () => {
                   <span className="text-[11px] text-gray-400 flex-shrink-0">{n.time}</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{n.desc}</p>
-                {n.details && (
-                  <div className="mt-3 text-sm text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 italic border-l-4 border-l-[#5B21B6]">
-                    "{n.details}"
-                  </div>
-                )}
               </div>
               {!n.read && <div className="w-2.5 h-2.5 rounded-full bg-[#5B21B6] flex-shrink-0 mt-1.5" />}
             </div>
