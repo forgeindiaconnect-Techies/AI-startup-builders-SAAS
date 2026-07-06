@@ -26,7 +26,7 @@ const SharedStartupDetailsTabs: React.FC<Props> = ({ startupData }) => {
   return (
     <div className="w-full flex flex-col read-only-view">
       {/* Navigation Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide border-b border-gray-100 bg-gray-50/50 p-2 rounded-2xl">
+      <div className="flex flex-wrap gap-2 mb-8 border border-gray-100 bg-gray-50/50 p-2 rounded-2xl">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
