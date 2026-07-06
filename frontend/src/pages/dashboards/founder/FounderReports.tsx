@@ -83,6 +83,30 @@ const FounderReports: React.FC<Props> = ({ startupData }) => {
                   </div>
                 </div>
               </div>
+
+              {startupData.mentorReview && (
+                <div className="bg-purple-50 p-6 rounded-xl border border-purple-100 mt-6">
+                  <h3 className="font-bold text-gray-900 mb-4 flex items-center">
+                    <MessageSquare size={18} className="mr-2 text-[#5B21B6]" /> Mentor Review
+                  </h3>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-sm font-bold text-gray-700">Rating:</span>
+                    <span className={`px-2.5 py-1 rounded-md text-xs font-bold text-white shadow-sm ${
+                      startupData.mentorReview.rating === 'Good' ? 'bg-green-500' :
+                      startupData.mentorReview.rating === 'Average' ? 'bg-yellow-500' : 'bg-red-500'
+                    }`}>
+                      {startupData.mentorReview.rating}
+                    </span>
+                    <span className="text-sm text-gray-500">by {startupData.mentorReview.mentorName}</span>
+                  </div>
+                  {startupData.mentorReview.feedback && (
+                    <div className="bg-white p-4 rounded-xl border border-purple-100/50 text-sm text-gray-700 leading-relaxed shadow-sm">
+                      <p className="font-bold text-gray-900 mb-2">Feedback & Suggestions</p>
+                      {startupData.mentorReview.feedback}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

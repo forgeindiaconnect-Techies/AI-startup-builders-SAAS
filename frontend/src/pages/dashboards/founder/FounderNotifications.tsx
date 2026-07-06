@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Bell, CheckCheck, Star, MessageSquare, TrendingUp, Users, Rocket } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bell, CheckCheck, Star, MessageSquare, TrendingUp, Users, Rocket, Info } from 'lucide-react';
+import { getNotifications, addNotification } from '../../../utils/localStorageHelper';
 
 type Notif = { id: number; icon: React.ElementType; color: string; bg: string; title: string; desc: string; time: string; read: boolean };
 
@@ -11,11 +12,37 @@ const initialNotifs: Notif[] = [
   { id: 5, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', title: 'Team Invite Accepted', desc: 'James Park accepted your invitation to join your startup workspace.', time: '2 days ago', read: true },
 ];
 
-const FounderNotifications: React.FC = () => {
-  const [notifs, setNotifs] = useState<Notif[]>(initialNotifs);
+const getTypeStyles = (type?: string) => {
+  switch (type) {
+    case 'mentor_review': return { icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-50' };
+    case 'ai_builder': return { icon: Rocket, color: 'text-purple-600', bg: 'bg-purple-50' };
+    default: return { icon: Info, color: 'text-blue-500', bg: 'bg-blue-50' };
+  }
+};
 
-  const markAll = () => setNotifs(n => n.map(x => ({ ...x, read: true })));
-  const markOne = (id: number) => setNotifs(n => n.map(x => x.id === id ? { ...x, read: true } : x));
+const FounderNotifications: React.FC = () => {
+  const [notifs, setNotifs] = useState<Notif[]>([]);
+
+  useEffect(() => {
+    const local = getNotifications().map((n: any) => ({
+      id: n.id || Date.now(),
+      title: n.title,
+      desc: n.message || n.desc,
+      time: n.time || 'Just now',
+      read: !n.unread,
+      ...getTypeStyles(n.type)
+    }));
+    setNotifs([...local, ...initialNotifs]);
+  }, []);
+
+  const markAll = () => {
+    setNotifs(n => n.map(x => ({ ...x, read: true })));
+    // Real app would update localStorage here as well
+  };
+  
+  const markOne = (id: number) => {
+    setNotifs(n => n.map(x => x.id === id ? { ...x, read: true } : x));
+  };
 
   const unread = notifs.filter(n => !n.read).length;
 
@@ -41,25 +68,28 @@ const FounderNotifications: React.FC = () => {
       )}
 
       <div className="space-y-3">
-        {notifs.map(n => (
-          <div
-            key={n.id}
-            onClick={() => markOne(n.id)}
-            className={`flex items-start gap-4 p-5 rounded-2xl border transition-all cursor-pointer ${n.read ? 'bg-white border-gray-100 opacity-70 hover:opacity-100' : 'bg-white border-[#5B21B6]/20 shadow-sm hover:shadow-md'}`}
-          >
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${n.bg}`}>
-              <n.icon size={22} className={n.color} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2">
-                <p className={`text-sm font-bold ${n.read ? 'text-gray-600' : 'text-gray-900'}`}>{n.title}</p>
-                <span className="text-[11px] text-gray-400 flex-shrink-0">{n.time}</span>
+        {notifs.map(n => {
+          const Icon = n.icon;
+          return (
+            <div
+              key={n.id}
+              onClick={() => markOne(n.id)}
+              className={`flex items-start gap-4 p-5 rounded-2xl border transition-all cursor-pointer ${n.read ? 'bg-white border-gray-100 opacity-70 hover:opacity-100' : 'bg-white border-[#5B21B6]/20 shadow-sm hover:shadow-md'}`}
+            >
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${n.bg}`}>
+                <Icon size={22} className={n.color} />
               </div>
-              <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{n.desc}</p>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p className={`text-sm font-bold ${n.read ? 'text-gray-600' : 'text-gray-900'}`}>{n.title}</p>
+                  <span className="text-[11px] text-gray-400 flex-shrink-0">{n.time}</span>
+                </div>
+                <p className="text-sm text-gray-500 mt-0.5 leading-relaxed">{n.desc}</p>
+              </div>
+              {!n.read && <div className="w-2.5 h-2.5 rounded-full bg-[#5B21B6] flex-shrink-0 mt-1.5" />}
             </div>
-            {!n.read && <div className="w-2.5 h-2.5 rounded-full bg-[#5B21B6] flex-shrink-0 mt-1.5" />}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

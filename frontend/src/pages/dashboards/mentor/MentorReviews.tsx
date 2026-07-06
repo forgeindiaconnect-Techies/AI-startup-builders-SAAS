@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Clock, X, Cpu, CheckCircle2, AlertTriangle, MessageSquare, Send } from 'lucide-react';
+import { addNotification } from '../../../utils/localStorageHelper';
 
 const MentorReviews: React.FC = () => {
   const [search, setSearch] = useState('');
@@ -7,6 +8,7 @@ const MentorReviews: React.FC = () => {
   const [selectedStartup, setSelectedStartup] = useState<any>(null);
   const [modalMode, setModalMode] = useState<'review' | 'report' | null>(null);
   const [feedback, setFeedback] = useState('');
+  const [rating, setRating] = useState<'Good' | 'Average' | 'Bad' | null>(null);
 
   useEffect(() => {
     const keys = Object.keys(localStorage);
@@ -23,13 +25,42 @@ const MentorReviews: React.FC = () => {
   }, []);
 
   const handleReviewSubmit = () => {
-    if (!selectedStartup || !feedback) return;
-    const updated = { ...selectedStartup, status: 'reviewed', mentorFeedback: feedback };
+    if (!selectedStartup || !rating) return;
+    if (rating !== 'Good' && !feedback) return;
+
+    const review = {
+      id: `review_${Date.now()}`,
+      startupId: selectedStartup.startupId,
+      mentorId: "mentor_demo_user",
+      mentorName: "Elena Rodriguez",
+      rating,
+      feedback,
+      createdAt: new Date().toISOString()
+    };
+
+    const updated = { 
+      ...selectedStartup, 
+      status: 'reviewed', 
+      mentorFeedback: feedback,
+      mentorReview: review
+    };
+    
     localStorage.setItem(`startup_${updated.startupId}`, JSON.stringify(updated));
     setStartups(prev => prev.map(s => s.startupId === updated.startupId ? updated : s));
+    
+    addNotification({
+      id: Date.now(),
+      title: 'Mentor Review',
+      message: 'Mentor reviewed your startup idea.',
+      type: 'mentor_review',
+      time: 'Just now',
+      unread: true
+    });
+
     setSelectedStartup(null);
     setModalMode(null);
     setFeedback('');
+    setRating(null);
     window.alert('Feedback submitted successfully!');
   };
 
@@ -197,27 +228,51 @@ const MentorReviews: React.FC = () => {
                   <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
                     <p className="text-sm text-gray-700 italic border-l-2 border-[#5B21B6] pl-3">"{selectedStartup.startupIdea}"</p>
                   </div>
+                  
+                  <div className="mb-2">
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Mentor Rating</label>
+                    <div className="flex gap-3">
+                      {['Good', 'Average', 'Bad'].map((r) => (
+                        <button
+                          key={r}
+                          onClick={() => setRating(r as any)}
+                          className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all ${
+                            rating === r 
+                              ? r === 'Good' ? 'bg-green-500 text-white border-green-500 shadow-md' :
+                                r === 'Average' ? 'bg-yellow-500 text-white border-yellow-500 shadow-md' :
+                                'bg-red-500 text-white border-red-500 shadow-md'
+                              : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                      <MessageSquare size={16} className="text-[#5B21B6]" /> Your Feedback & Recommendations
+                      <MessageSquare size={16} className="text-[#5B21B6]" /> 
+                      Your Feedback & Recommendations 
+                      {rating === 'Good' ? <span className="text-gray-400 font-normal text-xs">(Optional)</span> : <span className="text-red-500 font-normal text-xs">* Required</span>}
                     </label>
                     <textarea 
                       value={feedback}
                       onChange={(e) => setFeedback(e.target.value)}
                       placeholder="Write your expert advice, actionable steps, and general feedback for the founder..."
-                      className="w-full h-48 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5B21B6] focus:border-transparent text-sm resize-none transition-shadow"
+                      className="w-full h-40 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5B21B6] focus:border-transparent text-sm resize-none transition-shadow"
                     />
                   </div>
                   <div className="flex justify-end gap-3 pt-2">
                     <button 
-                      onClick={() => { setModalMode(null); setSelectedStartup(null); setFeedback(''); }}
+                      onClick={() => { setModalMode(null); setSelectedStartup(null); setFeedback(''); setRating(null); }}
                       className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-sm transition-colors"
                     >
                       Cancel
                     </button>
                     <button 
                       onClick={handleReviewSubmit}
-                      disabled={!feedback}
+                      disabled={!rating || (rating !== 'Good' && !feedback)}
                       className="flex items-center px-6 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] disabled:opacity-50 text-white rounded-lg font-bold text-sm transition-colors shadow-sm"
                     >
                       <Send size={16} className="mr-2" /> Submit Review
