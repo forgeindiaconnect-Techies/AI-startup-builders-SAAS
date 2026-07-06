@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Video, Calendar, Clock, MoreVertical, Link, MessageSquare, CheckCircle } from 'lucide-react';
 import { addNotification } from '../../../utils/localStorageHelper';
+import VideoCallModal from '../../../components/shared/VideoCallModal';
 
-const sessions = [
-  { id: 1, startup: 'EcoPackage Hub', founder: 'Sarah Jenkins', time: 'Today, 2:00 PM', duration: '45 min', status: 'upcoming' },
-  { id: 2, startup: 'AI Legal Reviewer', founder: 'James Park', time: 'Tomorrow, 10:00 AM', duration: '30 min', status: 'upcoming' },
-  { id: 3, startup: 'Fintech Micro-SaaS', founder: 'Tom Chen', time: 'Jul 1, 2026', duration: '60 min', status: 'completed' },
+const defaultSessions = [
+  { id: 1, startup: 'EcoPackage Hub', founder: 'Sarah Jenkins', time: 'Today, 2:00 PM', duration: '45 min', status: 'upcoming', roomName: 'AIStartupBuilder-EcoPackage' },
+  { id: 2, startup: 'AI Legal Reviewer', founder: 'James Park', time: 'Tomorrow, 10:00 AM', duration: '30 min', status: 'upcoming', roomName: 'AIStartupBuilder-AILegal' },
+  { id: 3, startup: 'Fintech Micro-SaaS', founder: 'Tom Chen', time: 'Jul 1, 2026', duration: '60 min', status: 'completed', roomName: 'AIStartupBuilder-Fintech' },
 ];
 
 const MentorSessions: React.FC = () => {
   const [startups, setStartups] = useState<any[]>([]);
+  const [videoSessions, setVideoSessions] = useState<any[]>([]);
+  const [activeCallRoom, setActiveCallRoom] = useState<string | null>(null);
 
   useEffect(() => {
     const keys = Object.keys(localStorage);
@@ -23,6 +26,14 @@ const MentorSessions: React.FC = () => {
     });
     locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     setStartups(locals);
+
+    const storedSessions = localStorage.getItem('video_sessions');
+    if (storedSessions) {
+      setVideoSessions(JSON.parse(storedSessions));
+    } else {
+      localStorage.setItem('video_sessions', JSON.stringify(defaultSessions));
+      setVideoSessions(defaultSessions);
+    }
   }, []);
 
   const pendingClarifications = startups.filter(s => s.mentorReview?.status === 'Clarification Requested');
@@ -143,7 +154,7 @@ const MentorSessions: React.FC = () => {
           <h2 className="font-bold text-gray-900 flex items-center gap-2"><Calendar size={18} className="text-[#5B21B6]" /> Upcoming & Past Sessions</h2>
         </div>
         <div className="divide-y divide-gray-50">
-          {sessions.map(s => (
+          {videoSessions.map(s => (
             <div key={s.id} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 hover:bg-gray-50 transition-colors gap-4">
               <div className="flex items-start gap-4">
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${s.status === 'upcoming' ? 'bg-purple-100 text-[#5B21B6]' : 'bg-gray-100 text-gray-400'}`}>
@@ -161,10 +172,10 @@ const MentorSessions: React.FC = () => {
               <div className="flex items-center gap-3">
                 {s.status === 'upcoming' ? (
                   <button 
-                    onClick={() => window.alert('Opening Zoom/Meet link for the session...')}
-                    className="px-4 py-2 bg-[#5B21B6] text-white font-bold rounded-lg text-sm hover:bg-[#7C3AED] transition-colors shadow"
+                    onClick={() => setActiveCallRoom(s.roomName)}
+                    className="px-4 py-2 bg-[#5B21B6] text-white font-bold rounded-lg text-sm hover:bg-[#7C3AED] transition-colors shadow flex items-center gap-2"
                   >
-                    Join Call
+                    <Video size={16} /> Join Call
                   </button>
                 ) : (
                   <span className="px-3 py-1 bg-gray-100 text-gray-600 font-bold rounded-lg text-xs">Completed</span>
@@ -180,8 +191,16 @@ const MentorSessions: React.FC = () => {
           ))}
         </div>
       </div>
+      
+      {activeCallRoom && (
+        <VideoCallModal 
+          roomName={activeCallRoom} 
+          onClose={() => setActiveCallRoom(null)} 
+        />
+      )}
     </div>
   );
 };
 
 export default MentorSessions;
+

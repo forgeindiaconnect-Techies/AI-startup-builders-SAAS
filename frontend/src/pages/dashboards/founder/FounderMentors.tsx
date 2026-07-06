@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Clock, ArrowRight } from 'lucide-react';
+import { Star, Clock, ArrowRight, Video, Calendar, MoreVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { addNotification } from '../../../utils/localStorageHelper';
+import VideoCallModal from '../../../components/shared/VideoCallModal';
+
 
 const FounderMentors: React.FC = () => {
   const [startups, setStartups] = useState<any[]>([]);
+  const [videoSessions, setVideoSessions] = useState<any[]>([]);
+  const [activeCallRoom, setActiveCallRoom] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,7 +23,29 @@ const FounderMentors: React.FC = () => {
     });
     locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     setStartups(locals);
+
+    const storedSessions = localStorage.getItem('video_sessions');
+    if (storedSessions) {
+      setVideoSessions(JSON.parse(storedSessions));
+    }
   }, []);
+
+  const handleBookCall = (mentorName: string, startupName: string) => {
+    const newSession = {
+      id: Date.now(),
+      startup: startupName,
+      founder: 'Sarah Jenkins', // current user
+      time: 'Tomorrow, 11:00 AM',
+      duration: '30 min',
+      status: 'upcoming',
+      roomName: `AIStartupBuilder-${startupName.replace(/\s+/g, '')}`
+    };
+    
+    const updatedSessions = [newSession, ...videoSessions];
+    setVideoSessions(updatedSessions);
+    localStorage.setItem('video_sessions', JSON.stringify(updatedSessions));
+    window.alert(`Successfully booked a call with ${mentorName} for tomorrow at 11:00 AM!`);
+  };
 
   const handleFeedbackAction = (startup: any, action: 'accept' | 'reject' | 'clarify') => {
     if (action === 'accept') {
@@ -180,10 +206,10 @@ const FounderMentors: React.FC = () => {
                     </div>
                     
                     <button 
-                      onClick={() => window.alert('Opening calendar integration...')}
-                      className="px-3 py-1.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-md text-xs font-bold transition-colors ml-auto"
+                      onClick={() => handleBookCall(startup.mentorReview.mentorName, startup.startupName)}
+                      className="px-3 py-1.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-md text-xs font-bold transition-colors ml-auto flex items-center gap-2"
                     >
-                      Book 1:1 Call
+                      <Calendar size={14} /> Book 1:1 Call
                     </button>
                   </div>
                 </div>
@@ -247,6 +273,60 @@ const FounderMentors: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Upcoming & Past Sessions */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-8 mt-8">
+        <div className="px-6 py-5 border-b border-gray-100">
+          <h2 className="font-bold text-gray-900 flex items-center gap-2"><Calendar size={18} className="text-[#5B21B6]" /> Upcoming & Past Sessions</h2>
+        </div>
+        <div className="divide-y divide-gray-50">
+          {videoSessions.length === 0 ? (
+            <div className="p-6 text-center text-gray-500 text-sm">No scheduled sessions yet. Book a call with a mentor!</div>
+          ) : (
+            videoSessions.map(s => (
+              <div key={s.id} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 hover:bg-gray-50 transition-colors gap-4">
+                <div className="flex items-start gap-4">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${s.status === 'upcoming' ? 'bg-purple-100 text-[#5B21B6]' : 'bg-gray-100 text-gray-400'}`}>
+                    <Video size={20} />
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-gray-900">{s.startup}</p>
+                    <div className="flex items-center gap-3 mt-1.5 text-xs font-semibold">
+                      <span className="flex items-center gap-1 text-gray-600"><Calendar size={14} /> {s.time}</span>
+                      <span className="flex items-center gap-1 text-gray-600"><Clock size={14} /> {s.duration}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {s.status === 'upcoming' ? (
+                    <button 
+                      onClick={() => setActiveCallRoom(s.roomName)}
+                      className="px-4 py-2 bg-[#5B21B6] text-white font-bold rounded-lg text-sm hover:bg-[#7C3AED] transition-colors shadow flex items-center gap-2"
+                    >
+                      <Video size={16} /> Join Call
+                    </button>
+                  ) : (
+                    <span className="px-3 py-1 bg-gray-100 text-gray-600 font-bold rounded-lg text-xs">Completed</span>
+                  )}
+                  <button 
+                    onClick={() => window.alert('Opening session options...')}
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                  >
+                    <MoreVertical size={16} />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+      
+      {activeCallRoom && (
+        <VideoCallModal 
+          roomName={activeCallRoom} 
+          onClose={() => setActiveCallRoom(null)} 
+        />
+      )}
     </div>
   );
 };
