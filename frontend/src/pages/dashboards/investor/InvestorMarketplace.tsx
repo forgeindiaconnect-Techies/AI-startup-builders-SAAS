@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, Cpu, ArrowRight, Bookmark, Target } from 'lucide-react';
+import { Search, Filter, Cpu, ArrowRight, Bookmark, Target, X, CheckCircle2, AlertTriangle, Briefcase } from 'lucide-react';
 
 const InvestorMarketplace: React.FC = () => {
   const [search, setSearch] = useState('');
@@ -159,7 +159,7 @@ const InvestorMarketplace: React.FC = () => {
               <div className="flex gap-3">
                 <button 
                   onClick={() => setSelectedStartup(startup)}
-                  className={`w-full py-3 text-white rounded-xl font-bold text-sm transition-all shadow-md flex items-center justify-center group-hover:shadow-lg bg-[#5B21B6] hover:bg-[#7C3AED]`}
+                  className="w-full py-3 text-white rounded-xl font-bold text-sm transition-all shadow-md flex items-center justify-center group-hover:shadow-lg bg-[#5B21B6] hover:bg-[#7C3AED]"
                 >
                   View Details
                   <ArrowRight size={16} className="ml-2 group-hover:translate-x-1 transition-transform" />
@@ -178,63 +178,76 @@ const InvestorMarketplace: React.FC = () => {
           <div className="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl animate-fade-in-up">
             <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-center z-10">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Startup Investment Details</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Startup Details
+                </h2>
                 <p className="text-sm text-gray-500 mt-1">{selectedStartup.startupName}</p>
               </div>
               <button 
                 onClick={() => setSelectedStartup(null)}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <Filter className="opacity-0 w-0 h-0" /> {/* dummy icon spacing */}
-                <span className="text-gray-500 font-bold text-xl leading-none">&times;</span>
+                <X size={20} className="text-gray-500" />
               </button>
             </div>
             
-            <div className="p-6">
-              <div className="space-y-6">
-                <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
-                  <h3 className="font-bold text-gray-900 mb-2">The Idea</h3>
-                  <p className="text-sm text-gray-700 italic border-l-2 border-[#10B981] pl-3">"{selectedStartup.startupIdea}"</p>
+            <div className="p-6 space-y-6">
+              <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                <p className="text-sm text-gray-700 italic border-l-2 border-[#5B21B6] pl-3">"{selectedStartup.startupIdea}"</p>
+              </div>
+              
+              {/* Score Section */}
+              <div className="flex items-center gap-6 p-6 bg-gray-50 rounded-xl border border-gray-100">
+                <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center bg-white shadow-sm shrink-0 ${selectedStartup.aiGenerated?.aiReport?.investmentReadinessScore >= 80 ? 'border-green-500 text-green-600' : 'border-yellow-500 text-yellow-600'}`}>
+                  <span className="text-2xl font-bold text-gray-900">{selectedStartup.aiGenerated?.aiReport?.investmentReadinessScore || '85'}</span>
                 </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">Investment Readiness Score</h3>
+                  <p className="text-sm text-gray-600">AI evaluation of overall viability, market size, and structural robustness.</p>
+                </div>
+              </div>
 
-                <div className="flex items-center gap-6 p-6 bg-gray-50 rounded-xl border border-gray-100">
-                  <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center bg-white shadow-sm shrink-0 ${selectedStartup.aiGenerated?.aiReport?.investmentReadinessScore >= 80 ? 'border-green-500 text-green-600' : 'border-yellow-500 text-yellow-600'}`}>
-                    <span className="text-2xl font-bold text-gray-900">{selectedStartup.aiGenerated?.aiReport?.investmentReadinessScore || '85'}</span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">Investment Readiness Score</h3>
-                    <p className="text-sm text-gray-600">AI evaluation of overall viability, market size, and structural robustness.</p>
-                  </div>
+              {/* Strengths & Weaknesses */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-bold text-gray-900 mb-3 flex items-center text-green-700">
+                    <CheckCircle2 size={18} className="mr-2" /> Key Strengths
+                  </h3>
+                  <ul className="space-y-3">
+                    {Array.isArray(selectedStartup.aiGenerated?.aiReport?.keyStrengths) 
+                      ? selectedStartup.aiGenerated.aiReport.keyStrengths.map((s: any, i: number) => (
+                        <li key={i} className="flex items-start text-sm text-gray-600 bg-green-50 p-3 rounded-xl border border-green-100">
+                          <span className="font-bold mr-2 text-green-700">{i + 1}.</span> {typeof s === 'string' ? s : JSON.stringify(s)}
+                        </li>
+                      ))
+                      : <li className="text-sm text-gray-500 bg-green-50 p-3 rounded-xl border border-green-100">Strong founder background and clear market need.</li>
+                    }
+                  </ul>
                 </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-3 flex items-center text-green-700">Key Strengths</h3>
-                    <ul className="space-y-3">
-                      {Array.isArray(selectedStartup.aiGenerated?.aiReport?.keyStrengths) 
-                        ? selectedStartup.aiGenerated.aiReport.keyStrengths.map((s: any, i: number) => (
-                          <li key={i} className="flex items-start text-sm text-gray-600 bg-green-50 p-3 rounded-xl border border-green-100">
-                            <span className="font-bold mr-2 text-green-700">{i + 1}.</span> {typeof s === 'string' ? s : JSON.stringify(s)}
-                          </li>
-                        ))
-                        : <li className="text-sm text-gray-500 bg-green-50 p-3 rounded-xl border border-green-100">Strong founder background and clear market need.</li>
-                      }
-                    </ul>
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 mb-3 flex items-center text-orange-600">Risk Factors</h3>
-                    <ul className="space-y-3">
-                      {Array.isArray(selectedStartup.aiGenerated?.aiReport?.riskFactors)
-                        ? selectedStartup.aiGenerated.aiReport.riskFactors.map((r: any, i: number) => (
-                          <li key={i} className="flex items-start text-sm text-gray-600 bg-orange-50 p-3 rounded-xl border border-orange-100">
-                            <span className="font-bold mr-2 text-orange-700">{i + 1}.</span> {typeof r === 'string' ? r : JSON.stringify(r)}
-                          </li>
-                        ))
-                        : <li className="text-sm text-gray-500 bg-orange-50 p-3 rounded-xl border border-orange-100">High competition in the current market sector.</li>
-                      }
-                    </ul>
-                  </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 mb-3 flex items-center text-orange-600">
+                    <AlertTriangle size={18} className="mr-2" /> Risk Factors
+                  </h3>
+                  <ul className="space-y-3">
+                    {Array.isArray(selectedStartup.aiGenerated?.aiReport?.riskFactors)
+                      ? selectedStartup.aiGenerated.aiReport.riskFactors.map((r: any, i: number) => (
+                        <li key={i} className="flex items-start text-sm text-gray-600 bg-orange-50 p-3 rounded-xl border border-orange-100">
+                          <span className="font-bold mr-2 text-orange-700">{i + 1}.</span> {typeof r === 'string' ? r : JSON.stringify(r)}
+                        </li>
+                      ))
+                      : <li className="text-sm text-gray-500 bg-orange-50 p-3 rounded-xl border border-orange-100">High competition in the current market sector.</li>
+                    }
+                  </ul>
                 </div>
+              </div>
+              
+              <div className="pt-6 mt-6 border-t border-gray-100 flex justify-end gap-3">
+                <button 
+                  onClick={() => { window.alert('Interest expressed to the founders!'); setSelectedStartup(null); }}
+                  className="px-6 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-lg font-bold text-sm transition-colors shadow-sm flex items-center"
+                >
+                  <Briefcase size={16} className="mr-2" /> Express Interest
+                </button>
               </div>
             </div>
           </div>
