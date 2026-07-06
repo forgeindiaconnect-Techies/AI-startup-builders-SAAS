@@ -7,6 +7,21 @@ const MentorDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [filter, setFilter] = useState('Newest');
+  const [startups, setStartups] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const keys = Object.keys(localStorage);
+    const locals: any[] = [];
+    keys.forEach(key => {
+      if (key.startsWith('startup_')) {
+        try {
+          locals.push(JSON.parse(localStorage.getItem(key) || ''));
+        } catch (e) {}
+      }
+    });
+    locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    setStartups(locals);
+  }, []);
 
   const stats = [
     { title: 'Pending Reviews', value: '4', icon: FileText, color: 'text-orange-500', bg: 'bg-orange-100' },
@@ -67,38 +82,32 @@ const MentorDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              <tr className="hover:bg-gray-50 transition-colors">
-                <td className="p-4">
-                  <div className="font-bold text-gray-900">MedTech Vision</div>
-                  <div className="text-xs text-gray-500">Founder: Alex M.</div>
-                </td>
-                <td className="p-4 text-sm text-gray-700">Healthcare AI</td>
-                <td className="p-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    88/100
-                  </span>
-                </td>
-                <td className="p-4 text-sm text-gray-500">Oct 24, 2026</td>
-                <td className="p-4">
-                  <button onClick={() => navigate('/dashboard/mentor/reviews')} className="text-sm font-medium text-[#5B21B6] hover:text-[#7C3AED]">Start Review</button>
-                </td>
-              </tr>
-              <tr className="hover:bg-gray-50 transition-colors">
-                <td className="p-4">
-                  <div className="font-bold text-gray-900">GreenChain</div>
-                  <div className="text-xs text-gray-500">Founder: Sarah J.</div>
-                </td>
-                <td className="p-4 text-sm text-gray-700">Logistics / ESG</td>
-                <td className="p-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    72/100
-                  </span>
-                </td>
-                <td className="p-4 text-sm text-gray-500">Oct 23, 2026</td>
-                <td className="p-4">
-                  <button onClick={() => navigate('/dashboard/mentor/reviews')} className="text-sm font-medium text-[#5B21B6] hover:text-[#7C3AED]">Start Review</button>
-                </td>
-              </tr>
+              {startups.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-gray-500">
+                    No startups assigned yet.
+                  </td>
+                </tr>
+              ) : (
+                startups.slice(0, 5).map((startup, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                    <td className="p-4">
+                      <div className="font-bold text-gray-900">{startup.startupName}</div>
+                      <div className="text-xs text-gray-500 line-clamp-1">{startup.startupIdea}</div>
+                    </td>
+                    <td className="p-4 text-sm text-gray-700">{startup.aiGenerated?.ideaAnalysis?.businessModel || 'Tech'}</td>
+                    <td className="p-4">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${startup.status === 'generated' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {startup.status === 'generated' ? (startup.aiGenerated?.aiReport?.investmentReadinessScore || '85') + '/100' : 'Draft'}
+                      </span>
+                    </td>
+                    <td className="p-4 text-sm text-gray-500">{new Date(startup.createdAt).toLocaleDateString()}</td>
+                    <td className="p-4">
+                      <button onClick={() => navigate(`/dashboard/mentor/reviews?startupId=${startup.startupId}`)} className="text-sm font-medium text-[#5B21B6] hover:text-[#7C3AED]">Start Review</button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

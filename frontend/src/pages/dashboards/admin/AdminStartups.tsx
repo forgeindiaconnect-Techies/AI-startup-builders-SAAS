@@ -18,14 +18,27 @@ const AdminStartups: React.FC = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
   const [industryFilter, setIndustryFilter] = useState('All Industries');
+  const [startups, setStartups] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const keys = Object.keys(localStorage);
+    const locals: any[] = [];
+    keys.forEach(key => {
+      if (key.startsWith('startup_')) {
+        try {
+          locals.push(JSON.parse(localStorage.getItem(key) || ''));
+        } catch (e) {}
+      }
+    });
+    locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    setStartups(locals);
+  }, []);
 
   const filtered = startups.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.founder.toLowerCase().includes(search.toLowerCase()) ||
-      s.industry.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'All Statuses' || s.status === statusFilter;
-    const matchesIndustry = industryFilter === 'All Industries' || s.industry === industryFilter;
-    return matchesSearch && matchesStatus && matchesIndustry;
+    const matchesSearch = s.startupName?.toLowerCase().includes(search.toLowerCase()) ||
+      s.startupIdea?.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === 'All Statuses' || s.status === statusFilter.toLowerCase();
+    return matchesSearch && matchesStatus;
   });
 
   return (
@@ -92,20 +105,22 @@ const AdminStartups: React.FC = () => {
               </tr>
             ) : (
               filtered.map(s => (
-                <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={s.startupId} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 font-bold text-gray-900 flex items-center gap-2">
-                    <Building2 size={16} className="text-gray-400" /> {s.name}
+                    <Building2 size={16} className="text-gray-400" /> {s.startupName}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{s.founder}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{s.industry}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">Local Founder</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 line-clamp-1">{s.aiGenerated?.ideaAnalysis?.businessModel || 'Tech'}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusStyles[s.status]}`}>{s.status}</span>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${s.status === 'generated' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                      {s.status === 'generated' ? 'Active' : 'Pending'}
+                    </span>
                   </td>
-                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">{s.plan}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{s.joined}</td>
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">Seed</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{new Date(s.createdAt).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-right">
                     <button 
-                      onClick={() => window.alert(`Actions for ${s.name}:\n• View Profile\n• Edit Details\n• Change Status\n• Delete Startup`)}
+                      onClick={() => window.alert(`Actions for ${s.startupName}:\n• View Profile\n• Edit Details\n• Change Status\n• Delete Startup`)}
                       className="p-1.5 text-gray-400 hover:text-[#5B21B6] hover:bg-purple-50 rounded-lg transition-colors"
                       title="More actions"
                     >
