@@ -1,36 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, CheckCheck, Star, MessageSquare, TrendingUp, Users, Rocket, Info, ShieldCheck, Briefcase } from 'lucide-react';
+import { Bell, CheckCheck, Star, MessageSquare, TrendingUp, Users, Rocket, Info } from 'lucide-react';
 import { getNotifications, addNotification } from '../../../utils/localStorageHelper';
-import { useAuth } from '../../../context/AuthContext';
 
 type Notif = { id: number; icon: React.ElementType; color: string; bg: string; title: string; desc: string; time: string; read: boolean };
 
-const getInitialNotifs = (role: string = 'founder'): Notif[] => {
-  if (role === 'admin') {
-    return [
-      { id: 1, icon: ShieldCheck, color: 'text-blue-600', bg: 'bg-blue-50', title: 'New Mentor Application', desc: 'David Kim applied to be a mentor. Review required.', time: '2 hours ago', read: false },
-      { id: 2, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', title: 'System Health Update', desc: 'All systems operational. Server load is at 45%.', time: 'Yesterday', read: true },
-    ];
-  }
-  if (role === 'investor') {
-    return [
-      { id: 1, icon: Briefcase, color: 'text-purple-600', bg: 'bg-purple-50', title: 'New Startup Match', desc: 'A new startup matching your investment criteria was added.', time: '3 hours ago', read: false },
-      { id: 2, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', title: 'Portfolio Update', desc: 'EcoPackage Hub updated their Q3 financial projections.', time: 'Yesterday', read: true },
-    ];
-  }
-  if (role === 'mentor') {
-    return [
-      { id: 1, icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-50', title: 'New Review Request', desc: 'You have been requested to review "FinFlow AI".', time: '1 hour ago', read: false },
-    ];
-  }
-  return [
-    { id: 1, icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-50', title: 'New Mentor Match!', desc: 'Alex Rivera has been matched as your mentor based on your startup profile.', time: '2 minutes ago', read: false },
-    { id: 2, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', title: 'AI Report Ready', desc: 'Your market analysis for "AI Legal Tech" is ready to view.', time: '1 hour ago', read: false },
-    { id: 3, icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-50', title: 'New Message from Capital Ventures', desc: 'They want to schedule a call to discuss your pitch deck.', time: '3 hours ago', read: false },
-    { id: 4, icon: Rocket, color: 'text-purple-600', bg: 'bg-purple-50', title: 'Startup Submitted', desc: 'Your startup "EcoPackage Hub" has been submitted for AI review.', time: 'Yesterday', read: true },
-    { id: 5, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', title: 'Team Invite Accepted', desc: 'James Park accepted your invitation to join your startup workspace.', time: '2 days ago', read: true },
-  ];
-};
+const initialNotifs: Notif[] = [
+  { id: 1, icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-50', title: 'New Mentor Match!', desc: 'Alex Rivera has been matched as your mentor based on your startup profile.', time: '2 minutes ago', read: false },
+  { id: 2, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50', title: 'AI Report Ready', desc: 'Your market analysis for "AI Legal Tech" is ready to view.', time: '1 hour ago', read: false },
+  { id: 3, icon: MessageSquare, color: 'text-blue-600', bg: 'bg-blue-50', title: 'New Message from Capital Ventures', desc: 'They want to schedule a call to discuss your pitch deck.', time: '3 hours ago', read: false },
+  { id: 4, icon: Rocket, color: 'text-purple-600', bg: 'bg-purple-50', title: 'Startup Submitted', desc: 'Your startup "EcoPackage Hub" has been submitted for AI review.', time: 'Yesterday', read: true },
+  { id: 5, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50', title: 'Team Invite Accepted', desc: 'James Park accepted your invitation to join your startup workspace.', time: '2 days ago', read: true },
+];
 
 const getTypeStyles = (type?: string) => {
   switch (type) {
@@ -41,7 +21,6 @@ const getTypeStyles = (type?: string) => {
 };
 
 const FounderNotifications: React.FC = () => {
-  const { user } = useAuth();
   const [notifs, setNotifs] = useState<Notif[]>([]);
 
   useEffect(() => {
@@ -53,8 +32,8 @@ const FounderNotifications: React.FC = () => {
       read: !n.unread,
       ...getTypeStyles(n.type)
     }));
-    setNotifs([...local, ...getInitialNotifs(user?.role)]);
-  }, [user?.role]);
+    setNotifs([...local, ...initialNotifs]);
+  }, []);
 
   const markAll = () => {
     setNotifs(n => n.map(x => ({ ...x, read: true })));

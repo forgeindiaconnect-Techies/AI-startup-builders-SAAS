@@ -9,6 +9,7 @@ import {
   BarChart2, Settings, Ticket, CheckSquare, ShieldCheck,
   Map, DollarSign, MessageSquare,
 } from 'lucide-react';
+import NotificationDropdown from '../components/shared/NotificationDropdown';
 
 // ─── Types ──────────────────────────────────────────────────────
 type NavItem = { name: string; icon: React.ElementType; path: string };
@@ -242,7 +243,8 @@ const DashboardLayout: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <NotificationDropdown />
             <div className="flex items-center gap-2 pl-3 ml-1 border-l border-gray-200">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-xs font-black shadow">
                 {user?.name.charAt(0).toUpperCase()}
