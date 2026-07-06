@@ -25,7 +25,8 @@ const MentorSessions: React.FC = () => {
     setStartups(locals);
   }, []);
 
-  const clarificationRequests = startups.filter(s => s.mentorReview?.status === 'Clarification Requested');
+  const pendingClarifications = startups.filter(s => s.mentorReview?.status === 'Clarification Requested');
+  const answeredClarifications = startups.filter(s => s.mentorReview?.status === 'Clarification Answered');
 
   const handleClarificationAction = (startup: any, action: 'accept' | 'reply') => {
     let replyText = '';
@@ -75,20 +76,23 @@ const MentorSessions: React.FC = () => {
         </button>
       </div>
 
-      {clarificationRequests.length > 0 && (
-        <div className="mb-8 bg-yellow-50 rounded-2xl border border-yellow-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-yellow-200 bg-yellow-100/50">
-            <h2 className="font-bold text-yellow-900 flex items-center gap-2">
-              <MessageSquare size={18} className="text-yellow-600" /> Pending Clarifications
+      {(pendingClarifications.length > 0 || answeredClarifications.length > 0) && (
+        <div className="mb-8 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-5 border-b border-gray-100">
+            <h2 className="font-bold text-gray-900 flex items-center gap-2">
+              <MessageSquare size={18} className="text-[#5B21B6]" /> Founder Clarifications
             </h2>
           </div>
-          <div className="divide-y divide-yellow-100">
-            {clarificationRequests.map(startup => (
-              <div key={startup.startupId} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 gap-4">
+          <div className="divide-y divide-gray-50">
+            {pendingClarifications.map(startup => (
+              <div key={startup.startupId} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 gap-4 bg-yellow-50/30">
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-gray-900">{startup.startupName}</p>
-                  <p className="text-xs text-gray-500 mb-2">From founder</p>
-                  <p className="text-sm text-gray-800 italic border-l-2 border-yellow-400 pl-3 bg-white p-2 rounded">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-bold text-gray-900">{startup.startupName}</p>
+                    <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[10px] font-bold rounded">Action Required</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-2">Question from founder</p>
+                  <p className="text-sm text-gray-800 italic border-l-2 border-yellow-400 pl-3 bg-white p-2 rounded border border-yellow-100">
                     "{startup.mentorReview.clarificationMessage}"
                   </p>
                 </div>
@@ -105,6 +109,28 @@ const MentorSessions: React.FC = () => {
                   >
                     <MessageSquare size={16} /> Reply
                   </button>
+                </div>
+              </div>
+            ))}
+            {answeredClarifications.map(startup => (
+              <div key={startup.startupId} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm font-bold text-gray-900">{startup.startupName}</p>
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded">Answered</span>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-2">Question from founder</p>
+                  <p className="text-sm text-gray-600 italic border-l-2 border-gray-200 pl-3 mb-3">
+                    "{startup.mentorReview.clarificationMessage}"
+                  </p>
+                  {startup.mentorReview.mentorReply && (
+                    <div className="ml-4">
+                      <p className="text-xs text-[#5B21B6] font-bold mb-1">Your Reply</p>
+                      <p className="text-sm text-gray-800 bg-purple-50 p-2 rounded border border-purple-100">
+                        "{startup.mentorReview.mentorReply}"
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
