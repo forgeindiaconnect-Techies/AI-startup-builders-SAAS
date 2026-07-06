@@ -33,7 +33,7 @@ const FounderPitchDeck: React.FC<Props> = ({ startupData }) => {
   const aiSlides = startupData?.aiGenerated?.pitchDeck || [];
 
   const slides = baseSlides.map(bs => {
-    const aiSlide = aiSlides.find((s: any) => s.slideTitle === bs.title || s.slideTitle.includes(bs.title) || bs.title.includes(s.slideTitle));
+    const aiSlide = aiSlides.find((s: any) => s && s.slideTitle && (s.slideTitle === bs.title || s.slideTitle.includes(bs.title) || bs.title.includes(s.slideTitle)));
     return {
       ...bs,
       content: aiSlide ? aiSlide.content : bs.defaultContent,
