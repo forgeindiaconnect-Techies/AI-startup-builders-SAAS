@@ -3,8 +3,7 @@ import { Search, Filter, Cpu, ArrowRight, Bookmark, Target, X, CheckCircle2, Ale
 
 const InvestorMarketplace: React.FC = () => {
   const [search, setSearch] = useState('');
-  const [activeScore, setActiveScore] = useState('');
-  const [activeStage, setActiveStage] = useState('');
+  const [startups, setStartups] = React.useState<any[]>([]);
   const [startups, setStartups] = React.useState<any[]>([]);
   const [selectedStartup, setSelectedStartup] = React.useState<any>(null);
 
@@ -47,49 +46,6 @@ const InvestorMarketplace: React.FC = () => {
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm transition-shadow"
             />
           </div>
-          <div className="flex gap-3">
-            <select className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm text-gray-700 font-medium bg-white outline-none">
-              <option>All Industries</option>
-              <option>SaaS / Enterprise</option>
-              <option>FinTech</option>
-              <option>HealthTech</option>
-              <option>ClimateTech</option>
-            </select>
-            <button className="flex items-center px-4 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-700 font-medium text-sm transition-colors">
-              <Filter size={18} className="mr-2" />
-              More Filters
-            </button>
-          </div>
-        </div>
-        
-        {/* Quick Filters */}
-        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2 self-center">AI Score:</span>
-          <button 
-            onClick={() => setActiveScore(activeScore === '90+' ? '' : '90+')}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${activeScore === '90+' ? 'bg-green-100 border-green-300 text-green-800' : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'}`}
-          >
-            90+ Score
-          </button>
-          <button 
-            onClick={() => setActiveScore(activeScore === '80-89' ? '' : '80-89')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeScore === '80-89' ? 'bg-gray-200 border-gray-300 text-gray-800' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`}
-          >
-            80-89 Score
-          </button>
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-4 mr-2 self-center">Stage:</span>
-          <button 
-            onClick={() => setActiveStage(activeStage === 'Pre-Seed' ? '' : 'Pre-Seed')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeStage === 'Pre-Seed' ? 'bg-[#5B21B6] text-white border-[#5B21B6] shadow-sm' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`}
-          >
-            Pre-Seed
-          </button>
-          <button 
-            onClick={() => setActiveStage(activeStage === 'Seed' ? '' : 'Seed')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${activeStage === 'Seed' ? 'bg-[#5B21B6] text-white border-[#5B21B6] shadow-sm' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`}
-          >
-            Seed
-          </button>
         </div>
       </div>
 
@@ -102,12 +58,7 @@ const InvestorMarketplace: React.FC = () => {
           </div>
         ) : (
           startups.filter(s => {
-            const score = s.aiGenerated?.aiReport?.investmentReadinessScore || 85;
-            const stage = s.status === 'generated' ? 'Seed' : 'Idea Stage';
             if (search && !s.startupName.toLowerCase().includes(search.toLowerCase()) && !s.startupIdea.toLowerCase().includes(search.toLowerCase())) return false;
-            if (activeScore === '90+' && score < 90) return false;
-            if (activeScore === '80-89' && (score < 80 || score >= 90)) return false;
-            if (activeStage && stage !== activeStage) return false;
             return true;
           }).map((startup, idx) => {
             const score = startup.aiGenerated?.aiReport?.investmentReadinessScore || 85;
