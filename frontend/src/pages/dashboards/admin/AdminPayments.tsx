@@ -22,7 +22,10 @@ const AdminPayments: React.FC = () => (
         <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
         <p className="text-gray-500 mt-1">Monitor all payment transactions across the platform in real-time.</p>
       </div>
-      <button className="flex items-center px-4 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold rounded-xl text-sm transition-colors">
+      <button 
+        onClick={() => window.alert('Exporting transactions report to CSV...')}
+        className="flex items-center px-4 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold rounded-xl text-sm transition-colors"
+      >
         <Download size={16} className="mr-2" /> Export CSV
       </button>
     </div>

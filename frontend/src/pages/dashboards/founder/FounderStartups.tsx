@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, MoreVertical, LayoutGrid, List, X, Rocket } from 'lucide-react';
+import { Plus, Search, MoreVertical, LayoutGrid, List, X, Rocket, Sparkles, RefreshCw } from 'lucide-react';
 
 type Startup = {
   id: string;
   name: string;
   description: string;
-  status: 'Approved' | 'In Review' | 'Draft' | 'Rejected';
+  status: 'Approved' | 'In Review' | 'Draft' | 'Rejected' | 'generated';
   score: number;
   stage: string;
   color: string;
-  // Extra fields for AI Idea Generator
   category?: string;
   problem?: string;
   customers?: string;
@@ -21,9 +20,6 @@ const initialStartups: Startup[] = [
   { id: '1', name: 'EcoPackage Hub', description: 'Sustainable packaging marketplace connecting green manufacturers with D2C e-commerce brands.', status: 'Approved', score: 92, stage: 'Pre-Seed', color: 'bg-green-100 text-green-600' },
   { id: '2', name: 'FinFlow AI', description: 'Automated financial forecasting for SaaS companies using LLM-based data extraction.', status: 'In Review', score: 85, stage: 'Idea Phase', color: 'bg-blue-100 text-blue-600' },
   { id: '3', name: 'LegalLens AI', description: 'AI-powered contract review and risk analysis platform for small law firms.', status: 'Approved', score: 95, stage: 'Seed', color: 'bg-purple-100 text-purple-600' },
-  { id: '4', name: 'MediBot Health', description: 'Virtual AI health assistant for triaging patient symptoms before telehealth calls.', status: 'Draft', score: 78, stage: 'Prototyping', color: 'bg-orange-100 text-orange-600' },
-  { id: '5', name: 'AutoHR Tech', description: 'Streamlined employee onboarding and automated compliance tracking using AI.', status: 'Approved', score: 88, stage: 'Seed', color: 'bg-indigo-100 text-indigo-600' },
-  { id: '6', name: 'CodeCompanion', description: 'Real-time AI pair programming assistant specialized in legacy code refactoring.', status: 'In Review', score: 81, stage: 'Idea Phase', color: 'bg-rose-100 text-rose-600' },
 ];
 
 const statusStyles: Record<string, string> = {
@@ -31,6 +27,7 @@ const statusStyles: Record<string, string> = {
   'In Review': 'text-yellow-700 bg-yellow-50 border-yellow-200',
   'Draft': 'text-gray-700 bg-gray-50 border-gray-200',
   'Rejected': 'text-red-700 bg-red-50 border-red-200',
+  'generated': 'text-purple-700 bg-purple-50 border-purple-200',
 };
 
 const FounderStartups: React.FC = () => {
@@ -42,8 +39,8 @@ const FounderStartups: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newStartupName, setNewStartupName] = useState('');
   const [newStartupDesc, setNewStartupDesc] = useState('');
-  const [newStartupCustomers, setNewStartupCustomers] = useState('');
-  const [newStartupModel, setNewStartupModel] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   
   const navigate = useNavigate();
 
@@ -52,34 +49,39 @@ const FounderStartups: React.FC = () => {
     s.description.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAddStartup = (e: React.FormEvent) => {
+  const handleAddStartup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newStartupName.trim() || !newStartupDesc.trim()) return;
 
-    const newStartup: Startup = {
-      id: Date.now().toString(),
-      name: newStartupName,
-      description: newStartupDesc,
-      customers: newStartupCustomers,
-      businessModel: newStartupModel,
-      status: 'Draft',
-      score: 0,
-      stage: 'Idea Phase', // Default hardcoded since input was removed
-      color: 'bg-[#5B21B6]/10 text-[#5B21B6]'
-    };
+    setLoading(true);
+    setError('');
 
-    // Save to local state
-    setStartups([newStartup, ...startups]);
-    
-    // Save to localStorage so AI Builder can pick it up
-    localStorage.setItem('recentStartup', JSON.stringify(newStartup));
+    try {
+      const response = await fetch('http://localhost:5000/api/startups/create-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          startupName: newStartupName, 
+          startupIdea: newStartupDesc 
+        })
+      });
 
-    // Reset and close
-    setIsModalOpen(false);
-    setNewStartupName('');
-    setNewStartupDesc('');
-    setNewStartupCustomers('');
-    setNewStartupModel('');
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsModalOpen(false);
+        setNewStartupName('');
+        setNewStartupDesc('');
+        
+        navigate(`/dashboard/founder/ai-builder?id=${data.data.startupId}`);
+      } else {
+        setError(data.message || 'Failed to save startup idea');
+      }
+    } catch (err) {
+      setError('Failed to connect to server');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -250,6 +252,8 @@ const FounderStartups: React.FC = () => {
             
             <form onSubmit={handleAddStartup} className="p-6 overflow-y-auto">
               
+              {error && <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-xl font-bold text-sm">{error}</div>}
+
               <div className="mb-5">
                 <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-1.5">Startup Name</label>
                 <input
@@ -264,64 +268,43 @@ const FounderStartups: React.FC = () => {
               </div>
 
               <div className="mb-5">
-                <label htmlFor="desc" className="block text-sm font-bold text-gray-700 mb-1.5">Elevator Pitch (Description)</label>
+                <label htmlFor="desc" className="block text-sm font-bold text-gray-700 mb-1.5">Startup Idea / Short Description</label>
                 <textarea
                   id="desc"
                   required
                   rows={3}
                   value={newStartupDesc}
                   onChange={e => setNewStartupDesc(e.target.value)}
-                  placeholder="A short summary of what the startup does..."
+                  placeholder="Describe your startup idea in simple words..."
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] bg-gray-50 focus:bg-white transition-colors resize-none"
                 ></textarea>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                <div>
-                  <label htmlFor="customers" className="block text-sm font-bold text-gray-700 mb-1.5">Target Customers</label>
-                  <input
-                    id="customers"
-                    type="text"
-                    value={newStartupCustomers}
-                    onChange={e => setNewStartupCustomers(e.target.value)}
-                    placeholder="e.g. SMBs, Freelancers, Gen Z..."
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] bg-gray-50 focus:bg-white transition-colors"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="businessModel" className="block text-sm font-bold text-gray-700 mb-1.5">Business Model</label>
-                  <select
-                    id="businessModel"
-                    value={newStartupModel}
-                    onChange={e => setNewStartupModel(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] bg-gray-50 focus:bg-white transition-colors"
-                  >
-                    <option value="">Select a model...</option>
-                    <option value="B2B SaaS">B2B SaaS</option>
-                    <option value="B2C Subscription">B2C Subscription</option>
-                    <option value="Marketplace">Marketplace</option>
-                    <option value="E-commerce">E-commerce</option>
-                    <option value="Freemium">Freemium</option>
-                    <option value="Enterprise / Sales-led">Enterprise / Sales-led</option>
-                    <option value="Hardware">Hardware</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
               </div>
 
               <div className="mt-8 flex items-center justify-end gap-3 pt-4 border-t border-gray-50 flex-shrink-0">
                 <button 
                   type="button" 
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                  disabled={loading}
+                  className="px-5 py-2.5 text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="px-5 py-2.5 text-sm font-bold text-white bg-[#5B21B6] hover:bg-[#7C3AED] rounded-xl transition-all shadow-md shadow-purple-900/20 active:scale-95"
+                  disabled={loading || !newStartupName || !newStartupDesc}
+                  className="flex items-center px-6 py-2.5 text-sm font-bold text-white bg-[#5B21B6] hover:bg-[#7C3AED] rounded-xl transition-all shadow-md shadow-purple-900/20 active:scale-95 disabled:opacity-50"
                 >
-                  Create Startup
+                  {loading ? (
+                    <>
+                      <RefreshCw size={16} className="animate-spin mr-2" />
+                      Saving your startup idea...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={16} className="mr-2" />
+                      Continue to AI Builder
+                    </>
+                  )}
                 </button>
               </div>
             </form>

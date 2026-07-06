@@ -17,9 +17,15 @@ const statusStyle: Record<string, string> = {
 
 const AdminSubManagement: React.FC = () => {
   const [search, setSearch] = useState('');
-  const filtered = subs.filter(s =>
-    s.user.toLowerCase().includes(search.toLowerCase()) || s.email.includes(search)
-  );
+  const [planFilter, setPlanFilter] = useState('All Plans');
+  
+  const filtered = subs.filter(s => {
+    const matchesSearch = s.user.toLowerCase().includes(search.toLowerCase()) || 
+                          s.email.toLowerCase().includes(search.toLowerCase()) ||
+                          s.id.toLowerCase().includes(search.toLowerCase());
+    const matchesPlan = planFilter === 'All Plans' || s.plan === planFilter;
+    return matchesSearch && matchesPlan;
+  });
 
   return (
     <div className="animate-fade-in-up pb-10">
@@ -41,7 +47,11 @@ const AdminSubManagement: React.FC = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
             <input value={search} onChange={e => setSearch(e.target.value)} type="text" placeholder="Search subscriptions..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm" />
           </div>
-          <select className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#5B21B6]">
+          <select 
+            value={planFilter}
+            onChange={e => setPlanFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
+          >
             <option>All Plans</option>
             <option>Starter</option>
             <option>Growth</option>
@@ -75,9 +85,31 @@ const AdminSubManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1">
-                      {s.status === 'Active' && <button title="Cancel" className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><XCircle size={15} /></button>}
-                      {s.status === 'Cancelled' && <button title="Reactivate" className="p-1.5 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors"><RotateCcw size={15} /></button>}
-                      <button title="View Details" className="p-1.5 text-gray-400 hover:text-[#5B21B6] hover:bg-purple-50 rounded-lg transition-colors"><CreditCard size={15} /></button>
+                      {s.status === 'Active' && (
+                        <button 
+                          onClick={() => window.alert(`Cancelling subscription for ${s.user} (${s.id})...`)}
+                          title="Cancel" 
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <XCircle size={15} />
+                        </button>
+                      )}
+                      {s.status === 'Cancelled' && (
+                        <button 
+                          onClick={() => window.alert(`Reactivating subscription for ${s.user} (${s.id})...`)}
+                          title="Reactivate" 
+                          className="p-1.5 text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors"
+                        >
+                          <RotateCcw size={15} />
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => window.alert(`Viewing detailed subscription info for ${s.user} (${s.id})`)}
+                        title="View Details" 
+                        className="p-1.5 text-gray-400 hover:text-[#5B21B6] hover:bg-purple-50 rounded-lg transition-colors"
+                      >
+                        <CreditCard size={15} />
+                      </button>
                     </div>
                   </td>
                 </tr>

@@ -24,7 +24,10 @@ const InvestorReports: React.FC = () => (
           <h3 className="font-bold text-gray-900 mb-2 leading-snug">{r.title}</h3>
           <p className="text-xs text-gray-500 mb-6">{r.date}</p>
           
-          <button className="mt-auto flex items-center justify-center w-full px-4 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-xl text-sm transition-colors border border-gray-200">
+          <button 
+            onClick={() => window.alert(`Downloading ${r.title} as PDF...`)}
+            className="mt-auto flex items-center justify-center w-full px-4 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-xl text-sm transition-colors border border-gray-200"
+          >
             <Download size={16} className="mr-2" /> Download PDF
           </button>
         </div>

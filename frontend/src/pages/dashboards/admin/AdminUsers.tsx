@@ -95,12 +95,36 @@ const AdminUsers: React.FC = () => {
                   <td className="px-6 py-4 text-sm text-gray-500">{u.joined}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Email"><Mail size={15} /></button>
+                      <button 
+                        onClick={() => window.alert(`Sending email to ${u.name} (${u.email})...`)}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" 
+                        title="Email"
+                      >
+                        <Mail size={15} />
+                      </button>
                       {u.status === 'Active'
-                        ? <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Suspend"><UserX size={15} /></button>
-                        : <button className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Activate"><UserCheck size={15} /></button>
+                        ? <button 
+                            onClick={() => window.alert(`${u.name} has been suspended.`)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" 
+                            title="Suspend"
+                          >
+                            <UserX size={15} />
+                          </button>
+                        : <button 
+                            onClick={() => window.alert(`${u.name} has been activated.`)}
+                            className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" 
+                            title="Activate"
+                          >
+                            <UserCheck size={15} />
+                          </button>
                       }
-                      <button className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg transition-colors"><MoreVertical size={15} /></button>
+                      <button 
+                        onClick={() => window.alert(`More options for ${u.name}: View Profile, Change Role, Delete Account`)}
+                        className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg transition-colors"
+                        title="More options"
+                      >
+                        <MoreVertical size={15} />
+                      </button>
                     </div>
                   </td>
                 </tr>

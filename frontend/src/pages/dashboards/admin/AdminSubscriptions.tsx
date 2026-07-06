@@ -34,7 +34,10 @@ const AdminSubscriptions: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Subscription Plans</h1>
           <p className="text-gray-500 mt-1">Create, edit, and manage the platform's pricing tiers.</p>
         </div>
-        <button className="flex items-center px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow text-sm transition-colors">
+        <button 
+          onClick={() => window.alert('Opening New Plan creation modal...')}
+          className="flex items-center px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow text-sm transition-colors"
+        >
           <Plus size={16} className="mr-2" /> Add New Plan
         </button>
       </div>
@@ -92,7 +95,15 @@ const AdminSubscriptions: React.FC = () => {
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={() => setEditing(null)} className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition-colors">Cancel</button>
-              <button onClick={() => setEditing(null)} className="flex-1 px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl text-sm transition-colors shadow">Save Changes</button>
+              <button 
+                onClick={() => {
+                  setEditing(null);
+                  window.alert('Plan saved successfully!');
+                }} 
+                className="flex-1 px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl text-sm transition-colors shadow"
+              >
+                Save Changes
+              </button>
             </div>
           </div>
         </div>

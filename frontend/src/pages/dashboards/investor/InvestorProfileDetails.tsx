@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Camera, Save, Target } from 'lucide-react';
 
 const InvestorProfileDetails: React.FC = () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   return (
     <div className="animate-fade-in-up pb-10">
       <div className="flex items-center justify-between mb-8">
@@ -9,7 +10,10 @@ const InvestorProfileDetails: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Investor Profile</h1>
           <p className="text-gray-500 mt-1">Manage your investment thesis and public profile.</p>
         </div>
-        <button className="flex items-center px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow text-sm transition-colors">
+        <button 
+          onClick={() => window.alert('Profile changes saved successfully!')}
+          className="flex items-center px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow text-sm transition-colors"
+        >
           <Save size={16} className="mr-2" /> Save Changes
         </button>
       </div>
@@ -20,9 +24,19 @@ const InvestorProfileDetails: React.FC = () => {
             <div className="w-28 h-28 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-4xl font-black shadow-xl">
               C
             </div>
-            <button className="absolute bottom-0 right-0 w-9 h-9 bg-[#5B21B6] text-white rounded-full flex items-center justify-center shadow-md hover:bg-[#7C3AED] transition-colors">
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 w-9 h-9 bg-[#5B21B6] text-white rounded-full flex items-center justify-center shadow-md hover:bg-[#7C3AED] transition-colors"
+            >
               <Camera size={16} />
             </button>
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={() => window.alert('Photo uploaded successfully!')} 
+            />
           </div>
           <p className="font-bold text-gray-900 text-lg">Capital Ventures</p>
           <p className="text-sm text-emerald-600 font-bold uppercase tracking-widest mt-1">Institutional Investor</p>

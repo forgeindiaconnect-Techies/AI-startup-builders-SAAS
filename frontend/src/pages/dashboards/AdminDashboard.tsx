@@ -50,8 +50,18 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm text-gray-500">Ex-Product at Google | 2 Exits</p>
               </div>
               <div className="flex gap-2">
-                <button className="px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md text-sm font-medium transition-colors">Approve</button>
-                <button className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-md text-sm font-medium transition-colors">Reject</button>
+                <button 
+                  onClick={() => window.alert('Michael Chang has been approved as a Mentor!')}
+                  className="px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-md text-sm font-medium transition-colors"
+                >
+                  Approve
+                </button>
+                <button 
+                  onClick={() => window.alert('Michael Chang\'s application has been rejected.')}
+                  className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-md text-sm font-medium transition-colors"
+                >
+                  Reject
+                </button>
               </div>
             </div>
           </div>
@@ -61,7 +71,12 @@ const AdminDashboard: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-bold text-gray-900">Recent Subscription Upgrades</h2>
-            <button className="text-sm font-medium text-[#5B21B6] hover:underline">View all</button>
+            <button 
+              onClick={() => window.alert('Navigating to Subscriptions & Payments...')}
+              className="text-sm font-medium text-[#5B21B6] hover:underline"
+            >
+              View all
+            </button>
           </div>
           
           <div className="space-y-4">

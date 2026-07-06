@@ -1,6 +1,13 @@
 import { Router, Request, Response } from 'express';
+import aiBuilderRoutes from './aiBuilderRoutes.js';
+import notificationRoutes from './notificationRoutes.js';
+import startupRoutes from './startupRoutes.js';
 
 const router = Router();
+
+router.use('/startups', startupRoutes);
+router.use('/ai-builder', aiBuilderRoutes);
+router.use('/notifications', notificationRoutes);
 
 // Health check endpoint
 router.get('/health', (_req: Request, res: Response) => {

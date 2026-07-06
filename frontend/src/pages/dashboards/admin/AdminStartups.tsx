@@ -1,5 +1,5 @@
-import React from 'react';
-import { Search, MoreVertical, Shield, ShieldAlert, CheckCircle2, Building2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, MoreVertical, Building2 } from 'lucide-react';
 
 const startups = [
   { id: 1, name: 'EcoPackage Hub', founder: 'Sarah Jenkins', industry: 'ClimateTech', status: 'Active', plan: 'Growth', joined: 'Jan 15, 2026' },
@@ -14,7 +14,21 @@ const statusStyles: Record<string, string> = {
   Suspended: 'bg-red-50 text-red-600 border border-red-100',
 };
 
-const AdminStartups: React.FC = () => (
+const AdminStartups: React.FC = () => {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All Statuses');
+  const [industryFilter, setIndustryFilter] = useState('All Industries');
+
+  const filtered = startups.filter(s => {
+    const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.founder.toLowerCase().includes(search.toLowerCase()) ||
+      s.industry.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === 'All Statuses' || s.status === statusFilter;
+    const matchesIndustry = industryFilter === 'All Industries' || s.industry === industryFilter;
+    return matchesSearch && matchesStatus && matchesIndustry;
+  });
+
+  return (
   <div className="animate-fade-in-up pb-10">
     <div className="mb-8">
       <h1 className="text-2xl font-bold text-gray-900">Manage Startups</h1>
@@ -25,20 +39,35 @@ const AdminStartups: React.FC = () => (
       <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="relative max-w-sm w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-          <input type="text" placeholder="Search startups..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm" />
+          <input 
+            type="text" 
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search startups..." 
+            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm" 
+          />
         </div>
         <div className="flex gap-2">
-          <select className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none">
+          <select 
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
+          >
             <option>All Statuses</option>
             <option>Active</option>
             <option>Under Review</option>
             <option>Suspended</option>
           </select>
-          <select className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none">
+          <select 
+            value={industryFilter}
+            onChange={e => setIndustryFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
+          >
             <option>All Industries</option>
             <option>ClimateTech</option>
             <option>LegalTech</option>
             <option>FinTech</option>
+            <option>SaaS</option>
           </select>
         </div>
       </div>
@@ -57,28 +86,41 @@ const AdminStartups: React.FC = () => (
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {startups.map(s => (
-              <tr key={s.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 font-bold text-gray-900 flex items-center gap-2">
-                  <Building2 size={16} className="text-gray-400" /> {s.name}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-600">{s.founder}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{s.industry}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusStyles[s.status]}`}>{s.status}</span>
-                </td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-700">{s.plan}</td>
-                <td className="px-6 py-4 text-sm text-gray-500">{s.joined}</td>
-                <td className="px-6 py-4 text-right">
-                  <button className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg transition-colors"><MoreVertical size={16} /></button>
-                </td>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-6 py-10 text-center text-gray-400 text-sm">No startups match your search or filters.</td>
               </tr>
-            ))}
+            ) : (
+              filtered.map(s => (
+                <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 font-bold text-gray-900 flex items-center gap-2">
+                    <Building2 size={16} className="text-gray-400" /> {s.name}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{s.founder}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{s.industry}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusStyles[s.status]}`}>{s.status}</span>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-700">{s.plan}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{s.joined}</td>
+                  <td className="px-6 py-4 text-right">
+                    <button 
+                      onClick={() => window.alert(`Actions for ${s.name}:\n• View Profile\n• Edit Details\n• Change Status\n• Delete Startup`)}
+                      className="p-1.5 text-gray-400 hover:text-[#5B21B6] hover:bg-purple-50 rounded-lg transition-colors"
+                      title="More actions"
+                    >
+                      <MoreVertical size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default AdminStartups;

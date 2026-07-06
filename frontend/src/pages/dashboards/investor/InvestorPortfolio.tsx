@@ -71,7 +71,10 @@ const InvestorPortfolio: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {/* Row 1 */}
-              <tr className="hover:bg-gray-50 transition-colors group cursor-pointer">
+              <tr 
+                onClick={() => window.alert('Opening investment details for LumiAI...')}
+                className="hover:bg-gray-50 transition-colors group cursor-pointer"
+              >
                 <td className="px-6 py-5">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold">L</div>
@@ -96,7 +99,10 @@ const InvestorPortfolio: React.FC = () => {
               </tr>
               
               {/* Row 2 */}
-              <tr className="hover:bg-gray-50 transition-colors group cursor-pointer">
+              <tr 
+                onClick={() => window.alert('Opening investment details for EcoPackage Hub...')}
+                className="hover:bg-gray-50 transition-colors group cursor-pointer"
+              >
                 <td className="px-6 py-5">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center font-bold">E</div>
@@ -122,7 +128,10 @@ const InvestorPortfolio: React.FC = () => {
               </tr>
 
               {/* Row 3 */}
-              <tr className="hover:bg-gray-50 transition-colors group cursor-pointer">
+              <tr 
+                onClick={() => window.alert('Opening investment details for Nova Security...')}
+                className="hover:bg-gray-50 transition-colors group cursor-pointer"
+              >
                 <td className="px-6 py-5">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center font-bold">N</div>

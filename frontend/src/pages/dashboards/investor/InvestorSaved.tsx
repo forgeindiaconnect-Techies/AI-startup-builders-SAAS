@@ -52,7 +52,10 @@ const InvestorSaved: React.FC = () => (
               </span>
               <span className="text-xs font-bold text-gray-400">AI Score</span>
             </div>
-            <button className="text-[#5B21B6] hover:text-[#7C3AED] font-bold text-sm flex items-center gap-1 transition-colors">
+            <button 
+              onClick={() => window.alert(`Opening full profile for ${s.name}...`)}
+              className="text-[#5B21B6] hover:text-[#7C3AED] font-bold text-sm flex items-center gap-1 transition-colors"
+            >
               View Profile <ExternalLink size={14} />
             </button>
           </div>

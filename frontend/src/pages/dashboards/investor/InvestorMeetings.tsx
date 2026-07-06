@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Calendar, Video, Clock, Link, CheckCircle2 } from 'lucide-react';
 
 const meetings = [
@@ -7,16 +7,33 @@ const meetings = [
   { id: 3, startup: 'AI Legal Reviewer', founder: 'James Park', type: 'Founder Intro', date: 'Jun 28, 2026', time: '11:00 AM - 11:30 AM', status: 'completed' },
 ];
 
-const InvestorMeetings: React.FC = () => (
+const InvestorMeetings: React.FC = () => {
+  const syncDateRef = useRef<HTMLInputElement>(null);
+  const rescheduleDateRef = useRef<HTMLInputElement>(null);
+
+  return (
   <div className="animate-fade-in-up pb-10">
     <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Meetings</h1>
         <p className="text-gray-500 mt-1">Manage your calendar and upcoming video calls with founders.</p>
       </div>
-      <button className="flex items-center px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow text-sm transition-colors">
-        <Link size={16} className="mr-2" /> Sync Google Calendar
-      </button>
+      <div className="relative">
+        <input 
+          type="date" 
+          ref={syncDateRef} 
+          className="absolute inset-0 opacity-0 pointer-events-none" 
+          onChange={(e) => {
+            if(e.target.value) window.alert(`Calendar synced from: ${e.target.value}`);
+          }} 
+        />
+        <button 
+          onClick={() => syncDateRef.current?.showPicker()}
+          className="flex items-center px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow text-sm transition-colors"
+        >
+          <Link size={16} className="mr-2" /> Sync Google Calendar
+        </button>
+      </div>
     </div>
 
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -44,11 +61,25 @@ const InvestorMeetings: React.FC = () => (
             </div>
             
             {m.status === 'upcoming' ? (
-              <div className="flex gap-2 w-full sm:w-auto">
-                <button className="flex-1 sm:flex-none px-4 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-lg text-sm hover:bg-gray-50 transition-colors">
+              <div className="flex gap-2 w-full sm:w-auto relative">
+                <input 
+                  type="datetime-local" 
+                  ref={rescheduleDateRef} 
+                  className="absolute inset-0 opacity-0 pointer-events-none" 
+                  onChange={(e) => {
+                    if(e.target.value) window.alert(`Meeting rescheduled to: ${new Date(e.target.value).toLocaleString()}`);
+                  }} 
+                />
+                <button 
+                  onClick={() => rescheduleDateRef.current?.showPicker()}
+                  className="flex-1 sm:flex-none px-4 py-2 bg-white border border-gray-200 text-gray-700 font-bold rounded-lg text-sm hover:bg-gray-50 transition-colors"
+                >
                   Reschedule
                 </button>
-                <button className="flex-1 sm:flex-none px-4 py-2 bg-[#5B21B6] text-white font-bold rounded-lg text-sm hover:bg-[#7C3AED] transition-colors shadow">
+                <button 
+                  onClick={() => window.open('https://meet.google.com/new', '_blank')}
+                  className="flex-1 sm:flex-none px-4 py-2 bg-[#5B21B6] text-white font-bold rounded-lg text-sm hover:bg-[#7C3AED] transition-colors shadow"
+                >
                   Join Call
                 </button>
               </div>
@@ -60,6 +91,7 @@ const InvestorMeetings: React.FC = () => (
       </div>
     </div>
   </div>
-);
+  );
+};
 
 export default InvestorMeetings;
