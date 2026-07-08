@@ -170,49 +170,60 @@ const AdminStartups: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">{new Date(s.createdAt).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 text-right flex justify-end gap-2 relative">
-                    <div className="relative inline-block text-left">
+                  <td className="px-6 py-4 text-right relative">
+                    <div className="inline-block text-left relative">
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
                           setDropdownOpen(dropdownOpen === s.startupId ? null : s.startupId);
                         }}
-                        className="px-3 py-1.5 bg-purple-50 text-[#5B21B6] hover:bg-purple-100 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+                        className="p-1.5 hover:bg-gray-100 rounded-full transition-colors inline-flex items-center justify-center"
                       >
-                        Documents <span className="text-[10px]">▼</span>
+                        <MoreVertical size={18} className="text-gray-500" />
                       </button>
                       {dropdownOpen === s.startupId && (
-                        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-[100] animate-fade-in-up flex flex-col">
-                          <button onClick={() => { handleDownload(`${s.startupName.replace(/\s+/g, '_')}_Report`, 'PDF'); setDropdownOpen(null); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
-                            <span className="font-bold text-gray-800">PDF Document</span>
+                        <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-[100] animate-fade-in-up text-left">
+                          <button 
+                            onClick={() => { setSelectedStartup(s); setViewMode('details'); setDropdownOpen(null); }} 
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-bold transition-colors"
+                          >
+                            View Details
                           </button>
-                          <button onClick={() => { handleDownload(`${s.startupName.replace(/\s+/g, '_')}_Report`, 'WORD'); setDropdownOpen(null); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
-                            <span className="font-bold text-gray-800">Word Document</span>
+                          <button 
+                            onClick={() => { setSelectedStartup(s); setViewMode('funding'); setDropdownOpen(null); }} 
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-bold transition-colors"
+                          >
+                            Funding Offers
                           </button>
-                          <button onClick={() => { handleDownload(`${s.startupName.replace(/\s+/g, '_')}_Full_Package`, 'ZIP'); setDropdownOpen(null); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
-                            <span className="font-bold text-gray-800">ZIP Package</span>
+                          <hr className="my-1 border-gray-100" />
+                          <button 
+                            onClick={() => { handleDownload(`${s.startupName.replace(/\s+/g, '_')}_Report`, 'PDF'); setDropdownOpen(null); }} 
+                            className="w-full text-left px-4 py-2 text-xs text-gray-600 hover:bg-gray-50 font-semibold transition-colors"
+                          >
+                            Download PDF Report
+                          </button>
+                          <button 
+                            onClick={() => { handleDownload(`${s.startupName.replace(/\s+/g, '_')}_Report`, 'WORD'); setDropdownOpen(null); }} 
+                            className="w-full text-left px-4 py-2 text-xs text-gray-600 hover:bg-gray-50 font-semibold transition-colors"
+                          >
+                            Download Word Report
+                          </button>
+                          <button 
+                            onClick={() => { handleDownload(`${s.startupName.replace(/\s+/g, '_')}_Full_Package`, 'ZIP'); setDropdownOpen(null); }} 
+                            className="w-full text-left px-4 py-2 text-xs text-gray-600 hover:bg-gray-50 font-semibold transition-colors"
+                          >
+                            Download ZIP Package
+                          </button>
+                          <hr className="my-1 border-gray-100" />
+                          <button 
+                            onClick={() => { handleDelete(s.startupId); setDropdownOpen(null); }} 
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-bold transition-colors"
+                          >
+                            Delete Startup
                           </button>
                         </div>
                       )}
                     </div>
-                    <button 
-                      onClick={() => { setSelectedStartup(s); setViewMode('funding'); }}
-                      className="px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg text-xs font-bold transition-colors"
-                    >
-                      Funding
-                    </button>
-                    <button 
-                      onClick={() => { setSelectedStartup(s); setViewMode('details'); }}
-                      className="px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
-                    >
-                      Details
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(s.startupId)}
-                      className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition-colors"
-                    >
-                      Delete
-                    </button>
                   </td>
                 </tr>
               ))
