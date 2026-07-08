@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { DollarSign, ArrowUpRight, Clock, Plus } from 'lucide-react';
-import SendInvestmentOfferModal from '../../../components/shared/SendInvestmentOfferModal';
+import React from 'react';
+import { DollarSign, ArrowUpRight, Clock } from 'lucide-react';
 
 const transactions = [
   { id: 'TRX-9821', date: 'Jun 15, 2026', startup: 'EcoPackage Hub', amount: '$50,000', type: 'SAFE Investment', status: 'Completed', pnl: '+12%' },
@@ -9,8 +8,6 @@ const transactions = [
 ];
 
 const InvestorTransactions: React.FC = () => {
-  const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
-
   return (
     <div className="animate-fade-in-up pb-10">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -18,13 +15,6 @@ const InvestorTransactions: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
           <p className="text-gray-500 mt-1">Track your investment history and capital deployed.</p>
         </div>
-        <button 
-          onClick={() => setIsOfferModalOpen(true)}
-          className="flex items-center px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl transition-colors shadow-sm"
-        >
-          <Plus size={18} className="mr-2" />
-          Send Investment Offer
-        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
@@ -78,11 +68,6 @@ const InvestorTransactions: React.FC = () => {
           </table>
         </div>
       </div>
-
-      <SendInvestmentOfferModal 
-        isOpen={isOfferModalOpen} 
-        onClose={() => setIsOfferModalOpen(false)} 
-      />
     </div>
   );
 };
