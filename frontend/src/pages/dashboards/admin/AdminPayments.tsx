@@ -44,6 +44,35 @@ const AdminPayments: React.FC = () => {
   
   const pendingRequests = paymentRequests.filter(p => p.status === 'pending_verification');
 
+  const handleExportCSV = () => {
+    if (transactions.length === 0) {
+      window.alert("No transaction data to export.");
+      return;
+    }
+
+    const headers = ["Transaction ID", "Customer Name", "Plan", "Type", "Amount", "Method", "Date", "Status"];
+    const rows = transactions.map(t => [
+      t.id,
+      t.userName,
+      t.plan,
+      t.type,
+      t.amount,
+      t.method,
+      t.date,
+      t.status
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(e => e.map(val => `"${(val || '').replace(/"/g, '""')}"`).join(","))].join("\r\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `payment_transactions_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="animate-fade-in-up pb-10">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -52,7 +81,7 @@ const AdminPayments: React.FC = () => {
           <p className="text-gray-500 mt-1">Review manual payment proofs and monitor transactions.</p>
         </div>
         <button 
-          onClick={() => window.alert('Exporting transactions report to CSV...')}
+          onClick={handleExportCSV}
           className="flex items-center px-4 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold rounded-xl text-sm transition-colors"
         >
           <Download size={16} className="mr-2" /> Export CSV

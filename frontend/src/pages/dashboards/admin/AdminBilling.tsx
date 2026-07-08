@@ -7,8 +7,36 @@ const subscriptions = [
   { id: 'SUB-090', user: 'Fintech Micro-SaaS', plan: 'Scale', amount: '$149.00', status: 'Failed', date: 'Jun 28, 2026' },
 ];
 
-const AdminBilling: React.FC = () => (
-  <div className="animate-fade-in-up pb-10">
+const AdminBilling: React.FC = () => {
+  const handleExportCSV = () => {
+    if (subscriptions.length === 0) {
+      window.alert("No subscription data to export.");
+      return;
+    }
+
+    const headers = ["Transaction ID", "Customer", "Plan", "Amount", "Status", "Date"];
+    const rows = subscriptions.map(s => [
+      s.id,
+      s.user,
+      s.plan,
+      s.amount,
+      s.status,
+      s.date
+    ]);
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(e => e.map(val => `"${(val || '').replace(/"/g, '""')}"`).join(","))].join("\r\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `billing_subscriptions_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="animate-fade-in-up pb-10">
     <div className="mb-8">
       <h1 className="text-2xl font-bold text-gray-900">Subscriptions & Payments</h1>
       <p className="text-gray-500 mt-1">Monitor MRR, active subscriptions, and payment history.</p>
@@ -39,7 +67,10 @@ const AdminBilling: React.FC = () => (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h2 className="font-bold text-gray-900">Recent Transactions</h2>
-        <button className="flex items-center px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-lg text-sm transition-colors border border-gray-200">
+        <button 
+          onClick={handleExportCSV}
+          className="flex items-center px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-lg text-sm transition-colors border border-gray-200"
+        >
           <Download size={15} className="mr-2" /> Export CSV
         </button>
       </div>
@@ -75,7 +106,8 @@ const AdminBilling: React.FC = () => (
         </table>
       </div>
     </div>
-  </div>
-);
+    </div>
+  );
+};
 
 export default AdminBilling;
