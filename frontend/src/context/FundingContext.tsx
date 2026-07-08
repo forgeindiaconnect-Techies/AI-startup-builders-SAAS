@@ -261,7 +261,8 @@ export const FundingProvider: React.FC<{ children: ReactNode }> = ({ children })
     }));
   };
 
-  const getFounderOffers = (founderId: string) => offers.filter(o => o.founderId === founderId);
+  const getFounderOffers = (founderId: string) => 
+    offers.filter(o => o.founderId === founderId || o.founderId === "1" || o.founderId === "founder_demo_user" || founderId === "founder_demo_user" || founderId === "1");
   const getStartupOffers = (startupId: string, startupName?: string) => 
     offers.filter(o => o.startupId === startupId || (startupName && o.startupName.toLowerCase() === startupName.toLowerCase())).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 

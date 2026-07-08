@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, CheckCheck, Star, MessageSquare, TrendingUp, Users, Rocket, Info } from 'lucide-react';
 import { getNotifications, addNotification } from '../../../utils/localStorageHelper';
+import { useAuth } from '../../../context/AuthContext';
 
 type Notif = { id: number; icon: React.ElementType; color: string; bg: string; title: string; desc: string; time: string; read: boolean };
 
@@ -21,19 +22,24 @@ const getTypeStyles = (type?: string) => {
 };
 
 const FounderNotifications: React.FC = () => {
+  const { user: authUser } = useAuth();
   const [notifs, setNotifs] = useState<Notif[]>([]);
 
   useEffect(() => {
-    const local = getNotifications().map((n: any) => ({
-      id: n.id || Date.now(),
-      title: n.title,
-      desc: n.message || n.desc,
-      time: n.time || 'Just now',
-      read: !n.unread,
-      ...getTypeStyles(n.type)
-    }));
+    if (!authUser) return;
+    
+    const local = getNotifications()
+      .filter((n: any) => n.userId === authUser.id || (authUser.role === 'admin' && n.userId === 'admin') || n.userId === 'all')
+      .map((n: any) => ({
+        id: n.id || Date.now(),
+        title: n.title,
+        desc: n.message || n.desc,
+        time: n.time || new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || 'Just now',
+        read: n.isRead !== undefined ? n.isRead : !n.unread,
+        ...getTypeStyles(n.type)
+      }));
     setNotifs([...local, ...initialNotifs]);
-  }, []);
+  }, [authUser]);
 
   const markAll = () => {
     setNotifs(n => n.map(x => ({ ...x, read: true })));
