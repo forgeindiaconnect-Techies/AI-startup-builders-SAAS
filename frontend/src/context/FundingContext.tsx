@@ -54,7 +54,9 @@ interface FundingContextType {
   respondToOffer: (offerId: string, responseType: 'accepted' | 'rejected' | 'counter_offer', details: { message?: string, counterAmount?: number, counterEquity?: number }) => void;
   markAsFunded: (offerId: string, adminNote: string, adminName: string) => void;
   getFounderOffers: (founderId: string) => FundingOffer[];
-  getStartupOffers: (startupId: string) => FundingOffer[];
+  getStartupOffers: (startupId: string, startupName?: string) => FundingOffer[];
+  updateOfferAdminNote: (offerId: string, note: string) => void;
+  verifyOffer: (offerId: string, adminName: string) => void;
 }
 
 const FundingContext = createContext<FundingContextType | undefined>(undefined);
@@ -225,12 +227,46 @@ export const FundingProvider: React.FC<{ children: ReactNode }> = ({ children })
     }));
   };
 
+  const updateOfferAdminNote = (offerId: string, note: string) => {
+    setOffers(prev => prev.map(offer => {
+      if (offer.id === offerId) {
+        return {
+          ...offer,
+          adminNote: note,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return offer;
+    }));
+  };
+
+  const verifyOffer = (offerId: string, adminName: string) => {
+    setOffers(prev => prev.map(offer => {
+      if (offer.id === offerId) {
+        const updatedOffer = {
+          ...offer,
+          updatedAt: new Date().toISOString(),
+          history: [...offer.history]
+        };
+        updatedOffer.history.push({
+          action: 'verified',
+          performedBy: adminName,
+          role: 'Admin',
+          message: 'Admin completed the offline document and compliance verification checks.',
+          createdAt: new Date().toISOString()
+        });
+        return updatedOffer;
+      }
+      return offer;
+    }));
+  };
+
   const getFounderOffers = (founderId: string) => offers.filter(o => o.founderId === founderId);
   const getStartupOffers = (startupId: string, startupName?: string) => 
     offers.filter(o => o.startupId === startupId || (startupName && o.startupName.toLowerCase() === startupName.toLowerCase())).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
-    <FundingContext.Provider value={{ offers, sendOffer, respondToOffer, markAsFunded, getFounderOffers, getStartupOffers }}>
+    <FundingContext.Provider value={{ offers, sendOffer, respondToOffer, markAsFunded, getFounderOffers, getStartupOffers, updateOfferAdminNote, verifyOffer }}>
       {children}
     </FundingContext.Provider>
   );
