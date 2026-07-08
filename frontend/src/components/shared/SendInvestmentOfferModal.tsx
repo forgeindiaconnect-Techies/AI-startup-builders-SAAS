@@ -32,7 +32,7 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
     valuationCap: '',
     instrument: 'SAFE',
     discount: '20',
-    expiresInDays: '14',
+    expiryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     investorMessage: ''
   });
 
@@ -57,7 +57,7 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
       valuationCap: Number(offerData.valuationCap),
       instrument: offerData.instrument,
       discount: Number(offerData.discount),
-      expiresInDays: Number(offerData.expiresInDays),
+      expiresInDays: Math.max(1, Math.ceil((new Date(offerData.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))),
       investorMessage: offerData.investorMessage
     });
 
@@ -76,7 +76,7 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
       valuationCap: '',
       instrument: 'SAFE',
       discount: '20',
-      expiresInDays: '14',
+      expiryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       investorMessage: ''
     });
   };
@@ -238,11 +238,11 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Expires In (Days)</label>
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Offer Expiry Date</label>
               <input 
-                type="number" 
-                value={offerData.expiresInDays}
-                onChange={(e) => setOfferData({...offerData, expiresInDays: e.target.value})}
+                type="date" 
+                value={offerData.expiryDate}
+                onChange={(e) => setOfferData({...offerData, expiryDate: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
               />
             </div>
