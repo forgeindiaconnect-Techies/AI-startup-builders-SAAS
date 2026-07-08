@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Search, MoreVertical, Building2, X, Cpu, CheckCircle2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDetailsTabs';
+import { useFunding } from '../../../context/FundingContext';
+import type { FundingOffer } from '../../../context/FundingContext';
 import { getDocuments } from '../../../utils/localStorageHelper';
 import jsPDF from 'jspdf';
 import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx';
@@ -13,8 +15,12 @@ const AdminStartups: React.FC = () => {
   const [startups, setStartups] = React.useState<any[]>([]);
   const [documents, setDocuments] = React.useState<any[]>([]);
   const [selectedStartup, setSelectedStartup] = React.useState<any>(null);
-  const [viewMode, setViewMode] = useState<'details' | 'documents'>('details');
+  const [viewMode, setViewMode] = useState<'details' | 'documents' | 'funding'>('details');
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+
+  const { getStartupOffers, markAsFunded } = useFunding();
+  const startupOffers = selectedStartup ? getStartupOffers(selectedStartup.startupId, selectedStartup.startupName) : [];
+  const [adminNote, setAdminNote] = useState('');
 
   const handleDelete = (startupId: string) => {
     if (window.confirm('Are you sure you want to delete this startup?')) {
@@ -186,6 +192,12 @@ const AdminStartups: React.FC = () => {
                       )}
                     </div>
                     <button 
+                      onClick={() => { setSelectedStartup(s); setViewMode('funding'); }}
+                      className="px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg text-xs font-bold transition-colors"
+                    >
+                      Funding
+                    </button>
+                    <button 
                       onClick={() => { setSelectedStartup(s); setViewMode('details'); }}
                       className="px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors"
                     >
@@ -219,7 +231,7 @@ const AdminStartups: React.FC = () => {
             </button>
             <div className="flex-1">
               <h2 className="text-[22px] font-bold text-gray-900">
-                {viewMode === 'documents' ? 'Startup Documents' : 'Startup Details'}
+                {viewMode === 'documents' ? 'Startup Documents' : viewMode === 'funding' ? 'Funding Offers' : 'Startup Details'}
               </h2>
               <p className="text-[15px] text-gray-500 mt-1">{selectedStartup.startupName}</p>
             </div>
@@ -234,6 +246,94 @@ const AdminStartups: React.FC = () => {
           <div className="p-8 overflow-y-auto flex-1 space-y-8">
             {viewMode === 'details' ? (
               <SharedStartupDetailsTabs startupData={selectedStartup} />
+            ) : viewMode === 'funding' ? (
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 mb-6">Funding Offers & Term Sheets</h3>
+                {startupOffers.length === 0 ? (
+                  <div className="text-center p-8 bg-gray-50 rounded-xl border border-gray-200 text-gray-500">
+                    No funding offers have been made to this startup yet.
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {startupOffers.map(offer => (
+                      <div key={offer.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                        <div className={`p-4 border-b ${offer.status === 'funded' ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-200'} flex justify-between items-center`}>
+                          <div>
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${offer.status === 'funded' ? 'bg-green-200 text-green-800' : offer.status === 'accepted' ? 'bg-purple-200 text-purple-800' : offer.status === 'counter_offer' ? 'bg-orange-200 text-orange-800' : offer.status === 'rejected' ? 'bg-red-200 text-red-800' : 'bg-blue-200 text-blue-800'}`}>
+                              {offer.status.replace('_', ' ')}
+                            </span>
+                            <h4 className="font-bold text-gray-900 mt-2 text-lg">Offer from {offer.investorCompany}</h4>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-black text-gray-900">${offer.offerAmount.toLocaleString()}</p>
+                            <p className="text-sm font-medium text-gray-500">for {offer.equityPercentage}% Equity</p>
+                          </div>
+                        </div>
+                        <div className="p-6">
+                          <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div><p className="text-xs text-gray-500 uppercase font-bold">Investor Name</p><p className="font-semibold text-gray-900">{offer.investorName}</p></div>
+                            <div><p className="text-xs text-gray-500 uppercase font-bold">Investor Email</p><p className="font-semibold text-gray-900 truncate" title={offer.investorEmail}>{offer.investorEmail || 'N/A'}</p></div>
+                            <div className="col-span-2"><p className="text-xs text-gray-500 uppercase font-bold">Investor Address</p><p className="font-semibold text-gray-900 truncate" title={offer.investorAddress}>{offer.investorAddress || 'N/A'}</p></div>
+                          </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                            <div><p className="text-xs text-gray-500">Instrument</p><p className="font-bold">{offer.instrument}</p></div>
+                            <div><p className="text-xs text-gray-500">Currency</p><p className="font-bold">{offer.currency}</p></div>
+                            <div><p className="text-xs text-gray-500">Valuation Cap</p><p className="font-bold">${(offer.valuationCap / 1000000).toFixed(1)}M</p></div>
+                            <div><p className="text-xs text-gray-500">Discount</p><p className="font-bold">{offer.discount}%</p></div>
+                            <div><p className="text-xs text-gray-500">Created</p><p className="font-bold">{new Date(offer.createdAt).toLocaleDateString()}</p></div>
+                          </div>
+                          
+                          <div className="mb-6">
+                            <h5 className="text-sm font-bold text-gray-900 mb-3 border-b border-gray-100 pb-2">Offer History & Timeline</h5>
+                            <div className="space-y-4">
+                              {offer.history.filter((h, index, self) => {
+                                if (['accepted', 'funded', 'offer_received', 'rejected'].includes(h.action)) {
+                                  return index === self.findIndex(t => t.action === h.action);
+                                }
+                                return index === self.findIndex(t => t.action === h.action && t.createdAt === h.createdAt);
+                              }).map((h, i) => (
+                                <div key={i} className="flex gap-3 text-sm">
+                                  <div className="w-1.5 bg-gray-200 rounded-full my-1"></div>
+                                  <div>
+                                    <p className="font-bold text-gray-800">{h.action.toUpperCase()} <span className="text-gray-400 font-medium text-xs ml-2">{new Date(h.createdAt).toLocaleString()}</span></p>
+                                    <p className="text-gray-600 mt-0.5">By {h.performedBy} ({h.role}) - {h.message}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {offer.status === 'accepted' && (
+                            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 flex flex-col gap-3">
+                              <p className="text-sm font-bold text-purple-900">Admin Verification Required</p>
+                              <p className="text-xs text-purple-700">This offer has been accepted by the founder. Please verify the legal and payment documents offline, then mark this as Funded.</p>
+                              <div className="flex gap-3 items-center mt-2">
+                                <input 
+                                  type="text" 
+                                  value={adminNote} 
+                                  onChange={(e) => setAdminNote(e.target.value)}
+                                  placeholder="Admin confirmation note..."
+                                  className="flex-1 px-3 py-2 border border-purple-200 rounded-lg text-sm focus:outline-none"
+                                />
+                                <button 
+                                  onClick={() => {
+                                    markAsFunded(offer.id, adminNote || "Verified by Admin", "System Admin");
+                                    setAdminNote('');
+                                  }}
+                                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold text-sm whitespace-nowrap transition-colors"
+                                >
+                                  Verify & Mark Funded
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             ) : (
               <div>
                 <h3 className="text-lg font-bold text-gray-900 mb-6">All Documents & Exports</h3>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Send, ShieldAlert, ChevronDown } from 'lucide-react';
+import { Search, Send, ShieldAlert, ChevronDown, Users } from 'lucide-react';
 import { useChat } from '../../../context/ChatContext';
-import type { Conversation } from '../../../context/ChatContext';
+import type { Conversation, ChatUser } from '../../../context/ChatContext';
 import { useAuth } from '../../../context/AuthContext';
 
 const SharedMessages: React.FC = () => {
@@ -18,12 +18,10 @@ const SharedMessages: React.FC = () => {
   const myConversations = useMemo(() => {
     if (!user) return [];
     if (user.role === 'admin') return conversations;
-    // In our mock context, participants have role: 'founder', 'mentor', 'investor'.
-    // The current user has role user.role. We'll match on role since id might not perfectly align in mocks.
-    return conversations.filter(c => c.participants.some(p => p.role === user.role));
+    return conversations.filter(c => c.participants.some(p => p.id === user.id || p.role === user.role));
   }, [conversations, user]);
 
-  const [active, setActive] = useState<number>(myConversations[0]?.id || 0);
+  const [active, setActive] = useState<string>(myConversations[0]?.id || '');
 
   // If the active conversation disappears (e.g. log in as someone else), reset active
   useEffect(() => {
@@ -32,22 +30,28 @@ const SharedMessages: React.FC = () => {
     }
   }, [myConversations, active]);
 
-  const filteredConvs = myConversations.filter(c => {
-    // Determine the "other" participant's name to match against search
-    const other = c.participants.find(p => p.role !== user?.role) || c.participants[0];
-    return other?.name.toLowerCase().includes(search.toLowerCase());
-  });
-
   const activeConv = myConversations.find(c => c.id === active);
   
   // Set default admin target when active conversation changes
   useEffect(() => {
     if (user?.role === 'admin' && activeConv) {
-       // By default, target the non-founder if possible, or just the first participant
-       const nonFounder = activeConv.participants.find(p => p.role !== 'founder');
-       setAdminTargetUserId(nonFounder ? nonFounder.role : activeConv.participants[0].role); // using role as id fallback
+       // By default, target the first participant
+       setAdminTargetUserId(activeConv.participants[0].id);
     }
   }, [active, activeConv, user]);
+
+  // Format Helper for Conversation Title (e.g., Sarah Jenkins (Founder) & Capital Ventures (Investor))
+  const formatConvTitle = (c: Conversation, separator: string = ' & ') => {
+    if (c.participants.length < 2) return c.participants[0]?.name || 'Unknown';
+    const p1 = c.participants[0];
+    const p2 = c.participants[1];
+    return `${p1.name} (${p1.role.charAt(0).toUpperCase() + p1.role.slice(1)}) ${separator} ${p2.name} (${p2.role.charAt(0).toUpperCase() + p2.role.slice(1)})`;
+  };
+
+  const filteredConvs = myConversations.filter(c => {
+    const title = formatConvTitle(c);
+    return title.toLowerCase().includes(search.toLowerCase());
+  });
 
   const activeMessages = messages[active] || [];
   
@@ -55,28 +59,50 @@ const SharedMessages: React.FC = () => {
   const visibleMessages = useMemo(() => {
     if (!user) return [];
     return activeMessages.filter(m => {
-      // If it's a standard message, everyone in the chat can see it
-      if (!m.targetUserId) return true;
-      // If it's a targeted message, only the admin and the target user can see it
-      // Using role for matching due to mock data
-      return user.role === 'admin' || user.role === m.targetUserId || user.id === m.targetUserId;
+      // User messages visible to everyone
+      if (m.type === 'user_message') return true;
+      // Admin messages visible only to Admin and the Receiver
+      return user.role === 'admin' || user.id === m.receiverId;
     });
   }, [activeMessages, user]);
 
-  const send = () => {
+  const send = (sendToAll: boolean = false) => {
     if (!input.trim() || !user || !activeConv) return;
     
-    // For mock context, using role as ID if real ID isn't mapped
-    const currentId = user.id || user.role; 
-    const currentName = user.name || 'User';
+    const currentId = user.id; 
+    const currentName = user.name;
+    const currentRole = user.role.charAt(0).toUpperCase() + user.role.slice(1);
     
     if (user.role === 'admin') {
-      sendAdminMessage(active, currentId, currentName, input, adminTargetUserId);
+      if (sendToAll) {
+        // Send separate direct messages to all participants
+        activeConv.participants.forEach(p => {
+          sendAdminMessage(active, currentId, currentName, input, p.id, p.name, p.role.charAt(0).toUpperCase() + p.role.slice(1));
+        });
+      } else {
+        // Send to selected target
+        const targetUser = activeConv.participants.find(p => p.id === adminTargetUserId);
+        if (targetUser) {
+          sendAdminMessage(active, currentId, currentName, input, targetUser.id, targetUser.name, targetUser.role.charAt(0).toUpperCase() + targetUser.role.slice(1));
+        }
+      }
     } else {
-      sendMessage(active, currentId, currentName, user.role, input);
+      // Find the other participant in the chat to be the receiver
+      const receiver = activeConv.participants.find(p => p.id !== user.id) || activeConv.participants[0];
+      sendMessage(active, currentId, currentName, currentRole, receiver.id, receiver.name, receiver.role.charAt(0).toUpperCase() + receiver.role.slice(1), input);
     }
     
     setInput('');
+  };
+
+  // Format Time Helper
+  const formatTime = (isoString: string) => {
+    try {
+      const date = new Date(isoString);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return isoString;
+    }
   };
 
   if (myConversations.length === 0) {
@@ -96,27 +122,6 @@ const SharedMessages: React.FC = () => {
 
   if (!activeConv) return null;
 
-  // Determine the display details for the conversation list item
-  const getDisplayDetails = (c: Conversation) => {
-    // If admin, show both participants
-    if (user?.role === 'admin') {
-      return {
-        name: `${c.participants[0].name} & ${c.participants[1].name}`,
-        role: `${c.participants[0].role} / ${c.participants[1].role}`,
-        avatar: '🤝'
-      };
-    }
-    // Otherwise, show the other participant
-    const other = c.participants.find(p => p.role !== user?.role) || c.participants[0];
-    return {
-      name: other.name,
-      role: other.role,
-      avatar: other.avatar
-    };
-  };
-
-  const activeDisplay = getDisplayDetails(activeConv);
-
   return (
     <div className="animate-fade-in-up flex flex-col h-[calc(100vh-160px)] min-h-[500px]">
       <div className="mb-6 flex-shrink-0">
@@ -132,7 +137,7 @@ const SharedMessages: React.FC = () => {
 
       <div className="flex-1 flex bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-0">
         {/* Left panel */}
-        <div className="w-72 flex-shrink-0 border-r border-gray-100 flex flex-col">
+        <div className="w-[340px] flex-shrink-0 border-r border-gray-100 flex flex-col">
           <div className="p-4 border-b border-gray-100 flex-shrink-0">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -148,17 +153,17 @@ const SharedMessages: React.FC = () => {
             {filteredConvs.length === 0 ? (
               <div className="p-4 text-center text-sm text-gray-500">No messages found.</div>
             ) : filteredConvs.map(c => {
-              const display = getDisplayDetails(c);
+              const title = formatConvTitle(c, ' & ');
               const lastMsg = messages[c.id]?.[messages[c.id].length - 1];
               return (
-                <button key={c.id} onClick={() => setActive(c.id)} className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-gray-50 transition-colors ${active === c.id ? 'bg-purple-50/70' : ''}`}>
-                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${c.gradient} flex items-center justify-center text-white font-bold flex-shrink-0 shadow-sm`}>{display.avatar}</div>
+                <button key={c.id} onClick={() => setActive(c.id)} className={`w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-gray-50 transition-colors ${active === c.id ? 'bg-purple-50/70 border-l-4 border-[#5B21B6]' : 'border-l-4 border-transparent'}`}>
+                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${c.gradient} flex items-center justify-center text-white font-bold flex-shrink-0 shadow-sm`}>
+                    {c.participants[0].avatar}{c.participants.length > 1 ? c.participants[1].avatar : ''}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center mb-0.5">
-                      <p className="text-sm font-bold text-gray-900 truncate">{display.name}</p>
-                    </div>
-                    <p className="text-xs text-gray-500 truncate">
-                      {lastMsg ? (lastMsg.targetUserId ? '⚠️ Admin Message' : lastMsg.text) : 'No messages'}
+                    <p className="text-[13px] font-bold text-gray-900 truncate leading-tight">{title}</p>
+                    <p className="text-[12px] text-gray-500 truncate mt-1">
+                      {lastMsg ? (lastMsg.type === 'admin_direct_message' ? '⚠️ Admin Message' : lastMsg.message) : 'No messages'}
                     </p>
                   </div>
                 </button>
@@ -170,71 +175,95 @@ const SharedMessages: React.FC = () => {
         {/* Chat panel */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 flex-shrink-0">
-            <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${activeConv.gradient} flex items-center justify-center text-white font-bold shadow-sm`}>{activeDisplay.avatar}</div>
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 flex-shrink-0 bg-gray-50/50">
+            <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${activeConv.gradient} flex items-center justify-center text-white font-bold shadow-sm`}>
+               {activeConv.participants[0].avatar}{activeConv.participants.length > 1 ? activeConv.participants[1].avatar : ''}
+            </div>
             <div>
-              <p className="font-bold text-gray-900 text-sm">{activeDisplay.name}</p>
-              <p className="text-xs text-gray-400 capitalize">{activeDisplay.role}</p>
+              <p className="font-bold text-gray-900 text-[15px]">{formatConvTitle(activeConv, ' ↔ ')}</p>
             </div>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          <div className="flex-1 overflow-y-auto px-5 py-6 space-y-5 bg-[#FAFAFA]">
             {visibleMessages.map((m, i) => {
-              // Determine if message is from 'me' based on role (for mock simplicity)
-              const isMe = user?.role === m.senderRole;
-              const isAdminMsg = m.targetUserId != null;
+              let isRight = user?.id === m.senderId;
+              if (user?.role === 'admin' && m.senderRole !== 'Admin') {
+                isRight = m.senderRole.toLowerCase() === 'founder';
+              }
+              const isAdminMsg = m.type === 'admin_direct_message';
 
               return (
-                <div key={i} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  {/* Sender name for clarity in multi-user chats */}
-                  {!isMe && <span className="text-[10px] text-gray-400 mb-1 ml-1">{m.senderName}</span>}
+                <div key={i} className={`flex flex-col ${isRight ? 'items-end' : 'items-start'}`}>
+                  {/* Always show sender name and role for clarity */}
+                  <div className={`flex flex-col mb-1.5 ${isRight ? 'items-end mr-1' : 'items-start ml-1'}`}>
+                    <span className="text-[13px] font-bold text-gray-700 leading-none">{m.senderName}</span>
+                    <span className="text-[10px] uppercase font-bold text-[#FBBF24] tracking-wider mt-1">{m.senderRole}</span>
+                  </div>
                   
-                  <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                  <div className={`max-w-[75%] px-4 py-3 rounded-2xl text-[14px] leading-relaxed shadow-sm ${
                     isAdminMsg 
-                      ? 'bg-red-50 border border-red-200 text-red-800 rounded-bl-sm' // Admin message style
-                      : isMe 
-                        ? 'bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] text-white rounded-tr-sm' 
-                        : 'bg-gray-100 text-gray-800 rounded-tl-sm'
+                      ? 'bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] rounded-bl-sm shadow-[0_2px_10px_-3px_rgba(239,68,68,0.3)]' 
+                      : isRight 
+                        ? 'bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] text-white rounded-tr-sm shadow-md shadow-purple-900/10' 
+                        : 'bg-white border border-gray-200 text-gray-800 rounded-tl-sm shadow-sm'
                   }`}>
                     {isAdminMsg && (
-                      <div className="flex items-center gap-1.5 mb-1 text-red-600 font-bold text-xs">
-                        <ShieldAlert size={12} />
-                        Admin Moderation
+                      <div className="flex items-center gap-1.5 mb-2 text-[#DC2626] font-extrabold text-[11px] uppercase tracking-widest border-b border-[#FCA5A5]/30 pb-1.5">
+                        <ShieldAlert size={14} />
+                        ADMIN MODERATION (To: {m.receiverName})
                       </div>
                     )}
-                    {m.text}
+                    {m.message}
                   </div>
-                  <span className="text-[9px] text-gray-400 mt-1">{m.timestamp}</span>
+                  <span className={`text-[10px] text-gray-400 mt-1.5 font-medium ${isRight ? 'mr-1' : 'ml-1'}`}>{formatTime(m.createdAt)}</span>
                 </div>
               );
             })}
           </div>
 
           {/* Input */}
-          <div className="px-5 py-4 border-t border-gray-100 flex gap-3 flex-shrink-0 items-center">
+          <div className="px-5 py-4 border-t border-gray-100 flex flex-col gap-3 flex-shrink-0 bg-white">
             {user?.role === 'admin' && (
-              <div className="relative">
-                <select 
-                  value={adminTargetUserId}
-                  onChange={(e) => setAdminTargetUserId(e.target.value)}
-                  className="appearance-none bg-red-50 border border-red-200 text-red-700 text-xs font-bold py-3 pl-3 pr-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500"
+              <div className="flex gap-3">
+                <div className="relative flex-1">
+                  <select 
+                    value={adminTargetUserId}
+                    onChange={(e) => setAdminTargetUserId(e.target.value)}
+                    className="appearance-none w-full bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] text-[13px] font-bold py-2.5 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#EF4444] shadow-sm cursor-pointer"
+                  >
+                    {activeConv.participants.map(p => (
+                      <option key={p.id} value={p.id}>Direct to: {p.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[#EF4444] pointer-events-none" size={16} />
+                </div>
+                <button 
+                  onClick={() => send(true)} 
+                  disabled={!input.trim()}
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-[13px] font-bold flex items-center gap-2 hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50"
                 >
-                  {/* Option for exact match mock role since IDs are simplified */}
-                  {activeConv.participants.map(p => (
-                    <option key={p.id} value={p.role}>Direct to: {p.name}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 text-red-500 pointer-events-none" size={14} />
+                  <Users size={16} />
+                  Send to All
+                </button>
               </div>
             )}
-            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()}
-              placeholder={user?.role === 'admin' ? "Send a moderation message..." : `Message...`}
-              className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
-            />
-            <button onClick={send} className={`px-4 py-3 rounded-xl transition-colors shadow ${user?.role === 'admin' ? 'bg-red-600 hover:bg-red-700 text-white' : 'bg-[#5B21B6] hover:bg-[#7C3AED] text-white'}`}>
-              <Send size={16} />
-            </button>
+            <div className="flex gap-3 items-center">
+              <input 
+                value={input} 
+                onChange={e => setInput(e.target.value)} 
+                onKeyDown={e => e.key === 'Enter' && send(false)}
+                placeholder={user?.role === 'admin' ? "Send a moderation message..." : `Type your message...`}
+                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-[14px] bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5B21B6] transition-all"
+              />
+              <button 
+                onClick={() => send(false)} 
+                disabled={!input.trim()}
+                className={`px-5 py-3 rounded-xl transition-all shadow-md flex items-center justify-center disabled:opacity-50 ${user?.role === 'admin' ? 'bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-red-900/20' : 'bg-[#5B21B6] hover:bg-[#7C3AED] text-white shadow-purple-900/20'}`}
+              >
+                <Send size={18} />
+              </button>
+            </div>
           </div>
         </div>
       </div>

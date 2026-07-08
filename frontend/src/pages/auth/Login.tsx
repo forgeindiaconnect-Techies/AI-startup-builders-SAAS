@@ -6,8 +6,8 @@ import type { User } from '../../context/AuthContext';
 
 const MOCK_USERS: Record<string, User> = {
   'founder@startupbuilder.ai': { id: '1', name: 'Sarah Jenkins', email: 'founder@startupbuilder.ai', role: 'founder' },
-  'mentor@startupbuilder.ai': { id: '2', name: 'Elena Rodriguez', email: 'mentor@startupbuilder.ai', role: 'mentor' },
-  'investor@startupbuilder.ai': { id: '3', name: 'David Chen', email: 'investor@startupbuilder.ai', role: 'investor' },
+  'mentor@startupbuilder.ai': { id: '2', name: 'Alex Rivera', email: 'mentor@startupbuilder.ai', role: 'mentor' },
+  'investor@startupbuilder.ai': { id: '3', name: 'Capital Ventures', email: 'investor@startupbuilder.ai', role: 'investor' },
   'admin@startupbuilder.ai': { id: '4', name: 'Super Admin', email: 'admin@startupbuilder.ai', role: 'admin' },
 };
 

@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ChatProvider } from './context/ChatContext';
+import { BillingProvider } from './context/BillingContext';
+import { FundingProvider } from './context/FundingContext';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/auth/Login';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -93,124 +95,128 @@ import AdminPlatformSettings   from './pages/dashboards/admin/AdminPlatformSetti
 function App() {
   return (
     <AuthProvider>
-      <ChatProvider>
-        <Router>
-          <Routes>
-            {/* Public */}
-            <Route path="/"      element={<LandingPage />} />
-            <Route path="/login" element={<Login />} />
+      <BillingProvider>
+        <FundingProvider>
+          <ChatProvider>
+            <Router>
+            <Routes>
+              {/* Public */}
+              <Route path="/"      element={<LandingPage />} />
+              <Route path="/login" element={<Login />} />
 
-            {/* Protected */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<DashboardLayout />}>
-                <Route index element={<Navigate to="/" replace />} />
+              {/* Protected */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/dashboard" element={<DashboardLayout />}>
+                  <Route index element={<Navigate to="/" replace />} />
 
-                {/* ───────────── FOUNDER ───────────── */}
-                <Route path="founder" element={<ProtectedRoute allowedRoles={['founder']} />}>
-                  <Route index                  element={<FounderDashboard />} />
-                  <Route path="startups"        element={<FounderStartups />} />
-                  <Route path="ai-builder"      element={<FounderAIBuilder />} />
-                  <Route path="roadmap-tasks"   element={<FounderRoadmapTasks />} />
-                  <Route path="mentors"         element={<FounderMentors />} />
-                  <Route path="funding"         element={<FounderFunding />} />
-                  <Route path="documents"       element={<FounderDocuments />} />
-                  <Route path="inbox"           element={<SharedInbox />} />
-                  <Route path="profile-billing" element={<FounderProfileBilling />} />
-                  {/* Legacy / Direct paths */}
-                  <Route path="roadmap"         element={<FounderRoadmap />} />
-                  <Route path="tasks"           element={<FounderTasks />} />
-                  <Route path="team"            element={<FounderTeam />} />
-                  <Route path="idea-generator"  element={<FounderIdeaGenerator />} />
-                  <Route path="business-plan"   element={<FounderBusinessPlan />} />
-                  <Route path="pitch-deck"      element={<FounderPitchDeck />} />
-                  <Route path="market-research" element={<FounderMarketResearch />} />
-                  <Route path="reports"         element={<FounderReports />} />
-                  <Route path="ai-chat"         element={<FounderAIChat />} />
-                  <Route path="messages"        element={<SharedMessages />} />
-                  <Route path="notifications"   element={<SharedNotifications />} />
-                  <Route path="profile"         element={<FounderProfile />} />
-                  <Route path="billing"         element={<FounderBilling />} />
-                  <Route path="help"            element={<SharedHelp />} />
+                  {/* ───────────── FOUNDER ───────────── */}
+                  <Route path="founder" element={<ProtectedRoute allowedRoles={['founder']} />}>
+                    <Route index                  element={<FounderDashboard />} />
+                    <Route path="startups"        element={<FounderStartups />} />
+                    <Route path="ai-builder"      element={<FounderAIBuilder />} />
+                    <Route path="roadmap-tasks"   element={<FounderRoadmapTasks />} />
+                    <Route path="mentors"         element={<FounderMentors />} />
+                    <Route path="funding"         element={<FounderFunding />} />
+                    <Route path="documents"       element={<FounderDocuments />} />
+                    <Route path="inbox"           element={<SharedInbox />} />
+                    <Route path="profile-billing" element={<FounderProfileBilling />} />
+                    {/* Legacy / Direct paths */}
+                    <Route path="roadmap"         element={<FounderRoadmap />} />
+                    <Route path="tasks"           element={<FounderTasks />} />
+                    <Route path="team"            element={<FounderTeam />} />
+                    <Route path="idea-generator"  element={<FounderIdeaGenerator />} />
+                    <Route path="business-plan"   element={<FounderBusinessPlan />} />
+                    <Route path="pitch-deck"      element={<FounderPitchDeck />} />
+                    <Route path="market-research" element={<FounderMarketResearch />} />
+                    <Route path="reports"         element={<FounderReports />} />
+                    <Route path="ai-chat"         element={<FounderAIChat />} />
+                    <Route path="messages"        element={<SharedMessages />} />
+                    <Route path="notifications"   element={<SharedNotifications />} />
+                    <Route path="profile"         element={<FounderProfile />} />
+                    <Route path="billing"         element={<FounderBilling />} />
+                    <Route path="help"            element={<SharedHelp />} />
+                  </Route>
+
+                  {/* ───────────── ADMIN ───────────── */}
+                  <Route path="admin" element={<ProtectedRoute allowedRoles={['admin']} />}>
+                    <Route index                     element={<AdminDashboard />} />
+                    <Route path="users"              element={<AdminUsers />} />
+                    <Route path="startups"           element={<AdminStartups />} />
+                    <Route path="approvals-hub"      element={<AdminApprovalsHub />} />
+                    <Route path="sub-payments"       element={<AdminSubPayments />} />
+                    <Route path="analytics"          element={<AdminAnalytics />} />
+                    <Route path="tickets"            element={<AdminTickets />} />
+                    <Route path="platform-settings"  element={<AdminPlatformSettings />} />
+                    <Route path="inbox"              element={<SharedInbox />} />
+                    {/* Legacy / Direct paths */}
+                    <Route path="mentor-approval"    element={<AdminMentorApproval />} />
+                    <Route path="investor-approval"  element={<AdminInvestorApproval />} />
+                    <Route path="roles"              element={<AdminRoles />} />
+                    <Route path="subscriptions"      element={<AdminSubscriptions />} />
+                    <Route path="sub-management"     element={<AdminSubManagement />} />
+                    <Route path="payments"           element={<AdminPayments />} />
+                    <Route path="ai-settings"        element={<AdminAISettings />} />
+                    <Route path="logs"               element={<AdminLogs />} />
+                    <Route path="reports"            element={<AdminReports />} />
+                    <Route path="billing"            element={<AdminBilling />} />
+                    <Route path="settings"           element={<AdminSettings />} />
+                    <Route path="messages"           element={<SharedMessages />} />
+                    <Route path="notifications"      element={<SharedNotifications />} />
+                    <Route path="profile"            element={<AdminProfile />} />
+                    <Route path="help"              element={<SharedHelp />} />
+                  </Route>
+
+                  {/* ───────────── MENTOR ───────────── */}
+                  <Route path="mentor" element={<ProtectedRoute allowedRoles={['mentor']} />}>
+                    <Route index                element={<MentorDashboard />} />
+                    <Route path="reviews"       element={<MentorReviews />} />
+                    <Route path="sessions"      element={<MentorSessions />} />
+                    <Route path="feedback-hub"  element={<MentorFeedbackHub />} />
+                    <Route path="earnings"      element={<MentorEarnings />} />
+                    <Route path="inbox"         element={<SharedInbox />} />
+                    <Route path="profile"       element={<MentorProfile />} />
+                    {/* Legacy / Direct paths */}
+                    <Route path="availability"  element={<MentorAvailability />} />
+                    <Route path="feedback"      element={<MentorFeedback />} />
+                    <Route path="ratings"       element={<MentorRatings />} />
+                    <Route path="payout"        element={<MentorPayout />} />
+                    <Route path="messages"      element={<SharedMessages />} />
+                    <Route path="notifications" element={<SharedNotifications />} />
+                    <Route path="help"          element={<SharedHelp />} />
+                  </Route>
+
+                  {/* ───────────── INVESTOR ───────────── */}
+                  <Route path="investor" element={<ProtectedRoute allowedRoles={['investor']} />}>
+                    <Route index                  element={<InvestorDashboard />} />
+                    <Route path="marketplace"     element={<InvestorMarketplace />} />
+                    <Route path="portfolio-hub"   element={<InvestorPortfolioHub />} />
+                    <Route path="requests"        element={<InvestorRequests />} />
+                    <Route path="due-diligence"   element={<InvestorDueDiligence />} />
+                    <Route path="meetings"        element={<InvestorMeetings />} />
+                    <Route path="transactions"    element={<InvestorTransactions />} />
+                    <Route path="inbox"           element={<SharedInbox />} />
+                    <Route path="profile-kyc"     element={<InvestorProfileKYC />} />
+                    {/* Legacy / Direct paths */}
+                    <Route path="saved"           element={<InvestorSaved />} />
+                    <Route path="portfolio"       element={<InvestorPortfolio />} />
+                    <Route path="reports"         element={<InvestorReports />} />
+                    <Route path="profile"         element={<InvestorProfileDetails />} />
+                    <Route path="kyc"             element={<InvestorKYC />} />
+                    <Route path="messages"        element={<SharedMessages />} />
+                    <Route path="notifications"   element={<SharedNotifications />} />
+                    <Route path="help"            element={<SharedHelp />} />
+                  </Route>
+
                 </Route>
-
-                {/* ───────────── ADMIN ───────────── */}
-                <Route path="admin" element={<ProtectedRoute allowedRoles={['admin']} />}>
-                  <Route index                     element={<AdminDashboard />} />
-                  <Route path="users"              element={<AdminUsers />} />
-                  <Route path="startups"           element={<AdminStartups />} />
-                  <Route path="approvals-hub"      element={<AdminApprovalsHub />} />
-                  <Route path="sub-payments"       element={<AdminSubPayments />} />
-                  <Route path="analytics"          element={<AdminAnalytics />} />
-                  <Route path="tickets"            element={<AdminTickets />} />
-                  <Route path="platform-settings"  element={<AdminPlatformSettings />} />
-                  <Route path="inbox"              element={<SharedInbox />} />
-                  {/* Legacy / Direct paths */}
-                  <Route path="mentor-approval"    element={<AdminMentorApproval />} />
-                  <Route path="investor-approval"  element={<AdminInvestorApproval />} />
-                  <Route path="roles"              element={<AdminRoles />} />
-                  <Route path="subscriptions"      element={<AdminSubscriptions />} />
-                  <Route path="sub-management"     element={<AdminSubManagement />} />
-                  <Route path="payments"           element={<AdminPayments />} />
-                  <Route path="ai-settings"        element={<AdminAISettings />} />
-                  <Route path="logs"               element={<AdminLogs />} />
-                  <Route path="reports"            element={<AdminReports />} />
-                  <Route path="billing"            element={<AdminBilling />} />
-                  <Route path="settings"           element={<AdminSettings />} />
-                  <Route path="messages"           element={<SharedMessages />} />
-                  <Route path="notifications"      element={<SharedNotifications />} />
-                  <Route path="profile"            element={<AdminProfile />} />
-                  <Route path="help"              element={<SharedHelp />} />
-                </Route>
-
-                {/* ───────────── MENTOR ───────────── */}
-                <Route path="mentor" element={<ProtectedRoute allowedRoles={['mentor']} />}>
-                  <Route index                element={<MentorDashboard />} />
-                  <Route path="reviews"       element={<MentorReviews />} />
-                  <Route path="sessions"      element={<MentorSessions />} />
-                  <Route path="feedback-hub"  element={<MentorFeedbackHub />} />
-                  <Route path="earnings"      element={<MentorEarnings />} />
-                  <Route path="inbox"         element={<SharedInbox />} />
-                  <Route path="profile"       element={<MentorProfile />} />
-                  {/* Legacy / Direct paths */}
-                  <Route path="availability"  element={<MentorAvailability />} />
-                  <Route path="feedback"      element={<MentorFeedback />} />
-                  <Route path="ratings"       element={<MentorRatings />} />
-                  <Route path="payout"        element={<MentorPayout />} />
-                  <Route path="messages"      element={<SharedMessages />} />
-                  <Route path="notifications" element={<SharedNotifications />} />
-                  <Route path="help"          element={<SharedHelp />} />
-                </Route>
-
-                {/* ───────────── INVESTOR ───────────── */}
-                <Route path="investor" element={<ProtectedRoute allowedRoles={['investor']} />}>
-                  <Route index                  element={<InvestorDashboard />} />
-                  <Route path="marketplace"     element={<InvestorMarketplace />} />
-                  <Route path="portfolio-hub"   element={<InvestorPortfolioHub />} />
-                  <Route path="requests"        element={<InvestorRequests />} />
-                  <Route path="due-diligence"   element={<InvestorDueDiligence />} />
-                  <Route path="meetings"        element={<InvestorMeetings />} />
-                  <Route path="transactions"    element={<InvestorTransactions />} />
-                  <Route path="inbox"           element={<SharedInbox />} />
-                  <Route path="profile-kyc"     element={<InvestorProfileKYC />} />
-                  {/* Legacy / Direct paths */}
-                  <Route path="saved"           element={<InvestorSaved />} />
-                  <Route path="portfolio"       element={<InvestorPortfolio />} />
-                  <Route path="reports"         element={<InvestorReports />} />
-                  <Route path="profile"         element={<InvestorProfileDetails />} />
-                  <Route path="kyc"             element={<InvestorKYC />} />
-                  <Route path="messages"        element={<SharedMessages />} />
-                  <Route path="notifications"   element={<SharedNotifications />} />
-                  <Route path="help"            element={<SharedHelp />} />
-                </Route>
-
               </Route>
-            </Route>
 
-            {/* Catch all */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Router>
-      </ChatProvider>
+              {/* Catch all */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Router>
+          </ChatProvider>
+        </FundingProvider>
+      </BillingProvider>
     </AuthProvider>
   );
 }
