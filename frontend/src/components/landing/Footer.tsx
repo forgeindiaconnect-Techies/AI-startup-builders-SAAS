@@ -46,9 +46,9 @@ const Footer: React.FC = () => {
   ];
 
   const legalLinks = [
-    { name: 'Privacy Policy', icon: Shield, action: () => window.alert('Privacy Policy page coming soon!') },
-    { name: 'Terms of Service', icon: FileJson, action: () => window.alert('Terms of Service page coming soon!') },
-    { name: 'Cookie Policy', icon: Cookie, action: () => window.alert('Cookie Policy page coming soon!') },
+    { name: 'Privacy Policy', icon: Shield, action: () => navigate('/privacy-policy') },
+    { name: 'Terms of Service', icon: FileJson, action: () => navigate('/terms-of-service') },
+    { name: 'Cookie Policy', icon: Cookie, action: () => navigate('/cookie-policy') },
   ];
 
   const socialLinks = [
@@ -86,7 +86,7 @@ const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h4 className="text-white font-bold mb-5 flex items-center gap-2"><ChevronRight size={14} className="text-[#FBBF24]" /> Product</h4>
+            <h4 className="text-white font-bold mb-5">Product</h4>
             <ul className="space-y-3 text-sm">
               {productLinks.map((link) => (
                 <li key={link.name}>
@@ -100,7 +100,7 @@ const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h4 className="text-white font-bold mb-5 flex items-center gap-2"><ChevronRight size={14} className="text-[#FBBF24]" /> Resources</h4>
+            <h4 className="text-white font-bold mb-5">Resources</h4>
             <ul className="space-y-3 text-sm">
               {resourceLinks.map((link) => (
                 <li key={link.name}>
@@ -114,7 +114,7 @@ const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h4 className="text-white font-bold mb-5 flex items-center gap-2"><ChevronRight size={14} className="text-[#FBBF24]" /> Legal</h4>
+            <h4 className="text-white font-bold mb-5">Legal</h4>
             <ul className="space-y-3 text-sm">
               {legalLinks.map((link) => {
                 const Icon = link.icon;

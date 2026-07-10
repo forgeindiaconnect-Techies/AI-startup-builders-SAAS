@@ -11,6 +11,9 @@ import BlogPage from './pages/info/BlogPage';
 import HelpCenterPage from './pages/info/HelpCenterPage';
 import CommunityPage from './pages/info/CommunityPage';
 import PitchDeckGuidePage from './pages/info/PitchDeckGuidePage';
+import PrivacyPolicyPage from './pages/info/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/info/TermsOfServicePage';
+import CookiePolicyPage from './pages/info/CookiePolicyPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 
@@ -115,6 +118,9 @@ function App() {
               <Route path="/help-center" element={<HelpCenterPage />} />
               <Route path="/community" element={<CommunityPage />} />
               <Route path="/pitch-deck-guide" element={<PitchDeckGuidePage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+              <Route path="/cookie-policy" element={<CookiePolicyPage />} />
 
               {/* Protected */}
               <Route element={<ProtectedRoute />}>
