@@ -203,7 +203,7 @@ const DashboardLayout: React.FC = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const handleLogout = () => { logout(); navigate('/'); };
+  const handleLogout = () => { logout(); navigate('/login', { replace: true }); };
   const closeMobile = () => setIsMobileOpen(false);
 
   const sidebarProps = {
