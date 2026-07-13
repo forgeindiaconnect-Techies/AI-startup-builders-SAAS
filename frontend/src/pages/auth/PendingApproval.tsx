@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Rocket, Clock, ShieldCheck, Mail, ArrowRight } from 'lucide-react';
+import { Clock, ShieldCheck, Mail, ArrowRight } from 'lucide-react';
 
 const PendingApproval: React.FC = () => {
   const navigate = useNavigate();

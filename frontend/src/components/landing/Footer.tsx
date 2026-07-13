@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Rocket, Sparkles, BarChart3, IndianRupee, Briefcase, Users,
+  Rocket, Sparkles, BarChart3, IndianRupee, Briefcase,
   BookOpen, HelpCircle, FileText, MessageSquare, Shield,
-  FileJson, Cookie, ChevronRight
+  FileJson, Cookie
 } from 'lucide-react';
 
 const Twitter = ({ size = 24 }: { size?: number }) => (
