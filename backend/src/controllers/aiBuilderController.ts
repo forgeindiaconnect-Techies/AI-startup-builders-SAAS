@@ -1,11 +1,11 @@
 import { Request, Response } from 'express';
-import { GoogleGenerativeAI } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import Startup from '../models/Startup.js';
 
-let aiClient: GoogleGenerativeAI | null = null;
+let aiClient: GoogleGenAI | null = null;
 try {
   if (process.env.GEMINI_API_KEY) {
-    aiClient = new GoogleGenerativeAI({ apiKey: process.env.GEMINI_API_KEY });
+    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   } else {
     console.warn("⚠️ GEMINI_API_KEY is not set in environment variables.");
   }
