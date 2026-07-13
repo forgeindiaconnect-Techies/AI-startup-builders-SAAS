@@ -250,10 +250,23 @@ const DashboardLayout: React.FC = () => {
           <div className="flex items-center gap-3">
             <NotificationDropdown />
             <div className="flex items-center gap-2 pl-3 ml-1 border-l border-gray-200">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-xs font-black shadow">
-                {user?.name.charAt(0).toUpperCase()}
-              </div>
-              <span className="hidden sm:block text-sm font-semibold text-gray-700">{user?.name}</span>
+              <button
+                onClick={() => {
+                  const profileMap: Record<string, string> = {
+                    founder: '/dashboard/founder/profile-billing',
+                    investor: '/dashboard/investor/profile-kyc',
+                    mentor: '/dashboard/mentor/profile',
+                    admin: '/dashboard/admin',
+                  };
+                  navigate(profileMap[user?.role ?? ''] ?? '/dashboard');
+                }}
+                className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-xs font-black shadow">
+                  {user?.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="hidden sm:block text-sm font-semibold text-gray-700">{user?.name}</span>
+              </button>
             </div>
           </div>
         </header>
