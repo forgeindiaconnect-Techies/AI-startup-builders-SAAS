@@ -1,9 +1,10 @@
-import React from 'react';
-import { ArrowRight, Play, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowRight, Play, CheckCircle2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Hero: React.FC = () => {
   const navigate = useNavigate();
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
 
   return (
     <section className="pt-32 pb-20 overflow-hidden relative">
@@ -38,7 +39,10 @@ const Hero: React.FC = () => {
                 <ArrowRight className="ml-2" size={20} />
               </button>
               
-              <button className="w-full sm:w-auto px-8 py-4 bg-white text-[#1F2937] border border-[#E5E7EB] hover:border-[#5B21B6] hover:bg-gray-50 rounded-xl font-bold text-lg transition-all flex items-center justify-center shadow-sm">
+              <button
+                onClick={() => setIsVideoOpen(true)}
+                className="w-full sm:w-auto px-8 py-4 bg-white text-[#1F2937] border border-[#E5E7EB] hover:border-[#5B21B6] hover:bg-gray-50 rounded-xl font-bold text-lg transition-all flex items-center justify-center shadow-sm"
+              >
                 <Play className="mr-2 text-[#5B21B6] fill-[#5B21B6]" size={20} />
                 Watch Demo
               </button>
@@ -74,6 +78,49 @@ const Hero: React.FC = () => {
           
         </div>
       </div>
+
+      {/* Video Demo Modal */}
+      {isVideoOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setIsVideoOpen(false)}
+          />
+
+          {/* Modal */}
+          <div className="relative w-full max-w-4xl bg-[#1F2937] rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+              <h3 className="text-white font-bold text-lg">How to Pitch Your Startup in 3 Minutes</h3>
+              <button
+                onClick={() => setIsVideoOpen(false)}
+                className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Video Player */}
+            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+              <iframe
+                className="absolute inset-0 w-full h-full"
+                src="https://www.youtube.com/embed/XWRtG_PDRik?autoplay=1&rel=0&modestbranding=1"
+                title="Startup Demo Video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-white/10">
+              <p className="text-gray-400 text-sm">
+                Learn how to structure a compelling 3-minute pitch for your startup idea.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

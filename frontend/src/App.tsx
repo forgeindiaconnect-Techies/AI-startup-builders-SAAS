@@ -59,6 +59,7 @@ import InvestorTransactions from './pages/dashboards/investor/InvestorTransactio
 import InvestorReports     from './pages/dashboards/investor/InvestorReports';
 import InvestorProfileDetails from './pages/dashboards/investor/InvestorProfileDetails';
 import InvestorKYC         from './pages/dashboards/investor/InvestorKYC';
+import InvestorLearningCenter from './pages/dashboards/investor/InvestorLearningCenter';
 
 // ── Admin Pages ──────────────────────────────────────────────────
 import AdminDashboard        from './pages/dashboards/AdminDashboard';
@@ -213,6 +214,7 @@ function App() {
                     <Route path="due-diligence"   element={<InvestorDueDiligence />} />
                     <Route path="meetings"        element={<InvestorMeetings />} />
                     <Route path="transactions"    element={<InvestorTransactions />} />
+                    <Route path="learning-center" element={<InvestorLearningCenter />} />
                     <Route path="inbox"           element={<SharedInbox />} />
                     <Route path="profile-kyc"     element={<InvestorProfileKYC />} />
                     {/* Legacy / Direct paths */}
