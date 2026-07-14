@@ -86,6 +86,20 @@ const Login: React.FC = () => {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
 
+          <div className="mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+            <p className="text-xs font-bold text-indigo-900 mb-2">Test Credentials</p>
+            <div className="grid grid-cols-2 gap-2 text-xs text-indigo-800">
+              <span><b>Admin:</b> admin@test.com</span>
+              <span>Pass: admin123</span>
+              <span><b>Founder:</b> founder@test.com</span>
+              <span>Pass: founder123</span>
+              <span><b>Mentor:</b> mentor@test.com</span>
+              <span>Pass: mentor123</span>
+              <span><b>Investor:</b> investor@test.com</span>
+              <span>Pass: investor123</span>
+            </div>
+          </div>
+
           <form className="space-y-5" onSubmit={handleLogin}>
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm flex items-center">

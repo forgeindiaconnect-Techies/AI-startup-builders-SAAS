@@ -129,7 +129,35 @@ function addNotification(notif: AppNotification) {
 }
 
 function seedDemoUsers() {
-  // No demo data - users sign up fresh
+  const existing = getStoredUsers();
+  if (existing.length > 0) return;
+
+  const now = new Date().toISOString();
+  const accounts = [
+    { id: 'admin_001', fullName: 'Admin User', email: 'admin@test.com', password: 'admin123', role: 'admin', status: 'active', approvalStatus: 'approved' },
+    { id: 'founder_001', fullName: 'Rahul Sharma', email: 'founder@test.com', password: 'founder123', role: 'founder', status: 'active', approvalStatus: 'approved' },
+    { id: 'mentor_001', fullName: 'Priya Menon', email: 'mentor@test.com', password: 'mentor123', role: 'mentor', status: 'active', approvalStatus: 'approved' },
+    { id: 'investor_001', fullName: 'Arjun Capital', email: 'investor@test.com', password: 'investor123', role: 'investor', status: 'active', approvalStatus: 'approved' },
+  ];
+
+  const users = accounts.map(d => ({
+    id: d.id,
+    fullName: d.fullName,
+    email: d.email,
+    role: d.role,
+    passwordHash: hashPassword(d.password),
+    startupName: '',
+    startupIdea: '',
+    status: d.status,
+    approvalStatus: d.approvalStatus,
+    signupDate: now,
+    lastLoginAt: null,
+    loginCount: 0,
+    createdAt: now,
+    updatedAt: now,
+  }));
+
+  setStoredUsers(users);
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
