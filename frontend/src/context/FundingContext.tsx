@@ -257,15 +257,13 @@ export const FundingProvider: React.FC<{ children: ReactNode }> = ({ children })
         }
       } catch (e) {}
 
-      // Notify Founder and Investor across all demo account IDs so it always appears in their Bell Icon & Notifications page
-      addNotification(updatedOffer.founderId || "1", "Funding Confirmed 🎉", `Admin verified and marked your $${updatedOffer.offerAmount.toLocaleString()} funding offer from ${updatedOffer.investorCompany} as Funded!`, "/dashboard/founder/funding");
-      if (updatedOffer.founderId && updatedOffer.founderId !== "1") {
-        addNotification("1", "Funding Confirmed 🎉", `Admin verified and marked your $${updatedOffer.offerAmount.toLocaleString()} funding offer from ${updatedOffer.investorCompany} as Funded!`, "/dashboard/founder/funding");
+      // Notify Founder and Investor
+      if (updatedOffer.founderId) {
+        addNotification(updatedOffer.founderId, "Funding Confirmed", `Admin verified and marked your $${updatedOffer.offerAmount.toLocaleString()} funding offer from ${updatedOffer.investorCompany} as Funded!`, "/dashboard/founder/funding");
       }
 
-      addNotification(updatedOffer.investorId || "4", "Funding Confirmed ✅", `Admin verified and marked your $${updatedOffer.offerAmount.toLocaleString()} investment in ${updatedOffer.startupName} as Funded!`, "/dashboard/investor/portfolio-hub");
-      if (updatedOffer.investorId && updatedOffer.investorId !== "4") {
-        addNotification("4", "Funding Confirmed ✅", `Admin verified and marked your $${updatedOffer.offerAmount.toLocaleString()} investment in ${updatedOffer.startupName} as Funded!`, "/dashboard/investor/portfolio-hub");
+      if (updatedOffer.investorId) {
+        addNotification(updatedOffer.investorId, "Funding Confirmed", `Admin verified and marked your $${updatedOffer.offerAmount.toLocaleString()} investment in ${updatedOffer.startupName} as Funded!`, "/dashboard/investor/portfolio-hub");
       }
 
       addNotification("admin", "Funding Completed", `You verified and marked ${updatedOffer.startupName} ($${updatedOffer.offerAmount.toLocaleString()}) as Funded.`, "/dashboard/admin/startups");
@@ -342,31 +340,19 @@ export const FundingProvider: React.FC<{ children: ReactNode }> = ({ children })
         }
       } catch (e) {}
 
-      addNotification(
-        verifiedOffer.founderId || "1",
-        "Offer & Startup Verified ✅",
-        `Admin verified your funding offer from ${verifiedOffer.investorCompany || verifiedOffer.investorName} ($${verifiedOffer.offerAmount.toLocaleString()}) for ${verifiedOffer.startupName}. Your startup status is now Active!`,
-        "/dashboard/founder/funding"
-      );
-      if (verifiedOffer.founderId && verifiedOffer.founderId !== "1") {
+      if (verifiedOffer.founderId) {
         addNotification(
-          "1",
-          "Offer & Startup Verified ✅",
+          verifiedOffer.founderId,
+          "Offer & Startup Verified",
           `Admin verified your funding offer from ${verifiedOffer.investorCompany || verifiedOffer.investorName} ($${verifiedOffer.offerAmount.toLocaleString()}) for ${verifiedOffer.startupName}. Your startup status is now Active!`,
           "/dashboard/founder/funding"
         );
       }
 
-      addNotification(
-        verifiedOffer.investorId || "4",
-        "Investment Verified & Active ✅",
-        `Admin verified your $${verifiedOffer.offerAmount.toLocaleString()} funding offer for ${verifiedOffer.startupName}. The investment is verified and active!`,
-        "/dashboard/investor/portfolio-hub"
-      );
-      if (verifiedOffer.investorId && verifiedOffer.investorId !== "4") {
+      if (verifiedOffer.investorId) {
         addNotification(
-          "4",
-          "Investment Verified & Active ✅",
+          verifiedOffer.investorId,
+          "Investment Verified & Active",
           `Admin verified your $${verifiedOffer.offerAmount.toLocaleString()} funding offer for ${verifiedOffer.startupName}. The investment is verified and active!`,
           "/dashboard/investor/portfolio-hub"
         );
@@ -382,7 +368,7 @@ export const FundingProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const getFounderOffers = (founderId: string) => 
-    offers.filter(o => o.founderId === founderId || o.founderId === "1" || o.founderId === "founder_demo_user" || founderId === "founder_demo_user" || founderId === "1");
+    offers.filter(o => o.founderId === founderId);
   const getStartupOffers = (startupId: string, startupName?: string) => 
     offers.filter(o => o.startupId === startupId || (startupName && o.startupName.toLowerCase() === startupName.toLowerCase())).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 

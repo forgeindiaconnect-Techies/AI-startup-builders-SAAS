@@ -86,16 +86,6 @@ const Login: React.FC = () => {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
 
-          <div className="mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100 flex items-start gap-3">
-            <CheckCircle2 className="text-indigo-500 shrink-0 mt-0.5" size={20} />
-            <div className="text-sm text-indigo-900">
-              <span className="font-bold block mb-1">Demo Credentials:</span>
-              <span>[role]@startupbuilder.ai</span><br />
-              <span>Pass: password123</span><br />
-              <span className="text-xs text-indigo-700 mt-1 block">Roles: founder, mentor, investor, admin</span>
-            </div>
-          </div>
-
           <form className="space-y-5" onSubmit={handleLogin}>
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm flex items-center">
@@ -122,7 +112,7 @@ const Login: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="block w-full pl-10 px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] sm:text-sm outline-none transition-colors"
-                  placeholder="founder@startupbuilder.ai"
+                  placeholder="Enter your email"
                   autoComplete="email"
                 />
               </div>

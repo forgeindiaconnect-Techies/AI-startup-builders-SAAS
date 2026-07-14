@@ -1,12 +1,7 @@
 import React from 'react';
 import { Plus, Mail, Globe, Briefcase, MoreVertical, Crown } from 'lucide-react';
 
-const members = [
-  { name: 'Sarah Jenkins', role: 'Founder & CEO', avatar: 'S', gradient: 'from-[#7C3AED] to-[#FBBF24]', email: 'sarah@startup.ai', joined: 'Jan 2026', access: 'Owner' },
-  { name: 'James Park', role: 'CTO', avatar: 'J', gradient: 'from-blue-500 to-indigo-600', email: 'james@startup.ai', joined: 'Feb 2026', access: 'Admin' },
-  { name: 'Priya Sharma', role: 'Head of Marketing', avatar: 'P', gradient: 'from-pink-500 to-rose-500', email: 'priya@startup.ai', joined: 'Mar 2026', access: 'Editor' },
-  { name: 'Tom Chen', role: 'Lead Developer', avatar: 'T', gradient: 'from-teal-500 to-emerald-500', email: 'tom@startup.ai', joined: 'Apr 2026', access: 'Editor' },
-];
+const members: { name: string; role: string; avatar: string; gradient: string; email: string; joined: string; access: string }[] = [];
 
 const accessColors: Record<string, string> = {
   Owner: 'bg-yellow-50 text-yellow-700 border-yellow-100',

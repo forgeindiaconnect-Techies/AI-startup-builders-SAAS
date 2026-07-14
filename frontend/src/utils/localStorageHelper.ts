@@ -31,7 +31,7 @@ export const createStartupDraft = (startupName: string, startupIdea: string) => 
   const newStartupData = {
     id: startupId,
     startupId,
-    founderId: "founder_demo_user",
+    founderId: "current_user",
     startupName,
     startupIdea,
     status: 'pending_analysis',

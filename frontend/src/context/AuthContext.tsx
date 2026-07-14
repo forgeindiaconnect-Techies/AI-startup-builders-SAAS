@@ -129,35 +129,7 @@ function addNotification(notif: AppNotification) {
 }
 
 function seedDemoUsers() {
-  const existing = getStoredUsers();
-  if (existing.length > 0) return;
-
-  const demos = [
-    { id: 'user_demo_admin', fullName: 'Super Admin', email: 'admin@startupbuilder.ai', password: 'password123', role: 'admin', status: 'active', approvalStatus: 'approved', startupName: '', startupIdea: '' },
-    { id: 'user_demo_founder', fullName: 'Sarah Jenkins', email: 'founder@startupbuilder.ai', password: 'password123', role: 'founder', status: 'active', approvalStatus: 'approved', startupName: 'EcoPackage Hub', startupIdea: 'Sustainable packaging solutions' },
-    { id: 'user_demo_mentor', fullName: 'Alex Rivera', email: 'mentor@startupbuilder.ai', password: 'password123', role: 'mentor', status: 'active', approvalStatus: 'approved', startupName: '', startupIdea: '' },
-    { id: 'user_demo_investor', fullName: 'Capital Ventures', email: 'investor@startupbuilder.ai', password: 'password123', role: 'investor', status: 'active', approvalStatus: 'approved', startupName: '', startupIdea: '' },
-  ];
-
-  const now = new Date().toISOString();
-  const users = demos.map(d => ({
-    id: d.id,
-    fullName: d.fullName,
-    email: d.email,
-    role: d.role,
-    passwordHash: hashPassword(d.password),
-    startupName: d.startupName,
-    startupIdea: d.startupIdea,
-    status: d.status,
-    approvalStatus: d.approvalStatus,
-    signupDate: now,
-    lastLoginAt: null,
-    loginCount: 0,
-    createdAt: now,
-    updatedAt: now,
-  }));
-
-  setStoredUsers(users);
+  // No demo data - users sign up fresh
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

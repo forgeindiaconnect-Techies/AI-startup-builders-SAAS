@@ -109,7 +109,7 @@ const Pricing: React.FC = () => {
 
   const handleButtonClick = (planName: string) => {
     if (planName === 'Platinum') {
-      window.alert('Please contact our sales team at sales@startupbuilder.ai');
+      window.alert('Please contact our sales team for Platinum plan details');
       return;
     }
     navigate('/login');

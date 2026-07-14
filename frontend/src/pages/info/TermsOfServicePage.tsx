@@ -61,7 +61,7 @@ const TermsOfServicePage: React.FC = () => {
           </Section>
 
           <Section title="10. Contact">
-            <p>For questions about these terms, contact us at legal@aistartupbuilder.ai.</p>
+            <p>For questions about these terms, contact us at legal@yourdomain.com.</p>
           </Section>
         </div>
       </div>

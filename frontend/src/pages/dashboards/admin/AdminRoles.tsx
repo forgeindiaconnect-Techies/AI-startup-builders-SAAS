@@ -1,13 +1,7 @@
 import React from 'react';
 import { Users, UserPlus, Shield, MoreVertical } from 'lucide-react';
 
-const users = [
-  { id: 1, name: 'System Admin', email: 'admin@startup.ai', role: 'Super Admin', status: 'Active' },
-  { id: 2, name: 'Sarah Jenkins', email: 'sarah@startup.ai', role: 'Founder', status: 'Active' },
-  { id: 3, name: 'Alex Rivera', email: 'alex@startup.ai', role: 'Mentor', status: 'Active' },
-  { id: 4, name: 'Capital Ventures', email: 'contact@cv.com', role: 'Investor', status: 'Active' },
-  { id: 5, name: 'Support Rep', email: 'support@startup.ai', role: 'Staff', status: 'Active' },
-];
+const users: { id: number; name: string; email: string; role: string; status: string }[] = [];
 
 const AdminRoles: React.FC = () => (
   <div className="animate-fade-in-up pb-10">

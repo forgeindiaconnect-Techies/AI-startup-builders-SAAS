@@ -58,7 +58,7 @@ const PrivacyPolicyPage: React.FC = () => {
           </Section>
 
           <Section title="7. Contact Us">
-            <p>If you have questions about this Privacy Policy, please contact our support team at privacy@aistartupbuilder.ai or through the Help Center on our platform.</p>
+            <p>If you have questions about this Privacy Policy, please contact our support team at privacy@yourdomain.com or through the Help Center on our platform.</p>
           </Section>
         </div>
       </div>

@@ -76,19 +76,9 @@ const getTodayDate = () => {
 };
 
 // Initial mock data
-const initialSubscriptions: Subscription[] = [
-  { id: 'SB-1042', userId: '1', userName: 'Sarah Jenkins', email: 'founder@startupbuilder.ai', plan: 'Starter', amount: 'Free', started: getTodayDate(), nextBilling: getNextBillingDate(), status: 'Trial' },
-  { id: 'SB-1041', userId: 'test_1', userName: 'Tom Chen', email: 'tom@startup.ai', plan: 'Scale', amount: '$149/mo', started: 'Mar 10, 2026', nextBilling: 'Aug 10, 2026', status: 'Active' },
-  { id: 'SB-1039', userId: 'test_2', userName: 'Anna Kim', email: 'anna@startup.ai', plan: 'Growth', amount: '$49/mo', started: 'Apr 1, 2026', nextBilling: 'Cancelled', status: 'Cancelled' },
-  { id: 'SB-1038', userId: 'test_3', userName: 'Peter Zhao', email: 'peter@startup.ai', plan: 'Scale', amount: '$149/mo', started: 'Jun 1, 2026', nextBilling: 'Aug 1, 2026', status: 'Past Due' },
-];
+const initialSubscriptions: Subscription[] = [];
 
-const initialTransactions: Transaction[] = [
-  { id: 'PAY-9901', userId: '1', userName: 'Sarah Jenkins', plan: 'Starter', amount: '+$0.00', date: getTodayDate(), method: 'System Activation', type: 'Trial Started', status: 'Success' },
-  { id: 'PAY-9820', userId: 'test_1', userName: 'Tom Chen', plan: 'Scale', amount: '+$149.00', date: 'Jul 1, 2026', method: 'Mastercard •••• 1234', type: 'Subscription', status: 'Success' },
-  { id: 'PAY-9819', userId: 'test_3', userName: 'Peter Zhao', plan: 'Scale', amount: '-$149.00', date: 'Jun 28, 2026', method: 'Visa •••• 9012', type: 'Failed Charge', status: 'Failed' },
-  { id: 'PAY-9818', userId: 'test_2', userName: 'Anna Kim', plan: 'Growth', amount: '+$49.00', date: 'Jun 15, 2026', method: 'Stripe Link', type: 'Subscription', status: 'Refunded' },
-];
+const initialTransactions: Transaction[] = [];
 
 const BillingContext = createContext<BillingContextType | undefined>(undefined);
 

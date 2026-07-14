@@ -58,7 +58,7 @@ const CookiePolicyPage: React.FC = () => {
           </Section>
 
           <Section title="6. Contact">
-            <p>If you have questions about our use of cookies, please contact us at privacy@aistartupbuilder.ai.</p>
+            <p>If you have questions about our use of cookies, please contact us at privacy@yourdomain.com.</p>
           </Section>
         </div>
       </div>

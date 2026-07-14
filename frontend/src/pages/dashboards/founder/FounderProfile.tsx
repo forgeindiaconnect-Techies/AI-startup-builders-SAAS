@@ -3,14 +3,14 @@ import { Camera, Save } from 'lucide-react';
 
 const FounderProfile: React.FC = () => {
   const [form, setForm] = useState({
-    name: 'Sarah Jenkins',
-    email: 'sarah@startup.ai',
-    phone: '+1 (555) 234-5678',
-    location: 'San Francisco, CA',
-    bio: 'Serial entrepreneur building AI-powered tools for the next generation of startups. Previously at Google and Y Combinator alumni.',
-    website: 'https://sarahjenkins.io',
-    linkedin: 'linkedin.com/in/sarahjenkins',
-    twitter: '@sarahbuilds',
+    name: '',
+    email: '',
+    phone: '',
+    location: '',
+    bio: '',
+    website: '',
+    linkedin: '',
+    twitter: '',
   });
 
   const update = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
