@@ -130,7 +130,8 @@ function addNotification(notif: AppNotification) {
 
 function seedDemoUsers() {
   const existing = getStoredUsers();
-  if (existing.length > 0) return;
+  const hasTestAccounts = existing.some((u: any) => u.id === 'admin_001');
+  if (hasTestAccounts) return;
 
   const now = new Date().toISOString();
   const accounts = [
