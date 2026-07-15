@@ -8,17 +8,28 @@ export interface IUser extends mongoose.Document {
   isVerified: boolean;
   status: 'active' | 'inactive' | 'suspended';
   approvalStatus: 'pending' | 'approved' | 'rejected';
-  
-  // Role specific fields
+
+  // Founder specific fields
+  mobile?: string;
+  currentRole?: string;
+  startupName?: string;
+  startupStage?: string;
+  industry?: string;
+  agreedToTerms?: boolean;
+  profileCompleted?: boolean;
+
+  // Mentor fields
   expertise?: string;
   experienceYears?: string;
   linkedin?: string;
   bio?: string;
+
+  // Investor fields
   companyName?: string;
   typicalCheckSize?: string;
   sectorsOfInterest?: string;
   investmentThesis?: string;
-  
+
   lastLoginAt?: Date;
   loginCount: number;
 }
@@ -30,7 +41,16 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['founder', 'mentor', 'investor', 'admin'], required: true },
   isVerified: { type: Boolean, default: false },
   status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
-  approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' }, // Startups auto-approved, Mentors/Investors might need admin review in reality
+  approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' },
+
+  // Founder fields
+  mobile: { type: String },
+  currentRole: { type: String },
+  startupName: { type: String },
+  startupStage: { type: String },
+  industry: { type: String },
+  agreedToTerms: { type: Boolean, default: false },
+  profileCompleted: { type: Boolean, default: false },
 
   // Mentor fields
   expertise: { type: String },

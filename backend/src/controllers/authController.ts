@@ -22,7 +22,7 @@ export const sendOTP = async (req: Request, res: Response) => {
     // Check if user already exists and is verified
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser && existingUser.isVerified) {
-      return res.status(400).json({ success: false, error: 'User already exists' });
+      return res.status(400).json({ success: false, error: 'User already exists with this email' });
     }
 
     // Generate 6-digit OTP
@@ -52,18 +52,22 @@ export const sendOTP = async (req: Request, res: Response) => {
   }
 };
 
-// 2. Verify OTP & Create Account
+// 2. Verify OTP & Create Account — now auto-logs in and returns JWT
 export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
   try {
-    const { email, otp, password, role, fullName, ...otherData } = req.body;
+    const {
+      email, otp, password, role, fullName,
+      mobile, currentRole, startupName, startupStage, industry, agreedToTerms,
+      ...otherData
+    } = req.body;
 
     if (!email || !otp || !password || !role || !fullName) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
 
     // Find valid OTP
-    const validOtp = await OTP.findOne({ 
-      email: email.toLowerCase(), 
+    const validOtp = await OTP.findOne({
+      email: email.toLowerCase(),
       otp,
       expiresAt: { $gt: new Date() }
     });
@@ -81,14 +85,16 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
 
     // Create User (or update if they started but didn't finish)
     let user = await User.findOne({ email: email.toLowerCase() });
-    
+
+    const founderFields = role === 'founder' ? { mobile, currentRole, startupName, startupStage, industry, agreedToTerms } : {};
+
     if (user) {
       user.fullName = fullName;
       user.passwordHash = passwordHash;
       user.role = role;
       user.isVerified = true;
       user.approvalStatus = approvalStatus;
-      Object.assign(user, otherData);
+      Object.assign(user, founderFields, otherData);
       await user.save();
     } else {
       user = await User.create({
@@ -98,6 +104,7 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
         role,
         isVerified: true,
         approvalStatus,
+        ...founderFields,
         ...otherData
       });
     }
@@ -112,7 +119,7 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
     let trialStart, trialEnd;
 
     if (role === 'founder') {
-      // Automatic 24h Free Trial
+      // Automatic 24h Free Trial for Founders
       planType = 'free_trial';
       subscriptionStatus = 'trial';
       trialUsed = true;
@@ -129,8 +136,20 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
       trialEnd
     });
 
-    // We do NOT return a token yet. The user should be redirected to Login.
-    res.status(201).json({ success: true, message: 'Account created successfully. Please log in.' });
+    // Auto-login: generate JWT token and return it
+    const token = generateToken(user._id.toString(), user.role);
+
+    res.status(201).json({
+      success: true,
+      message: 'Account created successfully.',
+      token,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (error) {
     console.error('Error in verifyOTPAndCreateUser:', error);
     res.status(500).json({ success: false, error: 'Server error' });
