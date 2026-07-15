@@ -1,420 +1,432 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Rocket, User, Mail, Lock, ArrowRight, CheckCircle2, AlertCircle, Eye, EyeOff, Briefcase, GraduationCap, Globe, FileText, Building2, IndianRupee, TrendingUp, BookOpen } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { 
+  Rocket, GraduationCap, Briefcase, ArrowRight, CheckCircle2, 
+  AlertCircle, Mail, User, Lock, Eye, EyeOff, ShieldCheck
+} from 'lucide-react';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const roleCards = [
   {
     id: 'founder',
     title: 'Founder',
-    desc: 'Build and launch your startup with AI-powered tools',
+    desc: 'Build and launch your startup with AI tools',
     icon: Rocket,
-    color: 'from-[#7C3AED] to-[#5B21B6]',
-    bgColor: 'bg-purple-50 border-purple-200',
-    activeBg: 'bg-purple-100 border-[#5B21B6]',
-    iconBg: 'bg-purple-100 text-[#5B21B6]',
+    primaryColor: '#6C4CF1',
+    accentColor: '#D4AF37'
   },
   {
     id: 'mentor',
     title: 'Mentor',
-    desc: 'Guide founders and earn from your expertise',
+    desc: 'Guide founders and earn from expertise',
     icon: GraduationCap,
-    color: 'from-blue-500 to-indigo-600',
-    bgColor: 'bg-blue-50 border-blue-200',
-    activeBg: 'bg-blue-100 border-blue-600',
-    iconBg: 'bg-blue-100 text-blue-600',
+    primaryColor: '#6C4CF1',
+    accentColor: '#22C55E'
   },
   {
     id: 'investor',
     title: 'Investor',
-    desc: 'Discover and invest in promising startups',
+    desc: 'Discover and invest in startups',
     icon: Briefcase,
-    color: 'from-emerald-500 to-teal-600',
-    bgColor: 'bg-emerald-50 border-emerald-200',
-    activeBg: 'bg-emerald-100 border-emerald-600',
-    iconBg: 'bg-emerald-100 text-emerald-600',
+    primaryColor: '#6C4CF1',
+    accentColor: '#3B82F6'
   },
 ];
 
 const Signup: React.FC = () => {
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const navigate = useNavigate();
+  
+  const [step, setStep] = useState<number>(1);
+  const [role, setRole] = useState<string>('');
+  
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [expertise, setExpertise] = useState('');
-  const [experienceYears, setExperienceYears] = useState('');
-  const [linkedin, setLinkedin] = useState('');
-  const [bio, setBio] = useState('');
-
-  const [companyName, setCompanyName] = useState('');
-  const [typicalCheckSize, setTypicalCheckSize] = useState('');
-  const [sectorsOfInterest, setSectorsOfInterest] = useState('');
-  const [investmentThesis, setInvestmentThesis] = useState('');
-
+  
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { signup } = useAuth();
-  const navigate = useNavigate();
 
-  const validate = (): string | null => {
-    if (!fullName.trim()) return 'Please enter your full name.';
-    if (!email.trim()) return 'Please enter your email address.';
-    if (!password.trim()) return 'Please enter a password.';
-    if (!confirmPassword.trim()) return 'Please confirm your password.';
-    if (password.length < 6) return 'Password must be at least 6 characters.';
-    if (password !== confirmPassword) return 'Passwords do not match.';
-    return null;
+  // Helpers
+  const showError = (msg: string) => {
+    setError(msg);
+    setTimeout(() => setError(''), 5000);
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleRoleSelect = (selectedRole: string) => {
+    setRole(selectedRole);
+    setStep(2);
+  };
+
+  const handlePlanSelect = (selectedPlan: string) => {
+    setPlan(selectedPlan);
+    setStep(3);
+  };
+
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      return;
+    if (!fullName.trim() || !email.trim()) {
+      return showError('Full Name and Email are required.');
     }
-
+    
     setIsLoading(true);
-
+    setError('');
     try {
-      const payload: any = {
-        fullName: fullName.trim(),
-        email: email.trim(),
-        password,
-        role: selectedRole,
-      };
-
-      if (selectedRole === 'mentor') {
-        payload.expertise = expertise.trim();
-        payload.experienceYears = experienceYears.trim();
-        payload.linkedin = linkedin.trim();
-        payload.bio = bio.trim();
-      }
-
-      if (selectedRole === 'investor') {
-        payload.companyName = companyName.trim();
-        payload.typicalCheckSize = typicalCheckSize.trim();
-        payload.sectorsOfInterest = sectorsOfInterest.trim();
-        payload.investmentThesis = investmentThesis.trim();
-      }
-
-      const result = await signup(payload);
-
-      if (result.success) {
-        setSuccess('Account created successfully! Your account is pending admin approval.');
-        setTimeout(() => {
-          navigate('/pending-approval');
-        }, 800);
+      const res = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setSuccess('OTP sent successfully to your email.');
+        setTimeout(() => setSuccess(''), 3000);
+        setStep(4);
       } else {
-        setError(result.error || 'Signup failed. Please try again.');
+        showError(data.error || 'Failed to send OTP.');
       }
-    } catch {
-      setError('An unexpected error occurred. Please try again.');
+    } catch (err) {
+      showError('Network error. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setFullName('');
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
-    setExpertise('');
-    setExperienceYears('');
-    setLinkedin('');
-    setBio('');
-    setCompanyName('');
-    setTypicalCheckSize('');
-    setSectorsOfInterest('');
-    setInvestmentThesis('');
-    setError('');
-    setSuccess('');
+  const handleOtpChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    if (value !== '' && index < 5) {
+      const nextInput = document.getElementById(`otp-${index + 1}`);
+      nextInput?.focus();
+    }
   };
 
-  const handleRoleSelect = (role: string) => {
-    setSelectedRole(role);
-    resetForm();
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && otp[index] === '' && index > 0) {
+      const prevInput = document.getElementById(`otp-${index - 1}`);
+      prevInput?.focus();
+    }
+  };
+
+  const verifyOtpFormat = () => {
+    const code = otp.join('');
+    if (code.length !== 6) {
+      showError('Please enter a valid 6-digit OTP.');
+      return;
+    }
+    setStep(5);
+  };
+
+  const getPasswordStrength = () => {
+    let score = 0;
+    if (password.length > 5) score++;
+    if (password.length > 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    return score; // 0 to 5
+  };
+
+  const handleCreateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < 6) return showError('Password must be at least 6 characters.');
+    if (password !== confirmPassword) return showError('Passwords do not match.');
+
+    setIsLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${API_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          otp: otp.join(''),
+          password,
+          role,
+          fullName
+        })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setSuccess('Account Created Successfully.');
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
+      } else {
+        showError(data.error || 'Failed to create account.');
+      }
+    } catch (err) {
+      showError('Network error. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-[#7C3AED]/10 blur-[100px]"></div>
-      <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#FBBF24]/10 blur-[100px]"></div>
+    <div className="min-h-screen bg-[#FAFAFA] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+      {/* Background Ornaments */}
+      <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-[#6C4CF1]/10 blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#D4AF37]/10 blur-[100px] pointer-events-none"></div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-lg relative z-10">
-        <div className="flex justify-center mb-6 cursor-pointer" onClick={() => navigate('/')}>
-          <div className="bg-[#5B21B6] text-[#FBBF24] p-3 rounded-xl shadow-lg">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        <div className="flex justify-center mb-6 cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate('/')}>
+          <div className="bg-[#6C4CF1] text-[#D4AF37] p-3.5 rounded-2xl shadow-xl shadow-[#6C4CF1]/20">
             <Rocket size={32} />
           </div>
         </div>
-        <h2 className="mt-2 text-center text-3xl font-extrabold text-[#1F2937]">
-          Create your account
+        <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900 tracking-tight">
+          {step === 1 && "Choose your path"}
+          {step === 2 && "Select a plan"}
+          {step === 3 && "Create your account"}
+          {step === 4 && "Verify your email"}
+          {step === 5 && "Secure your account"}
         </h2>
-        <p className="mt-2 text-center text-sm text-[#6B7280]">
-          Join AI Startup Builder — select your role to get started
+        <p className="mt-2 text-center text-sm text-gray-500">
+          Step {step} of 5
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg relative z-10">
-        <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        <div className="bg-white/80 backdrop-blur-xl py-8 px-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-[20px] sm:px-10 border border-gray-100/50">
+          
+          {/* Messages */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-sm flex items-start shadow-sm animate-in fade-in slide-in-from-top-2">
+              <AlertCircle size={18} className="mr-2.5 shrink-0 mt-0.5" />
+              <span className="font-medium leading-relaxed">{error}</span>
+            </div>
+          )}
+          {success && (
+            <div className="mb-6 p-4 bg-[#22C55E]/10 border border-[#22C55E]/20 text-[#16a34a] rounded-2xl text-sm flex items-start shadow-sm animate-in fade-in slide-in-from-top-2">
+              <CheckCircle2 size={18} className="mr-2.5 shrink-0 mt-0.5" />
+              <span className="font-medium leading-relaxed">{success}</span>
+            </div>
+          )}
 
-          {/* Role Selection Cards */}
-          {!selectedRole ? (
-            <div className="space-y-3">
-              {roleCards.map((card) => {
-                const Icon = card.icon;
+          {/* STEP 1: ROLE */}
+          {step === 1 && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {roleCards.map((r) => {
+                const Icon = r.icon;
                 return (
                   <button
-                    key={card.id}
-                    onClick={() => handleRoleSelect(card.id)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-md ${card.bgColor} ${card.activeBg}`}
+                    key={r.id}
+                    onClick={() => handleRoleSelect(r.id)}
+                    className="w-full group flex items-center p-5 rounded-2xl border-2 border-gray-100 bg-white hover:border-[#6C4CF1] hover:shadow-[0_4px_20px_rgba(108,76,241,0.1)] transition-all duration-300"
                   >
-                    <div className={`w-12 h-12 rounded-xl ${card.iconBg} flex items-center justify-center shrink-0`}>
-                      <Icon size={24} />
+                    <div className="w-14 h-14 rounded-2xl bg-gray-50 group-hover:bg-[#6C4CF1]/10 flex items-center justify-center shrink-0 transition-colors">
+                      <Icon size={26} className="text-gray-400 group-hover:text-[#6C4CF1] transition-colors" />
                     </div>
-                    <div className="text-left flex-1">
-                      <h3 className="font-bold text-[#1F2937] text-base">{card.title}</h3>
-                      <p className="text-xs text-[#6B7280] mt-0.5">{card.desc}</p>
+                    <div className="ml-5 text-left flex-1">
+                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#6C4CF1] transition-colors">{r.title}</h3>
+                      <p className="text-sm text-gray-500 mt-1 leading-snug">{r.desc}</p>
                     </div>
-                    <ArrowRight size={20} className="text-[#6B7280] shrink-0" />
+                    <ArrowRight size={20} className="text-gray-300 group-hover:text-[#6C4CF1] group-hover:translate-x-1 transition-all" />
                   </button>
                 );
               })}
             </div>
-          ) : (
-            <>
-              {/* Role header + back */}
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                    selectedRole === 'founder' ? 'bg-purple-100 text-[#5B21B6]' :
-                    selectedRole === 'mentor' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'
-                  }`}>
-                    {selectedRole === 'founder' ? <Rocket size={20} /> :
-                     selectedRole === 'mentor' ? <GraduationCap size={20} /> : <Briefcase size={20} />}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-[#1F2937] capitalize">{selectedRole} Signup</p>
-                    <p className="text-xs text-[#6B7280]">Fill in your details below</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => { setSelectedRole(null); resetForm(); }}
-                  className="text-xs font-semibold text-[#5B21B6] hover:text-[#7C3AED] transition-colors"
-                >
-                  Change role
-                </button>
-              </div>
-
-              <form className="space-y-4" onSubmit={handleSignup}>
-                {error && (
-                  <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm flex items-center">
-                    <AlertCircle size={16} className="mr-2 shrink-0" />
-                    <span>{error}</span>
-                  </div>
-                )}
-                {success && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-lg text-sm flex items-center">
-                    <CheckCircle2 size={16} className="mr-2 shrink-0" />
-                    <span>{success}</span>
-                  </div>
-                )}
-
-                {/* Common fields */}
-                <div>
-                  <label className="block text-sm font-medium text-[#1F2937]">Full Name</label>
-                  <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <User className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text" required value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="block w-full pl-10 px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] sm:text-sm outline-none transition-colors"
-                      placeholder="John Doe" autoComplete="name"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[#1F2937]">Email Address</label>
-                  <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="email" required value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="block w-full pl-10 px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] sm:text-sm outline-none transition-colors"
-                      placeholder="john@example.com" autoComplete="email"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[#1F2937]">Password</label>
-                  <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type={showPassword ? 'text' : 'password'} required value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="block w-full pl-10 pr-10 px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] sm:text-sm outline-none transition-colors"
-                      placeholder="Min. 6 characters" autoComplete="new-password"
-                    />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-[#1F2937]">Confirm Password</label>
-                  <div className="mt-1 relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type={showConfirmPassword ? 'text' : 'password'} required value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="block w-full pl-10 pr-10 px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] sm:text-sm outline-none transition-colors"
-                      placeholder="Re-enter password" autoComplete="new-password"
-                    />
-                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Mentor fields */}
-                {selectedRole === 'mentor' && (
-                  <div className="space-y-4 pt-2 border-t border-gray-100">
-                    <p className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">Professional Details</p>
-                    <div>
-                      <label className="block text-xs font-medium text-[#4B5563]">Expertise</label>
-                      <div className="mt-1 relative rounded-md shadow-sm">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <BookOpen className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <input type="text" value={expertise} onChange={(e) => setExpertise(e.target.value)}
-                          className="block w-full pl-9 px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] text-sm outline-none transition-colors"
-                          placeholder="e.g. AI/ML, SaaS, Product Strategy" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[#4B5563]">Years of Experience</label>
-                      <div className="mt-1 relative rounded-md shadow-sm">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <GraduationCap className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <input type="text" value={experienceYears} onChange={(e) => setExperienceYears(e.target.value)}
-                          className="block w-full pl-9 px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] text-sm outline-none transition-colors"
-                          placeholder="e.g. 8+ years" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[#4B5563]">LinkedIn Profile</label>
-                      <div className="mt-1 relative rounded-md shadow-sm">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Globe className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <input type="url" value={linkedin} onChange={(e) => setLinkedin(e.target.value)}
-                          className="block w-full pl-9 px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] text-sm outline-none transition-colors"
-                          placeholder="https://linkedin.com/in/yourprofile" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[#4B5563]">Bio</label>
-                      <textarea value={bio} onChange={(e) => setBio(e.target.value)} rows={3}
-                        className="block w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] text-sm outline-none transition-colors resize-none"
-                        placeholder="Tell us about your background and mentoring experience..." />
-                    </div>
-                  </div>
-                )}
-
-                {/* Investor fields */}
-                {selectedRole === 'investor' && (
-                  <div className="space-y-4 pt-2 border-t border-gray-100">
-                    <p className="text-xs font-bold text-[#6B7280] uppercase tracking-wider">Investment Profile</p>
-                    <div>
-                      <label className="block text-xs font-medium text-[#4B5563]">Company Name</label>
-                      <div className="mt-1 relative rounded-md shadow-sm">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <Building2 className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <input type="text" value={companyName} onChange={(e) => setCompanyName(e.target.value)}
-                          className="block w-full pl-9 px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] text-sm outline-none transition-colors"
-                          placeholder="Your firm or personal name" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[#4B5563]">Typical Check Size</label>
-                      <div className="mt-1 relative rounded-md shadow-sm">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <IndianRupee className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <input type="text" value={typicalCheckSize} onChange={(e) => setTypicalCheckSize(e.target.value)}
-                          className="block w-full pl-9 px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] text-sm outline-none transition-colors"
-                          placeholder="e.g. ₹50k - ₹250k" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[#4B5563]">Sectors of Interest</label>
-                      <div className="mt-1 relative rounded-md shadow-sm">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <TrendingUp className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <input type="text" value={sectorsOfInterest} onChange={(e) => setSectorsOfInterest(e.target.value)}
-                          className="block w-full pl-9 px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] text-sm outline-none transition-colors"
-                          placeholder="e.g. AI, SaaS, FinTech" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[#4B5563]">Short Investment Thesis</label>
-                      <textarea value={investmentThesis} onChange={(e) => setInvestmentThesis(e.target.value)} rows={2}
-                        className="block w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] text-sm outline-none transition-colors resize-none"
-                        placeholder="Describe your investment philosophy briefly..." />
-                    </div>
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 font-medium flex items-start gap-2">
-                      <FileText size={14} className="shrink-0 mt-0.5" />
-                      <span>KYC documents can be uploaded later from your profile after approval.</span>
-                    </div>
-                  </div>
-                )}
-
-                <button type="submit" disabled={isLoading}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-[#5B21B6] hover:bg-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5B21B6] disabled:opacity-70 transition-all mt-2"
-                >
-                  {isLoading ? 'Creating Account...' : `Create ${selectedRole === 'founder' ? 'Founder' : selectedRole === 'mentor' ? 'Mentor' : 'Investor'} Account`}
-                  {!isLoading && <ArrowRight className="ml-2 h-5 w-5" />}
-                </button>
-              </form>
-            </>
           )}
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-[#6B7280]">
+          {/* STEP 2: PLAN */}
+          {step === 2 && (
+            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              {role === 'founder' && (
+                <div 
+                  onClick={() => handlePlanSelect('free_trial')}
+                  className="relative overflow-hidden cursor-pointer w-full p-6 rounded-2xl border-2 border-[#D4AF37] bg-gradient-to-br from-white to-[#D4AF37]/5 hover:shadow-[0_8px_30px_rgba(212,175,55,0.15)] transition-all"
+                >
+                  <div className="absolute top-0 right-0 bg-[#D4AF37] text-white text-xs font-bold px-3 py-1 rounded-bl-lg">ONE-TIME</div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <Rocket className="text-[#D4AF37]" size={24} />
+                    <h3 className="text-xl font-bold text-gray-900">1-Day Free Trial</h3>
+                  </div>
+                  <ul className="space-y-2 mb-6">
+                    <li className="flex items-center text-sm text-gray-600"><CheckCircle2 size={16} className="text-[#22C55E] mr-2" /> Full AI Features enabled</li>
+                    <li className="flex items-center text-sm text-gray-600"><CheckCircle2 size={16} className="text-[#22C55E] mr-2" /> Valid for exactly 24 hours</li>
+                    <li className="flex items-center text-sm text-gray-600"><CheckCircle2 size={16} className="text-[#22C55E] mr-2" /> No credit card required</li>
+                  </ul>
+                  <button className="w-full py-3 bg-[#111827] text-white rounded-xl font-semibold text-sm hover:bg-[#1F2937] transition-colors">
+                    Start Free Trial
+                  </button>
+                </div>
+              )}
+              
+              <div 
+                onClick={() => handlePlanSelect('monthly')}
+                className="cursor-pointer w-full p-6 rounded-2xl border-2 border-gray-100 hover:border-[#6C4CF1] hover:shadow-[0_8px_30px_rgba(108,76,241,0.1)] transition-all bg-white"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gray-900">Monthly Plan</h3>
+                  <span className="text-2xl font-black text-gray-900">$49<span className="text-sm font-medium text-gray-500">/mo</span></span>
+                </div>
+                {role === 'mentor' && <p className="text-sm text-gray-500 mb-4">Includes notifications, session & earnings management.</p>}
+                {role === 'investor' && <p className="text-sm text-gray-500 mb-4">Includes startup discovery & portfolio tracking.</p>}
+                <button className="w-full py-3 bg-white border-2 border-gray-200 text-gray-900 rounded-xl font-semibold text-sm hover:border-[#6C4CF1] hover:text-[#6C4CF1] transition-colors">
+                  Select Monthly
+                </button>
+              </div>
+              
+              <button onClick={() => setStep(1)} className="w-full py-2 text-sm text-gray-500 hover:text-gray-900 font-medium transition-colors">
+                ← Back to Roles
+              </button>
+            </div>
+          )}
+
+          {/* STEP 3: ACCOUNT DETAILS */}
+          {step === 3 && (
+            <form onSubmit={handleSendOTP} className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Full Name</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)}
+                    className="block w-full pl-11 px-4 py-3.5 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
+                    placeholder="John Doe"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Email Address</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                    className="block w-full pl-11 px-4 py-3.5 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
+                    placeholder="john@example.com"
+                  />
+                </div>
+              </div>
+
+              <button type="submit" disabled={isLoading}
+                className="w-full flex justify-center items-center py-4 px-4 rounded-2xl shadow-lg shadow-[#6C4CF1]/20 text-sm font-bold text-white bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] hover:from-[#5B21B6] hover:to-[#4C1D95] hover:shadow-[#6C4CF1]/40 disabled:opacity-70 transition-all transform active:scale-[0.98]"
+              >
+                {isLoading ? 'Sending OTP...' : 'Send Verification OTP'}
+              </button>
+              
+              <button type="button" onClick={() => setStep(2)} className="w-full py-2 text-sm text-gray-500 hover:text-gray-900 font-medium transition-colors">
+                ← Back
+              </button>
+            </form>
+          )}
+
+          {/* STEP 4: OTP */}
+          {step === 4 && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="text-center">
+                <div className="mx-auto w-16 h-16 bg-[#6C4CF1]/10 text-[#6C4CF1] rounded-full flex items-center justify-center mb-4">
+                  <ShieldCheck size={32} />
+                </div>
+                <p className="text-sm text-gray-600 mb-6">Enter the 6-digit code sent to<br/><strong className="text-gray-900">{email}</strong></p>
+              </div>
+
+              <div className="flex justify-between gap-2">
+                {otp.map((digit, index) => (
+                  <input
+                    key={index} id={`otp-${index}`}
+                    type="text" maxLength={1} value={digit}
+                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                    className="w-12 h-14 text-center text-xl font-black text-gray-900 border-2 border-gray-200 rounded-xl focus:border-[#6C4CF1] focus:ring-0 bg-white transition-colors"
+                  />
+                ))}
+              </div>
+
+              <button onClick={verifyOtpFormat}
+                className="w-full flex justify-center py-4 px-4 rounded-2xl shadow-lg shadow-[#6C4CF1]/20 text-sm font-bold text-white bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all transform active:scale-[0.98]"
+              >
+                Verify Code
+              </button>
+              
+              <div className="text-center">
+                <button onClick={handleSendOTP} disabled={isLoading} className="text-sm font-semibold text-[#6C4CF1] hover:text-[#5B21B6] transition-colors">
+                  Resend Code
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 5: PASSWORD */}
+          {step === 5 && (
+            <form onSubmit={handleCreateAccount} className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Create Password</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'} required value={password} onChange={(e) => setPassword(e.target.value)}
+                    className="block w-full pl-11 pr-12 px-4 py-3.5 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
+                    placeholder="Min. 6 characters"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#6C4CF1] transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                {/* Strength Meter */}
+                {password.length > 0 && (
+                  <div className="mt-2.5 flex gap-1 items-center">
+                    {[1, 2, 3, 4, 5].map((level) => (
+                      <div key={level} className={`h-1.5 flex-1 rounded-full ${getPasswordStrength() >= level ? (getPasswordStrength() > 3 ? 'bg-[#22C55E]' : 'bg-[#D4AF37]') : 'bg-gray-200'}`}></div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Confirm Password</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'} required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="block w-full pl-11 pr-12 px-4 py-3.5 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
+                    placeholder="Repeat password"
+                  />
+                </div>
+              </div>
+
+              <button type="submit" disabled={isLoading}
+                className="w-full flex justify-center py-4 px-4 rounded-2xl shadow-lg shadow-[#6C4CF1]/20 text-sm font-bold text-white bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] hover:from-[#5B21B6] hover:to-[#4C1D95] disabled:opacity-70 transition-all transform active:scale-[0.98] mt-2"
+              >
+                {isLoading ? 'Creating Account...' : 'Complete Registration'}
+              </button>
+            </form>
+          )}
+
+        </div>
+        
+        {step === 1 && (
+          <div className="mt-6 text-center animate-in fade-in">
+            <p className="text-sm text-gray-500 font-medium">
               Already have an account?{' '}
-              <Link to="/login" className="font-semibold text-[#5B21B6] hover:text-[#7C3AED] transition-colors">
-                Sign in
+              <Link to="/login" className="font-bold text-[#6C4CF1] hover:text-[#5B21B6] transition-colors">
+                Sign in instead
               </Link>
             </p>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Rocket, Mail, Lock, ArrowRight, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useBilling } from '../../context/BillingContext';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  
   const { login } = useAuth();
-  const { assignFreePlan } = useBilling();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -21,12 +21,8 @@ const Login: React.FC = () => {
     setError('');
     setSuccess('');
 
-    if (!email.trim()) {
-      setError('Please enter your email address.');
-      return;
-    }
-    if (!password.trim()) {
-      setError('Please enter your password.');
+    if (!email.trim() || !password.trim()) {
+      setError('Please enter both email and password.');
       return;
     }
 
@@ -34,26 +30,17 @@ const Login: React.FC = () => {
 
     try {
       const result = await login(email.trim(), password);
+      
       if (result.success) {
-        setSuccess('Login successful! Redirecting...');
-        const userData = JSON.parse(localStorage.getItem('ai_startup_builder_current_user') || '{}');
-        if (userData.role === 'founder') {
-          assignFreePlan(userData.id, userData.name, userData.email);
-        }
+        setSuccess('Welcome back! Redirecting...');
+        
         setTimeout(() => {
-          const role = userData.role || 'founder';
-          if (role === 'founder') {
-            navigate('/dashboard/founder?subscription=free');
-          } else if (role === 'admin') {
-            navigate('/dashboard/admin');
-          } else if (role === 'mentor') {
-            navigate('/dashboard/mentor');
-          } else if (role === 'investor') {
-            navigate('/dashboard/investor');
-          } else {
-            navigate('/dashboard/founder');
-          }
-        }, 500);
+          const targetRole = result.role || 'founder';
+          if (targetRole === 'admin') navigate('/dashboard/admin');
+          else if (targetRole === 'mentor') navigate('/dashboard/mentor');
+          else if (targetRole === 'investor') navigate('/dashboard/investor');
+          else navigate('/dashboard/founder');
+        }, 1000);
       } else {
         setError(result.error || 'Login failed. Please try again.');
       }
@@ -65,92 +52,69 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-[#7C3AED]/10 blur-[100px]"></div>
-      <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#FBBF24]/10 blur-[100px]"></div>
+    <div className="min-h-screen bg-[#FAFAFA] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden font-sans">
+      {/* Background Ornaments */}
+      <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-[#6C4CF1]/10 blur-[120px] pointer-events-none"></div>
+      <div className="absolute bottom-[10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#D4AF37]/10 blur-[100px] pointer-events-none"></div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="flex justify-center mb-6">
-          <div className="bg-[#5B21B6] text-[#FBBF24] p-3 rounded-xl shadow-lg">
+        <div className="flex justify-center mb-6 cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate('/')}>
+          <div className="bg-[#6C4CF1] text-[#D4AF37] p-3.5 rounded-2xl shadow-xl shadow-[#6C4CF1]/20">
             <Rocket size={32} />
           </div>
         </div>
-        <h2 className="mt-2 text-center text-3xl font-extrabold text-[#1F2937]">
+        <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900 tracking-tight">
           Welcome back
         </h2>
-        <p className="mt-2 text-center text-sm text-[#6B7280]">
+        <p className="mt-2 text-center text-sm text-gray-500 font-medium">
           Sign in to your AI Startup Builder account
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
-
-          <div className="mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-            <p className="text-xs font-bold text-indigo-900 mb-2">Test Credentials</p>
-            <div className="grid grid-cols-2 gap-2 text-xs text-indigo-800">
-              <span><b>Admin:</b> admin@test.com</span>
-              <span>Pass: admin123</span>
-              <span><b>Founder:</b> founder@test.com</span>
-              <span>Pass: founder123</span>
-              <span><b>Mentor:</b> mentor@test.com</span>
-              <span>Pass: mentor123</span>
-              <span><b>Investor:</b> investor@test.com</span>
-              <span>Pass: investor123</span>
-            </div>
-          </div>
+        <div className="bg-white/80 backdrop-blur-xl py-8 px-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-[20px] sm:px-10 border border-gray-100/50">
 
           <form className="space-y-5" onSubmit={handleLogin}>
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm flex items-center">
-                <AlertCircle size={16} className="mr-2 shrink-0" />
-                <span>{error}</span>
+              <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-sm flex items-start shadow-sm animate-in fade-in">
+                <AlertCircle size={18} className="mr-2.5 shrink-0 mt-0.5" />
+                <span className="font-medium leading-relaxed">{error}</span>
               </div>
             )}
             {success && (
-              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-lg text-sm flex items-center">
-                <CheckCircle2 size={16} className="mr-2 shrink-0" />
-                <span>{success}</span>
+              <div className="p-4 bg-[#22C55E]/10 border border-[#22C55E]/20 text-[#16a34a] rounded-2xl text-sm flex items-start shadow-sm animate-in fade-in">
+                <CheckCircle2 size={18} className="mr-2.5 shrink-0 mt-0.5" />
+                <span className="font-medium leading-relaxed">{success}</span>
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-[#1F2937]">Email address</label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <label className="block text-sm font-semibold text-gray-900 mb-1.5">Email address</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] sm:text-sm outline-none transition-colors"
-                  placeholder="Enter your email"
-                  autoComplete="email"
+                  type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full pl-11 px-4 py-3.5 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
+                  placeholder="Enter your email" autoComplete="email"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#1F2937]">Password</label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <label className="block text-sm font-semibold text-gray-900 mb-1.5">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-10 px-4 py-3 border border-gray-300 rounded-xl focus:ring-[#5B21B6] focus:border-[#5B21B6] sm:text-sm outline-none transition-colors"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
+                  type={showPassword ? 'text' : 'password'} required value={password} onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full pl-11 pr-12 px-4 py-3.5 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
+                  placeholder="••••••••" autoComplete="current-password"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#6C4CF1] transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
@@ -160,27 +124,22 @@ const Login: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
-                  id="remember-me"
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 text-[#5B21B6] focus:ring-[#5B21B6] border-gray-300 rounded"
+                  id="remember-me" type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 text-[#6C4CF1] focus:ring-[#6C4CF1] border-2 border-gray-200 rounded transition-colors cursor-pointer"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-[#6B7280]">
+                <label htmlFor="remember-me" className="ml-2 block text-sm font-medium text-gray-600 cursor-pointer">
                   Remember me
                 </label>
               </div>
               <div className="text-sm">
-                <a href="#" className="font-medium text-[#5B21B6] hover:text-[#7C3AED]">
+                <a href="#" className="font-bold text-[#6C4CF1] hover:text-[#5B21B6] transition-colors">
                   Forgot password?
                 </a>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-[#5B21B6] hover:bg-[#7C3AED] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5B21B6] disabled:opacity-70 transition-all"
+            <button type="submit" disabled={isLoading}
+              className="w-full flex justify-center py-4 px-4 rounded-2xl shadow-lg shadow-[#6C4CF1]/20 text-sm font-bold text-white bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] hover:from-[#5B21B6] hover:to-[#4C1D95] disabled:opacity-70 transition-all transform active:scale-[0.98]"
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
               {!isLoading && <ArrowRight className="ml-2 h-5 w-5" />}
@@ -188,9 +147,9 @@ const Login: React.FC = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-[#6B7280]">
+            <p className="text-sm text-gray-500 font-medium">
               Don't have an account?{' '}
-              <Link to="/signup" className="font-semibold text-[#5B21B6] hover:text-[#7C3AED] transition-colors">
+              <Link to="/signup" className="font-bold text-[#6C4CF1] hover:text-[#5B21B6] transition-colors">
                 Sign up
               </Link>
             </p>

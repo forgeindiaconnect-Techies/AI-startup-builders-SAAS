@@ -2,9 +2,11 @@ import { Router, Request, Response } from 'express';
 import aiBuilderRoutes from './aiBuilderRoutes.js';
 import notificationRoutes from './notificationRoutes.js';
 import startupRoutes from './startupRoutes.js';
+import authRoutes from './authRoutes.js';
 
 const router = Router();
 
+router.use('/auth', authRoutes);
 router.use('/startups', startupRoutes);
 router.use('/ai-builder', aiBuilderRoutes);
 router.use('/notifications', notificationRoutes);
