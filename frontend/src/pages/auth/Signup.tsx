@@ -39,6 +39,7 @@ const Signup: React.FC = () => {
   
   const [step, setStep] = useState<number>(1);
   const [role, setRole] = useState<string>('');
+  const [plan, setPlan] = useState<string>('');
   
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
