@@ -59,7 +59,7 @@ const Navbar: React.FC = () => {
             <button onClick={() => navigate('/login')} className="text-[#1F2937] font-medium hover:text-[#5B21B6] transition-colors">
               Log in
             </button>
-            <button onClick={() => navigate('/login')} className="bg-[#5B21B6] hover:bg-[#7C3AED] text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg">
+            <button onClick={() => navigate('/signup')} className="bg-[#5B21B6] hover:bg-[#7C3AED] text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg">
               Sign up
             </button>
           </div>
@@ -94,7 +94,7 @@ const Navbar: React.FC = () => {
               <button onClick={() => navigate('/login')} className="w-full text-center px-4 py-2 border border-[#E5E7EB] rounded-lg text-[#1F2937] font-medium">
                 Log in
               </button>
-              <button onClick={() => navigate('/login')} className="w-full text-center px-4 py-2 bg-[#5B21B6] text-white rounded-lg font-medium">
+              <button onClick={() => navigate('/signup')} className="w-full text-center px-4 py-2 bg-[#5B21B6] text-white rounded-lg font-medium">
                 Sign up
               </button>
             </div>

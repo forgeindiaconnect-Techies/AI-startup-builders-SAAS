@@ -31,6 +31,34 @@ const AdminStartups: React.FC = () => {
       localStorage.removeItem(`startup_${startupId}`);
       localStorage.removeItem(startupId);
       localStorage.removeItem(startupId.replace(/^startup_/, ''));
+
+      try {
+        const rawStartups = localStorage.getItem('ai_startup_builder_startups');
+        if (rawStartups) {
+          let parsed = JSON.parse(rawStartups);
+          parsed = parsed.filter((s: any) => s.startupId !== startupId && s.id !== startupId && `startup_${s.id}` !== startupId);
+          localStorage.setItem('ai_startup_builder_startups', JSON.stringify(parsed));
+        }
+      } catch (e) {}
+
+      try {
+        const rawFunding = localStorage.getItem('ai_startup_builder_funding_offers');
+        if (rawFunding) {
+          let parsed = JSON.parse(rawFunding);
+          parsed = parsed.filter((o: any) => o.startupId !== startupId);
+          localStorage.setItem('ai_startup_builder_funding_offers', JSON.stringify(parsed));
+        }
+      } catch (e) {}
+
+      try {
+        const rawPortfolio = localStorage.getItem('ai_startup_builder_portfolio');
+        if (rawPortfolio) {
+          let parsed = JSON.parse(rawPortfolio);
+          parsed = parsed.filter((p: any) => p.startupId !== startupId);
+          localStorage.setItem('ai_startup_builder_portfolio', JSON.stringify(parsed));
+        }
+      } catch (e) {}
+
       setStartups(prev => prev.filter(s => s.startupId !== startupId && s.id !== startupId && `startup_${s.id}` !== startupId));
       if (selectedStartup?.startupId === startupId || selectedStartup?.id === startupId) {
         setSelectedStartup(null);

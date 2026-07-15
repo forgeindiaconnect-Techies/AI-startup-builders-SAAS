@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Rocket, IndianRupee, Check, X, Users, Cpu, ShoppingBag, ShieldCheck, Building2 } from 'lucide-react';
+import { Rocket, IndianRupee, Check, X, Users, Cpu, ShoppingBag, ShieldCheck, Building2, Trash2 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -124,12 +124,52 @@ const AdminDashboard: React.FC = () => {
     window.alert(`❌ ${name}'s application has been rejected.`);
   };
 
+  const handleClearAllData = () => {
+    if (window.confirm('⚠️ Are you sure you want to clear ALL platform data?\n\nThis will remove:\n• All login logs\n• All notifications\n• All mentor profiles\n• All startup data\n• All funding offers\n• All subscriptions & payments\n• All portfolio data\n\nThis action CANNOT be undone.')) {
+      const keysToRemove = [
+        'ai_startup_builder_login_logs',
+        'ai_startup_builder_notifications',
+        'ai_startup_builder_mentor_profiles',
+        'ai_startup_builder_startups',
+        'ai_startup_builder_funding_offers',
+        'ai_startup_builder_subs_v2',
+        'ai_startup_builder_trans_v2',
+        'ai_startup_builder_payments',
+        'ai_startup_builder_portfolio',
+        'ai_startup_builder_documents',
+      ];
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+
+      const allKeys = Object.keys(localStorage);
+      allKeys.forEach(key => {
+        if (key.startsWith('startup_')) {
+          localStorage.removeItem(key);
+        }
+      });
+
+      setPendingMentors([]);
+      setPendingStartups([]);
+      window.dispatchEvent(new Event('storage'));
+      window.alert('All platform data has been cleared successfully.');
+    }
+  };
+
 
   return (
     <div className="animate-fade-in-up pb-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Welcome, {user?.name || 'Admin'}</h1>
-        <p className="text-gray-500 mt-1">Manage users, monitor AI usage, and view platform analytics.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Welcome, {user?.name || 'Admin'}</h1>
+            <p className="text-gray-500 mt-1">Manage users, monitor AI usage, and view platform analytics.</p>
+          </div>
+          <button
+            onClick={handleClearAllData}
+            className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 font-bold rounded-xl text-sm transition-colors shadow-sm shrink-0"
+          >
+            <Trash2 size={15} /> Clear All Data
+          </button>
+        </div>
       </div>
 
       {/* ── Top 5 Stats Cards ── */}

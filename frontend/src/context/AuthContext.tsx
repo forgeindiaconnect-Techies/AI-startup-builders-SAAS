@@ -455,8 +455,65 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const deleteUser = (userId: string) => {
     const users = getStoredUsers();
+    const target = users.find((u: any) => u.id === userId);
     const filtered = users.filter((u: any) => u.id !== userId);
     setStoredUsers(filtered);
+
+    if (target) {
+      try {
+        const logs = getStoredLogs();
+        const filteredLogs = logs.filter((l: any) => l.userId !== userId);
+        localStorage.setItem(LOGIN_LOGS_KEY, JSON.stringify(filteredLogs));
+      } catch (e) {}
+
+      try {
+        const rawMentors = localStorage.getItem('ai_startup_builder_mentor_profiles');
+        if (rawMentors) {
+          let parsed = JSON.parse(rawMentors);
+          parsed = parsed.filter((m: any) => m.userId !== userId && m.id !== userId);
+          localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(parsed));
+        }
+      } catch (e) {}
+
+      try {
+        const rawNotifs = localStorage.getItem(NOTIFICATIONS_KEY);
+        if (rawNotifs) {
+          let parsed = JSON.parse(rawNotifs);
+          parsed = parsed.filter((n: any) => n.userId !== userId);
+          localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(parsed));
+        }
+      } catch (e) {}
+
+      try {
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.startsWith('startup_')) {
+            try {
+              const data = JSON.parse(localStorage.getItem(key) || '{}');
+              if (data.founderId === userId) {
+                localStorage.removeItem(key);
+              }
+            } catch (e) {}
+          }
+        });
+
+        const rawStartups = localStorage.getItem('ai_startup_builder_startups');
+        if (rawStartups) {
+          let parsed = JSON.parse(rawStartups);
+          parsed = parsed.filter((s: any) => s.founderId !== userId);
+          localStorage.setItem('ai_startup_builder_startups', JSON.stringify(parsed));
+        }
+      } catch (e) {}
+
+      try {
+        const rawFunding = localStorage.getItem('ai_startup_builder_funding_offers');
+        if (rawFunding) {
+          let parsed = JSON.parse(rawFunding);
+          parsed = parsed.filter((o: any) => o.founderId !== userId && o.investorId !== userId);
+          localStorage.setItem('ai_startup_builder_funding_offers', JSON.stringify(parsed));
+        }
+      } catch (e) {}
+    }
   };
 
   const getPendingApprovals = (): User[] => {

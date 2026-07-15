@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, CheckCircle2, RefreshCw, LogIn, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, RefreshCw, LogIn, X, Trash2 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
 const AdminLogs: React.FC = () => {
@@ -31,6 +31,14 @@ const AdminLogs: React.FC = () => {
 
   const [selectedLog, setSelectedLog] = useState<any>(null);
 
+  const handleClearAllLogs = () => {
+    if (window.confirm('Are you sure you want to permanently delete ALL login logs? This action cannot be undone.')) {
+      localStorage.removeItem('ai_startup_builder_login_logs');
+      setLoginLogs([]);
+      window.alert('All login logs have been cleared.');
+    }
+  };
+
   return (
     <div className="animate-fade-in-up pb-10 space-y-8">
       <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -38,12 +46,20 @@ const AdminLogs: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Login Activity Logs</h1>
           <p className="text-gray-500 mt-1">Track all user login attempts — successful and failed.</p>
         </div>
-        <button
-          onClick={loadLogs}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold rounded-xl text-sm transition-colors"
-        >
-          <RefreshCw size={15} /> Refresh
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={loadLogs}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold rounded-xl text-sm transition-colors"
+          >
+            <RefreshCw size={15} /> Refresh
+          </button>
+          <button
+            onClick={handleClearAllLogs}
+            className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 font-bold rounded-xl text-sm transition-colors"
+          >
+            <Trash2 size={15} /> Clear All Logs
+          </button>
+        </div>
       </div>
 
       {/* Filter + Stats */}

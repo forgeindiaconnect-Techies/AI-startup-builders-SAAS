@@ -30,7 +30,7 @@ const CTA: React.FC = () => {
               className="w-full sm:w-80 px-6 py-4 rounded-xl text-[#1F2937] border-0 focus:ring-4 focus:ring-[#FBBF24] outline-none shadow-lg text-lg"
             />
           </div>
-          <button onClick={() => navigate('/login')} className="w-full sm:w-auto px-8 py-4 bg-[#FBBF24] hover:bg-[#FDE68A] text-[#111827] rounded-xl font-bold text-lg transition-colors shadow-lg flex items-center justify-center group">
+          <button onClick={() => navigate('/signup')} className="w-full sm:w-auto px-8 py-4 bg-[#FBBF24] hover:bg-[#FDE68A] text-[#111827] rounded-xl font-bold text-lg transition-colors shadow-lg flex items-center justify-center group">
             Sign up
             <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
           </button>
