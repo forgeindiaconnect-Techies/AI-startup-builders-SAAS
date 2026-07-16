@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -24,6 +24,18 @@
   --color-warning: #F59E0B;
   --color-info: #3B82F6;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0F0A1E;
+    --color-bg-card: #1A1033;
+    --color-text-primary: #F9FAFB;
+    --color-text-secondary: #D1D5DB;
+    --color-text-muted: #9CA3AF;
+    --color-border: #374151;
+    --color-border-light: #1F2937;
+  }
 }
 
 /* ===== Global Styles ===== */
@@ -211,4 +223,32 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ===== OTP Input ===== */
+.otp-input {
+  width: 3rem;
+  height: 3.5rem;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  border: 2px solid var(--color-border);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  transition: all 0.2s;
+}
+
+.otp-input:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  background-color: var(--color-bg-card);
+  box-shadow: 0 0 0 4px rgba(91, 33, 182, 0.1);
+}
+
+.otp-input.filled {
+  border-color: var(--color-brand);
+  background-color: rgba(91, 33, 182, 0.05);
+  color: var(--color-brand);
+}
+
 .read-only-view .hide-in-read-only { display: none !important; } .read-only-view textarea { pointer-events: none; opacity: 0.8; border-color: transparent; resize: none; }

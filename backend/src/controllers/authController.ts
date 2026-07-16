@@ -45,7 +45,8 @@ export const sendOTP = async (req: Request, res: Response) => {
     console.log(`🔑 OTP CODE: ${otpCode}`);
     console.log(`==============================================\n`);
 
-    res.status(200).json({ success: true, message: 'OTP sent successfully' });
+    // Return OTP in response for demo/dev mode (no real email service configured)
+    res.status(200).json({ success: true, message: 'OTP sent successfully', demoOtp: otpCode });
   } catch (error) {
     console.error('Error in sendOTP:', error);
     res.status(500).json({ success: false, error: 'Server error' });
