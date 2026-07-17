@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Lightbulb, FileText, BarChart3, Search, ClipboardList, MessageSquare, RefreshCw, Play, ChevronDown, Download, File as FileIcon, Sparkles } from 'lucide-react';
+import { Lightbulb, FileText, BarChart3, Search, ClipboardList, MessageSquare, RefreshCw, Play, ChevronDown, Download, File as FileIcon, Sparkles, Scale } from 'lucide-react';
 import FounderIdeaGenerator from './FounderIdeaGenerator';
 import FounderBranding from './FounderBranding';
 import FounderBusinessPlan from './FounderBusinessPlan';
@@ -8,6 +8,7 @@ import FounderPitchDeck from './FounderPitchDeck';
 import FounderMarketResearch from './FounderMarketResearch';
 import FounderReports from './FounderReports';
 import FounderAIChat from './FounderAIChat';
+import FounderLegalDocs from './FounderLegalDocs';
 import { getStartups, getStartupById, updateStartup, generateStartupOutput, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument } from '../../../utils/localStorageHelper';
 
 const tabs = [
@@ -16,6 +17,7 @@ const tabs = [
   { id: 'plan',     label: 'Business Plan',         icon: FileText,     component: FounderBusinessPlan },
   { id: 'pitch',    label: 'Pitch Deck',             icon: BarChart3,    component: FounderPitchDeck },
   { id: 'market',   label: 'Market Research',        icon: Search,       component: FounderMarketResearch },
+  { id: 'legal',    label: 'Legal & Documents',      icon: Scale,        component: FounderLegalDocs },
   { id: 'reports',  label: 'AI Reports',             icon: ClipboardList,component: FounderReports },
   { id: 'chat',     label: 'AI Chat',                icon: MessageSquare,component: FounderAIChat },
 ];

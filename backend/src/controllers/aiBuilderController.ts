@@ -301,6 +301,135 @@ export const regenerateStartup = async (req: Request, res: Response) => {
   }
 };
 
+// ── Legal Documents Generation ──────────────────────────────────────────────────
+
+const LEGAL_DOCS_PROMPT = `You are an expert Indian legal consultant, business compliance advisor, and startup registration specialist.
+
+The founder gives:
+1. Startup Name
+2. Startup Idea / Short Description
+3. Location/Country (default: India)
+
+TASK:
+Analyze the startup idea. First detect the business category, then generate startup-specific legal documents, registrations, licenses, and compliance checklist.
+
+Detect ONE category from:
+- Food / Restaurant / Cafe
+- SaaS / Software / AI
+- Healthcare / Hospital / Clinic
+- E-commerce
+- Education / Training
+- Manufacturing
+- Retail / Shop
+- Transport
+- Finance / FinTech
+- Service Business
+- Other
+
+RULES for category-specific documents:
+- Food, restaurant, cafe, tea, coffee, snacks: MUST include FSSAI, Shop & Establishment, Trade License, rent agreement, GST if applicable.
+- Restaurant/cafe/shop: Shop & Establishment, Trade License, rent agreement, GST if applicable.
+- SaaS/software/AI: Privacy Policy, Terms & Conditions, GST if applicable, software agreement, DPIIT optional, trademark optional.
+- Healthcare/hospital/clinic: Healthcare-specific approvals, doctor/medical registration proof, biomedical waste permission, fire safety if applicable.
+- E-commerce: GST, Privacy Policy, Refund Policy, Terms & Conditions, vendor agreement, payment gateway documents.
+- Manufacturing: Factory/trade license, fire safety, pollution approval if applicable, GST, Udyam/MSME.
+- Education/training: Business registration, GST if applicable, refund policy, course terms, certificate policy.
+- Retail/shop: Shop & Establishment, Trade License, GST if applicable, rent agreement.
+- Finance/FinTech: Company registration, privacy policy, terms, data protection, compliance review, RBI/financial compliance note if applicable.
+
+Output JSON structure:
+{
+  "detectedCategory": "",
+  "categoryReason": "",
+  "recommendedStructure": {
+    "type": "",
+    "reason": ""
+  },
+  "founderDocuments": [
+    { "name": "", "description": "" }
+  ],
+  "businessAddressDocuments": [
+    { "name": "", "description": "", "applicable": true }
+  ],
+  "registrationsNeeded": [
+    { "name": "", "description": "", "mandatory": true, "portal": "" }
+  ],
+  "industryLicenses": [
+    { "name": "", "description": "", "authority": "", "mandatory": true }
+  ],
+  "investorReadyDocs": [
+    { "name": "", "description": "", "status": "Pending" }
+  ],
+  "complianceTimeline": {
+    "beforeLaunch": [],
+    "duringLaunch": [],
+    "afterLaunch": [],
+    "monthly": [],
+    "yearly": []
+  },
+  "missingDocumentsChecklist": [
+    {
+      "documentName": "",
+      "required": "Required",
+      "whyNeeded": "",
+      "whenToSubmit": "",
+      "issuedBy": "",
+      "uploadRequired": true,
+      "status": "Pending"
+    }
+  ],
+  "disclaimer": "This is an AI-generated checklist. Please verify with a CA, lawyer, or local authority before registration."
+}
+
+Return ONLY valid JSON. No markdown. No explanation outside JSON.`;
+
+async function callLegalAI(startupName: string, startupIdea: string, location: string) {
+  if (!aiClient) {
+    throw new Error("AI Client is not configured. Missing API key.");
+  }
+
+  const prompt = `${LEGAL_DOCS_PROMPT}\n\nStartup Name: ${startupName}\nStartup Idea: ${startupIdea}\nLocation: ${location}\n\nReturn ONLY the JSON object.`;
+
+  const response = await aiClient.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json"
+    }
+  });
+
+  const text = response.text;
+  if (!text) throw new Error("AI returned empty response");
+
+  let cleanText = text.trim();
+  if (cleanText.startsWith('\`\`\`json')) cleanText = cleanText.substring(7);
+  if (cleanText.startsWith('\`\`\`')) cleanText = cleanText.substring(3);
+  if (cleanText.endsWith('\`\`\`')) cleanText = cleanText.substring(0, cleanText.length - 3);
+
+  return JSON.parse(cleanText);
+}
+
+export const generateLegalDocs = async (req: Request, res: Response) => {
+  try {
+    const { startupName, startupIdea, location } = req.body;
+
+    if (!startupName || !startupIdea) {
+      return res.status(400).json({ success: false, message: 'Startup name and idea are required.' });
+    }
+
+    const legalData = await callLegalAI(startupName, startupIdea, location || 'India');
+
+    res.status(200).json({
+      success: true,
+      message: 'Legal documents generated successfully',
+      data: legalData
+    });
+  } catch (error: any) {
+    console.error('Error generating legal docs:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to generate legal documents.' });
+  }
+};
+
 export const chatStartup = async (req: Request, res: Response) => {
   try {
     const { startupId } = req.params;
