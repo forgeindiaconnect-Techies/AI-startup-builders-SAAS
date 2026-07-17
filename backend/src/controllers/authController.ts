@@ -111,11 +111,12 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
     await OTP.deleteOne({ _id: validOtp._id });
 
     // Initialize Subscription state
-    let planName = 'none';
-    let status = 'none';
-    let paymentStatus = 'not_required';
+    let planName: 'free_trial' | 'pro' | 'premium_startup_builder' | 'none' = 'none';
+    let status: 'active' | 'expired' | 'pending_verification' | 'cancelled' | 'none' = 'none';
+    let paymentStatus: 'not_required' | 'pending' | 'approved' | 'rejected' = 'not_required';
     let trialUsed = false;
-    let startDate, endDate;
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
 
     if (role === 'founder') {
       // Automatic 24h Free Trial for Founders

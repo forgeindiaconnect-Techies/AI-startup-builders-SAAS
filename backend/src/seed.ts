@@ -72,11 +72,13 @@ async function seed() {
       if (userData.role === 'founder') {
         await Subscription.create({
           userId: user._id,
-          planType: 'free_trial',
-          subscriptionStatus: 'trial',
+          planName: 'free_trial',
+          status: 'active',
+          billingCycle: 'trial',
+          paymentStatus: 'not_required',
           trialUsed: true,
-          trialStart: new Date(),
-          trialEnd: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
         });
       }
 
