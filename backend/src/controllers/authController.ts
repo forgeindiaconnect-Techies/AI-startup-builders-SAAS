@@ -111,27 +111,31 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
     await OTP.deleteOne({ _id: validOtp._id });
 
     // Initialize Subscription state
-    let planType: 'free_trial' | 'monthly' | 'yearly' | 'none' = 'none';
-    let subscriptionStatus: 'active' | 'expired' | 'trial' | 'none' = 'none';
+    let planName = 'none';
+    let status = 'none';
+    let paymentStatus = 'not_required';
     let trialUsed = false;
-    let trialStart, trialEnd;
+    let startDate, endDate;
 
     if (role === 'founder') {
       // Automatic 24h Free Trial for Founders
-      planType = 'free_trial';
-      subscriptionStatus = 'trial';
+      planName = 'free_trial';
+      status = 'active';
+      paymentStatus = 'not_required';
       trialUsed = true;
-      trialStart = new Date();
-      trialEnd = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+      startDate = new Date();
+      endDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
     }
 
     await Subscription.create({
       userId: user._id,
-      planType,
-      subscriptionStatus,
+      planName,
+      status,
+      paymentStatus,
+      billingCycle: 'trial',
       trialUsed,
-      trialStart,
-      trialEnd
+      startDate,
+      endDate
     });
 
     // Auto-login: generate JWT token and return it
@@ -192,15 +196,33 @@ export const loginUser = async (req: Request, res: Response) => {
     user.lastLoginAt = new Date();
     await user.save();
 
+    const subscription = await Subscription.findOne({ userId: user._id });
+
+    // Check if trial expired and auto-update
+    if (subscription && subscription.planName === 'free_trial' && subscription.status === 'active') {
+      if (subscription.endDate && new Date() > subscription.endDate) {
+        subscription.status = 'expired';
+        await subscription.save();
+      }
+    }
+
+    const flatUser = user.toObject();
+    if (subscription) {
+      Object.assign(flatUser, {
+        plan: subscription.planName,
+        subscriptionStatus: subscription.status,
+        paymentStatus: subscription.paymentStatus,
+        trialUsed: subscription.trialUsed,
+        trialStartDate: subscription.startDate,
+        trialEndDate: subscription.endDate
+      });
+    }
+
     res.json({
       success: true,
       token: generateToken(user._id.toString(), user.role),
-      user: {
-        id: user._id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role
-      }
+      user: flatUser,
+      subscription
     });
   } catch (error) {
     console.error('Error in login:', error);
@@ -219,17 +241,28 @@ export const getMe = async (req: AuthRequest, res: Response) => {
     const subscription = await Subscription.findOne({ userId: user._id });
 
     // Check if trial expired and auto-update
-    if (subscription && subscription.subscriptionStatus === 'trial') {
-      if (subscription.trialEnd && new Date() > subscription.trialEnd) {
-        subscription.subscriptionStatus = 'expired';
-        subscription.planType = 'none';
+    if (subscription && subscription.planName === 'free_trial' && subscription.status === 'active') {
+      if (subscription.endDate && new Date() > subscription.endDate) {
+        subscription.status = 'expired';
         await subscription.save();
       }
     }
 
+    const flatUser = user.toObject();
+    if (subscription) {
+      Object.assign(flatUser, {
+        plan: subscription.planName,
+        subscriptionStatus: subscription.status,
+        paymentStatus: subscription.paymentStatus,
+        trialUsed: subscription.trialUsed,
+        trialStartDate: subscription.startDate,
+        trialEndDate: subscription.endDate
+      });
+    }
+
     res.json({
       success: true,
-      user,
+      user: flatUser,
       subscription
     });
   } catch (error) {

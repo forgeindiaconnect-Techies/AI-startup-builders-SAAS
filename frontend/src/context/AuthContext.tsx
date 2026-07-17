@@ -82,7 +82,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           role: data.user.role,
           isVerified: data.user.isVerified,
           status: data.user.status,
-          approvalStatus: data.user.approvalStatus
+          approvalStatus: data.user.approvalStatus,
+          // Subscription fields flattened from API
+          plan: data.user.plan,
+          subscriptionStatus: data.user.subscriptionStatus,
+          paymentStatus: data.user.paymentStatus,
+          trialUsed: data.user.trialUsed,
+          trialStartDate: data.user.trialStartDate,
+          trialEndDate: data.user.trialEndDate,
         });
         if (data.subscription) {
           setSubscription(data.subscription);
