@@ -7,6 +7,9 @@ import { Subscription } from '../models/Subscription.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 import { sendOTPEmail } from '../utils/emailService.js';
 
+// In-memory OTP store for demo/fallback (when MongoDB OTP lookup fails)
+const demoPhoneOtpStore: Record<string, { otp: string; expiresAt: number }> = {};
+
 // Helper to generate JWT
 const generateToken = (id: string, role: string) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET || 'fallback_secret', {
@@ -173,14 +176,17 @@ export const sendPhoneOTP = async (req: Request, res: Response) => {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
-    // Delete any existing phone OTP for this number
-    await OTP.deleteMany({ phone, type: 'phone' });
+    // Always store in in-memory map (works even without DB)
+    demoPhoneOtpStore[phone] = { otp: otpCode, expiresAt: expiresAt.getTime() };
 
-    // Save new OTP
-    await OTP.create({ phone, otp: otpCode, type: 'phone', expiresAt });
+    // Also try to persist in DB (best effort)
+    try {
+      await OTP.deleteMany({ phone, type: 'phone' });
+      await OTP.create({ phone, otp: otpCode, type: 'phone', expiresAt });
+    } catch (dbErr) {
+      console.warn('⚠️  DB OTP save failed (using in-memory fallback):', (dbErr as Error).message);
+    }
 
-    // In production, send via SMS service (Twilio, etc.)
-    // For demo, return OTP in response so frontend can display it
     console.log(`📱 Phone OTP for ${phone}: ${otpCode}`);
 
     res.status(200).json({
@@ -202,19 +208,36 @@ export const verifyPhoneOTP = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Phone and OTP are required' });
     }
 
-    const validOtp = await OTP.findOne({
-      phone,
-      otp,
-      type: 'phone',
-      expiresAt: { $gt: new Date() }
-    });
+    let verified = false;
 
-    if (!validOtp) {
-      return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
+    // Primary: Check DB
+    try {
+      const validOtp = await OTP.findOne({
+        phone,
+        otp,
+        type: 'phone',
+        expiresAt: { $gt: new Date() }
+      });
+      if (validOtp) {
+        await OTP.deleteOne({ _id: validOtp._id });
+        verified = true;
+      }
+    } catch (dbErr) {
+      console.warn('⚠️  DB OTP check failed (using in-memory fallback):', (dbErr as Error).message);
     }
 
-    // Delete the used OTP
-    await OTP.deleteOne({ _id: validOtp._id });
+    // Fallback: Check in-memory store
+    if (!verified) {
+      const stored = demoPhoneOtpStore[phone];
+      if (stored && stored.otp === otp && stored.expiresAt > Date.now()) {
+        delete demoPhoneOtpStore[phone];
+        verified = true;
+      }
+    }
+
+    if (!verified) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired OTP. Please request a new one.' });
+    }
 
     res.status(200).json({ success: true, message: 'Phone number verified successfully' });
   } catch (error) {
@@ -244,15 +267,18 @@ export const completePhoneSignup = async (req: Request, res: Response) => {
 
     let user = await User.findOne({ email: email.toLowerCase() });
 
-    const founderFields = role === 'founder' ? { mobile, currentRole, startupName, startupStage, industry, agreedToTerms } : {};
+    const founderFields = role === 'founder'
+      ? { mobile, currentRole, startupName, startupStage, industry, agreedToTerms }
+      : {};
 
     if (user) {
+      // Update existing user (re-registration or retry)
       user.fullName = fullName;
       user.passwordHash = passwordHash;
-      user.role = role;
+      user.role = role as 'founder' | 'mentor' | 'investor' | 'admin';
       user.isVerified = true;
-      user.approvalStatus = approvalStatus;
-      Object.assign(user, founderFields, otherData);
+      user.approvalStatus = approvalStatus as 'pending' | 'approved' | 'rejected';
+      Object.assign(user, founderFields);
       await user.save();
     } else {
       user = await User.create({
@@ -264,37 +290,36 @@ export const completePhoneSignup = async (req: Request, res: Response) => {
         approvalStatus,
         mobile,
         ...founderFields,
-        ...otherData
       });
     }
 
-    // Initialize Subscription
-    let planName: 'free_trial' | 'pro' | 'premium_startup_builder' | 'none' = 'none';
-    let status: 'active' | 'expired' | 'pending_verification' | 'cancelled' | 'none' = 'none';
-    let paymentStatus: 'not_required' | 'pending' | 'approved' | 'rejected' = 'not_required';
-    let trialUsed = false;
-    let startDate: Date | undefined;
-    let endDate: Date | undefined;
+    // Upsert Subscription — avoids E11000 duplicate key error on retry
+    const now = new Date();
+    const trialEnd = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
 
-    if (role === 'founder') {
-      planName = 'free_trial';
-      status = 'active';
-      paymentStatus = 'not_required';
-      trialUsed = true;
-      startDate = new Date();
-      endDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    }
+    const subData = role === 'founder'
+      ? {
+          planName: 'free_trial' as const,
+          status: 'active' as const,
+          paymentStatus: 'not_required' as const,
+          billingCycle: 'trial' as const,
+          trialUsed: true,
+          startDate: now,
+          endDate: trialEnd,
+        }
+      : {
+          planName: 'none' as const,
+          status: 'none' as const,
+          paymentStatus: 'not_required' as const,
+          billingCycle: 'trial' as const,
+          trialUsed: false,
+        };
 
-    await Subscription.create({
-      userId: user._id,
-      planName,
-      status,
-      paymentStatus,
-      billingCycle: 'trial',
-      trialUsed,
-      startDate,
-      endDate
-    });
+    await Subscription.findOneAndUpdate(
+      { userId: user._id },
+      { $set: subData },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
     const token = generateToken(user._id.toString(), user.role);
 
@@ -306,12 +331,16 @@ export const completePhoneSignup = async (req: Request, res: Response) => {
         id: user._id,
         fullName: user.fullName,
         email: user.email,
-        role: user.role
-      }
+        role: user.role,
+      },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in completePhoneSignup:', error);
-    res.status(500).json({ success: false, error: 'Server error' });
+    // Specific duplicate email error
+    if (error.code === 11000 && error.keyPattern?.email) {
+      return res.status(409).json({ success: false, error: 'An account with this email already exists. Please log in.' });
+    }
+    res.status(500).json({ success: false, error: 'Server error: ' + (error.message || 'Unknown') });
   }
 };
 
