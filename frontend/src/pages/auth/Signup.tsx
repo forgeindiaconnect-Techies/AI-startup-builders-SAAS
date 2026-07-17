@@ -463,6 +463,28 @@ const FounderSignup: React.FC = () => {
                     </p>
                   </form>
                 </Form>
+
+                {/* Demo Accounts Panel */}
+                <div className="mt-8 p-4 rounded-2xl bg-muted/40 border border-muted flex flex-col gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-foreground/80 tracking-wide uppercase">Demo Accounts for Testing</span>
+                    <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">READY</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {[
+                      { role: 'Founder', email: 'founder@test.com' },
+                      { role: 'Admin', email: 'admin@test.com' },
+                      { role: 'Mentor', email: 'mentor@test.com' },
+                      { role: 'Investor', email: 'investor@test.com' },
+                    ].map(demo => (
+                      <div key={demo.email} className="bg-card border border-muted/50 rounded-xl p-2 flex flex-col">
+                        <span className="font-bold text-foreground">{demo.role}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono truncate">{demo.email}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono mt-0.5">PW: Test@123</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
 

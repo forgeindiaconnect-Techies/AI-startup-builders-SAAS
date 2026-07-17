@@ -25,7 +25,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     return <Navigate to={`/dashboard/${user.role}`} replace />;
   }
 
-  if (user.role === 'founder' && user.subscriptionStatus === 'expired') {
+  if (user.role === 'founder' && user.subscriptionStatus !== 'active') {
     const isAllowedPath = location.pathname.includes('/billing') || location.pathname.includes('/profile');
     if (!isAllowedPath) {
       return <Navigate to="/dashboard/founder/billing" replace state={{ expired: true }} />;

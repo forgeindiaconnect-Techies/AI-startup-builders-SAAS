@@ -154,6 +154,28 @@ const Login: React.FC = () => {
               </Link>
             </p>
           </div>
+
+          {/* Demo Accounts Panel */}
+          <div className="mt-6 p-4 rounded-[20px] bg-gray-50 border border-gray-100 flex flex-col gap-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-700 tracking-wide uppercase">Demo Accounts for Testing</span>
+              <span className="text-[10px] bg-[#6C4CF1]/10 text-[#6C4CF1] px-2 py-0.5 rounded-full font-bold">READY</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              {[
+                { role: 'Founder', email: 'founder@test.com' },
+                { role: 'Admin', email: 'admin@test.com' },
+                { role: 'Mentor', email: 'mentor@test.com' },
+                { role: 'Investor', email: 'investor@test.com' },
+              ].map(demo => (
+                <div key={demo.email} className="bg-white border border-gray-100 rounded-xl p-2.5 flex flex-col shadow-sm">
+                  <span className="font-bold text-gray-900">{demo.role}</span>
+                  <span className="text-[10px] text-gray-500 font-mono truncate">{demo.email}</span>
+                  <span className="text-[10px] text-gray-400 font-mono mt-0.5">PW: Test@123</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

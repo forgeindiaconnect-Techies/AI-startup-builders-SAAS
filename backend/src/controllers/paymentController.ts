@@ -35,7 +35,7 @@ export const submitPayment = async (req: AuthRequest, res: Response) => {
       subscription = new Subscription({ userId });
     }
     subscription.paymentStatus = 'pending';
-    // We do NOT change the planName or status yet until approved.
+    subscription.status = 'pending_verification';
     await subscription.save();
 
     res.status(201).json({ success: true, message: 'Payment submitted successfully. Awaiting admin verification.', payment });
@@ -101,6 +101,7 @@ export const rejectPayment = async (req: AuthRequest, res: Response) => {
     const subscription = await Subscription.findOne({ userId: payment.userId });
     if (subscription) {
       subscription.paymentStatus = 'rejected';
+      subscription.status = 'expired';
       await subscription.save();
     }
 
