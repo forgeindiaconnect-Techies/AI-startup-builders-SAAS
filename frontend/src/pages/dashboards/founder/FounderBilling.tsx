@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-  Check, Zap, Star, Crown, CreditCard, X, ArrowRight,
+  Check, Zap, Crown, X, ArrowRight,
   Copy, CheckCircle2, UploadCloud, Loader2, Clock, AlertTriangle, Shield
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
@@ -206,14 +206,6 @@ const FounderBilling: React.FC = () => {
     premium_startup_builder: 'Premium Startup Builder',
     none: 'No Active Plan',
   };
-
-  const statusColor: Record<string, string> = {
-    active: 'text-emerald-600 bg-emerald-50 border-emerald-200',
-    expired: 'text-red-600 bg-red-50 border-red-200',
-    pending_verification: 'text-amber-600 bg-amber-50 border-amber-200',
-    none: 'text-gray-600 bg-gray-50 border-gray-200',
-  };
-
   return (
     <div className="animate-fade-in-up pb-10">
       <div className="mb-8">

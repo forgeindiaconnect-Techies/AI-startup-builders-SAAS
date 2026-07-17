@@ -150,12 +150,6 @@ export default function LoginPage() {
           </Link>
         </p>
 
-        <div className="mt-8 p-4 rounded-xl bg-gray-50 border border-gray-100">
-          <p className="text-xs text-gray-500 font-medium mb-2">Demo Accounts:</p>
-          <div className="space-y-1.5 text-xs text-gray-400">
-            <p>Register as any role to create an account</p>
-          </div>
-        </div>
       </div>
     </AuthLayout>
   );

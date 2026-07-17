@@ -157,7 +157,6 @@ const AdminPayments: React.FC = () => {
         ) : (
           <div className="divide-y divide-gray-100">
             {displayedPayments.map(payment => {
-              const StatusIcon = STATUS_CONFIG[payment.status]?.icon || Clock;
               const statusCfg = STATUS_CONFIG[payment.status];
               return (
                 <div key={payment._id} className="p-5 hover:bg-gray-50/70 transition-colors">
