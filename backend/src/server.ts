@@ -45,9 +45,10 @@ app.get('/', (_req: express.Request, res: express.Response) => {
 // Start server
 const startServer = async () => {
   try {
-    await connectDB();
-
     app.listen(PORT, '0.0.0.0', () => {
+      // Connect to DB in the background
+      connectDB();
+
       console.log('');
       console.log('🚀 ═══════════════════════════════════════════');
       console.log('   AI Startup Builder API Server');
