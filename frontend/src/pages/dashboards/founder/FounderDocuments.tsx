@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Upload, FileText, File, Image, Search, Download, Trash2, X, Eye, Scale, CheckCircle2, Clock, ChevronDown, ChevronRight, UploadCloud } from 'lucide-react';
-import { getDocuments, saveDocument, deleteDocument, getStartups } from '../../../utils/localStorageHelper';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Upload, FileText, File, Image, Search, Download, Trash2, X, Eye, Scale, CheckCircle2, Clock, ChevronDown, ChevronRight, UploadCloud, RefreshCw } from 'lucide-react';
+import { getDocuments, saveDocument, deleteDocument, getStartups, getStartupById } from '../../../utils/localStorageHelper';
 import jsPDF from 'jspdf';
 import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx';
 import JSZip from 'jszip';
@@ -30,18 +31,51 @@ const getFileColor = (type: string) => {
 };
 
 const FounderDocuments: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const startupId = searchParams.get('id') || searchParams.get('startupId');
+
   const [documents, setDocuments] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [previewDoc, setPreviewDoc] = useState<any>(null);
   const [downloadDropdown, setDownloadDropdown] = useState<string | null>(null);
   const [expandedSection, setExpandedSection] = useState<'legal' | null>('legal');
+  const [selectedStartup, setSelectedStartup] = useState<any>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const legalFileInputRef = useRef<HTMLInputElement>(null);
+
+  const refreshDocs = useCallback(() => {
+    const allDocs = getDocuments() || [];
+    if (startupId) {
+      setDocuments(allDocs.filter((d: any) => d.startupId === startupId));
+      const info = getStartupById(startupId);
+      setSelectedStartup(info);
+    } else {
+      setDocuments(allDocs);
+      setSelectedStartup(null);
+    }
+  }, [startupId]);
 
   useEffect(() => {
-    setDocuments(getDocuments());
-  }, []);
+    refreshDocs();
+  }, [refreshDocs]);
+
+  // Re-read documents when window gains focus (user navigates back from AI Builder)
+  // or when localStorage changes (another component saved docs)
+  useEffect(() => {
+    const onFocus = () => refreshDocs();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'ai_startup_builder_documents') refreshDocs();
+    };
+    window.addEventListener('focus', onFocus);
+    window.addEventListener('storage', onStorage);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') refreshDocs();
+    });
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, [refreshDocs]);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -50,7 +84,6 @@ const FounderDocuments: React.FC = () => {
   const handleLegalFileChange = (e: React.ChangeEvent<HTMLInputElement>, pendingDoc: any) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      // Update the pending doc entry with the uploaded file
       const updatedDoc = {
         ...pendingDoc,
         fileType: (file.name.split('.').pop() || 'file').toUpperCase(),
@@ -63,7 +96,7 @@ const FounderDocuments: React.FC = () => {
         updatedAt: new Date().toISOString()
       };
       saveDocument(updatedDoc);
-      setDocuments(getDocuments());
+      refreshDocs();
       e.target.value = '';
     }
   };
@@ -71,12 +104,11 @@ const FounderDocuments: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      const startups = getStartups();
-      const startupId = startups.length > 0 ? startups[0].startupId : "startup_default";
+      const targetStartupId = startupId || (getStartups().length > 0 ? getStartups()[0].startupId : "startup_default");
 
       const newDoc = {
         id: `doc_${Date.now()}`,
-        startupId: startupId,
+        startupId: targetStartupId,
         founderId: "founder_demo_user",
         fileName: file.name,
         fileType: (file.name.split('.').pop() || 'file').toUpperCase(),
@@ -90,14 +122,14 @@ const FounderDocuments: React.FC = () => {
       };
 
       saveDocument(newDoc);
-      setDocuments(getDocuments());
+      refreshDocs();
     }
   };
 
   const handleDelete = (id: string) => {
     if (window.confirm("Are you sure you want to delete this document?")) {
       deleteDocument(id);
-      setDocuments(getDocuments());
+      refreshDocs();
     }
   };
 
@@ -162,7 +194,6 @@ const FounderDocuments: React.FC = () => {
     d.documentLabel?.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Split docs into legal pending vs regular
   const legalPendingDocs = filteredDocs.filter(d => d.documentType && d.documentType !== '__checklist__');
   const legalChecklistDocs = filteredDocs.filter(d => d.documentType === '__checklist__');
   const regularDocs = filteredDocs.filter(d => !d.category || d.category !== 'Legal Document');
@@ -174,7 +205,7 @@ const FounderDocuments: React.FC = () => {
   });
 
   const pendingCount = legalPendingDocs.filter(d => d.status === 'Pending').length;
-  const uploadedCount = legalPendingDocs.filter(d => d.status === 'Uploaded').length;
+  const uploadedCount = legalPendingDocs.filter(d => d.status !== 'Pending').length;
 
   return (
     <>
@@ -185,17 +216,23 @@ const FounderDocuments: React.FC = () => {
           onChange={handleFileChange}
           style={{ display: 'none' }}
         />
-        <input
-          type="file"
-          ref={legalFileInputRef}
-          onChange={() => {}}
-          style={{ display: 'none' }}
-        />
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
-            <p className="text-gray-500 mt-1">Upload and manage all your startup documents securely.</p>
+            <p className="text-gray-500 mt-1">
+              {selectedStartup
+                ? `Documents for ${selectedStartup.startupName}`
+                : 'Upload and manage all your startup documents securely.'}
+            </p>
           </div>
+          {legalPendingDocs.length > 0 && (
+            <button
+              onClick={refreshDocs}
+              className="px-3 py-1.5 text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center gap-1 transition-colors"
+            >
+              <RefreshCw size={12} /> Refresh
+            </button>
+          )}
         </div>
 
         {/* Legal Pending Documents Section */}
@@ -434,15 +471,15 @@ const FounderDocuments: React.FC = () => {
                 <div className="bg-white mx-auto max-w-2xl shadow-sm border border-gray-200 rounded-lg p-10">
                   <h2 className="text-2xl font-bold text-gray-800 mb-4 border-b pb-4">Legal Compliance Checklist</h2>
                   <div className="space-y-3">
-                    {previewDoc.aiLegalData.missingDocumentsChecklist?.map((item: any, i: number) => (
+                    {previewDoc.aiLegalData.essentialDocuments?.map((item: any, i: number) => (
                       <div key={i} className="flex items-start gap-2 text-sm text-gray-700 p-2 bg-gray-50 rounded-lg">
                         <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
                           item.status === 'Verified' ? 'bg-green-500' :
                           item.status === 'Uploaded' ? 'bg-blue-500' : 'bg-yellow-500'
                         }`} />
                         <div>
-                          <p className="font-bold">{item.documentName}</p>
-                          <p className="text-xs text-gray-500">{item.whyNeeded} — Issued by: {item.issuedBy}</p>
+                          <p className="font-bold">{item.name}</p>
+                          <p className="text-xs text-gray-500">{item.reason}</p>
                         </div>
                       </div>
                     ))}

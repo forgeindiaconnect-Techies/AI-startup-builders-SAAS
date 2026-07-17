@@ -58,6 +58,13 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
   };
 
   const saveLegalDocsToDocuments = (data: any) => {
+    // First remove any existing legal docs for this startup to avoid duplicates
+    const existingDocs = getDocuments() || [];
+    const cleanedDocs = existingDocs.filter((d: any) =>
+      !(d.startupId === startupData.startupId && d.category === 'Legal Document')
+    );
+    localStorage.setItem('ai_startup_builder_documents', JSON.stringify(cleanedDocs));
+
     const allDocs: any[] = [];
 
     // Save the full checklist reference
