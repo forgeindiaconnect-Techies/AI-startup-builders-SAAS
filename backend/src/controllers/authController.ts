@@ -5,6 +5,7 @@ import { User } from '../models/User.js';
 import { OTP } from '../models/OTP.js';
 import { Subscription } from '../models/Subscription.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
+import { sendOTPEmail } from '../utils/emailService.js';
 
 // Helper to generate JWT
 const generateToken = (id: string, role: string) => {
@@ -39,11 +40,8 @@ export const sendOTP = async (req: Request, res: Response) => {
       expiresAt
     });
 
-    // MOCK EMAIL SENDING: Log to terminal for development
-    console.log(`\n==============================================`);
-    console.log(`📧 MOCK EMAIL SENT TO: ${email}`);
-    console.log(`🔑 OTP CODE: ${otpCode}`);
-    console.log(`==============================================\n`);
+    // Send email using Nodemailer
+    await sendOTPEmail(email.toLowerCase(), otpCode);
 
     res.status(200).json({ success: true, message: 'OTP sent successfully' });
   } catch (error) {
