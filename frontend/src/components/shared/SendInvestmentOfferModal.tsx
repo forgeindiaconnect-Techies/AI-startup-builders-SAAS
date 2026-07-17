@@ -48,8 +48,8 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
     const discountVal = Number(offerData.discount) || 20;
     const expiresVal = Math.max(1, Math.ceil((new Date(offerData.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) || 14;
     const investorIdVal = user?.id || "4";
-    const investorNameVal = offerData.investorName || user?.name || "Capital Ventures";
-    const investorCompVal = offerData.investorCompany || (user as any)?.company || user?.name || "Capital Ventures";
+    const investorNameVal = offerData.investorName || user?.fullName || "Capital Ventures";
+    const investorCompVal = offerData.investorCompany || (user as any)?.company || user?.fullName || "Capital Ventures";
 
     sendOffer({
       startupId: `startup_${Date.now()}`,

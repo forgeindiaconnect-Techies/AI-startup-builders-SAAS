@@ -210,7 +210,7 @@ const DashboardLayout: React.FC = () => {
     isCollapsed,
     onLinkClick: closeMobile,
     onLogout: handleLogout,
-    userName: user?.name ?? '',
+    userName: user?.fullName ?? '',
     userRole: user?.role ?? '',
   };
 
@@ -263,9 +263,9 @@ const DashboardLayout: React.FC = () => {
                 className="flex items-center gap-2 hover:bg-gray-100 rounded-lg px-2 py-1 -mx-2 -my-1 transition-colors cursor-pointer"
               >
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-xs font-black shadow">
-                  {user?.name.charAt(0).toUpperCase()}
+                  {(user?.fullName || '?').charAt(0).toUpperCase()}
                 </div>
-                <span className="hidden sm:block text-sm font-semibold text-gray-700">{user?.name}</span>
+                <span className="hidden sm:block text-sm font-semibold text-gray-700">{user?.fullName}</span>
               </button>
             </div>
           </div>

@@ -41,13 +41,13 @@ const InvestorProfileDetails: React.FC = () => {
         profiles = JSON.parse(stored);
       }
       const myId = user?.id || '';
-      const found = profiles.find(p => p.id === myId || p.id === user?.id || p.investorName === user?.name);
+      const found = profiles.find(p => p.id === myId || p.id === user?.id || p.investorName === user?.fullName);
       if (found) {
         setProfile(found);
       } else {
         // Initialize if not found
         const initial = { ...defaultProfile, id: myId };
-        if (user?.name) initial.investorName = user.name;
+        if (user?.fullName) initial.investorName = user.fullName;
         if (user?.email) initial.email = user.email;
         profiles.push(initial);
         localStorage.setItem('ai_startup_builder_investor_profiles', JSON.stringify(profiles));

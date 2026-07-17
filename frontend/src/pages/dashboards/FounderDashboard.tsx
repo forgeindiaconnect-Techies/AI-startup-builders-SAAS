@@ -26,11 +26,11 @@ const FounderDashboard: React.FC = () => {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-xl font-black shadow-lg shrink-0">
-            {(user?.name || '?').charAt(0).toUpperCase()}
+            {(user?.fullName || '?').charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h1 className="text-xl font-bold text-gray-900">{user?.name}</h1>
+              <h1 className="text-xl font-bold text-gray-900">{user?.fullName}</h1>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-yellow-100 text-yellow-700 border border-yellow-200">
                 {user?.role}
               </span>

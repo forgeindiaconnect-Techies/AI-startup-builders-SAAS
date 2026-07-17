@@ -37,7 +37,7 @@ const MentorReviews: React.FC = () => {
       id: `review_${Date.now()}`,
       startupId: selectedStartup.startupId,
       mentorId: user?.id || '',
-      mentorName: user?.name || '',
+      mentorName: user?.fullName || '',
       rating,
       feedback,
       createdAt: new Date().toISOString()
@@ -56,7 +56,7 @@ const MentorReviews: React.FC = () => {
     addNotification({
       id: Date.now(),
       title: 'New Mentor Review',
-      message: `${user?.name || ''} provided a review for "${updated.startupName}": "${feedback}"`,
+      message: `${user?.fullName || ''} provided a review for "${updated.startupName}": "${feedback}"`,
       type: 'mentor_review',
       time: 'Just now',
       unread: true

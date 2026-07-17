@@ -73,12 +73,12 @@ const MentorProfile: React.FC = () => {
         profiles = JSON.parse(stored);
       }
       const myId = user?.id || '';
-      const found = profiles.find(p => p.id === myId || p.name === user?.name);
+      const found = profiles.find(p => p.id === myId || p.name === user?.fullName);
       if (found) {
         setForm(found);
       } else {
         const initial = { ...defaultMentorProfile, id: myId };
-        if (user?.name) initial.name = user.name;
+        if (user?.fullName) initial.name = user.fullName;
         if (user?.email) initial.email = user.email;
         profiles.push(initial);
         localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(profiles));

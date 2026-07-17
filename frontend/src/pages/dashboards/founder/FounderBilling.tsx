@@ -174,7 +174,7 @@ const FounderBilling: React.FC = () => {
     if (user && targetPlan) {
       submitManualPaymentRequest(
         user.id,
-        user.name,
+        user.fullName,
         targetPlan.name,
         isAnnual ? 'annual' : 'monthly',
         Number(paidAmount),

@@ -84,8 +84,8 @@ const InvestorMarketplace: React.FC = () => {
     const discountVal = Number(offerData.discount) || 20;
     const expiresVal = Number(offerData.expiresInDays) || 14;
     const investorIdVal = user?.id || '';
-    const investorNameVal = user?.name || '';
-    const investorCompVal = (user as any)?.company || user?.name || '';
+    const investorNameVal = user?.fullName || '';
+    const investorCompVal = (user as any)?.company || user?.fullName || '';
 
     sendOffer({
       startupId: selectedStartup.startupId || `startup_${Date.now()}`,

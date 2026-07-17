@@ -70,7 +70,7 @@ const SharedMessages: React.FC = () => {
     if (!input.trim() || !user || !activeConv) return;
     
     const currentId = user.id; 
-    const currentName = user.name;
+    const currentName = user.fullName;
     const currentRole = user.role.charAt(0).toUpperCase() + user.role.slice(1);
     
     if (user.role === 'admin') {

@@ -53,7 +53,7 @@ const InvestorKYC: React.FC = () => {
       } else {
         const parsed: KYCDocument[] = JSON.parse(stored);
         const myId = user?.id || '';
-        const filtered = parsed.filter(d => d.investorId === myId || d.investorId === user?.id || d.investorName === user?.name);
+        const filtered = parsed.filter(d => d.investorId === myId || d.investorId === user?.id || d.investorName === user?.fullName);
         setDocuments(filtered);
       }
     } catch (e) {
@@ -79,7 +79,7 @@ const InvestorKYC: React.FC = () => {
       const newDoc: KYCDocument = {
         id: `kyc_doc_${Date.now()}`,
         investorId: user?.id || '',
-        investorName: user?.name || '',
+        investorName: user?.fullName || '',
         documentType: selectedDocType,
         fileName: selectedFile.name,
         fileData: base64Data,
@@ -112,7 +112,7 @@ const InvestorKYC: React.FC = () => {
           id: Date.now(),
           userId: "admin",
           title: "New KYC Document Uploaded",
-          desc: `${user?.name || ''} uploaded ${selectedDocType} (${selectedFile.name}) for KYC & Accreditation verification.`,
+          desc: `${user?.fullName || ''} uploaded ${selectedDocType} (${selectedFile.name}) for KYC & Accreditation verification.`,
           time: "Just now",
           read: false,
           link: "/dashboard/admin/approvals"
@@ -160,7 +160,7 @@ const InvestorKYC: React.FC = () => {
           id: Date.now(),
           userId: "admin",
           title: "KYC Document Re-uploaded",
-          desc: `${user?.name || ''} re-uploaded their KYC document (${file.name}).`,
+          desc: `${user?.fullName || ''} re-uploaded their KYC document (${file.name}).`,
           time: "Just now",
           read: false,
           link: "/dashboard/admin/approvals"

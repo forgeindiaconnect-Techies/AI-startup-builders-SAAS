@@ -40,8 +40,8 @@ const InvestorPortfolio: React.FC = () => {
     if (user.role === 'admin') return true;
     return (
       o.investorId === user.id ||
-      o.investorName === user.name ||
-      o.investorCompany === user.name ||
+      o.investorName === user.fullName ||
+      o.investorCompany === user.fullName ||
       o.investorId === user.id ||
       user.role === 'investor'
     );
