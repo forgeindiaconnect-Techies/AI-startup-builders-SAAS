@@ -179,6 +179,16 @@ const FounderSignup: React.FC = () => {
 
   const [savedFormData, setSavedFormData] = useState<FounderFormData | null>(null);
 
+  // Phone OTP state
+  const [showPhoneOtp, setShowPhoneOtp] = useState(false);
+  const [phoneOtp, setPhoneOtp] = useState(['', '', '', '', '', '']);
+  const [phoneOtpLoading, setPhoneOtpLoading] = useState(false);
+  const [phoneOtpSending, setPhoneOtpSending] = useState(false);
+  const [phoneOtpError, setPhoneOtpError] = useState('');
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [generatedPhoneOtp, setGeneratedPhoneOtp] = useState('');
+  const [phoneOtpCooldown, setPhoneOtpCooldown] = useState(0);
+
   const form = useForm<FounderFormData>({
     resolver: zodResolver(founderSchema),
     mode: 'onBlur',
@@ -234,6 +244,71 @@ const FounderSignup: React.FC = () => {
       setOtpError('');
       startResendCooldown();
     } catch { /* silent */ }
+  };
+
+  // ── Phone OTP handlers ─────────────────────────────────────────────────────
+  const handleSendPhoneOtp = async () => {
+    const phone = form.getValues('mobile');
+    if (!phone) return;
+    setPhoneOtpSending(true);
+    setPhoneOtpError('');
+    try {
+      const res = await fetch(`${API_URL}/auth/send-phone-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setGeneratedPhoneOtp(json.otp || '');
+        setShowPhoneOtp(true);
+        setPhoneOtp(['', '', '', '', '', '']);
+        // Start cooldown
+        setPhoneOtpCooldown(60);
+        const interval = setInterval(() => {
+          setPhoneOtpCooldown(prev => {
+            if (prev <= 1) { clearInterval(interval); return 0; }
+            return prev - 1;
+          });
+        }, 1000);
+      } else {
+        setPhoneOtpError(json.error || 'Failed to send OTP.');
+      }
+    } catch {
+      setPhoneOtpError('Network error. Please try again.');
+    } finally {
+      setPhoneOtpSending(false);
+    }
+  };
+
+  const handleVerifyPhoneOtp = async () => {
+    const code = phoneOtp.join('');
+    if (code.length !== 6) {
+      setPhoneOtpError('Please enter the complete 6-digit OTP.');
+      return;
+    }
+    setPhoneOtpLoading(true);
+    setPhoneOtpError('');
+    try {
+      const phone = form.getValues('mobile');
+      const res = await fetch(`${API_URL}/auth/verify-phone-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, otp: code }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setPhoneVerified(true);
+        setShowPhoneOtp(false);
+        setPhoneOtp(['', '', '', '', '', '']);
+      } else {
+        setPhoneOtpError(json.error || 'Invalid OTP. Please try again.');
+      }
+    } catch {
+      setPhoneOtpError('Network error. Please try again.');
+    } finally {
+      setPhoneOtpLoading(false);
+    }
   };
 
   const handleVerifyOTP = async () => {
@@ -375,9 +450,36 @@ const FounderSignup: React.FC = () => {
                             <FormItem>
                               <FormLabel>Mobile Number *</FormLabel>
                               <FormControl>
-                                <div className="relative">
-                                  <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                  <Input type="tel" className="pl-9 bg-muted/50" placeholder="+91 9876543210" {...field} />
+                                <div className="flex gap-2">
+                                  <div className="relative flex-1">
+                                    <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                      type="tel"
+                                      className="pl-9 bg-muted/50"
+                                      placeholder="+91 9876543210"
+                                      {...field}
+                                      disabled={phoneVerified}
+                                    />
+                                  </div>
+                                  {phoneVerified ? (
+                                    <span className="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold whitespace-nowrap">
+                                      <CheckCircle2 size={14} /> Verified
+                                    </span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={handleSendPhoneOtp}
+                                      disabled={phoneOtpSending || !form.watch('mobile')}
+                                      className="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-primary text-primary-foreground text-xs font-bold whitespace-nowrap hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                    >
+                                      {phoneOtpSending ? (
+                                        <Loader2 size={14} className="animate-spin" />
+                                      ) : (
+                                        <ShieldCheck size={14} />
+                                      )}
+                                      {phoneOtpSending ? 'Sending...' : 'Verify'}
+                                    </button>
+                                  )}
                                 </div>
                               </FormControl>
                               <FormMessage />
@@ -544,6 +646,70 @@ const FounderSignup: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Phone OTP Popup ─────────────────────────────────────────────── */}
+      {showPhoneOtp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
+          <div className="bg-card rounded-3xl shadow-2xl border p-8 w-full max-w-sm animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-4 ring-4 ring-primary/5">
+                <Phone size={28} className="text-primary" />
+              </div>
+              <h3 className="text-xl font-extrabold mb-1">Verify Your Phone</h3>
+              <p className="text-muted-foreground text-sm mb-1">Enter the 6-digit OTP sent to</p>
+              <p className="font-bold text-foreground text-sm mb-2">{form.getValues('mobile')}</p>
+
+              {/* Demo OTP display */}
+              {generatedPhoneOtp && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl w-full">
+                  <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Demo Mode — Your OTP</p>
+                  <p className="text-2xl font-black text-amber-700 tracking-[0.3em] font-mono">{generatedPhoneOtp}</p>
+                </div>
+              )}
+
+              <div className="w-full mb-4">
+                <OTPInput value={phoneOtp} onChange={setPhoneOtp} />
+              </div>
+
+              {phoneOtpError && (
+                <div className="w-full mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-xl flex items-start gap-2 text-destructive text-sm font-medium">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <span>{phoneOtpError}</span>
+                </div>
+              )}
+
+              <Button
+                onClick={handleVerifyPhoneOtp}
+                disabled={phoneOtpLoading || phoneOtp.join('').length !== 6}
+                className="w-full h-11 text-sm font-bold rounded-xl shadow-md mb-3"
+              >
+                {phoneOtpLoading ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</>
+                ) : (
+                  <><CheckCircle2 className="mr-2 h-4 w-4" /> Verify Phone Number</>
+                )}
+              </Button>
+
+              <p className="text-xs text-muted-foreground">
+                {phoneOtpCooldown > 0 ? (
+                  <span className="opacity-60">Resend in {phoneOtpCooldown}s</span>
+                ) : (
+                  <button onClick={handleSendPhoneOtp} disabled={phoneOtpSending} className="font-bold text-primary hover:underline transition-colors">
+                    Resend OTP
+                  </button>
+                )}
+              </p>
+
+              <button
+                onClick={() => { setShowPhoneOtp(false); setPhoneOtp(['','','','','','']); setPhoneOtpError(''); }}
+                className="mt-4 text-xs text-muted-foreground hover:text-foreground font-medium transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

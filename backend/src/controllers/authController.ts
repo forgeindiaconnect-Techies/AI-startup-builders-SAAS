@@ -31,12 +31,13 @@ export const sendOTP = async (req: Request, res: Response) => {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins expiry
 
     // Delete any existing OTP for this email
-    await OTP.deleteMany({ email: email.toLowerCase() });
+    await OTP.deleteMany({ email: email.toLowerCase(), type: 'email' });
 
     // Save new OTP
     await OTP.create({
       email: email.toLowerCase(),
       otp: otpCode,
+      type: 'email',
       expiresAt
     });
 
@@ -67,6 +68,7 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
     const validOtp = await OTP.findOne({
       email: email.toLowerCase(),
       otp,
+      type: 'email',
       expiresAt: { $gt: new Date() }
     });
 
@@ -159,7 +161,69 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
   }
 };
 
-// 3. Login
+// ── Phone OTP ──────────────────────────────────────────────────────────────────
+
+// 3. Send Phone OTP (demo mode: returns OTP in response)
+export const sendPhoneOTP = async (req: Request, res: Response) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ success: false, error: 'Phone number is required' });
+
+    // Generate 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+    // Delete any existing phone OTP for this number
+    await OTP.deleteMany({ phone, type: 'phone' });
+
+    // Save new OTP
+    await OTP.create({ phone, otp: otpCode, type: 'phone', expiresAt });
+
+    // In production, send via SMS service (Twilio, etc.)
+    // For demo, return OTP in response so frontend can display it
+    console.log(`📱 Phone OTP for ${phone}: ${otpCode}`);
+
+    res.status(200).json({
+      success: true,
+      message: 'OTP sent to your phone number',
+      otp: otpCode, // demo mode — remove in production with real SMS
+    });
+  } catch (error) {
+    console.error('Error in sendPhoneOTP:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
+// 4. Verify Phone OTP
+export const verifyPhoneOTP = async (req: Request, res: Response) => {
+  try {
+    const { phone, otp } = req.body;
+    if (!phone || !otp) {
+      return res.status(400).json({ success: false, error: 'Phone and OTP are required' });
+    }
+
+    const validOtp = await OTP.findOne({
+      phone,
+      otp,
+      type: 'phone',
+      expiresAt: { $gt: new Date() }
+    });
+
+    if (!validOtp) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
+    }
+
+    // Delete the used OTP
+    await OTP.deleteOne({ _id: validOtp._id });
+
+    res.status(200).json({ success: true, message: 'Phone number verified successfully' });
+  } catch (error) {
+    console.error('Error in verifyPhoneOTP:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
+// 5. Login
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
