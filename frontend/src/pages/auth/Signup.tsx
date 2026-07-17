@@ -5,15 +5,13 @@ import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Rocket, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight,
-  Loader2, ShieldCheck, Mail, User, Phone, Lock, Briefcase,
-  Building2, TrendingUp, Globe, Check
+  Loader2, ShieldCheck, Mail, User, Phone, Lock, Check
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { API_URL } from '../../config/api';
 
@@ -27,23 +25,12 @@ const founderSchema = z.object({
                    .regex(/[0-9]/, 'Must contain at least one number')
                    .regex(/[^A-Za-z0-9]/, 'Must contain at least one special character'),
   confirmPassword: z.string(),
-  currentRole:     z.string().min(1, 'Please select your current role'),
-  startupName:     z.string().optional(),
-  startupStage:    z.string().min(1, 'Please select your startup stage'),
-  industry:        z.string().min(1, 'Please select your industry'),
-  agreedToTerms:   z.boolean().refine(val => val === true, 'You must agree to the Terms & Conditions'),
-  agreedToPrivacy: z.boolean().refine(val => val === true, 'You must agree to the Privacy Policy'),
 }).refine(data => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],
 });
 
 type FounderFormData = z.infer<typeof founderSchema>;
-
-// ── Constants ──────────────────────────────────────────────────────────────────
-const CURRENT_ROLES = ['Student', 'Entrepreneur', 'Founder', 'Business Owner', 'Employee', 'Freelancer', 'Other'];
-const STARTUP_STAGES = ['Idea Stage', 'Validation', 'MVP', 'Early Revenue', 'Scaling'];
-const INDUSTRIES = ['AI', 'SaaS', 'FinTech', 'EdTech', 'Healthcare', 'Agriculture', 'E-commerce', 'Cybersecurity', 'Manufacturing', 'Other'];
 
 // ── Password Strength ──────────────────────────────────────────────────────────
 const getPasswordStrength = (password: string) => {
@@ -195,10 +182,6 @@ const FounderSignup: React.FC = () => {
   const form = useForm<FounderFormData>({
     resolver: zodResolver(founderSchema),
     mode: 'onBlur',
-    defaultValues: {
-      agreedToTerms: false,
-      agreedToPrivacy: false,
-    }
   });
 
   const passwordValue = form.watch('password', '');
@@ -274,11 +257,6 @@ const FounderSignup: React.FC = () => {
           role:            'founder',
           fullName:        savedFormData.fullName,
           mobile:          savedFormData.mobile,
-          currentRole:     savedFormData.currentRole,
-          startupName:     savedFormData.startupName,
-          startupStage:    savedFormData.startupStage,
-          industry:        savedFormData.industry,
-          agreedToTerms:   savedFormData.agreedToTerms,
         }),
       });
       const json = await res.json();
@@ -469,161 +447,12 @@ const FounderSignup: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Professional Information */}
-                    <div>
-                      <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
-                        <span className="w-4 h-0.5 bg-primary rounded-full inline-block" />
-                        Professional Information
-                      </p>
-                      <FormField control={form.control} name="currentRole" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Current Role *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <div className="relative">
-                                <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
-                                <SelectTrigger className="pl-9 bg-muted/50">
-                                  <SelectValue placeholder="Select your role" />
-                                </SelectTrigger>
-                              </div>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectGroup>
-                                {CURRENT_ROLES.map(role => (
-                                  <SelectItem key={role} value={role}>{role}</SelectItem>
-                                ))}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </div>
-
-                    {/* Startup Information */}
-                    <div>
-                      <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3 flex items-center gap-2">
-                        <span className="w-4 h-0.5 bg-primary rounded-full inline-block" />
-                        Startup Information
-                      </p>
-                      <div className="space-y-4">
-                        <FormField control={form.control} name="startupName" render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Startup Name (Optional)</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input className="pl-9 bg-muted/50" placeholder="e.g. TechNova AI" {...field} />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )} />
-                        
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <FormField control={form.control} name="startupStage" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Startup Stage *</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <div className="relative">
-                                    <TrendingUp className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
-                                    <SelectTrigger className="pl-9 bg-muted/50">
-                                      <SelectValue placeholder="Select stage" />
-                                    </SelectTrigger>
-                                  </div>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectGroup>
-                                    {STARTUP_STAGES.map(stage => (
-                                      <SelectItem key={stage} value={stage}>{stage}</SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                          
-                          <FormField control={form.control} name="industry" render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Industry *</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <div className="relative">
-                                    <Globe className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground z-10" />
-                                    <SelectTrigger className="pl-9 bg-muted/50">
-                                      <SelectValue placeholder="Select industry" />
-                                    </SelectTrigger>
-                                  </div>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectGroup>
-                                    {INDUSTRIES.map(industry => (
-                                      <SelectItem key={industry} value={industry}>{industry}</SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Agreements */}
-                    <div className="space-y-3">
-                      <FormField control={form.control} name="agreedToTerms" render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <input type="checkbox" checked={field.value} onChange={field.onChange} className="mt-1 h-4 w-4 rounded border-primary text-primary focus:ring-primary" />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="text-sm font-normal text-muted-foreground">
-                              I agree to the <Link to="/terms-of-service" className="font-semibold text-primary hover:underline">Terms & Conditions</Link>
-                            </FormLabel>
-                            <FormMessage />
-                          </div>
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="agreedToPrivacy" render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <input type="checkbox" checked={field.value} onChange={field.onChange} className="mt-1 h-4 w-4 rounded border-primary text-primary focus:ring-primary" />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="text-sm font-normal text-muted-foreground">
-                              I agree to the <Link to="/privacy-policy" className="font-semibold text-primary hover:underline">Privacy Policy</Link>
-                            </FormLabel>
-                            <FormMessage />
-                          </div>
-                        </FormItem>
-                      )} />
-                    </div>
-
                     <Button type="submit" className="w-full h-12 text-base font-bold rounded-xl shadow-md" disabled={isSubmitting}>
                       {isSubmitting ? (
                         <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending OTP...</>
                       ) : (
                         <>Create Founder Account <ArrowRight className="ml-2 h-4 w-4" /></>
                       )}
-                    </Button>
-
-                    <div className="relative flex items-center">
-                      <div className="flex-grow border-t border-border" />
-                      <span className="mx-4 text-xs text-muted-foreground font-medium uppercase tracking-widest">or</span>
-                      <div className="flex-grow border-t border-border" />
-                    </div>
-
-                    <Button type="button" variant="outline" className="w-full h-11 text-sm font-semibold rounded-xl bg-background hover:bg-muted/50 border-2">
-                      <svg width="18" height="18" viewBox="0 0 48 48" className="mr-2">
-                        <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" />
-                        <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" />
-                        <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" />
-                        <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" />
-                      </svg>
-                      Continue with Google
                     </Button>
 
                     <p className="text-center text-sm text-muted-foreground font-medium">
