@@ -644,6 +644,28 @@ export const getDocuments = () => {
   }
 };
 
+export const migrateDocumentApplyLinks = () => {
+  const docs = getDocuments();
+  let changed = false;
+  const updated = docs.map((doc: any) => {
+    if (doc.documentLabel && !doc.applyLink) {
+      const allDocs = [
+        ...Object.values(CATEGORY_DOCUMENT_MAP).flatMap((cat: any) => [...cat.essential, ...cat.optional]),
+      ];
+      const match = allDocs.find((d: any) => d.name === doc.documentLabel);
+      if (match && match.applyLink) {
+        changed = true;
+        return { ...doc, applyLink: match.applyLink };
+      }
+    }
+    return doc;
+  });
+  if (changed) {
+    localStorage.setItem('ai_startup_builder_documents', JSON.stringify(updated));
+  }
+  return updated;
+};
+
 export const saveDocument = (document: any) => {
   const current = getDocuments();
   const updated = [document, ...current];

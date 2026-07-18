@@ -10,6 +10,7 @@ import {
 import {
   getDocuments, saveDocument, deleteDocument,
   getStartups, getStartupById, detectStartupCategory, generateCategoryDocuments,
+  migrateDocumentApplyLinks,
 } from '../../../utils/localStorageHelper';
 import jsPDF from 'jspdf';
 import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx';
@@ -85,6 +86,7 @@ const FounderDocuments: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refreshDocs = useCallback(() => {
+    migrateDocumentApplyLinks();
     const allStartupsList = getStartups() || [];
     setAllStartups(allStartupsList);
     const allDocs = getDocuments() || [];
