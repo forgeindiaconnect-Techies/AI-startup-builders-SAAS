@@ -78,6 +78,7 @@ import AdminReports          from './pages/dashboards/admin/AdminReports';
 import AdminBilling          from './pages/dashboards/admin/AdminBilling';
 import AdminSettings         from './pages/dashboards/admin/AdminSettings';
 import AdminManageVideos     from './pages/dashboards/admin/AdminManageVideos';
+import AdminDocumentVerification from './pages/dashboards/admin/AdminDocumentVerification';
 
 import SharedMessages      from './pages/dashboards/founder/FounderMessages';
 import SharedNotifications from './pages/dashboards/founder/FounderNotifications';
@@ -167,6 +168,7 @@ function App() {
                     <Route path="sub-payments"       element={<AdminSubPayments />} />
                     <Route path="analytics"          element={<AdminAnalytics />} />
                     <Route path="platform-settings"  element={<AdminPlatformSettings />} />
+                    <Route path="document-verification" element={<AdminDocumentVerification />} />
                     <Route path="inbox"              element={<SharedInbox />} />
                     {/* Legacy / Direct paths */}
                     <Route path="mentor-approval"    element={<AdminMentorApproval />} />

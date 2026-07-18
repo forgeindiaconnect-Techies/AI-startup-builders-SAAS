@@ -75,6 +75,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Manage Startups',         icon: Rocket,          path: '/dashboard/admin/startups' },
         { name: 'Manage Videos',           icon: Film,            path: '/dashboard/admin/manage-videos' },
         { name: 'Approvals',               icon: ShieldCheck,     path: '/dashboard/admin/approvals-hub' },
+        { name: 'Doc Verification',        icon: File,            path: '/dashboard/admin/document-verification' },
         { name: 'Subscriptions & Payments',icon: CreditCard,      path: '/dashboard/admin/sub-payments' },
         { name: 'AI Analytics',            icon: BarChart2,       path: '/dashboard/admin/analytics' },
         { name: 'Platform Settings',       icon: Settings,        path: '/dashboard/admin/platform-settings' },

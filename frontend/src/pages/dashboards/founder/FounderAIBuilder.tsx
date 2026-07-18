@@ -9,7 +9,7 @@ import FounderMarketResearch from './FounderMarketResearch';
 import FounderReports from './FounderReports';
 import FounderAIChat from './FounderAIChat';
 import FounderLegalDocs from './FounderLegalDocs';
-import { getStartups, getStartupById, updateStartup, generateStartupOutput, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument } from '../../../utils/localStorageHelper';
+import { getStartups, getStartupById, updateStartup, generateStartupOutput, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument, detectStartupCategory, generateCategoryDocuments } from '../../../utils/localStorageHelper';
 
 const tabs = [
   { id: 'idea',     label: 'AI Idea Generator',    icon: Lightbulb,    component: FounderIdeaGenerator },
@@ -82,32 +82,18 @@ const FounderAIBuilder: React.FC = () => {
         
         setStartupData(updatedStartup);
         
-        // Generate automatic documents all in PDF initially
-        const generatedDocs = [
-          { category: 'AI Report', type: 'PDF' },
-          { category: 'Business Plan', type: 'PDF' },
-          { category: 'Pitch Deck', type: 'PDF' },
-          { category: 'Market Research', type: 'PDF' },
-          { category: 'Roadmap', type: 'PDF' },
-          { category: 'Full Package', type: 'PDF' }
-        ];
+        // Generate category-specific documents based on business type
+        const existingDocs = getDocuments().filter((d: any) => d.startupId === startupId);
+        existingDocs.forEach((doc: any) => deleteDocument(doc.id));
 
-        generatedDocs.forEach(doc => {
-          saveDocument({
-            id: `doc_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-            startupId: startupId,
-            founderId: startupData.founderId || "founder_demo_user",
-            fileName: `${startupData.startupName.replace(/\s+/g, '_')}_${doc.category.replace(/\s+/g, '_')}.${doc.type.toLowerCase()}`,
-            fileType: doc.type,
-            fileSize: `${(Math.random() * 2 + 0.5).toFixed(1)} MB`,
-            fileData: "base64_or_blob_url",
-            category: doc.category,
-            status: "private",
-            sharedWith: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          });
-        });
+        const startupCategory = detectStartupCategory(startupData);
+        const categoryDocs = generateCategoryDocuments(
+          startupId,
+          startupData.founderId || 'founder_demo_user',
+          startupData.startupName,
+          startupCategory
+        );
+        categoryDocs.forEach(doc => saveDocument(doc));
 
         // Dispatch notification
         addNotification({
@@ -134,37 +120,7 @@ const FounderAIBuilder: React.FC = () => {
     setExporting(true);
     setShowExportMenu(false);
     
-    // Simulate generation time
     setTimeout(() => {
-      // Delete existing documents for this startup to replace them with new format
-      const existingDocs = getDocuments().filter((d: any) => d.startupId === startupId);
-      existingDocs.forEach((doc: any) => {
-        deleteDocument(doc.id);
-      });
-
-      const categories = ['AI Report', 'Business Plan', 'Pitch Deck', 'Market Research', 'Roadmap', 'Full Package'];
-      
-      categories.forEach(category => {
-        const fileName = `${startupData.startupName.replace(/\s+/g, '_')}_${category.replace(/\s+/g, '_')}.${fileType.toLowerCase()}`;
-        
-        const newDoc = {
-          id: `doc_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-          startupId: startupId,
-          founderId: startupData.founderId || "founder_demo_user",
-          fileName: fileName,
-          fileType: fileType,
-          fileSize: `${(Math.random() * 2 + 0.5).toFixed(1)} MB`,
-          fileData: "base64_or_blob_url",
-          category: category,
-          status: "private",
-          sharedWith: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        
-        saveDocument(newDoc);
-      });
-      
       addNotification({
         id: `notification_${Date.now()}`,
         userId: startupData.founderId || "founder_demo_user",
@@ -178,7 +134,7 @@ const FounderAIBuilder: React.FC = () => {
       
       setExporting(false);
       window.alert(`All documents successfully exported as ${fileType}!`);
-    }, 2000);
+    }, 1500);
   };
 
   const ActiveComponent = tabs.find(t => t.id === active)!.component;

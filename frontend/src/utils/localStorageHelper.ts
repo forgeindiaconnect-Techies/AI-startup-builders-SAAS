@@ -76,37 +76,290 @@ export const addNotification = (notification: any) => {
 export const detectStartupCategory = (startup: any): string => {
   const text = (startup.startupIdea || startup.startupName || '').toLowerCase();
 
-  if (/restaurant|cafe|coffee|tea|snacks|bakery|food|cook|kitchen|dining|bar|pub|pizza|burger|bistro|hotel|salon|spa|gym|fitness|clinic|hospital|pharmacy/.test(text)) {
-    return 'Food / Cafe / Restaurant';
+  if (/restaurant|cafe|coffee|tea|snack|bakery|food|cook|kitchen|dining|bar |pub |pizza|burger|bistro|delivery food|food deliver|catering|mess |tiffin|juice|smoothie|ice cream|sweet|confection|dessert|brew|roast|grill|BBQ|tandoor|shawarma|momos|noodle|rice|curry|spice|masala|organic food|health food|pet food|packaged food|food truck|food stall|food cart|cloud kitchen|dark kitchen|home kitchen|tiffin service|canteen|cafeteria/.test(text)) {
+    return 'Food / Restaurant / Cafe';
   }
-  if (/saas|software|ai|app|platform|cloud|api|data|analytics|automation|machine learning|deep learning|blockchain|web3|iot|cyber/.test(text)) {
+  if (/saas|software|ai |artificial intelligence|machine learning|deep learning|app |application|platform|cloud|api |data |analytics|automation|blockchain|web3|iot|cyber|mobile app|web app|web development|mobile development|devops|fintech platform|edtech platform|healthtech|martech|hrtech|cleantech|gam|vr |ar |virtual reality|augmented reality|chatbot|chat bot|saas platform|erp|crm|cms|lms platform|project management|team collaboration|productivity tool|no code|low code|no-code|low-code|open source|developer tool|api platform/.test(text)) {
     return 'SaaS / Software / AI';
   }
-  if (/health|medical|doctor|nurse|dental|therapy|wellness|telemedicine|diagnostic/.test(text)) {
+  if (/hospital|clinic|health|medical|doctor|nurse|dental|therapy|wellness|telemedicine|diagnostic|pharma|drug|medicine|ayurved|yoga|fitness|gym|mental health|counsel|psych|nutrition|diet|supplement|ambulance|health care|healthcare|biotech|medtech|surgical|patholog|radiolog|blood bank|organ|transplant|nursing|elder care|senior care|child care|pediatr/.test(text)) {
     return 'Healthcare / Clinic / Hospital';
   }
-  if (/ecommerce|e-commerce|online store|marketplace|shopping|retail online|dropship/.test(text)) {
+  if (/ecommerce|e-commerce|online store|marketplace|shopping|retail online|dropship|online shop|online sell|online buy|product listing|multi vendor|vendor platform|buy and sell|auction|b2c marketplace|b2b marketplace|grocery delivery|fashion store|electronics store/.test(text)) {
     return 'E-commerce';
   }
-  if (/education|training|learning|school|college|course|tutor|academy|edtech|lms/.test(text)) {
+  if (/education|training|learning|school|college|course|tutor|academy|edtech|lms|coaching|institute|university|exam|test prep|competitive exam|skill development|vocational|certification|bootcamp|workshop|seminar|webinar|e-learning|online class|online teach|student|classroom/.test(text)) {
     return 'Education / Training';
   }
-  if (/manufactur|factory|production|supply chain|warehouse|logistics|industrial/.test(text)) {
+  if (/manufactur|factory|production|supply chain|warehouse|industrial|assembly|fabricat|textile|garment|plastic|metal|steel|cement|chemical|pharmaceutical|auto part|component|raw material|plant |mill |packaging|label|batch/.test(text)) {
     return 'Manufacturing';
   }
-  if (/retail|shop|store|boutique|supermarket|grocery|convenience/.test(text)) {
+  if (/retail |shop |store |boutique|supermarket|grocery|convenience store|showroom|outlet|franchise|department store|general store|kirana|mom and pop|local shop|brick and mortar|physical store|retail business|retail shop|retail store/.test(text)) {
     return 'Retail / Local Shop';
   }
-  if (/transport|delivery|ride|cab|bike|logistics|fleet|shipping|courier/.test(text)) {
+  if (/transport|delivery|ride|cab |bike |logistics|fleet|shipping|courier|trucking|freight|moving|relocation|pool|carpool|taxi|auto rickshaw|two wheeler|three wheeler|last mile|first mile|warehousing|cold chain|supply|dispatch/.test(text)) {
     return 'Transport / Delivery';
   }
-  if (/finance|fintech|banking|payment|invest|insur|loan|credit|wealth|crypto/.test(text)) {
+  if (/finance|fintech|banking|payment|invest|insur|loan|credit|wealth|crypto|lending|neobank|digital bank|upi|wallet|fund|mutual fund|stock|share|trading|forex|remittance|collection|recovery|audit|accounting|tax |gst |ca service|bookkeep|payroll/.test(text)) {
     return 'Finance / FinTech';
   }
-  if (/service|consulting|agency|freelanc|coaching|cleaning|maintenance|repair/.test(text)) {
+  if (/service|consulting|agency|freelanc|cleaning|maintenance|repair|plumb|electric|architect|interior|landscap|Event|wedding|photography|videography|beauty|salon|spa |parlor|tailor|laundry|dry clean|pest control|security|guard|packers|movers|travel|tour|hotel|resort|lodg|guest house|homestay|hostel|real estate|property|broker|co working|cowork|storage/.test(text)) {
     return 'Service Business';
   }
   return 'Other';
+};
+
+export const CATEGORY_DOCUMENT_MAP: Record<string, { essential: Array<{ name: string; reason: string; applyLink?: string }>; optional: Array<{ name: string; reason: string; applyLink?: string }> }> = {
+  'Food / Restaurant / Cafe': {
+    essential: [
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'FSSAI Registration / License', reason: 'Mandatory food safety license for any business involved in food preparation, processing, or distribution.', applyLink: 'https://foscos.fssai.gov.in/' },
+      { name: 'Shop & Establishment Registration', reason: 'Required under state law to legally operate a commercial establishment.', applyLink: '' },
+      { name: 'Trade License', reason: 'Local municipal authority permission to carry on a specific trade or business.', applyLink: '' },
+      { name: 'GST Registration', reason: 'Required if turnover exceeds the threshold or for inter-state sales and input tax credit.', applyLink: 'https://www.gst.gov.in/' },
+      { name: 'Rent Agreement / NOC from Owner', reason: 'Proof of premises for FSSAI, GST, and Shop & Establishment registration.', applyLink: '' },
+      { name: 'Business Bank Account Proof', reason: 'Current account in the business name for transactions, GST, and compliance.', applyLink: '' },
+    ],
+    optional: [
+      { name: 'Udyam / MSME Registration', reason: 'Benefits under MSME schemes including subsidized loans and tax relief.', applyLink: 'https://udyamregistration.gov.in/' },
+      { name: 'Trademark Certificate', reason: 'Protect your brand name, logo, and tagline from competitors.', applyLink: 'https://ipindiaonline.gov.in/' },
+      { name: 'Fire Safety Certificate', reason: 'Required by municipal authority for restaurants and dining establishments.', applyLink: '' },
+      { name: 'Pollution Certificate', reason: 'Required if your business generates waste or emissions.', applyLink: '' },
+      { name: 'Health / Trade Insurance', reason: 'Protects against liability, property damage, and employee injuries.', applyLink: '' },
+    ],
+  },
+  'SaaS / Software / AI': {
+    essential: [
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'Company Incorporation ( Pvt Ltd / LLP )', reason: 'Legal entity registration for raised funding, signing contracts, and limiting liability.', applyLink: 'https://www.mca.gov.in/' },
+      { name: 'GST Registration', reason: 'Required for SaaS billing, interstate transactions, and input tax credit.', applyLink: 'https://www.gst.gov.in/' },
+      { name: 'Trademark Registration', reason: 'Protect your product name, logo, and brand from competitors in the tech space.', applyLink: 'https://ipindiaonline.gov.in/' },
+      { name: 'Business Bank Account', reason: 'Current account in the company name for investor funds, subscriptions, and vendor payments.', applyLink: '' },
+      { name: 'Terms of Service & Privacy Policy', reason: 'Legally required for any SaaS product handling user data. Needed for app stores and payment gateways.', applyLink: '' },
+      { name: 'SOC2 / Data Protection Compliance', reason: 'Required for enterprise sales and handling sensitive customer data.', applyLink: '' },
+    ],
+    optional: [
+      { name: 'Udyam / MSME Registration', reason: 'Benefits under MSME schemes including subsidized loans and tax relief.', applyLink: 'https://udyamregistration.gov.in/' },
+      { name: 'Startup India Registration', reason: 'Tax holidays, self-certification for labor laws, and easier IP protection.', applyLink: 'https://www.startupindia.gov.in/' },
+      { name: 'ISO Certification', reason: 'Quality management certification that builds trust with enterprise clients.', applyLink: '' },
+      { name: 'Copyright Registration', reason: 'Protect your source code and software from unauthorized copying.', applyLink: 'https://copyright.gov.in/' },
+    ],
+  },
+  'Healthcare / Clinic / Hospital': {
+    essential: [
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'Clinical Establishment Registration', reason: 'Mandatory registration under the Clinical Establishments Act for healthcare facilities.', applyLink: '' },
+      { name: 'Medical Council Registration', reason: 'Practitioners must be registered with the State or National Medical Council.', applyLink: '' },
+      { name: 'Drug License', reason: 'Required if pharmacy or dispensing medicines is part of the healthcare service.', applyLink: '' },
+      { name: 'GST Registration', reason: 'Required if turnover exceeds the threshold or for inter-state services.', applyLink: 'https://www.gst.gov.in/' },
+      { name: 'Biomedical Waste Management Authorization', reason: 'Mandatory for healthcare facilities generating biomedical waste.', applyLink: '' },
+      { name: 'Fire Safety Certificate', reason: 'Required by municipal authority for healthcare establishments.', applyLink: '' },
+    ],
+    optional: [
+      { name: 'NABH Accreditation', reason: 'National Accreditation Board for Hospitals - builds trust and quality assurance.', applyLink: '' },
+      { name: 'Health Insurance Empanelment', reason: 'Empanelment with TPA and insurance companies for patient billing.', applyLink: '' },
+      { name: 'Trademark Certificate', reason: 'Protect your healthcare brand name and logo.', applyLink: 'https://ipindiaonline.gov.in/' },
+      { name: 'Udyam / MSME Registration', reason: 'Benefits under MSME schemes.', applyLink: 'https://udyamregistration.gov.in/' },
+    ],
+  },
+  'E-commerce': {
+    essential: [
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'Company / LLP Incorporation', reason: 'Legal entity for raised funding, vendor agreements, and payment gateway integration.', applyLink: 'https://www.mca.gov.in/' },
+      { name: 'GST Registration', reason: 'Mandatory for e-commerce operators and sellers on e-commerce platforms.', applyLink: 'https://www.gst.gov.in/' },
+      { name: 'Shop & Establishment Registration', reason: 'Required under state law for commercial operations.', applyLink: '' },
+      { name: 'Trademark Registration', reason: 'Protect your marketplace brand name and logo.', applyLink: 'https://ipindiaonline.gov.in/' },
+      { name: 'Business Bank Account', reason: 'Current account for vendor settlements, refunds, and operations.', applyLink: '' },
+      { name: 'Terms of Service & Privacy Policy', reason: 'Legally required for any platform collecting user data and processing payments.', applyLink: '' },
+    ],
+    optional: [
+      { name: 'Udyam / MSME Registration', reason: 'Benefits under MSME schemes.', applyLink: 'https://udyamregistration.gov.in/' },
+      { name: 'FSSAI License (if selling food)', reason: 'Required if your marketplace sells food products.', applyLink: 'https://foscos.fssai.gov.in/' },
+      { name: 'Consumer Protection Compliance', reason: 'E-commerce rules require grievance officer and consumer complaint mechanisms.', applyLink: '' },
+      { name: 'ISO Certification', reason: 'Builds trust with vendors and customers.', applyLink: '' },
+    ],
+  },
+  'Education / Training': {
+    essential: [
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'Society / Trust / Company Incorporation', reason: 'Legal entity registration for educational institutions and EdTech platforms.', applyLink: 'https://www.mca.gov.in/' },
+      { name: 'GST Registration', reason: 'Required for course fees billing and interstate transactions.', applyLink: 'https://www.gst.gov.in/' },
+      { name: 'Udyam / MSME Registration', reason: 'Benefits under MSME schemes for educational ventures.', applyLink: 'https://udyamregistration.gov.in/' },
+      { name: 'Trademark Registration', reason: 'Protect your institution name, brand, and course names.', applyLink: 'https://ipindiaonline.gov.in/' },
+      { name: 'Business Bank Account', reason: 'Current account for fee collection, payroll, and operations.', applyLink: '' },
+      { name: 'Terms of Service & Privacy Policy', reason: 'Required for student data protection and platform terms.', applyLink: '' },
+    ],
+    optional: [
+      { name: 'Accreditation / Affiliation', reason: 'UGC, AICTE, or board affiliation for recognized certifications.', applyLink: '' },
+      { name: 'ISO Certification', reason: 'Quality management certification for educational services.', applyLink: '' },
+      { name: 'Fire Safety Certificate', reason: 'Required for physical training centers and classrooms.', applyLink: '' },
+    ],
+  },
+  'Manufacturing': {
+    essential: [
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'Company / LLP Incorporation', reason: 'Legal entity for industrial operations, vendor contracts, and raised funding.', applyLink: 'https://www.mca.gov.in/' },
+      { name: 'GST Registration', reason: 'Mandatory for manufacturers for input tax credit and inter-state sales.', applyLink: 'https://www.gst.gov.in/' },
+      { name: 'Factory License', reason: 'Required from the State Factory Inspectorate for operating a manufacturing unit.', applyLink: '' },
+      { name: 'Pollution Control Board Consent', reason: 'CTO (Consent to Operate) and CTE (Consent to Establish) from State PCB.', applyLink: '' },
+      { name: 'Trade License', reason: 'Local municipal authority permission for commercial operations.', applyLink: '' },
+      { name: 'Business Bank Account', reason: 'Current account for raw material purchases, payroll, and operations.', applyLink: '' },
+    ],
+    optional: [
+      { name: 'Udyam / MSME Registration', reason: 'Benefits under MSME schemes for manufacturing.', applyLink: 'https://udyamregistration.gov.in/' },
+      { name: 'ISO / BIS Certification', reason: 'Quality standards certification required for many product categories.', applyLink: '' },
+      { name: 'Trademark Registration', reason: 'Protect your product brand and company name.', applyLink: 'https://ipindiaonline.gov.in/' },
+      { name: 'ESI / PF Registration', reason: 'Employee state insurance and provident fund for workers.', applyLink: '' },
+      { name: 'Fire Safety Certificate', reason: 'Required for manufacturing facilities.', applyLink: '' },
+    ],
+  },
+  'Retail / Local Shop': {
+    essential: [
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'Shop & Establishment Registration', reason: 'Required under state law to legally operate a retail establishment.', applyLink: '' },
+      { name: 'Trade License', reason: 'Local municipal authority permission to carry on retail trade.', applyLink: '' },
+      { name: 'GST Registration', reason: 'Required if turnover exceeds the threshold or for purchasing from GST-registered suppliers.', applyLink: 'https://www.gst.gov.in/' },
+      { name: 'Rent Agreement / NOC from Owner', reason: 'Proof of premises for Shop & Establishment, GST, and bank account.', applyLink: '' },
+      { name: 'Business Bank Account', reason: 'Current account for daily operations, supplier payments, and POS settlements.', applyLink: '' },
+      { name: 'FSSAI License (if selling food items)', reason: 'Required if your retail shop sells packaged or unpacked food items.', applyLink: 'https://foscos.fssai.gov.in/' },
+    ],
+    optional: [
+      { name: 'Udyam / MSME Registration', reason: 'Benefits under MSME schemes for retail businesses.', applyLink: 'https://udyamregistration.gov.in/' },
+      { name: 'Trademark Registration', reason: 'Protect your shop brand name and logo.', applyLink: 'https://ipindiaonline.gov.in/' },
+      { name: 'Fire Safety Certificate', reason: 'Required for larger retail establishments.', applyLink: '' },
+      { name: 'Insurance', reason: 'Property and liability insurance for your retail space.', applyLink: '' },
+    ],
+  },
+  'Transport / Delivery': {
+    essential: [
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'Company / LLP Incorporation', reason: 'Legal entity for transport operations, fleet management, and raised funding.', applyLink: 'https://www.mca.gov.in/' },
+      { name: 'GST Registration', reason: 'Required for transport services billing and interstate operations.', applyLink: 'https://www.gst.gov.in/' },
+      { name: 'Motor Vehicle Act Permits', reason: 'Commercial vehicle permits required for transport and delivery operations.', applyLink: '' },
+      { name: 'Shop & Establishment Registration', reason: 'Required for office and warehouse operations.', applyLink: '' },
+      { name: 'Trade License', reason: 'Local municipal authority permission for transport operations.', applyLink: '' },
+      { name: 'Business Bank Account', reason: 'Current account for fleet expenses, fuel, and operations.', applyLink: '' },
+    ],
+    optional: [
+      { name: 'Udyam / MSME Registration', reason: 'Benefits under MSME schemes.', applyLink: 'https://udyamregistration.gov.in/' },
+      { name: 'Insurance (Vehicle & Cargo)', reason: 'Mandatory and recommended for fleet vehicles and cargo.', applyLink: '' },
+      { name: 'Trademark Registration', reason: 'Protect your delivery brand name and logo.', applyLink: 'https://ipindiaonline.gov.in/' },
+      { name: 'Warehouse License', reason: 'Required if operating storage or fulfillment centers.', applyLink: '' },
+    ],
+  },
+  'Finance / FinTech': {
+    essential: [
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'Company Incorporation ( Pvt Ltd )', reason: 'Mandatory for fintech companies. Required for RBI/SEBI compliance.', applyLink: 'https://www.mca.gov.in/' },
+      { name: 'GST Registration', reason: 'Required for financial services billing.', applyLink: 'https://www.gst.gov.in/' },
+      { name: 'RBI / SEBI / IRDAI Approval', reason: 'Regulatory approval required based on financial service type (lending, insurance, securities).', applyLink: '' },
+      { name: 'Payment Aggregator / Gateway License', reason: 'Required for collecting payments from users on behalf of merchants.', applyLink: '' },
+      { name: 'Trademark Registration', reason: 'Protect your fintech brand name and product names.', applyLink: 'https://ipindiaonline.gov.in/' },
+      { name: 'Terms of Service & Privacy Policy', reason: 'Legally required for financial services handling sensitive user data.', applyLink: '' },
+    ],
+    optional: [
+      { name: 'Udyam / MSME Registration', reason: 'Benefits under MSME schemes.', applyLink: 'https://udyamregistration.gov.in/' },
+      { name: 'ISO 27001 Certification', reason: 'Information security management certification - builds trust with financial regulators.', applyLink: '' },
+      { name: 'Data Protection Compliance', reason: 'DPDP Act compliance for handling financial data.', applyLink: '' },
+      { name: 'NPCI Certification (if UPI)', reason: 'Required for UPI-based payment services.', applyLink: '' },
+    ],
+  },
+  'Service Business': {
+    essential: [
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'Shop & Establishment Registration', reason: 'Required under state law for service business operations.', applyLink: '' },
+      { name: 'Trade License', reason: 'Local municipal authority permission for service trade.', applyLink: '' },
+      { name: 'GST Registration', reason: 'Required if turnover exceeds the threshold or for interstate services.', applyLink: 'https://www.gst.gov.in/' },
+      { name: 'Rent Agreement / NOC from Owner', reason: 'Proof of premises for registration and bank account.', applyLink: '' },
+      { name: 'Business Bank Account', reason: 'Current account for client payments, vendor payments, and operations.', applyLink: '' },
+      { name: 'Professional Tax Registration', reason: 'Required in some states for service businesses with employees.', applyLink: '' },
+    ],
+    optional: [
+      { name: 'Udyam / MSME Registration', reason: 'Benefits under MSME schemes.', applyLink: 'https://udyamregistration.gov.in/' },
+      { name: 'Trademark Registration', reason: 'Protect your service brand name and logo.', applyLink: 'https://ipindiaonline.gov.in/' },
+      { name: 'Service Tax Registration', reason: 'Specific service tax compliance if applicable.', applyLink: '' },
+      { name: 'Insurance', reason: 'Professional liability and property insurance.', applyLink: '' },
+    ],
+  },
+  'Other': {
+    essential: [
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'Shop & Establishment Registration', reason: 'Required under state law for business operations.', applyLink: '' },
+      { name: 'Trade License', reason: 'Local municipal authority permission for business operations.', applyLink: '' },
+      { name: 'GST Registration', reason: 'Required if turnover exceeds the threshold.', applyLink: 'https://www.gst.gov.in/' },
+      { name: 'Business Bank Account', reason: 'Current account for business transactions.', applyLink: '' },
+    ],
+    optional: [
+      { name: 'Udyam / MSME Registration', reason: 'Benefits under MSME schemes.', applyLink: 'https://udyamregistration.gov.in/' },
+      { name: 'Trademark Registration', reason: 'Protect your business brand name.', applyLink: 'https://ipindiaonline.gov.in/' },
+    ],
+  },
+};
+
+export const generateCategoryDocuments = (startupId: string, founderId: string, startupName: string, category: string) => {
+  const catDocs = CATEGORY_DOCUMENT_MAP[category] || CATEGORY_DOCUMENT_MAP['Other'];
+  const now = new Date().toISOString();
+
+  const essentialDocs = catDocs.essential.map((doc, i) => ({
+    id: `doc_cat_${startupId}_${i}_${Date.now()}`,
+    startupId,
+    founderId,
+    fileName: `${startupName.replace(/\s+/g, '_')}_${doc.name.replace(/\s+/g, '_')}`,
+    fileType: 'PENDING',
+    fileSize: '\u2014',
+    fileData: '',
+    category: 'Founder Documents',
+    documentType: doc.name,
+    documentLabel: doc.name,
+    documentDescription: doc.reason,
+    documentSection: 'Essential',
+    required: true,
+    uploadRequired: true,
+    applyLink: doc.applyLink || '',
+    status: 'Pending',
+    verificationStatus: 'pending',
+    verificationNote: '',
+    sharedWith: [],
+    createdAt: now,
+    updatedAt: now,
+  }));
+
+  const optionalDocs = catDocs.optional.map((doc, i) => ({
+    id: `doc_cat_opt_${startupId}_${i}_${Date.now()}`,
+    startupId,
+    founderId,
+    fileName: `${startupName.replace(/\s+/g, '_')}_${doc.name.replace(/\s+/g, '_')}`,
+    fileType: 'PENDING',
+    fileSize: '\u2014',
+    fileData: '',
+    category: 'Optional Documents',
+    documentType: doc.name,
+    documentLabel: doc.name,
+    documentDescription: doc.reason,
+    documentSection: 'Optional',
+    required: false,
+    uploadRequired: false,
+    applyLink: doc.applyLink || '',
+    status: 'Pending',
+    verificationStatus: 'pending',
+    verificationNote: '',
+    sharedWith: [],
+    createdAt: now,
+    updatedAt: now,
+  }));
+
+  return [...essentialDocs, ...optionalDocs];
 };
 
 export const generateStartupOutput = (startup: any) => {
