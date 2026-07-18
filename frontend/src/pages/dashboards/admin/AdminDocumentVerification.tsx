@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Search, CheckCircle2, XCircle, Clock, Eye, Filter, RefreshCw,
-  FileText, AlertTriangle, MessageSquare, Building2,
+  Search, CheckCircle2, XCircle, Clock, Eye, RefreshCw,
+  AlertTriangle, Building2, X,
 } from 'lucide-react';
 import {
-  getDocuments, updateDocument, getStartups, getStartupById, detectStartupCategory,
+  getDocuments, updateDocument, getStartups, getStartupById,
 } from '../../../utils/localStorageHelper';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -168,7 +168,6 @@ const AdminDocumentVerification: React.FC = () => {
               ) : (
                 filteredDocs.map((doc) => {
                   const startup = getStartupById(doc.startupId);
-                  const cat = startup ? detectStartupCategory(startup) : 'Unknown';
                   return (
                     <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">

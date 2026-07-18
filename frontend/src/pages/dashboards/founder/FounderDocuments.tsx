@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
-  Upload, FileText, File, Image, Search, Download, Trash2, X, Eye, Scale,
+  Upload, FileText, Search, Download, Trash2, X, Eye, Scale,
   CheckCircle2, Clock, ChevronDown, ChevronRight, UploadCloud, RefreshCw,
   Building2, Utensils, Monitor, ShoppingCart, GraduationCap, Factory, Store,
   Truck, Banknote, Wrench, HelpCircle, ExternalLink, AlertTriangle, Filter,
-  ShieldCheck, XCircle, FileWarning,
+  XCircle, FileWarning,
 } from 'lucide-react';
 import {
-  getDocuments, saveDocument, deleteDocument, updateDocument,
+  getDocuments, saveDocument, deleteDocument,
   getStartups, getStartupById, detectStartupCategory, generateCategoryDocuments,
 } from '../../../utils/localStorageHelper';
 import jsPDF from 'jspdf';
@@ -73,7 +73,6 @@ const FounderDocuments: React.FC = () => {
 
   const [documents, setDocuments] = useState<any[]>([]);
   const [search, setSearch] = useState('');
-  const [filterCategory, setFilterCategory] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterDocCategory, setFilterDocCategory] = useState('All');
   const [previewDoc, setPreviewDoc] = useState<any>(null);
@@ -226,7 +225,6 @@ const FounderDocuments: React.FC = () => {
 
   const essentialDocs = documents.filter(d => d.documentType && d.documentType !== '__checklist__' && d.documentSection === 'Essential');
   const optionalDocs = documents.filter(d => d.documentType && d.documentType !== '__checklist__' && d.documentSection === 'Optional');
-  const aiGenDocs = documents.filter(d => !d.documentType && d.category !== 'Legal Document');
   const hasCategoryDocs = essentialDocs.length > 0 || optionalDocs.length > 0;
 
   const filteredDocs = documents.filter(d => {
