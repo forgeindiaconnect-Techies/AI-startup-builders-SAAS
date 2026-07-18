@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
-  Upload, FileText, Search, Download, Trash2, X, Eye, Scale,
+  FileText, Search, Download, X, Eye, Scale,
   CheckCircle2, Clock, ChevronDown, ChevronRight, UploadCloud, RefreshCw,
   Building2, Utensils, Monitor, ShoppingCart, GraduationCap, Factory, Store,
   Truck, Banknote, Wrench, HelpCircle, ExternalLink, AlertTriangle, Filter,
@@ -128,27 +128,6 @@ const FounderDocuments: React.FC = () => {
     refreshDocs();
   };
 
-  const handleUploadClick = () => fileInputRef.current?.click();
-
-  const handleLegalFileChange = (e: React.ChangeEvent<HTMLInputElement>, pendingDoc: any) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      const updatedDoc = {
-        ...pendingDoc,
-        fileType: (file.name.split('.').pop() || 'file').toUpperCase(),
-        fileSize: (file.size / (1024 * 1024)).toFixed(1) + ' MB',
-        fileData: URL.createObjectURL(file),
-        fileName: `${pendingDoc.documentLabel.replace(/\s+/g, '_')}.${file.name.split('.').pop()}`,
-        status: 'Pending Verification',
-        verificationStatus: 'pending_verification',
-        updatedAt: new Date().toISOString(),
-      };
-      saveDocument(updatedDoc);
-      refreshDocs();
-      e.target.value = '';
-    }
-  };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
@@ -169,13 +148,6 @@ const FounderDocuments: React.FC = () => {
         updatedAt: new Date().toISOString(),
       };
       saveDocument(newDoc);
-      refreshDocs();
-    }
-  };
-
-  const handleDelete = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this document?')) {
-      deleteDocument(id);
       refreshDocs();
     }
   };
@@ -427,15 +399,6 @@ const FounderDocuments: React.FC = () => {
                                 <Download size={12} /> Download
                               </button>
                             )}
-                            {(doc.status === 'Pending' || doc.status === 'Rejected') && (
-                              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] text-xs font-bold rounded-lg cursor-pointer transition-colors border border-purple-200">
-                                <UploadCloud size={12} /> Upload Document
-                                <input type="file" className="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => handleLegalFileChange(e, doc)} />
-                              </label>
-                            )}
-                            <button onClick={() => handleDelete(doc.id)} title="Remove" className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                              <Trash2 size={14} />
-                            </button>
                           </div>
                         </div>
                       </div>
@@ -505,15 +468,6 @@ const FounderDocuments: React.FC = () => {
                                 <Download size={12} /> Download
                               </button>
                             )}
-                            {(doc.status === 'Pending' || doc.status === 'Rejected') && (
-                              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] text-xs font-bold rounded-lg cursor-pointer transition-colors border border-purple-200">
-                                <UploadCloud size={12} /> Upload Document
-                                <input type="file" className="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={(e) => handleLegalFileChange(e, doc)} />
-                              </label>
-                            )}
-                            <button onClick={() => handleDelete(doc.id)} title="Remove" className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                              <Trash2 size={14} />
-                            </button>
                           </div>
                         </div>
                       </div>
@@ -522,20 +476,6 @@ const FounderDocuments: React.FC = () => {
                 ))}
               </div>
             )}
-          </div>
-        )}
-
-        {/* Upload Drop Zone */}
-        {startupId && (
-          <div className="mb-8 border-2 border-dashed border-gray-200 hover:border-[#5B21B6]/50 rounded-2xl p-10 text-center bg-white transition-colors cursor-pointer group">
-            <div className="w-14 h-14 bg-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-100 transition-colors">
-              <Upload size={28} className="text-[#5B21B6]" />
-            </div>
-            <p className="text-base font-bold text-gray-700 mb-1">Drop files here to upload</p>
-            <p className="text-sm text-gray-400">PDF, PPTX, DOCX, XLSX, ZIP up to 50MB</p>
-            <button onClick={handleUploadClick} className="mt-4 px-5 py-2 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] text-sm font-bold rounded-xl transition-colors">
-              Browse Files
-            </button>
           </div>
         )}
 
@@ -645,7 +585,6 @@ const FounderDocuments: React.FC = () => {
                           {(doc.status === 'Uploaded' || doc.status === 'Verified') && doc.fileData && (
                             <button onClick={() => handleDownload(doc.fileName)} title="Download" className="p-1.5 text-gray-400 hover:text-[#5B21B6] hover:bg-purple-50 rounded-lg transition-colors"><Download size={16} /></button>
                           )}
-                          <button onClick={() => handleDelete(doc.id)} title="Delete" className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={16} /></button>
                         </div>
                       </td>
                     </tr>
