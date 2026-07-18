@@ -8,9 +8,6 @@ const FounderProfile: React.FC = () => {
     phone: '',
     location: '',
     bio: '',
-    website: '',
-    linkedin: '',
-    twitter: '',
   });
 
   const update = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
@@ -61,25 +58,7 @@ const FounderProfile: React.FC = () => {
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] resize-none" />
               </div>
             </div>
-          </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="text-base font-bold text-gray-900 mb-5 pb-4 border-b border-gray-100">Social & Links</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { label: 'Website', key: 'website' },
-                { label: 'LinkedIn', key: 'linkedin' },
-                { label: 'Twitter / X', key: 'twitter' },
-              ].map(f => (
-                <div key={f.key}>
-                  <label className="block text-sm font-bold text-gray-700 mb-1.5">{f.label}</label>
-                  <input type="text" value={form[f.key as keyof typeof form]} onChange={e => update(f.key, e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]" />
-                </div>
-              ))}
-            </div>
-
-            {/* Save Changes Button at the bottom (in last) */}
             <div className="flex justify-end pt-4 border-t border-gray-100 mt-6">
               <button 
                 onClick={() => window.alert("Profile settings saved successfully!")}
