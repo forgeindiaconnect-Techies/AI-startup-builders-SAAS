@@ -40,7 +40,7 @@ const Login: React.FC = () => {
           else if (targetRole === 'mentor') navigate('/dashboard/mentor');
           else if (targetRole === 'investor') navigate('/dashboard/investor');
           else {
-            if (result.subscriptionStatus === 'expired') {
+            if (result.subscriptionStatus && result.subscriptionStatus !== 'active') {
               navigate('/dashboard/founder/billing');
             } else {
               navigate('/dashboard/founder');

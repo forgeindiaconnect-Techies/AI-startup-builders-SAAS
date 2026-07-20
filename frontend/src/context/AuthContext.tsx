@@ -30,7 +30,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; role?: string; subscriptionStatus?: string }>;
   logout: () => void;
-  checkAuth: () => Promise<void>;
+  checkAuth: () => Promise<{ subscriptionStatus?: string; role?: string } | null>;
   getToken: () => string | null;
   // Legacy Admin stubs to prevent build errors
   getPendingApprovals: () => any[];
@@ -57,13 +57,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const setToken = (token: string) => localStorage.setItem(TOKEN_KEY, token);
   const removeToken = () => localStorage.removeItem(TOKEN_KEY);
 
-  const checkAuth = async () => {
+  const checkAuth = async (): Promise<{ subscriptionStatus?: string; role?: string } | null> => {
     const token = getToken();
     if (!token) {
       setIsLoading(false);
       setUser(null);
       setSubscription(null);
-      return;
+      return null;
     }
 
     try {
@@ -94,16 +94,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (data.subscription) {
           setSubscription(data.subscription);
         }
+        return { subscriptionStatus: data.user.subscriptionStatus, role: data.user.role };
       } else {
         removeToken();
         setUser(null);
         setSubscription(null);
+        return null;
       }
     } catch (error) {
       console.error('Auth check failed:', error);
       removeToken();
       setUser(null);
       setSubscription(null);
+      return null;
     } finally {
       setIsLoading(false);
     }
@@ -124,8 +127,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (data.success && data.token) {
         setToken(data.token);
-        await checkAuth(); // Fetch full user & subscription data
-        return { success: true, role: data.user?.role, subscriptionStatus: data.user?.subscriptionStatus };
+        const authData = await checkAuth(); // Fetch full user & subscription data and update state
+        return {
+          success: true,
+          role: authData?.role || data.user?.role,
+          subscriptionStatus: authData?.subscriptionStatus || data.user?.subscriptionStatus
+        };
       } else {
         return { success: false, error: data.error || 'Login failed' };
       }
