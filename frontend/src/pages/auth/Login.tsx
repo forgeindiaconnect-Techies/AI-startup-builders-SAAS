@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Rocket, Mail, Lock, ArrowRight, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -15,6 +15,8 @@ const Login: React.FC = () => {
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAdminLogin = location.pathname === '/admin-login';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,10 +34,16 @@ const Login: React.FC = () => {
       const result = await login(email.trim(), password);
       
       if (result.success) {
+        const targetRole = result.role || 'founder';
+
+        if (!isAdminLogin && targetRole === 'admin') {
+          setError('Admin accounts use a separate login portal. Please use /admin-login.');
+          return;
+        }
+
         setSuccess('Welcome back! Redirecting...');
         
         setTimeout(() => {
-          const targetRole = result.role || 'founder';
           if (targetRole === 'admin') navigate('/dashboard/admin');
           else if (targetRole === 'mentor') navigate('/dashboard/mentor');
           else if (targetRole === 'investor') navigate('/dashboard/investor');
@@ -70,10 +78,10 @@ const Login: React.FC = () => {
           </div>
         </div>
         <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900 tracking-tight">
-          Welcome back
+          {isAdminLogin ? 'Admin Portal' : 'Welcome back'}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-500 font-medium">
-          Sign in to your AI Startup Builder account
+          {isAdminLogin ? 'Sign in to the admin dashboard' : 'Sign in to your AI Startup Builder account'}
         </p>
       </div>
 

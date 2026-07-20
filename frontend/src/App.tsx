@@ -114,6 +114,7 @@ function App() {
               {/* Public */}
               <Route path="/"      element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/admin-login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/pending-approval" element={<PendingApproval />} />
               <Route path="/blog" element={<BlogPage />} />

@@ -26,9 +26,10 @@ export interface IUser extends mongoose.Document {
 
   // Investor fields
   companyName?: string;
-  typicalCheckSize?: string;
-  sectorsOfInterest?: string;
-  investmentThesis?: string;
+  investorType?: string;
+  preferredIndustry?: string;
+  minInvestment?: string;
+  maxInvestment?: string;
 
   lastLoginAt?: Date;
   loginCount: number;
@@ -60,9 +61,10 @@ const userSchema = new mongoose.Schema({
 
   // Investor fields
   companyName: { type: String },
-  typicalCheckSize: { type: String },
-  sectorsOfInterest: { type: String },
-  investmentThesis: { type: String },
+  investorType: { type: String },
+  preferredIndustry: { type: String },
+  minInvestment: { type: String },
+  maxInvestment: { type: String },
 
   lastLoginAt: { type: Date },
   loginCount: { type: Number, default: 0 },

@@ -60,6 +60,8 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
     const {
       email, otp, password, role, fullName,
       mobile, currentRole, startupName, startupStage, industry, agreedToTerms,
+      expertise, experienceYears, linkedin, bio,
+      companyName, investorType, preferredIndustry, minInvestment, maxInvestment,
       ...otherData
     } = req.body;
 
@@ -89,7 +91,14 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
     // Create User (or update if they started but didn't finish)
     let user = await User.findOne({ email: email.toLowerCase() });
 
-    const founderFields = role === 'founder' ? { mobile, currentRole, startupName, startupStage, industry, agreedToTerms } : {};
+    const roleFields: Record<string, any> = {};
+    if (role === 'founder') {
+      Object.assign(roleFields, { mobile, currentRole, startupName, startupStage, industry, agreedToTerms });
+    } else if (role === 'mentor') {
+      Object.assign(roleFields, { mobile, expertise, experienceYears, linkedin, bio });
+    } else if (role === 'investor') {
+      Object.assign(roleFields, { mobile, companyName, investorType, preferredIndustry, minInvestment, maxInvestment });
+    }
 
     if (user) {
       user.fullName = fullName;
@@ -97,7 +106,7 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
       user.role = role;
       user.isVerified = true;
       user.approvalStatus = approvalStatus;
-      Object.assign(user, founderFields, otherData);
+      Object.assign(user, roleFields, otherData);
       await user.save();
     } else {
       user = await User.create({
@@ -107,7 +116,7 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
         role,
         isVerified: true,
         approvalStatus,
-        ...founderFields,
+        ...roleFields,
         ...otherData
       });
     }
@@ -252,6 +261,8 @@ export const completePhoneSignup = async (req: Request, res: Response) => {
     const {
       email, password, role, fullName,
       mobile, currentRole, startupName, startupStage, industry, agreedToTerms,
+      expertise, experienceYears, linkedin, bio,
+      companyName, investorType, preferredIndustry, minInvestment, maxInvestment,
       ...otherData
     } = req.body;
 
@@ -267,9 +278,14 @@ export const completePhoneSignup = async (req: Request, res: Response) => {
 
     let user = await User.findOne({ email: email.toLowerCase() });
 
-    const founderFields = role === 'founder'
-      ? { mobile, currentRole, startupName, startupStage, industry, agreedToTerms }
-      : {};
+    const roleFields: Record<string, any> = {};
+    if (role === 'founder') {
+      Object.assign(roleFields, { mobile, currentRole, startupName, startupStage, industry, agreedToTerms });
+    } else if (role === 'mentor') {
+      Object.assign(roleFields, { mobile, expertise, experienceYears, linkedin, bio });
+    } else if (role === 'investor') {
+      Object.assign(roleFields, { mobile, companyName, investorType, preferredIndustry, minInvestment, maxInvestment });
+    }
 
     if (user) {
       // Update existing user (re-registration or retry)
@@ -278,7 +294,7 @@ export const completePhoneSignup = async (req: Request, res: Response) => {
       user.role = role as 'founder' | 'mentor' | 'investor' | 'admin';
       user.isVerified = true;
       user.approvalStatus = approvalStatus as 'pending' | 'approved' | 'rejected';
-      Object.assign(user, founderFields);
+      Object.assign(user, roleFields);
       await user.save();
     } else {
       user = await User.create({
@@ -289,7 +305,7 @@ export const completePhoneSignup = async (req: Request, res: Response) => {
         isVerified: true,
         approvalStatus,
         mobile,
-        ...founderFields,
+        ...roleFields,
       });
     }
 
