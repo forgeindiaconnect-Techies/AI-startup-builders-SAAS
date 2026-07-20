@@ -381,7 +381,7 @@ const AdminUsers: React.FC = () => {
 
               <div className="my-4 border-t border-gray-100" />
 
-              {/* Subscription Information */}}
+              {/* Subscription Information */}
               <div>
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                   <span className="w-1 h-4 rounded-full bg-purple-500"></span> Subscription Information
