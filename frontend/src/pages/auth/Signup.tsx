@@ -496,6 +496,8 @@ const Signup: React.FC = () => {
     ? [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }, { num: 3, label: 'Verify Email' }]
     : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }, { num: 3, label: 'Verify Email' }];
 
+  const currentStepIdx = step === 'role' ? 0 : step === 'form' ? 1 : 2;
+
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4 font-sans relative">
       {/* Toast Notification */}
