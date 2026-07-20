@@ -4,8 +4,13 @@ import { Rocket, Mail, Lock, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, E
 import { useAuth } from '../../context/AuthContext';
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isAdminLogin = location.pathname === '/admin-login';
+
+  const [email, setEmail] = useState(isAdminLogin ? 'selva@gmail.com' : '');
+  const [password, setPassword] = useState(isAdminLogin ? 'Selva@143' : '');
   const [showPassword, setShowPassword] = useState(false);
   
   const [error, setError] = useState('');
@@ -21,11 +26,6 @@ const Login: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
   
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const isAdminLogin = location.pathname === '/admin-login';
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
