@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Trash2, Download, X, ShieldCheck, Lock, KeyRound } from 'lucide-react';
+import { Search, Eye, Trash2, Download, X, ShieldCheck, Lock, KeyRound, UserX, UserCheck, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
 const roleColors: Record<string, string> = {
@@ -26,7 +26,7 @@ const approvalColors: Record<string, string> = {
 };
 
 const AdminUsers: React.FC = () => {
-  const { getAllUsers, deleteUser, approveUser, resetUserPassword, refreshUsers } = useAuth();
+  const { getAllUsers, deleteUser, approveUser, resetUserPassword, refreshUsers, updateUserStatus } = useAuth();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [usersList, setUsersList] = useState<any[]>([]);
@@ -55,6 +55,18 @@ const AdminUsers: React.FC = () => {
     if (window.confirm(`Are you sure you want to permanently delete ${name}?`)) {
       deleteUser(id);
       if (selectedUser?.id === id) setSelectedUser(null);
+      loadUsers();
+    }
+  };
+
+  const handleToggleStatus = (id: string, currentStatus: string) => {
+    const newStatus = (currentStatus === 'suspended' || currentStatus === 'inactive') ? 'active' : 'suspended';
+    const action = newStatus === 'active' ? 'activate' : 'suspend';
+    if (window.confirm(`Are you sure you want to ${action} this user?`)) {
+      updateUserStatus(id, newStatus);
+      if (selectedUser?.id === id) {
+        setSelectedUser({ ...selectedUser, status: newStatus });
+      }
       loadUsers();
     }
   };
@@ -98,7 +110,7 @@ const AdminUsers: React.FC = () => {
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return '—';
     try {
-      return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     } catch {
       return dateStr;
     }
@@ -155,8 +167,8 @@ const AdminUsers: React.FC = () => {
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Signup Date</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Last Login</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Login Count</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Trial Expiry</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Subscription Expiry</th>
+                {roleFilter !== 'admin' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Trial Expiry</th>}
+                {roleFilter !== 'admin' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Subscription Expiry</th>}
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Approval</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
@@ -184,22 +196,26 @@ const AdminUsers: React.FC = () => {
                   <td className="px-6 py-4 text-sm text-gray-500">{formatDate(u.signupDate)}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{u.lastLoginAt ? formatDate(u.lastLoginAt) : <span className="text-gray-400 italic">Never</span>}</td>
                   <td className="px-6 py-4 text-sm font-bold text-gray-700">{u.loginCount || 0}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {u.trialEndDate ? (
-                      <span className={`font-medium ${new Date(u.trialEndDate) < new Date() ? 'text-red-600' : 'text-gray-700'}`}>
-                        {formatDate(u.trialEndDate)}
-                        {new Date(u.trialEndDate) < new Date() && <span className="ml-1 text-[10px] font-bold text-red-500">(Expired)</span>}
-                      </span>
-                    ) : <span className="text-gray-400 italic">—</span>}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {u.subscriptionEndDate ? (
-                      <span className={`font-medium ${new Date(u.subscriptionEndDate) < new Date() ? 'text-red-600' : 'text-gray-700'}`}>
-                        {formatDate(u.subscriptionEndDate)}
-                        {new Date(u.subscriptionEndDate) < new Date() && <span className="ml-1 text-[10px] font-bold text-red-500">(Expired)</span>}
-                      </span>
-                    ) : <span className="text-gray-400 italic">—</span>}
-                  </td>
+                  {roleFilter !== 'admin' && (
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {u.trialEndDate ? (
+                        <span className={`font-medium ${new Date(u.trialEndDate) < new Date() ? 'text-red-600' : 'text-gray-700'}`}>
+                          {formatDate(u.trialEndDate)}
+                          {new Date(u.trialEndDate) < new Date() && <span className="ml-1 text-[10px] font-bold text-red-500">(Expired)</span>}
+                        </span>
+                      ) : <span className="text-gray-400 italic">—</span>}
+                    </td>
+                  )}
+                  {roleFilter !== 'admin' && (
+                    <td className="px-6 py-4 text-sm text-gray-500">
+                      {u.subscriptionEndDate ? (
+                        <span className={`font-medium ${new Date(u.subscriptionEndDate) < new Date() ? 'text-red-600' : 'text-gray-700'}`}>
+                          {formatDate(u.subscriptionEndDate)}
+                          {new Date(u.subscriptionEndDate) < new Date() && <span className="ml-1 text-[10px] font-bold text-red-500">(Expired)</span>}
+                        </span>
+                      ) : <span className="text-gray-400 italic">—</span>}
+                    </td>
+                  )}
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusColors[u.status] || statusColors.active}`}>
                       {u.status || 'active'}
@@ -219,7 +235,23 @@ const AdminUsers: React.FC = () => {
                       >
                         <Eye size={14} /> View
                       </button>
-
+                      {u.status === 'suspended' || u.status === 'inactive' ? (
+                        <button
+                          onClick={() => handleToggleStatus(u.id, u.status)}
+                          className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                          title="Activate User"
+                        >
+                          <UserCheck size={15} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleToggleStatus(u.id, u.status)}
+                          className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                          title="Suspend User"
+                        >
+                          <UserX size={15} />
+                        </button>
+                      )}
                       {(u.approvalStatus === 'pending') && (
                         <button
                           onClick={() => handleApproveUser(u.id, u.name || u.fullName)}
@@ -254,147 +286,151 @@ const AdminUsers: React.FC = () => {
 
       {/* View Details Modal */}
       {selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-xl flex flex-col" style={{ maxHeight: 'calc(100vh - 48px)' }}>
-
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 pb-6 px-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-lg flex flex-col my-auto">
             {/* Header */}
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-xl font-black shadow-md flex-shrink-0">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-base font-black shadow flex-shrink-0">
                   {(selectedUser.name || selectedUser.fullName || '?').charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-bold text-gray-900 text-xl leading-tight">{selectedUser.name || selectedUser.fullName}</h3>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${roleColors[selectedUser.role] || roleColors.founder}`}>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <h3 className="font-bold text-gray-900 text-lg">{selectedUser.name || selectedUser.fullName}</h3>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${roleColors[selectedUser.role] || roleColors.founder}`}>
                       {selectedUser.role}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500">{selectedUser.email}</p>
+                  <p className="text-xs text-gray-500">{selectedUser.email}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedUser(null)}
-                className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition-colors shrink-0 ml-3"
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition-colors shrink-0"
               >
                 <X size={20} />
               </button>
             </div>
 
             {/* Scrollable body */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-
+            <div className="p-6 overflow-y-auto text-sm text-gray-700 space-y-0">
               {/* Basic Information */}
               <div>
-                <h4 className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <span className="w-1 h-3 rounded-full bg-[#5B21B6] inline-block"></span> Basic Information
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <span className="w-1 h-4 rounded-full bg-[#5B21B6]"></span> Basic Information
                 </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Role</span>
-                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold self-start ${roleColors[selectedUser.role] || roleColors.founder}`}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Role</span>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${roleColors[selectedUser.role] || roleColors.founder}`}>
                       {selectedUser.role}
                     </span>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Login Count</span>
-                    <span className="font-extrabold text-gray-900 text-2xl leading-none">{selectedUser.loginCount || 0}</span>
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Login Count</span>
+                    <span className="font-bold text-gray-900 text-base">{selectedUser.loginCount || 0}</span>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 col-span-2 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Signup Date</span>
-                    <span className="font-semibold text-gray-900">{formatDate(selectedUser.signupDate)}</span>
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Signup Date</span>
+                    <span className="font-bold text-gray-900">{formatDate(selectedUser.signupDate)}</span>
                   </div>
                 </div>
               </div>
 
+              <div className="my-4 border-t border-gray-100" />
+
               {/* Account Status */}
               <div>
-                <h4 className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <span className="w-1 h-3 rounded-full bg-emerald-500 inline-block"></span> Account Status
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <span className="w-1 h-4 rounded-full bg-emerald-500"></span> Account Status
                 </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Status</span>
-                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold self-start ${statusColors[selectedUser.status] || statusColors.active}`}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Status</span>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusColors[selectedUser.status] || statusColors.active}`}>
                       {selectedUser.status || 'active'}
                     </span>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Approval</span>
-                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold self-start ${approvalColors[selectedUser.approvalStatus] || approvalColors.approved}`}>
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Approval Status</span>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${approvalColors[selectedUser.approvalStatus] || approvalColors.approved}`}>
                       {selectedUser.approvalStatus || 'approved'}
                     </span>
                   </div>
                 </div>
               </div>
 
+              <div className="my-4 border-t border-gray-100" />
+
               {/* Login Activity */}
               <div>
-                <h4 className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <span className="w-1 h-3 rounded-full bg-blue-500 inline-block"></span> Login Activity
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <span className="w-1 h-4 rounded-full bg-blue-500"></span> Login Activity
                 </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Last Login</span>
-                    <span className="font-semibold text-gray-900 text-sm">
-                      {selectedUser.lastLoginAt ? formatDate(selectedUser.lastLoginAt) : <span className="text-gray-400 italic text-xs font-normal">Never logged in</span>}
-                    </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Last Login</span>
+                    <span className="font-bold text-gray-900">{selectedUser.lastLoginAt ? formatDate(selectedUser.lastLoginAt) : <span className="text-gray-400 italic">Never logged in</span>}</span>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Logins</span>
-                    <span className="font-extrabold text-gray-900 text-2xl leading-none">{selectedUser.loginCount || 0}</span>
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Login Count</span>
+                    <span className="font-bold text-gray-900">{selectedUser.loginCount || 0}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Subscription Information */}
+              <div className="my-4 border-t border-gray-100" />
+
+              {/* Subscription Information */}}
               <div>
-                <h4 className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <span className="w-1 h-3 rounded-full bg-purple-500 inline-block"></span> Subscription
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <span className="w-1 h-4 rounded-full bg-purple-500"></span> Subscription Information
                 </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Current Plan</span>
-                    <span className="font-semibold text-gray-900 capitalize text-sm">{selectedUser.plan || 'none'}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Free Trial Expiry</span>
+                    <span className={`font-bold ${selectedUser.trialEndDate && new Date(selectedUser.trialEndDate) < new Date() ? 'text-red-600' : 'text-gray-900'}`}>
+                      {selectedUser.trialEndDate ? formatDate(selectedUser.trialEndDate) : <span className="text-gray-400 italic">N/A</span>}
+                    </span>
+                    {selectedUser.trialEndDate && new Date(selectedUser.trialEndDate) < new Date() && (
+                      <span className="text-[10px] font-bold text-red-500 block mt-1">Expired</span>
+                    )}
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sub. Status</span>
-                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold self-start ${statusColors[selectedUser.subscriptionStatus] || statusColors.none}`}>
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Subscription Plan Expiry</span>
+                    <span className={`font-bold ${selectedUser.subscriptionEndDate && new Date(selectedUser.subscriptionEndDate) < new Date() ? 'text-red-600' : 'text-gray-900'}`}>
+                      {selectedUser.subscriptionEndDate ? formatDate(selectedUser.subscriptionEndDate) : <span className="text-gray-400 italic">N/A</span>}
+                    </span>
+                    {selectedUser.subscriptionEndDate && new Date(selectedUser.subscriptionEndDate) < new Date() && (
+                      <span className="text-[10px] font-bold text-red-500 block mt-1">Expired</span>
+                    )}
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Current Plan</span>
+                    <span className="font-bold text-gray-900">{selectedUser.plan || 'none'}</span>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Subscription Status</span>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusColors[selectedUser.subscriptionStatus] || statusColors.none}`}>
                       {selectedUser.subscriptionStatus || 'none'}
                     </span>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Trial Expiry</span>
-                    <span className={`font-semibold text-sm ${selectedUser.trialEndDate && new Date(selectedUser.trialEndDate) < new Date() ? 'text-red-600' : 'text-gray-900'}`}>
-                      {selectedUser.trialEndDate ? formatDate(selectedUser.trialEndDate) : <span className="text-gray-400 italic text-xs font-normal">N/A</span>}
-                    </span>
-                    {selectedUser.trialEndDate && new Date(selectedUser.trialEndDate) < new Date() && (
-                      <span className="text-[10px] font-bold text-red-500">Expired</span>
-                    )}
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sub. Expiry</span>
-                    <span className={`font-semibold text-sm ${selectedUser.subscriptionEndDate && new Date(selectedUser.subscriptionEndDate) < new Date() ? 'text-red-600' : 'text-gray-900'}`}>
-                      {selectedUser.subscriptionEndDate ? formatDate(selectedUser.subscriptionEndDate) : <span className="text-gray-400 italic text-xs font-normal">N/A</span>}
-                    </span>
-                    {selectedUser.subscriptionEndDate && new Date(selectedUser.subscriptionEndDate) < new Date() && (
-                      <span className="text-[10px] font-bold text-red-500">Expired</span>
-                    )}
-                  </div>
                 </div>
               </div>
 
-              {/* Security */}
+              <div className="my-4 border-t border-gray-100" />
+
+              {/* Security Information */}
               <div>
-                <h4 className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                  <span className="w-1 h-3 rounded-full bg-amber-500 inline-block"></span> Security
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <span className="w-1 h-4 rounded-full bg-red-500"></span> Security Information
                 </h4>
-                <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="flex items-start gap-3 flex-1">
-                    <Lock size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                    <Lock size={18} className="text-amber-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-xs font-bold text-amber-800">Password Management</p>
-                      <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">Password is hidden for security. Admin can reset it if needed.</p>
+                      <p className="text-xs font-bold text-amber-800">Password</p>
+                      <p className="text-xs text-amber-700 mt-0.5">Password is hidden for security reasons. Admin can reset the password if needed.</p>
                     </div>
                   </div>
                   <button
@@ -405,9 +441,9 @@ const AdminUsers: React.FC = () => {
                         loadUsers();
                       }
                     }}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm shrink-0 whitespace-nowrap"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm shrink-0"
                   >
-                    <KeyRound size={13} /> Reset Password
+                    <KeyRound size={14} /> Reset Password
                   </button>
                 </div>
               </div>
@@ -416,24 +452,39 @@ const AdminUsers: React.FC = () => {
             {/* Footer actions */}
             <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3 shrink-0 bg-gray-50/60 rounded-b-3xl">
               <div className="flex flex-wrap items-center gap-2">
+                {selectedUser.status === 'suspended' || selectedUser.status === 'inactive' ? (
+                  <button
+                    onClick={() => { handleToggleStatus(selectedUser.id, selectedUser.status); setSelectedUser(null); }}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm inline-flex items-center gap-1.5"
+                  >
+                    <CheckCircle size={14} /> Activate
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { handleToggleStatus(selectedUser.id, selectedUser.status); setSelectedUser(null); }}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm inline-flex items-center gap-1.5"
+                  >
+                    <AlertCircle size={14} /> Suspend
+                  </button>
+                )}
                 {(selectedUser.approvalStatus === 'pending') && (
                   <button
                     onClick={() => handleApproveUser(selectedUser.id, selectedUser.name || selectedUser.fullName)}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm inline-flex items-center gap-1.5"
                   >
-                    <ShieldCheck size={14} /> Approve Account
+                    <ShieldCheck size={14} /> Approve
                   </button>
                 )}
                 <button
                   onClick={() => { handleDeleteUser(selectedUser.id, selectedUser.name || selectedUser.fullName); setSelectedUser(null); }}
-                  className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl transition-colors border border-red-100 inline-flex items-center gap-1.5"
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm inline-flex items-center gap-1.5"
                 >
-                  <Trash2 size={14} /> Delete User
+                  <Trash2 size={14} /> Delete
                 </button>
               </div>
               <button
                 onClick={() => setSelectedUser(null)}
-                className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-colors"
+                className="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs rounded-xl transition-colors"
               >
                 Close
               </button>
