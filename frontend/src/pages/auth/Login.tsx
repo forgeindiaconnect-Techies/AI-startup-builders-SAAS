@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Rocket, Mail, Lock, ArrowRight, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Rocket, Mail, Lock, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Login: React.FC = () => {
@@ -70,6 +70,16 @@ const Login: React.FC = () => {
       {/* Background Ornaments */}
       <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-[#6C4CF1]/10 blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#D4AF37]/10 blur-[100px] pointer-events-none"></div>
+
+      {/* Back to Home Button */}
+      <button
+        type="button"
+        onClick={() => navigate('/')}
+        className="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-600 hover:text-[#6C4CF1] hover:border-[#6C4CF1] hover:bg-white shadow-sm hover:shadow-md transition-all duration-200 text-sm font-semibold group"
+      >
+        <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform duration-200" />
+        Back to Home
+      </button>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="flex justify-center mb-6 cursor-pointer hover:scale-105 transition-transform" onClick={() => navigate('/')}>
