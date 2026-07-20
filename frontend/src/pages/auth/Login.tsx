@@ -44,10 +44,7 @@ const Login: React.FC = () => {
       if (result.success) {
         const targetRole = result.role || 'founder';
 
-        if (!isAdminLogin && targetRole === 'admin') {
-          setError('Admin accounts use a separate login portal. Please use /admin-login.');
-          return;
-        }
+
 
         const isTrialExpired = targetRole === 'founder' && result.subscriptionStatus && result.subscriptionStatus !== 'active';
 
