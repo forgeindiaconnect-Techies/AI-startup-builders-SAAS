@@ -1,9 +1,12 @@
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Clock, ShieldCheck, Mail, ArrowRight } from 'lucide-react';
 
 const PendingApproval: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const role = searchParams.get('role');
+  const isMentor = role === 'mentor';
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -17,10 +20,12 @@ const PendingApproval: React.FC = () => {
           </div>
         </div>
         <h2 className="text-center text-3xl font-extrabold text-[#1F2937]">
-          Pending Approval
+          {isMentor ? 'Mentor Profile Submitted' : 'Pending Approval'}
         </h2>
         <p className="mt-2 text-center text-sm text-[#6B7280]">
-          Your account has been created and is awaiting admin verification.
+          {isMentor
+            ? 'Your mentor profile has been submitted. Please wait for admin approval.'
+            : 'Your account has been created and is awaiting admin verification.'}
         </p>
       </div>
 
@@ -36,7 +41,9 @@ const PendingApproval: React.FC = () => {
             <div>
               <h3 className="font-bold text-[#1F2937] text-lg mb-1">Almost there!</h3>
               <p className="text-sm text-[#6B7280] leading-relaxed">
-                An admin will review your account shortly. You'll receive a notification once your account is approved and you can log in.
+                {isMentor
+                  ? 'Your mentor profile is now under review. An admin will review your expertise and approve your account. You\'ll receive a notification once approved.'
+                  : 'An admin will review your account shortly. You\'ll receive a notification once your account is approved and you can log in.'}
               </p>
             </div>
 
@@ -45,9 +52,19 @@ const PendingApproval: React.FC = () => {
               <div className="text-xs text-blue-800">
                 <span className="font-bold block mb-1">What happens next?</span>
                 <ol className="list-decimal list-inside space-y-1 text-blue-700">
-                  <li>Admin reviews your application</li>
-                  <li>You get approved or notified if more info is needed</li>
-                  <li>Once approved, you can log in and access your dashboard</li>
+                  {isMentor ? (
+                    <>
+                      <li>Admin reviews your mentor profile</li>
+                      <li>Your expertise and experience are verified</li>
+                      <li>Once approved, you can log in and start mentoring</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Admin reviews your application</li>
+                      <li>You get approved or notified if more info is needed</li>
+                      <li>Once approved, you can log in and access your dashboard</li>
+                    </>
+                  )}
                 </ol>
               </div>
             </div>

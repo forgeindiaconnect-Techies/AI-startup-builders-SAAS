@@ -1,12 +1,13 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   Rocket, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight,
   Loader2, Mail, User, Phone, Lock, Check, Gift, Zap,
-  Briefcase, TrendingUp, Building2, ChevronRight
+  Briefcase, TrendingUp, Building2, ChevronRight, Link2, ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config/api';
+import { validateInvite, markInviteUsed, getInviteByToken } from '../../utils/inviteLinks';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type UserRole = 'founder' | 'mentor' | 'investor';
@@ -16,13 +17,22 @@ interface FormData {
   fullName: string;
   email: string;
   mobile: string;
+  location: string;
   password: string;
   confirmPassword: string;
   // Mentor fields
   expertise: string;
   experienceYears: string;
+  industriesWorkedWith: string;
+  previousExperience: string;
+  mentoredStartupsCount: string;
   linkedin: string;
+  portfolioWebsite: string;
+  achievements: string;
+  certifications: string;
   bio: string;
+  availableDays: string[];
+  preferredSessionType: string;
   // Investor fields
   companyName: string;
   investorType: string;
@@ -32,8 +42,10 @@ interface FormData {
 }
 
 const emptyForm: FormData = {
-  fullName: '', email: '', mobile: '', password: '', confirmPassword: '',
-  expertise: '', experienceYears: '', linkedin: '', bio: '',
+  fullName: '', email: '', mobile: '', location: '', password: '', confirmPassword: '',
+  expertise: '', experienceYears: '', industriesWorkedWith: '', previousExperience: '',
+  mentoredStartupsCount: '', linkedin: '', portfolioWebsite: '', achievements: '',
+  certifications: '', bio: '', availableDays: [], preferredSessionType: '',
   companyName: '', investorType: '', preferredIndustry: '', minInvestment: '', maxInvestment: '',
 };
 
@@ -43,6 +55,14 @@ const ROLES: { id: UserRole; title: string; icon: React.FC<any>; color: string; 
   { id: 'mentor',   title: 'Mentor',   icon: Briefcase,     color: 'text-blue-700',   bg: 'bg-blue-100',   desc: 'Guide founders and share your expertise to shape the future.' },
   { id: 'investor', title: 'Investor', icon: TrendingUp,    color: 'text-amber-700',  bg: 'bg-amber-100',  desc: 'Discover promising startups and grow your investment portfolio.' },
 ];
+
+const EXPERTISE_OPTIONS = [
+  'Product Management', 'Marketing & Growth', 'Technology & Engineering',
+  'Finance & Accounting', 'Legal & Compliance', 'Sales & Business Dev',
+  'HR & People Ops', 'Design & UX', 'Fundraising & IR', 'Other',
+];
+
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 // ── OTP Input ─────────────────────────────────────────────────────────────────
 const OTPInput: React.FC<{ value: string[]; onChange: (val: string[]) => void }> = ({ value, onChange }) => {
@@ -222,24 +242,25 @@ const LeftPanel: React.FC = () => (
 const Field: React.FC<{
   label: string; icon: React.ReactNode; type?: string; placeholder?: string;
   value: string; onChange: (v: string) => void; error?: string;
-  maxLength?: number; inputMode?: string; rows?: number;
-}> = ({ label, icon, type = 'text', placeholder, value, onChange, error, maxLength, inputMode, rows }) => (
+  maxLength?: number; inputMode?: string; rows?: number; disabled?: boolean;
+}> = ({ label, icon, type = 'text', placeholder, value, onChange, error, maxLength, inputMode, rows, disabled }) => (
   <div>
     <label className="block text-sm font-semibold text-gray-900 mb-1.5">{label}</label>
     <div className="relative">
       {icon && <div className="absolute left-3 top-2.5 h-4 w-4 text-gray-400">{icon}</div>}
       {rows ? (
         <textarea
-          className={`block w-full ${icon ? 'pl-9' : 'pl-4'} px-4 py-3 border-2 ${error ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium resize-none`}
+          className={`block w-full ${icon ? 'pl-9' : 'pl-4'} px-4 py-3 border-2 ${error ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium resize-none ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           placeholder={placeholder}
           value={value}
           onChange={e => onChange(e.target.value)}
           rows={rows}
+          disabled={disabled}
         />
       ) : (
         <input
           type={type}
-          className={`block w-full ${icon ? 'pl-9' : 'pl-4'} px-4 py-3 border-2 ${error ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium`}
+          className={`block w-full ${icon ? 'pl-9' : 'pl-4'} px-4 py-3 border-2 ${error ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           placeholder={placeholder}
           value={value}
           onChange={e => {
@@ -251,6 +272,7 @@ const Field: React.FC<{
           }}
           maxLength={maxLength}
           inputMode={inputMode as any}
+          disabled={disabled}
         />
       )}
     </div>
@@ -300,10 +322,22 @@ const PasswordField: React.FC<{
 // ── Main Component ────────────────────────────────────────────────────────────
 const Signup: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { checkAuth } = useAuth();
 
-  const [step, setStep] = useState<Step>('role');
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  // Invite token support
+  const inviteTokenParam = searchParams.get('inviteToken');
+  const inviteRoleParam = searchParams.get('role');
+  const isInviteFlow = inviteRoleParam === 'mentor' && !!inviteTokenParam;
+  const [inviteValid, setInviteValid] = useState<boolean | null>(isInviteFlow ? null : true);
+  const [inviteData, setInviteData] = useState<any>(null);
+
+  // If invite flow, always start at form step (skip role selection)
+  const getInitialStep = (): Step => isInviteFlow ? 'form' : 'role';
+  const getInitialRole = (): UserRole | null => isInviteFlow ? 'mentor' : null;
+
+  const [step, setStep] = useState<Step>(getInitialStep());
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(getInitialRole());
   const [form, setForm] = useState<FormData>({ ...emptyForm });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
@@ -317,7 +351,6 @@ const Signup: React.FC = () => {
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [generatedOtp, setGeneratedOtp] = useState('');
 
-  // Toast notification state
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
@@ -325,7 +358,31 @@ const Signup: React.FC = () => {
     setTimeout(() => setToast(null), 8000);
   };
 
-  const update = (field: keyof FormData, value: string) => {
+  // Validate invite token on mount
+  useEffect(() => {
+    if (!isInviteFlow) {
+      setInviteValid(true);
+      return;
+    }
+    const result = validateInvite(inviteTokenParam!);
+    if (result.valid) {
+      setInviteValid(true);
+      setInviteData(result);
+      // Pre-fill form with invite data
+      const inv = getInviteByToken(inviteTokenParam!);
+      if (inv) {
+        setForm(prev => ({
+          ...prev,
+          email: inv.mentorEmail || '',
+          expertise: inv.expertise || '',
+        }));
+      }
+    } else {
+      setInviteValid(false);
+    }
+  }, [isInviteFlow, inviteTokenParam]);
+
+  const update = (field: keyof FormData, value: any) => {
     setForm(prev => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   };
@@ -362,6 +419,9 @@ const Signup: React.FC = () => {
     if (selectedRole === 'mentor') {
       if (!form.expertise.trim()) e.expertise = 'Expertise is required';
       if (!form.experienceYears.trim()) e.experienceYears = 'Years of experience is required';
+      if (!form.industriesWorkedWith.trim()) e.industriesWorkedWith = 'Please specify industries';
+      if (!form.linkedin.trim()) e.linkedin = 'LinkedIn profile is required';
+      if (!form.bio.trim()) e.bio = 'Short bio is required';
     }
 
     // Investor-specific
@@ -441,36 +501,61 @@ const Signup: React.FC = () => {
     setOtpLoading(true);
     setOtpError('');
     try {
+      const body: Record<string, any> = {
+        email: form.email.trim(),
+        otp: code,
+        password: form.password,
+        role: selectedRole,
+        fullName: form.fullName.trim(),
+        mobile: form.mobile,
+      };
+
+      if (selectedRole === 'mentor') {
+        body.location = form.location;
+        body.expertise = form.expertise;
+        body.experienceYears = form.experienceYears;
+        body.industriesWorkedWith = form.industriesWorkedWith;
+        body.previousExperience = form.previousExperience;
+        body.mentoredStartupsCount = form.mentoredStartupsCount;
+        body.linkedin = form.linkedin;
+        body.portfolioWebsite = form.portfolioWebsite;
+        body.achievements = form.achievements;
+        body.certifications = form.certifications;
+        body.bio = form.bio;
+        body.availableDays = form.availableDays;
+        body.preferredSessionType = form.preferredSessionType;
+      } else if (selectedRole === 'investor') {
+        body.companyName = form.companyName;
+        body.investorType = form.investorType;
+        body.preferredIndustry = form.preferredIndustry;
+        body.minInvestment = form.minInvestment;
+        body.maxInvestment = form.maxInvestment;
+      }
+
       const res = await fetch(`${API_URL}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: form.email.trim(),
-          otp: code,
-          password: form.password,
-          role: selectedRole,
-          fullName: form.fullName.trim(),
-          mobile: form.mobile,
-          // Mentor fields
-          expertise: form.expertise,
-          experienceYears: form.experienceYears,
-          linkedin: form.linkedin,
-          bio: form.bio,
-          // Investor fields
-          companyName: form.companyName,
-          investorType: form.investorType,
-          preferredIndustry: form.preferredIndustry,
-          minInvestment: form.minInvestment,
-          maxInvestment: form.maxInvestment,
-        }),
+        body: JSON.stringify(body),
       });
       const json = await res.json();
 
       if (json.success && json.token) {
         localStorage.setItem('ai_startup_builder_jwt', json.token);
+
+        // Mark invite as used if invite flow
+        if (isInviteFlow && inviteTokenParam) {
+          markInviteUsed(inviteTokenParam);
+        }
+
         await checkAuth();
-        showToast('Mail verified successfully! Your free trial starts now.', 'success');
-        setStep('welcome');
+
+        // For mentor/invite flow, redirect to pending approval
+        if (selectedRole === 'mentor') {
+          navigate('/pending-approval?role=mentor', { replace: true });
+        } else {
+          showToast('Mail verified successfully! Your free trial starts now.', 'success');
+          setStep('welcome');
+        }
       } else {
         setOtpError(json.error || 'Failed to create account. Please try again.');
       }
@@ -491,12 +576,43 @@ const Signup: React.FC = () => {
   const steps = step === 'role'
     ? [{ num: 1, label: 'Choose Role' }]
     : step === 'form'
-    ? [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }]
+    ? isInviteFlow
+      ? [{ num: 1, label: 'Account Details' }]
+      : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }]
     : step === 'email_otp'
-    ? [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }, { num: 3, label: 'Verify Email' }]
-    : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }, { num: 3, label: 'Verify Email' }];
+    ? isInviteFlow
+      ? [{ num: 1, label: 'Account Details' }, { num: 2, label: 'Verify Email' }]
+      : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }, { num: 3, label: 'Verify Email' }]
+    : isInviteFlow
+      ? [{ num: 1, label: 'Account Details' }, { num: 2, label: 'Verify Email' }]
+      : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }, { num: 3, label: 'Verify Email' }];
 
-  const currentStepIdx = step === 'role' ? 0 : step === 'form' ? 1 : 2;
+  const currentStepIdx = isInviteFlow
+    ? (step === 'form' ? 0 : 1)
+    : (step === 'role' ? 0 : step === 'form' ? 1 : 2);
+
+  // Invalid invite screen
+  if (isInviteFlow && inviteValid === false) {
+    return (
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4 font-sans">
+        <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-100/50 p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <ShieldAlert size={32} className="text-red-500" />
+          </div>
+          <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Invalid Invite Link</h2>
+          <p className="text-gray-500 text-sm mb-6">
+            This invite link is invalid or expired. Please contact admin.
+          </p>
+          <Link
+            to="/"
+            className="w-full inline-flex items-center justify-center gap-2 h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all"
+          >
+            Go to Home <ArrowRight size={16} />
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4 font-sans relative">
@@ -519,7 +635,20 @@ const Signup: React.FC = () => {
           </div>
 
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-100/50 p-8 flex-1">
-            {/* Step indicator (hide on role selection & welcome) */}
+            {/* Invite Banner */}
+            {isInviteFlow && inviteValid && (
+              <div className="mb-5 p-3 bg-[#6C4CF1]/5 border border-[#6C4CF1]/20 rounded-xl flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-[#6C4CF1]/10 flex items-center justify-center">
+                  <Link2 size={16} className="text-[#6C4CF1]" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-[#6C4CF1] uppercase tracking-wider">Invited as Mentor</p>
+                  <p className="text-xs text-gray-500">Your role is pre-selected via invite link</p>
+                </div>
+              </div>
+            )}
+
+            {/* Step indicator */}
             {step !== 'role' && step !== 'welcome' && (
               <div className="flex items-center gap-2 mb-8">
                 {steps.map((s, idx) => (
@@ -590,11 +719,13 @@ const Signup: React.FC = () => {
             {step === 'form' && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-1">
-                    <button onClick={() => { setStep('role'); setForm({ ...emptyForm }); setErrors({}); }} className="text-gray-400 hover:text-gray-600 transition-colors text-sm">
-                      ← Back
-                    </button>
-                  </div>
+                  {!isInviteFlow && (
+                    <div className="flex items-center gap-2 mb-1">
+                      <button onClick={() => { setStep('role'); setForm({ ...emptyForm }); setErrors({}); }} className="text-gray-400 hover:text-gray-600 transition-colors text-sm">
+                        ← Back
+                      </button>
+                    </div>
+                  )}
                   <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
                     {selectedRole === 'founder' && 'Create Founder Account'}
                     {selectedRole === 'mentor' && 'Create Mentor Account'}
@@ -626,9 +757,13 @@ const Signup: React.FC = () => {
                   )}
 
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <Field label="Email Address *" icon={<Mail size={16} />} type="email" placeholder="name@gmail.com" value={form.email} onChange={v => update('email', v.trim())} error={errors.email} />
+                    <Field label="Email Address *" icon={<Mail size={16} />} type="email" placeholder="name@gmail.com" value={form.email} onChange={v => update('email', v.trim())} error={errors.email} disabled={isInviteFlow} />
                     <Field label="Mobile Number *" icon={<Phone size={16} />} type="tel" placeholder="10-digit number" value={form.mobile} onChange={v => update('mobile', v)} error={errors.mobile} maxLength={10} inputMode="numeric" />
                   </div>
+
+                  {selectedRole === 'mentor' && (
+                    <Field label="Location" icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>} placeholder="City, Country" value={form.location} onChange={v => update('location', v)} />
+                  )}
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <PasswordField label="Password *" value={form.password} onChange={v => update('password', v)} show={showPassword} onToggle={() => setShowPassword(!showPassword)} error={errors.password} showStrength />
@@ -639,7 +774,7 @@ const Signup: React.FC = () => {
                   {selectedRole === 'mentor' && (
                     <>
                       <div className="pt-2 border-t border-gray-100">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Mentor Details</p>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Experience</p>
                       </div>
                       <div className="grid sm:grid-cols-2 gap-4">
                         <div>
@@ -648,18 +783,12 @@ const Signup: React.FC = () => {
                             value={form.expertise}
                             onChange={e => update('expertise', e.target.value)}
                             className={`block w-full px-4 py-3 border-2 ${errors.expertise ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium`}
+                            disabled={isInviteFlow && !!inviteData?.expertise}
                           >
                             <option value="">Select expertise</option>
-                            <option value="Product Management">Product Management</option>
-                            <option value="Marketing & Growth">Marketing & Growth</option>
-                            <option value="Technology & Engineering">Technology & Engineering</option>
-                            <option value="Finance & Accounting">Finance & Accounting</option>
-                            <option value="Legal & Compliance">Legal & Compliance</option>
-                            <option value="Sales & Business Dev">Sales & Business Dev</option>
-                            <option value="HR & People Ops">HR & People Ops</option>
-                            <option value="Design & UX">Design & UX</option>
-                            <option value="Fundraising & IR">Fundraising & IR</option>
-                            <option value="Other">Other</option>
+                            {EXPERTISE_OPTIONS.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
                           </select>
                           {errors.expertise && <p className="text-red-500 text-xs mt-1 font-medium">{errors.expertise}</p>}
                         </div>
@@ -679,8 +808,73 @@ const Signup: React.FC = () => {
                           {errors.experienceYears && <p className="text-red-500 text-xs mt-1 font-medium">{errors.experienceYears}</p>}
                         </div>
                       </div>
-                      <Field label="LinkedIn Profile" icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>} placeholder="https://linkedin.com/in/yourprofile" value={form.linkedin} onChange={v => update('linkedin', v)} />
-                      <Field label="Short Bio" icon={null} placeholder="Tell us about your experience and what you can help with..." value={form.bio} onChange={v => update('bio', v)} rows={3} />
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <Field label="Industries Worked With *" icon={<Briefcase size={16} />} placeholder="e.g. FinTech, HealthTech, EdTech" value={form.industriesWorkedWith} onChange={v => update('industriesWorkedWith', v)} error={errors.industriesWorkedWith} />
+                        <Field label="Mentored Startups Count" icon={null} type="number" placeholder="e.g. 5" value={form.mentoredStartupsCount} onChange={v => update('mentoredStartupsCount', v)} inputMode="numeric" />
+                      </div>
+                      <Field label="Previous Company / Startup Experience" icon={null} placeholder="e.g. CTO at TechCorp, Founder of StartupXYZ..." value={form.previousExperience} onChange={v => update('previousExperience', v)} rows={3} />
+
+                      <div className="pt-2 border-t border-gray-100">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Previous Work</p>
+                      </div>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <Field label="LinkedIn Profile *" icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>} placeholder="https://linkedin.com/in/yourprofile" value={form.linkedin} onChange={v => update('linkedin', v)} error={errors.linkedin} />
+                        <Field label="Portfolio / Website Link" icon={null} placeholder="https://yourportfolio.com" value={form.portfolioWebsite} onChange={v => update('portfolioWebsite', v)} />
+                      </div>
+                      <Field label="Achievements" icon={null} placeholder="Notable achievements, awards, recognitions..." value={form.achievements} onChange={v => update('achievements', v)} rows={2} />
+                      <Field label="Certifications" icon={null} placeholder="Relevant certifications and qualifications..." value={form.certifications} onChange={v => update('certifications', v)} rows={2} />
+                      <Field label="Short Bio *" icon={null} placeholder="Tell us about your experience and what you can help with..." value={form.bio} onChange={v => update('bio', v)} error={errors.bio} rows={3} />
+
+                      <div className="pt-2 border-t border-gray-100">
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Availability</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2">Available Days</label>
+                        <div className="flex flex-wrap gap-2">
+                          {DAYS.map(day => {
+                            const isSelected = form.availableDays.includes(day);
+                            return (
+                              <button
+                                key={day}
+                                type="button"
+                                onClick={() => {
+                                  const next = isSelected
+                                    ? form.availableDays.filter(d => d !== day)
+                                    : [...form.availableDays, day];
+                                  update('availableDays', next);
+                                }}
+                                className={`px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
+                                  isSelected
+                                    ? 'bg-[#6C4CF1]/10 border-[#6C4CF1]/30 text-[#6C4CF1]'
+                                    : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'
+                                }`}
+                              >
+                                {isSelected && <Check size={10} className="inline mr-1" />}
+                                {day.slice(0, 3)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-2">Preferred Session Type</label>
+                        <div className="flex gap-3">
+                          {['Chat', 'Video Call', 'Both'].map(type => (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => update('preferredSessionType', type)}
+                              className={`flex-1 px-4 py-3 rounded-xl text-sm font-bold border-2 transition-all ${
+                                form.preferredSessionType === type
+                                  ? 'bg-[#6C4CF1]/10 border-[#6C4CF1]/30 text-[#6C4CF1]'
+                                  : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'
+                              }`}
+                            >
+                              {type}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </>
                   )}
 

@@ -7,7 +7,7 @@ import {
   File, Lightbulb, CalendarClock, Handshake, ClipboardList,
   Briefcase, Building2, UserCog, Inbox, CreditCard,
   BarChart2, Settings, CheckSquare, ShieldCheck,
-  Map, IndianRupee, Film,
+  Map, IndianRupee, Film, Link2,
 } from 'lucide-react';
 import NotificationDropdown from '../components/shared/NotificationDropdown';
 
@@ -71,7 +71,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
       items: [
         { name: 'Overview',                icon: LayoutDashboard, path: '/dashboard/admin' },
         { name: 'Manage Users',            icon: Users,           path: '/dashboard/admin/users' },
-        { name: 'Login Logs',             icon: ClipboardList,   path: '/dashboard/admin/logs' },
+        { name: 'Invite Links',            icon: Link2,           path: '/dashboard/admin/invite-links' },
         { name: 'Manage Startups',         icon: Rocket,          path: '/dashboard/admin/startups' },
         { name: 'Manage Videos',           icon: Film,            path: '/dashboard/admin/manage-videos' },
         { name: 'Approvals',               icon: ShieldCheck,     path: '/dashboard/admin/approvals-hub' },
