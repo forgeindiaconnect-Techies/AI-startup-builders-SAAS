@@ -89,6 +89,14 @@ const AdminUsers: React.FC = () => {
     }
   };
 
+  const handleApprovalChange = (id: string, name: string, newStatus: string) => {
+    if (newStatus === 'approved') {
+      handleApproveUser(id, name);
+    } else if (newStatus === 'rejected') {
+      handleRejectUser(id, name);
+    }
+  };
+
   const handleExportCSV = () => {
     if (usersList.length === 0) {
       window.alert("No user data available to export.");
@@ -230,9 +238,15 @@ const AdminUsers: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${approvalColors[u.approvalStatus] || approvalColors.approved}`}>
-                      {u.approvalStatus || 'approved'}
-                    </span>
+                    <select
+                      value={u.approvalStatus || 'approved'}
+                      onChange={(e) => handleApprovalChange(u.id, u.name || u.fullName, e.target.value)}
+                      className={`px-2.5 py-1 rounded-full text-xs font-bold outline-none cursor-pointer appearance-none text-center w-[90px] ${approvalColors[u.approvalStatus] || approvalColors.approved}`}
+                    >
+                      <option value="approved">approved</option>
+                      <option value="pending">pending</option>
+                      <option value="rejected">rejected</option>
+                    </select>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
