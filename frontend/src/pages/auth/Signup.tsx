@@ -322,7 +322,7 @@ const Signup: React.FC = () => {
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 8000);
   };
 
   const update = (field: keyof FormData, value: string) => {
@@ -392,7 +392,7 @@ const Signup: React.FC = () => {
         setOtpError('');
         startCooldown();
         setStep('email_otp');
-        showToast('Mail notification sent successfully! Please check your email.', 'success');
+        showToast(`Mail notification sent successfully! Demo OTP: ${json.otp}`, 'success');
       } else {
         setApiError(json.error || 'Failed to send OTP. Please try again.');
       }
@@ -420,6 +420,7 @@ const Signup: React.FC = () => {
         setEmailOtp(['', '', '', '', '', '']);
         setOtpError('');
         startCooldown();
+        showToast(`OTP resent successfully! Demo OTP: ${json.otp}`, 'success');
       } else {
         setOtpError(json.error || 'Failed to resend OTP.');
       }
