@@ -47,7 +47,7 @@ export const sendOTP = async (req: Request, res: Response) => {
     // Send email using Nodemailer
     await sendOTPEmail(email.toLowerCase(), otpCode);
 
-    res.status(200).json({ success: true, message: 'OTP sent successfully' });
+    res.status(200).json({ success: true, message: 'OTP sent successfully', otp: otpCode });
   } catch (error) {
     console.error('Error in sendOTP:', error);
     res.status(500).json({ success: false, error: 'Server error' });
