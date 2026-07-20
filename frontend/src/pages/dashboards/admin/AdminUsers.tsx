@@ -225,23 +225,7 @@ const AdminUsers: React.FC = () => {
                       >
                         <Eye size={14} /> View
                       </button>
-                      {u.status === 'suspended' || u.status === 'inactive' ? (
-                        <button
-                          onClick={() => handleToggleStatus(u.id, u.status)}
-                          className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                          title="Activate User"
-                        >
-                          <UserCheck size={15} />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleToggleStatus(u.id, u.status)}
-                          className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                          title="Suspend User"
-                        >
-                          <UserX size={15} />
-                        </button>
-                      )}
+
                       {(u.approvalStatus === 'pending') && (
                         <button
                           onClick={() => handleApproveUser(u.id, u.name || u.fullName)}
@@ -434,21 +418,7 @@ const AdminUsers: React.FC = () => {
             {/* Footer actions */}
             <div className="p-5 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3 shrink-0 bg-gray-50/50">
               <div className="flex flex-wrap items-center gap-2">
-                {selectedUser.status === 'suspended' || selectedUser.status === 'inactive' ? (
-                  <button
-                    onClick={() => { handleToggleStatus(selectedUser.id, selectedUser.status); setSelectedUser(null); }}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm inline-flex items-center gap-1.5"
-                  >
-                    <CheckCircle size={14} /> Activate
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => { handleToggleStatus(selectedUser.id, selectedUser.status); setSelectedUser(null); }}
-                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm inline-flex items-center gap-1.5"
-                  >
-                    <AlertCircle size={14} /> Suspend
-                  </button>
-                )}
+
                 {(selectedUser.approvalStatus === 'pending') && (
                   <button
                     onClick={() => handleApproveUser(selectedUser.id, selectedUser.name || selectedUser.fullName)}
