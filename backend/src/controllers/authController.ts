@@ -141,8 +141,10 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Delete the used OTP
-    await OTP.deleteOne({ _id: validOtp._id });
+    // Delete the used OTP (only if it was found in DB)
+    if (validOtp) {
+      await OTP.deleteOne({ _id: validOtp._id });
+    }
 
     // Initialize Subscription state
     let planName: 'free_trial' | 'pro' | 'premium_startup_builder' | 'none' = 'none';
