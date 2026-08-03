@@ -91,19 +91,21 @@ const AdminUsers: React.FC = () => {
   const handleApprovalChange = (userId: string, userName: string, newApproval: string) => {
     if (newApproval === 'rejected') {
       if (!window.confirm(`Reject ${userName}'s account? They will not be able to log in.`)) {
-        loadUsers();
         return;
       }
+      // Optimistic update
+      setUsersList(prev => prev.map(u => u.id === userId ? { ...u, approvalStatus: newApproval } : u));
       rejectUser(userId);
       showToast(`${userName}'s account has been rejected.`);
     } else if (newApproval === 'approved') {
+      // Optimistic update
+      setUsersList(prev => prev.map(u => u.id === userId ? { ...u, approvalStatus: newApproval } : u));
       approveUser(userId);
       showToast(`${userName}'s account has been approved.`);
     }
     if (selectedUser?.id === userId) {
       setSelectedUser({ ...selectedUser, approvalStatus: newApproval });
     }
-    loadUsers();
   };
 
   const handleExportCSV = () => {
