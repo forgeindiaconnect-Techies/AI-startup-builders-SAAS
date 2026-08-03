@@ -162,6 +162,47 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
     return map;
   })();
 
+  const keywordApplyLinks: Array<[RegExp, string]> = [
+    [/fssai|food license|food safety|food business/i, 'https://foscos.fssai.gov.in/'],
+    [/gst\b|gst registration|goods and services/i, 'https://www.gst.gov.in/'],
+    [/shop.*establishment|establishment.*act/i, 'https://services.india.gov.in/service/detail/registration-of-shops-and-establishments-under-shops-and-establishment-act-4248'],
+    [/trade license|trade licence/i, 'https://services.india.gov.in/service/detail/issuance-of-trade-license-under-municipal-corporation-act'],
+    [/fire safety|fire license/i, 'https://services.india.gov.in/service/detail/issuance-of-fire-safety-certificate'],
+    [/pan card|\bpan\b|permanent account number/i, 'https://onlineservices.proteantech.in/paam/endUserRegisterContact.html'],
+    [/aadhaar|uidai/i, 'https://appointments.uidai.gov.in/'],
+    [/udyam|msme/i, 'https://udyamregistration.gov.in/'],
+    [/incorporation|company registration|\broc\b|\bllp\b|pvt.?ltd|private limited/i, 'https://www.mca.gov.in/'],
+    [/trademark|\bipr\b|intellectual property/i, 'https://ipindiaonline.gov.in/'],
+    [/copyright/i, 'https://copyright.gov.in/'],
+    [/rent agreement|no.?objection|\bnoc\b|premises/i, 'https://tnreginet.gov.in/portal/'],
+    [/bank account|current account/i, 'https://www.indiafilings.com/learn/open-current-account-online'],
+    [/professional tax/i, 'https://www.indiafilings.com/learn/professional-tax-registration-and-compliance'],
+    [/pollution|consent to operate|\bcte\b|\bcto\b/i, 'https://cpcb.gov.in/'],
+    [/insurance/i, 'https://www.indiafilings.com/learn/insurance-for-businesses'],
+    [/startup india/i, 'https://www.startupindia.gov.in/'],
+    [/iso\b|bis certification/i, 'https://www.bis.gov.in/'],
+    [/\besi\b|provident fund|\bepf\b/i, 'https://www.epfindia.gov.in/'],
+    [/drug license|drug licence/i, 'https://www.indiafilings.com/learn/drug-license'],
+    [/health trade/i, 'https://tnswp.com/DIGIGOV/listOfClearances.jsp'],
+    [/consumer protection/i, 'https://www.indiafilings.com/learn/consumer-protection-act'],
+    [/privacy policy|terms.*condition|refund policy/i, 'https://www.indiafilings.com/learn/privacy-policy-drafting'],
+    [/clinical establishment/i, 'https://www.indiafilings.com/learn/clinical-establishment-registration'],
+    [/motor vehicle|vehicle permit|\bpermit\b|registration certificate|vehicle rc|\brc\b/i, 'https://vahan.parivahan.gov.in/'],
+    [/medical council/i, 'https://www.indiafilings.com/learn/medical-council-registration'],
+    [/data protection|soc.?2/i, 'https://www.indiafilings.com/learn/data-protection-compliance'],
+    [/nabh|accreditation/i, 'https://www.nabh.co/'],
+  ];
+
+  const resolveApplyLink = (name: string): string => {
+    if (!name) return '';
+    if (officialLinks[name]) return officialLinks[name];
+    if (categoryApplyLinks[name]) return categoryApplyLinks[name];
+    for (const [re, url] of keywordApplyLinks) {
+      if (re.test(name)) return url;
+    }
+    return '';
+  };
+
   const UPLOADABLE_DOCS = ['Aadhaar Card', 'PAN Card', 'PAN Card (Proprietor/Company)'];
 
   const [toast, setToast] = useState<string | null>(null);
@@ -182,7 +223,7 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
   }, [startupData.startupId]);
 
   const handleCardClick = (name: string) => {
-    const url = officialLinks[name] || categoryApplyLinks[name];
+    const url = resolveApplyLink(name);
     if (url) {
       window.open(url, "_blank", "noopener,noreferrer");
     }
@@ -262,7 +303,7 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
   const DocList = ({ docs, section }: { docs: any[]; section: string }) => (
     <div className="space-y-2 pt-3">
       {docs?.map((doc: any, i: number) => {
-        const link = officialLinks[doc.name] || categoryApplyLinks[doc.name];
+        const link = resolveApplyLink(doc.name);
         const isClickable = !!link;
         const canUpload = UPLOADABLE_DOCS.includes(doc.name);
         
