@@ -6,7 +6,7 @@ interface Props {
   setStartupData?: (data: any) => void;
 }
 
-import { generateStartupOutput, generateRoadmapAndTasks, updateStartup } from '../../../utils/localStorageHelper';
+import { generateStartupOutput, generateRoadmapAndTasks, updateStartup, addNotification } from '../../../utils/localStorageHelper';
 
 const FounderIdeaGenerator: React.FC<Props> = ({ startupData = {}, setStartupData = () => {} }) => {
   const [loading, setLoading] = useState(false);
@@ -31,6 +31,16 @@ const FounderIdeaGenerator: React.FC<Props> = ({ startupData = {}, setStartupDat
         
         if (updatedStartup) {
           setStartupData(updatedStartup);
+          addNotification({
+            id: `notification_${Date.now()}`,
+            userId: 'admin',
+            title: 'Startup Idea Regenerated',
+            message: `${startupData.startupName}: ${startupData.startupIdea}`,
+            type: 'ai_builder',
+            isRead: false,
+            actionUrl: `/dashboard/admin/startups`,
+            createdAt: new Date().toISOString()
+          });
           window.alert('Success: Startup regenerated successfully');
         }
       } catch (err) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, LayoutGrid, List, X, Rocket, Sparkles, RefreshCw, Trash2 } from 'lucide-react';
-import { createStartupDraft, getStartups } from '../../../utils/localStorageHelper';
+import { createStartupDraft, getStartups, addNotification } from '../../../utils/localStorageHelper';
 
 type Startup = {
   id: string;
@@ -76,6 +76,17 @@ const FounderStartups: React.FC = () => {
 
     try {
       const newStartupData = createStartupDraft(newStartupName, newStartupDesc);
+
+      addNotification({
+        id: `notification_${Date.now()}`,
+        userId: 'admin',
+        title: 'New Startup Idea Submitted',
+        message: `${newStartupName}: ${newStartupDesc}`,
+        type: 'ai_builder',
+        isRead: false,
+        actionUrl: `/dashboard/admin/startups`,
+        createdAt: new Date().toISOString()
+      });
 
       setIsModalOpen(false);
       setNewStartupName('');

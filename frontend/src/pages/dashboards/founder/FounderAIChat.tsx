@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, RefreshCw, UploadCloud, FileText, Trash2, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { API_URL } from '../../../config/api';
 import { useAuth } from '../../../context/AuthContext';
+import { addNotification } from '../../../utils/localStorageHelper';
 
 interface Props {
   startupData?: any;
@@ -160,6 +161,17 @@ const FounderAIChat: React.FC<Props> = ({ startupData = {} }) => {
     const userMessage: Msg = { role: 'user', text };
     setMessages(m => [...m, userMessage]);
     setInput('');
+
+    addNotification({
+      id: `notification_${Date.now()}`,
+      userId: 'admin',
+      title: 'Founder AI Chat Message',
+      message: `[${startupData.startupName || 'Startup'}] ${text}`,
+      type: 'ai_builder',
+      isRead: false,
+      actionUrl: `/dashboard/admin/startups`,
+      createdAt: new Date().toISOString()
+    });
     
     if (!startupData || !startupId) {
       setMessages(m => [...m, { role: 'ai', text: "Please generate a startup in the AI Idea Generator first so I have context to help you!" }]);

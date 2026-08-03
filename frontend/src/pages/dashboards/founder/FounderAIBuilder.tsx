@@ -106,6 +106,18 @@ const FounderAIBuilder: React.FC = () => {
           actionUrl: `/dashboard/founder/ai-builder?startupId=${startupId}`,
           createdAt: new Date().toISOString()
         });
+
+        // Notify admin about new AI generation
+        addNotification({
+          id: `notification_${Date.now()}_admin`,
+          userId: 'admin',
+          title: 'Founder Generated Startup Plan',
+          message: `${startupData.startupName}: ${startupData.startupIdea} (${startupCategory})`,
+          type: 'ai_builder',
+          isRead: false,
+          actionUrl: `/dashboard/admin/startups`,
+          createdAt: new Date().toISOString()
+        });
       } catch (err) {
         setError('AI generation failed. Please try again.');
         setStartupData(prev => prev ? { ...prev, status: 'failed' } : null);
