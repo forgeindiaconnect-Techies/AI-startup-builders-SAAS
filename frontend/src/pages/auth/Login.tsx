@@ -67,7 +67,13 @@ const Login: React.FC = () => {
           }
         }, 1500);
       } else {
-        setError(result.error || 'Login failed. Please try again.');
+        if (result.error === 'Account request rejected') {
+          showToast('Your account has been rejected by the admin.', 'error');
+        } else if (result.error === 'Account pending admin approval') {
+          showToast('Your account is pending admin approval.', 'warning');
+        } else {
+          setError(result.error || 'Login failed. Please try again.');
+        }
       }
     } catch {
       setError('An unexpected error occurred. Please try again.');

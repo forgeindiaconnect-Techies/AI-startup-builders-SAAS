@@ -99,9 +99,6 @@ const AdminUsers: React.FC = () => {
     } else if (newApproval === 'approved') {
       approveUser(userId);
       showToast(`${userName}'s account has been approved.`);
-    } else {
-      approveUser(userId);
-      showToast(`${userName}'s approval set to pending.`);
     }
     if (selectedUser?.id === userId) {
       setSelectedUser({ ...selectedUser, approvalStatus: newApproval });
@@ -182,7 +179,6 @@ const AdminUsers: React.FC = () => {
           }${approvalBgColors[currentApproval] || approvalBgColors.approved}`}
         >
           <option value="approved">Approved</option>
-          <option value="pending">Pending</option>
           <option value="rejected">Rejected</option>
         </select>
         <span className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${approvalDotColors[currentApproval] || approvalDotColors.approved}`} />
