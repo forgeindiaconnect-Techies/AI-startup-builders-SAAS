@@ -29,8 +29,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Subscription',     icon: CreditCard,      path: '/dashboard/founder/billing' },
         { name: 'Documents',        icon: File,            path: '/dashboard/founder/documents' },
         { name: 'Learning Videos',  icon: Film,            path: '/dashboard/founder/learning-videos' },
-        { name: 'Founder Support',  icon: Inbox,           path: '/dashboard/founder/inbox' },
-        { name: 'Profile & Billing',icon: CreditCard,      path: '/dashboard/founder/profile-billing' },
+        { name: 'User Support',     icon: Inbox,           path: '/dashboard/founder/inbox' },        { name: 'Profile & Billing',icon: CreditCard,      path: '/dashboard/founder/profile-billing' },
       ],
     },
   ],
@@ -131,7 +130,7 @@ const SidebarInner: React.FC<{
             </div>
             <div className="overflow-hidden min-w-0">
               <p className="text-[13px] font-semibold text-white truncate">{userName}</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#FBBF24] truncate">{userRole}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#FBBF24] truncate">{userRole === 'founder' ? 'User' : userRole}</p>
             </div>
           </div>
         )}
@@ -248,7 +247,9 @@ const DashboardLayout: React.FC = () => {
               {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             </button>
             <div className="hidden sm:block">
-              <p className="text-xs text-gray-400 font-semibold capitalize">{user?.role} Dashboard</p>
+              <p className="text-xs text-gray-400 font-semibold capitalize">
+                {user?.role === 'founder' ? 'User' : user?.role} Dashboard
+              </p>
             </div>
           </div>
 

@@ -92,7 +92,7 @@ const FounderProfile: React.FC = () => {
             </button>
           </div>
           <p className="font-bold text-gray-900 text-lg">{form.name}</p>
-          <p className="text-sm text-[#5B21B6] font-bold uppercase tracking-widest mt-1">Founder</p>
+          <p className="text-sm text-[#5B21B6] font-bold uppercase tracking-widest mt-1">User</p>
           <p className="text-sm text-gray-500 mt-3 leading-relaxed">{form.location || 'Location not set'}</p>
 
           <div className="w-full border-t border-gray-100 mt-6 pt-5 space-y-3.5 text-left text-xs">
@@ -110,7 +110,7 @@ const FounderProfile: React.FC = () => {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-500 font-medium flex items-center gap-1.5"><User size={13} /> Role</span>
-              <span className="font-bold text-[#5B21B6] uppercase">Founder</span>
+              <span className="font-bold text-[#5B21B6] uppercase">User</span>
             </div>
           </div>
         </div>
