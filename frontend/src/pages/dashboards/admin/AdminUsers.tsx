@@ -468,35 +468,6 @@ const AdminUsers: React.FC = () => {
                 </div>
               </div>
 
-              <div className="my-4 border-t border-gray-100" />
-
-              {/* Security Information */}
-              <div>
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                  <span className="w-1 h-4 rounded-full bg-red-500"></span> Security Information
-                </h4>
-                <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl flex flex-col sm:flex-row sm:items-center gap-3">
-                  <div className="flex items-start gap-3 flex-1">
-                    <Lock size={18} className="text-amber-500 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-bold text-amber-800">Password</p>
-                      <p className="text-xs text-amber-700 mt-0.5">Password is hidden for security reasons. Admin can reset the password if needed.</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (window.confirm(`Reset password for ${selectedUser.name || selectedUser.fullName}? The new password will be "reset123".`)) {
-                        resetUserPassword(selectedUser.id);
-                        showToast(`Password for ${selectedUser.name || selectedUser.fullName} has been reset to "reset123".`);
-                        loadUsers();
-                      }
-                    }}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm shrink-0"
-                  >
-                    <KeyRound size={14} /> Reset Password
-                  </button>
-                </div>
-              </div>
             </div>
 
             {/* Footer actions */}
