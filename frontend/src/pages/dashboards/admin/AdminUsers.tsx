@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Trash2, Download, X, Lock, KeyRound, AlertCircle, CheckCircle, ChevronDown } from 'lucide-react';
+import { Search, Eye, Trash2, Download, X, AlertCircle, CheckCircle, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
 const roleColors: Record<string, string> = {
@@ -34,7 +34,7 @@ const approvalBgColors: Record<string, string> = {
 };
 
 const AdminUsers: React.FC = () => {
-  const { user: currentUser, getAllUsers, deleteUser, approveUser, rejectUser, updateUserStatus, resetUserPassword, refreshUsers } = useAuth();
+  const { user: currentUser, getAllUsers, deleteUser, approveUser, rejectUser, updateUserStatus, refreshUsers } = useAuth();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [usersList, setUsersList] = useState<any[]>([]);
