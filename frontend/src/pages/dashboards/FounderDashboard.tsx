@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Lightbulb, TrendingUp, IndianRupee, Clock, Mail, Calendar, LogIn, ShieldCheck } from 'lucide-react';
+import { getStartups } from '../../utils/localStorageHelper';
+import { Lightbulb, TrendingUp, IndianRupee, Clock, Mail, Calendar, LogIn, ShieldCheck, Rocket, ArrowRight, Sparkles } from 'lucide-react';
 
 const FounderDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [startups, setStartups] = useState<any[]>([]);
+
+  useEffect(() => {
+    const localData = getStartups();
+    setStartups(localData);
+  }, []);
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return '—';
@@ -13,11 +20,29 @@ const FounderDashboard: React.FC = () => {
     catch { return dateStr; }
   };
 
+  const formatRelativeTime = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 7) return `${days}d ago`;
+    return formatDate(dateStr);
+  };
+
+  // Compute real stats
+  const totalStartups = startups.length;
+  const aiReportsGenerated = startups.filter(s => s.aiGenerated?.aiReport || s.status === 'generated').length;
+  const activeStartups = startups.filter(s => s.status === 'generated' || s.status === 'pending_analysis' || s.isSavedToMyStartups);
+  const recentStartups = startups.slice(0, 5); // already sorted by createdAt desc
+
   const stats = [
-    { title: 'Total Startups', value: '0', icon: Lightbulb, color: 'text-blue-500', bg: 'bg-blue-100' },
-    { title: 'AI Reports Generated', value: '0', icon: TrendingUp, color: 'text-purple-500', bg: 'bg-purple-100' },
-    { title: 'Pending Offers', value: '0', icon: IndianRupee, color: 'text-green-500', bg: 'bg-green-100' },
-    { title: 'Mentor Reviews', value: '0', icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-100' },
+    { title: 'Total Startups', value: totalStartups.toString(), icon: Lightbulb, color: 'text-blue-500', bg: 'bg-blue-100' },
+    { title: 'AI Reports Generated', value: aiReportsGenerated.toString(), icon: TrendingUp, color: 'text-purple-500', bg: 'bg-purple-100' },
+    { title: 'Active Ideas', value: activeStartups.length.toString(), icon: IndianRupee, color: 'text-green-500', bg: 'bg-green-100' },
+    { title: 'Pending Analysis', value: startups.filter(s => s.status === 'pending_analysis').length.toString(), icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-100' },
   ];
 
   return (
@@ -85,9 +110,52 @@ const FounderDashboard: React.FC = () => {
             </div>
             
             <div className="space-y-4">
-              <div className="p-5 border border-gray-100 rounded-xl text-center text-gray-400 text-sm">
-                No data yet
-              </div>
+              {activeStartups.length === 0 ? (
+                <div className="p-8 border border-dashed border-gray-200 rounded-xl text-center">
+                  <Rocket size={36} className="mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500 text-sm font-medium mb-3">No startups yet. Create your first idea!</p>
+                  <button
+                    onClick={() => navigate('/dashboard/founder/ai-builder')}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#5B21B6] text-white text-xs font-bold rounded-lg hover:bg-[#4c1d95] transition-colors"
+                  >
+                    <Sparkles size={14} /> Generate Your First Idea
+                  </button>
+                </div>
+              ) : (
+                activeStartups.slice(0, 4).map((s, idx) => {
+                  const score = s.aiGenerated?.aiReport?.investmentReadinessScore || 0;
+                  const statusLabel = s.status === 'generated' ? 'AI Generated' : s.status === 'pending_analysis' ? 'Draft' : s.status;
+                  const statusColor = s.status === 'generated'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200';
+                  return (
+                    <div
+                      key={s.startupId || s.id || idx}
+                      onClick={() => navigate(`/dashboard/founder/ai-builder/${s.startupId || s.id}`)}
+                      className="p-4 border border-gray-100 rounded-xl hover:border-purple-200 hover:shadow-sm transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-bold text-gray-900 truncate">{s.startupName}</h3>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusColor}`}>{statusLabel}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 truncate">{s.startupIdea}</p>
+                        </div>
+                        <div className="flex items-center gap-3 ml-4 shrink-0">
+                          {score > 0 && (
+                            <div className="text-center">
+                              <p className="text-lg font-black text-purple-600">{score}</p>
+                              <p className="text-[9px] text-gray-400 font-medium uppercase">Score</p>
+                            </div>
+                          )}
+                          <ArrowRight size={16} className="text-gray-300 group-hover:text-purple-500 transition-colors" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -104,10 +172,24 @@ const FounderDashboard: React.FC = () => {
 
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h2>
-            <div className="space-y-4">
-              <div className="text-center text-gray-400 text-sm py-4">
-                No recent activity
-              </div>
+            <div className="space-y-3">
+              {recentStartups.length === 0 ? (
+                <div className="text-center text-gray-400 text-sm py-4">
+                  No recent activity
+                </div>
+              ) : (
+                recentStartups.map((s, idx) => (
+                  <div key={s.startupId || s.id || idx} className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${s.status === 'generated' ? 'bg-emerald-500' : 'bg-amber-400'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 truncate">{s.startupName}</p>
+                      <p className="text-[11px] text-gray-400">
+                        {s.status === 'generated' ? 'AI report generated' : 'Draft created'} · {formatRelativeTime(s.updatedAt || s.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
