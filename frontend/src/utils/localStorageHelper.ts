@@ -112,8 +112,8 @@ export const detectStartupCategory = (startup: any): string => {
 export const CATEGORY_DOCUMENT_MAP: Record<string, { essential: Array<{ name: string; reason: string; applyLink?: string }>; optional: Array<{ name: string; reason: string; applyLink?: string }> }> = {
   'Food / Restaurant / Cafe': {
     essential: [
-      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
-      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://onlineservices.proteantech.in/paam/endUserRegisterContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://appointments.uidai.gov.in/' },
       { name: 'FSSAI Registration / License', reason: 'Mandatory food safety license for any business involved in food preparation, processing, or distribution.', applyLink: 'https://foscos.fssai.gov.in/' },
       { name: 'Shop & Establishment Registration', reason: 'Required under state law to legally operate a commercial establishment.', applyLink: 'https://services.india.gov.in/service/detail/registration-of-shops-and-establishments-under-shops-and-establishment-act-4248' },
       { name: 'Trade License', reason: 'Local municipal authority permission to carry on a specific trade or business.', applyLink: 'https://services.india.gov.in/service/detail/issuance-of-trade-license-under-municipal-corporation-act' },
@@ -131,8 +131,8 @@ export const CATEGORY_DOCUMENT_MAP: Record<string, { essential: Array<{ name: st
   },
   'SaaS / Software / AI': {
     essential: [
-      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
-      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://onlineservices.proteantech.in/paam/endUserRegisterContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://appointments.uidai.gov.in/' },
       { name: 'Company Incorporation ( Pvt Ltd / LLP )', reason: 'Legal entity registration for raised funding, signing contracts, and limiting liability.', applyLink: 'https://www.mca.gov.in/' },
       { name: 'GST Registration', reason: 'Required for SaaS billing, interstate transactions, and input tax credit.', applyLink: 'https://www.gst.gov.in/' },
       { name: 'Trademark Registration', reason: 'Protect your product name, logo, and brand from competitors in the tech space.', applyLink: 'https://ipindiaonline.gov.in/' },
@@ -149,8 +149,8 @@ export const CATEGORY_DOCUMENT_MAP: Record<string, { essential: Array<{ name: st
   },
   'Healthcare / Clinic / Hospital': {
     essential: [
-      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
-      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://onlineservices.proteantech.in/paam/endUserRegisterContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://appointments.uidai.gov.in/' },
       { name: 'Clinical Establishment Registration', reason: 'Mandatory registration under the Clinical Establishments Act for healthcare facilities.', applyLink: 'https://www.indiafilings.com/learn/clinical-establishment-registration' },
       { name: 'Medical Council Registration', reason: 'Practitioners must be registered with the State or National Medical Council.', applyLink: 'https://www.indiafilings.com/learn/medical-council-registration' },
       { name: 'Drug License', reason: 'Required if pharmacy or dispensing medicines is part of the healthcare service.', applyLink: 'https://www.indiafilings.com/learn/drug-license' },
@@ -167,8 +167,8 @@ export const CATEGORY_DOCUMENT_MAP: Record<string, { essential: Array<{ name: st
   },
   'E-commerce': {
     essential: [
-      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
-      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://onlineservices.proteantech.in/paam/endUserRegisterContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://appointments.uidai.gov.in/' },
       { name: 'Company / LLP Incorporation', reason: 'Legal entity for raised funding, vendor agreements, and payment gateway integration.', applyLink: 'https://www.mca.gov.in/' },
       { name: 'GST Registration', reason: 'Mandatory for e-commerce operators and sellers on e-commerce platforms.', applyLink: 'https://www.gst.gov.in/' },
       { name: 'Shop & Establishment Registration', reason: 'Required under state law for commercial operations.', applyLink: 'https://services.india.gov.in/service/detail/registration-of-shops-and-establishments-under-shops-and-establishment-act-4248' },
@@ -185,8 +185,8 @@ export const CATEGORY_DOCUMENT_MAP: Record<string, { essential: Array<{ name: st
   },
   'Education / Training': {
     essential: [
-      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
-      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://onlineservices.proteantech.in/paam/endUserRegisterContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://appointments.uidai.gov.in/' },
       { name: 'Society / Trust / Company Incorporation', reason: 'Legal entity registration for educational institutions and EdTech platforms.', applyLink: 'https://www.mca.gov.in/' },
       { name: 'GST Registration', reason: 'Required for course fees billing and interstate transactions.', applyLink: 'https://www.gst.gov.in/' },
       { name: 'Udyam / MSME Registration', reason: 'Benefits under MSME schemes for educational ventures.', applyLink: 'https://udyamregistration.gov.in/' },
@@ -202,8 +202,8 @@ export const CATEGORY_DOCUMENT_MAP: Record<string, { essential: Array<{ name: st
   },
   'Manufacturing': {
     essential: [
-      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
-      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://onlineservices.proteantech.in/paam/endUserRegisterContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://appointments.uidai.gov.in/' },
       { name: 'Company / LLP Incorporation', reason: 'Legal entity for industrial operations, vendor contracts, and raised funding.', applyLink: 'https://www.mca.gov.in/' },
       { name: 'GST Registration', reason: 'Mandatory for manufacturers for input tax credit and inter-state sales.', applyLink: 'https://www.gst.gov.in/' },
       { name: 'Factory License', reason: 'Required from the State Factory Inspectorate for operating a manufacturing unit.', applyLink: 'https://services.india.gov.in/' },
@@ -221,8 +221,8 @@ export const CATEGORY_DOCUMENT_MAP: Record<string, { essential: Array<{ name: st
   },
   'Retail / Local Shop': {
     essential: [
-      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
-      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://onlineservices.proteantech.in/paam/endUserRegisterContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://appointments.uidai.gov.in/' },
       { name: 'Shop & Establishment Registration', reason: 'Required under state law to legally operate a retail establishment.', applyLink: 'https://services.india.gov.in/service/detail/registration-of-shops-and-establishments-under-shops-and-establishment-act-4248' },
       { name: 'Trade License', reason: 'Local municipal authority permission to carry on retail trade.', applyLink: 'https://services.india.gov.in/service/detail/issuance-of-trade-license-under-municipal-corporation-act' },
       { name: 'GST Registration', reason: 'Required if turnover exceeds the threshold or for purchasing from GST-registered suppliers.', applyLink: 'https://www.gst.gov.in/' },
@@ -239,8 +239,8 @@ export const CATEGORY_DOCUMENT_MAP: Record<string, { essential: Array<{ name: st
   },
   'Transport / Delivery': {
     essential: [
-      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
-      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://onlineservices.proteantech.in/paam/endUserRegisterContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://appointments.uidai.gov.in/' },
       { name: 'Company / LLP Incorporation', reason: 'Legal entity for transport operations, fleet management, and raised funding.', applyLink: 'https://www.mca.gov.in/' },
       { name: 'GST Registration', reason: 'Required for transport services billing and interstate operations.', applyLink: 'https://www.gst.gov.in/' },
       { name: 'Motor Vehicle Act Permits', reason: 'Commercial vehicle permits required for transport and delivery operations.', applyLink: 'https://vahan.parivahan.gov.in/vahan4dashboard/' },
@@ -257,8 +257,8 @@ export const CATEGORY_DOCUMENT_MAP: Record<string, { essential: Array<{ name: st
   },
   'Finance / FinTech': {
     essential: [
-      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
-      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://onlineservices.proteantech.in/paam/endUserRegisterContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://appointments.uidai.gov.in/' },
       { name: 'Company Incorporation ( Pvt Ltd )', reason: 'Mandatory for fintech companies. Required for RBI/SEBI compliance.', applyLink: 'https://www.mca.gov.in/' },
       { name: 'GST Registration', reason: 'Required for financial services billing.', applyLink: 'https://www.gst.gov.in/' },
       { name: 'RBI / SEBI / IRDAI Approval', reason: 'Regulatory approval required based on financial service type (lending, insurance, securities).', applyLink: 'https://www.rbi.org.in/' },
@@ -275,8 +275,8 @@ export const CATEGORY_DOCUMENT_MAP: Record<string, { essential: Array<{ name: st
   },
   'Service Business': {
     essential: [
-      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
-      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://onlineservices.proteantech.in/paam/endUserRegisterContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://appointments.uidai.gov.in/' },
       { name: 'Shop & Establishment Registration', reason: 'Required under state law for service business operations.', applyLink: 'https://services.india.gov.in/service/detail/registration-of-shops-and-establishments-under-shops-and-establishment-act-4248' },
       { name: 'Trade License', reason: 'Local municipal authority permission for service trade.', applyLink: 'https://services.india.gov.in/service/detail/issuance-of-trade-license-under-municipal-corporation-act' },
       { name: 'GST Registration', reason: 'Required if turnover exceeds the threshold or for interstate services.', applyLink: 'https://www.gst.gov.in/' },
@@ -293,8 +293,8 @@ export const CATEGORY_DOCUMENT_MAP: Record<string, { essential: Array<{ name: st
   },
   'Other': {
     essential: [
-      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://www.onlineservices.nsdl.com/paam-endUser-printContact.html' },
-      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://uidai.gov.in/' },
+      { name: 'PAN Card', reason: 'Mandatory for all businesses in India for tax filing and financial transactions.', applyLink: 'https://onlineservices.proteantech.in/paam/endUserRegisterContact.html' },
+      { name: 'Aadhaar Card', reason: 'Identity proof required for PAN application, bank accounts, and government registrations.', applyLink: 'https://appointments.uidai.gov.in/' },
       { name: 'Shop & Establishment Registration', reason: 'Required under state law for business operations.', applyLink: 'https://services.india.gov.in/service/detail/registration-of-shops-and-establishments-under-shops-and-establishment-act-4248' },
       { name: 'Trade License', reason: 'Local municipal authority permission for business operations.', applyLink: 'https://services.india.gov.in/service/detail/issuance-of-trade-license-under-municipal-corporation-act' },
       { name: 'GST Registration', reason: 'Required if turnover exceeds the threshold.', applyLink: 'https://www.gst.gov.in/' },

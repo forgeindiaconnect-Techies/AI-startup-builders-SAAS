@@ -148,7 +148,8 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
     "Rent Agreement / No-Objection Certificate (NOC)": "https://tnreginet.gov.in/portal/",
     "Fire Safety Certificate": "https://tnswp.com/DIGIGOV/swp-tnswp.jsp",
     "Health Trade License": "https://tnswp.com/DIGIGOV/listOfClearances.jsp",
-    "PAN Card (Proprietor/Company)": "https://onlineservices.proteantech.in/paam/endUserRegisterContact.html"
+    "PAN Card (Proprietor/Company)": "https://onlineservices.proteantech.in/paam/endUserRegisterContact.html",
+    "Aadhaar Card": "https://appointments.uidai.gov.in/"
   };
 
   const [toast, setToast] = useState<string | null>(null);
