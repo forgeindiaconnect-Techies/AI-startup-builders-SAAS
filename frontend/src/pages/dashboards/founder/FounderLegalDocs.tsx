@@ -151,6 +151,23 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
     "PAN Card (Proprietor/Company)": "https://onlineservices.proteantech.in/paam/endUserRegisterContact.html"
   };
 
+  const [toast, setToast] = useState<string | null>(null);
+  const [dbDocs, setDbDocs] = useState<any[]>([]);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const loadDbDocs = () => {
+    const allDocs = getDocuments() || [];
+    setDbDocs(allDocs.filter((d: any) => d.startupId === startupData.startupId));
+  };
+
+  useEffect(() => {
+    loadDbDocs();
+  }, [startupData.startupId]);
+
   const handleCardClick = (name: string) => {
     const url = officialLinks[name];
     if (url) {
@@ -158,43 +175,115 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
     }
   };
 
-  const DocList = ({ docs }: { docs: any[] }) => (
+  const handleUploadClick = (docName: string) => {
+    const input = document.getElementById(`upload-input-${docName.replace(/\s+/g, '_')}`) as HTMLInputElement;
+    if (input) input.click();
+  };
+
+  const handleFileChange = (docName: string, docReason: string, section: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Data = event.target?.result as string;
+      
+      const existing = dbDocs.find((d: any) => d.documentType === docName);
+      const docId = existing?.id || `doc_legal_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      
+      const newDoc = {
+        id: docId,
+        startupId: startupData.startupId,
+        founderId: user?.id || startupData.founderId || 'founder_demo',
+        fileName: file.name,
+        fileType: file.type.split('/')[1]?.toUpperCase() || 'PDF',
+        fileSize: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+        fileData: base64Data,
+        category: 'Legal Document',
+        documentType: docName,
+        documentLabel: docName,
+        documentDescription: docReason,
+        documentSection: section,
+        required: section === 'Essential',
+        uploadRequired: true,
+        status: 'Uploaded',
+        sharedWith: [],
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      saveDocument(newDoc);
+      loadDbDocs();
+      showToast(`${docName} uploaded successfully!`);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeleteDoc = (docId: string, docName: string) => {
+    if (window.confirm(`Are you sure you want to delete ${docName}?`)) {
+      const existing = dbDocs.find((d: any) => d.id === docId);
+      if (existing) {
+        const updated = {
+          ...existing,
+          fileData: '',
+          fileSize: '—',
+          status: 'Pending',
+          updatedAt: new Date().toISOString()
+        };
+        saveDocument(updated);
+        loadDbDocs();
+        showToast(`${docName} removed.`);
+      }
+    }
+  };
+
+  const handleDownloadDoc = (fileName: string, fileData: string) => {
+    const link = document.createElement('a');
+    link.href = fileData;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const DocList = ({ docs, section }: { docs: any[]; section: string }) => (
     <div className="space-y-2 pt-3">
       {docs?.map((doc: any, i: number) => {
         const link = officialLinks[doc.name];
         const isClickable = !!link;
+        
+        const realDoc = dbDocs.find((d: any) => d.documentType === doc.name);
+        const status = realDoc?.status || 'Pending';
+        const hasFile = !!realDoc?.fileData;
+
         return (
           <div
             key={i}
-            onClick={() => isClickable && handleCardClick(doc.name)}
-            className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-gray-50 rounded-xl transition-all duration-200 relative group ${
-              isClickable ? 'cursor-pointer hover:bg-gray-100 hover:shadow-sm border border-transparent hover:border-purple-200' : 'border border-transparent'
-            }`}
-            aria-label={isClickable ? `Apply for ${doc.name} (Opens in new tab)` : undefined}
-            role={isClickable ? "button" : undefined}
-            tabIndex={isClickable ? 0 : undefined}
-            onKeyDown={(e) => {
-              if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
-                e.preventDefault();
-                handleCardClick(doc.name);
-              }
-            }}
+            className={`flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-gray-50 rounded-xl transition-all duration-200 relative group border border-transparent hover:border-purple-200`}
           >
             <div className="flex items-start gap-3 flex-1 min-w-0">
-              {doc.status === 'Verified' ? <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
-              : doc.status === 'Rejected' ? <XCircle size={16} className="text-red-500 mt-0.5 shrink-0" />
-              : doc.status === 'Uploaded' ? <Clock size={16} className="text-blue-500 mt-0.5 shrink-0" />
+              {status === 'Verified' ? <CheckCircle2 size={16} className="text-green-500 mt-0.5 shrink-0" />
+              : status === 'Rejected' ? <XCircle size={16} className="text-red-500 mt-0.5 shrink-0" />
+              : status === 'Uploaded' ? <CheckCircle2 size={16} className="text-blue-500 mt-0.5 shrink-0" />
               : <Clock size={16} className="text-yellow-500 mt-0.5 shrink-0" />}
               <div className="min-w-0">
                 <p className="text-sm font-bold text-gray-900 flex items-center gap-1.5 flex-wrap">
                   {doc.name}
-                  {isClickable && <ExternalLink size={12} className="text-gray-400 group-hover:text-[#5B21B6] transition-colors" />}
+                  {isClickable && (
+                    <button 
+                      onClick={() => handleCardClick(doc.name)} 
+                      className="text-gray-400 hover:text-[#5B21B6] transition-colors"
+                      title="Apply online"
+                    >
+                      <ExternalLink size={12} />
+                    </button>
+                  )}
                 </p>
                 <p className="text-xs text-gray-500">{doc.reason}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0 mt-3 sm:mt-0 sm:ml-3 flex-wrap" onClick={(e) => e.stopPropagation()}>
-              {isClickable && (
+              {isClickable && !hasFile && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -206,23 +295,42 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
                   Apply Online ↗
                 </button>
               )}
-              {doc.uploadRequired === 'Yes' && (
-                <span className="text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
-                  Upload Required
-                </span>
+              
+              {!hasFile ? (
+                <>
+                  <input
+                    type="file"
+                    id={`upload-input-${doc.name.replace(/\s+/g, '_')}`}
+                    className="hidden"
+                    onChange={(e) => handleFileChange(doc.name, doc.reason, section, e)}
+                  />
+                  <button
+                    onClick={() => handleUploadClick(doc.name)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-full transition-colors shadow-sm focus:outline-none"
+                  >
+                    Upload Document
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getStatusStyle(status)}`}>
+                    {status}
+                  </span>
+                  <button
+                    onClick={() => handleDownloadDoc(realDoc.fileName, realDoc.fileData)}
+                    className="px-2.5 py-1 bg-green-50 hover:bg-green-100 text-green-700 text-[10px] font-bold rounded-full border border-green-200 transition-colors shadow-sm"
+                  >
+                    Download
+                  </button>
+                  <button
+                    onClick={() => handleDeleteDoc(realDoc.id, doc.name)}
+                    className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-bold rounded-full border border-red-200 transition-colors shadow-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
               )}
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getStatusStyle(doc.status)}`}>
-                {doc.status}
-              </span>
             </div>
-
-            {/* Custom Tooltip */}
-            {isClickable && (
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-950 text-white text-[11px] font-medium rounded py-1 px-2.5 whitespace-nowrap z-10 shadow-lg pointer-events-none transition-opacity duration-150">
-                You will be redirected to the official government portal.
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-width border-4 border-transparent border-t-gray-950"></div>
-              </div>
-            )}
           </div>
         );
       })}
@@ -314,17 +422,17 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
 
       {/* Essential Documents */}
       <Section id="essential" title="Essential Documents" icon={Shield} count={legalData.essentialDocuments?.length}>
-        <DocList docs={legalData.essentialDocuments} />
+        <DocList docs={legalData.essentialDocuments} section="Essential" />
       </Section>
 
       {/* Optional Documents */}
       <Section id="optional" title="Optional Documents" icon={FileCheck} count={legalData.optionalDocuments?.length}>
-        <DocList docs={legalData.optionalDocuments} />
+        <DocList docs={legalData.optionalDocuments} section="Optional" />
       </Section>
 
       {/* Investor Documents */}
       <Section id="investor" title="Investor Documents" icon={FileCheck} count={legalData.investorDocuments?.length}>
-        <DocList docs={legalData.investorDocuments} />
+        <DocList docs={legalData.investorDocuments} section="Investor" />
       </Section>
 
       {/* Saved notice */}
@@ -349,6 +457,12 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
           <p className="text-xs text-amber-700 mt-1">{legalData.disclaimer}</p>
         </div>
       </div>
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-5 right-5 bg-purple-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg z-50 animate-fade-in">
+          {toast}
+        </div>
+      )}
     </div>
   );
 };
