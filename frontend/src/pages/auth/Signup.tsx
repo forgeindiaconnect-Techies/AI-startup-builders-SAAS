@@ -11,7 +11,7 @@ import { validateInvite, markInviteUsed, getInviteByToken } from '../../utils/in
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type UserRole = 'founder' | 'mentor' | 'investor';
-type Step = 'role' | 'form' | 'email_otp' | 'welcome';
+type Step = 'role' | 'form' | 'phone_otp' | 'welcome';
 
 interface FormData {
   fullName: string;
@@ -434,16 +434,16 @@ const Signup: React.FC = () => {
     return Object.keys(e).length === 0;
   };
 
-  // ── Send Email OTP ──────────────────────────────────────────────────────
+  // ── Send Phone OTP ──────────────────────────────────────────────────────
   const handleSendOtp = async () => {
     if (!validateForm()) return;
     setIsSubmitting(true);
     setApiError('');
     try {
-      const res = await fetch(`${API_URL}/auth/register`, {
+      const res = await fetch(`${API_URL}/auth/send-phone-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email.trim() }),
+        body: JSON.stringify({ phone: form.mobile.trim() }),
       });
       const json = await res.json();
       if (json.success) {
@@ -451,8 +451,8 @@ const Signup: React.FC = () => {
         setEmailOtp(['', '', '', '', '', '']);
         setOtpError('');
         startCooldown();
-        setStep('email_otp');
-        showToast(`Mail notification sent successfully! Demo OTP: ${json.otp}`, 'success');
+        setStep('phone_otp');
+        showToast(`Phone notification sent successfully! Demo OTP: ${json.otp}`, 'success');
       } else {
         setApiError(json.error || 'Failed to send OTP. Please try again.');
       }
@@ -469,10 +469,10 @@ const Signup: React.FC = () => {
     setIsSubmitting(true);
     setOtpError('');
     try {
-      const res = await fetch(`${API_URL}/auth/register`, {
+      const res = await fetch(`${API_URL}/auth/send-phone-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email.trim() }),
+        body: JSON.stringify({ phone: form.mobile.trim() }),
       });
       const json = await res.json();
       if (json.success) {
@@ -501,9 +501,23 @@ const Signup: React.FC = () => {
     setOtpLoading(true);
     setOtpError('');
     try {
+      // Step 1: Verify Phone OTP
+      const verifyRes = await fetch(`${API_URL}/auth/verify-phone-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: form.mobile.trim(), otp: code }),
+      });
+      const verifyJson = await verifyRes.json();
+      
+      if (!verifyJson.success) {
+        setOtpError(verifyJson.error || 'Invalid or expired OTP. Please try again.');
+        setOtpLoading(false);
+        return;
+      }
+
+      // Step 2: Complete Signup
       const body: Record<string, any> = {
         email: form.email.trim(),
-        otp: code,
         password: form.password,
         role: selectedRole,
         fullName: form.fullName.trim(),
@@ -532,7 +546,7 @@ const Signup: React.FC = () => {
         body.maxInvestment = form.maxInvestment;
       }
 
-      const res = await fetch(`${API_URL}/auth/verify-otp`, {
+      const res = await fetch(`${API_URL}/auth/complete-phone-signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -553,7 +567,7 @@ const Signup: React.FC = () => {
         if (selectedRole === 'mentor') {
           navigate('/pending-approval?role=mentor', { replace: true });
         } else {
-          showToast('Mail verified successfully! Your free trial starts now.', 'success');
+          showToast('Phone verified successfully! Your account is created.', 'success');
           setStep('welcome');
         }
       } else {
@@ -579,13 +593,13 @@ const Signup: React.FC = () => {
     ? isInviteFlow
       ? [{ num: 1, label: 'Account Details' }]
       : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }]
-    : step === 'email_otp'
+    : step === 'phone_otp'
     ? isInviteFlow
-      ? [{ num: 1, label: 'Account Details' }, { num: 2, label: 'Verify Email' }]
-      : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }, { num: 3, label: 'Verify Email' }]
+      ? [{ num: 1, label: 'Account Details' }, { num: 2, label: 'Verify Phone' }]
+      : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }, { num: 3, label: 'Verify Phone' }]
     : isInviteFlow
-      ? [{ num: 1, label: 'Account Details' }, { num: 2, label: 'Verify Email' }]
-      : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }, { num: 3, label: 'Verify Email' }];
+      ? [{ num: 1, label: 'Account Details' }, { num: 2, label: 'Verify Phone' }]
+      : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }, { num: 3, label: 'Verify Phone' }];
 
   const currentStepIdx = isInviteFlow
     ? (step === 'form' ? 0 : 1)
@@ -934,17 +948,17 @@ const Signup: React.FC = () => {
               </div>
             )}
 
-            {/* ── STEP 3: Email OTP Verification ── */}
-            {step === 'email_otp' && (
+            {/* ── STEP 3: Phone OTP Verification ── */}
+            {step === 'phone_otp' && (
               <div className="flex flex-col items-center text-center animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="w-16 h-16 bg-[#6C4CF1]/10 rounded-2xl flex items-center justify-center mb-5 ring-4 ring-[#6C4CF1]/5">
-                  <Mail size={32} className="text-[#6C4CF1]" />
+                  <Phone size={32} className="text-[#6C4CF1]" />
                 </div>
-                <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Verify your email</h2>
+                <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Verify your phone</h2>
                 <p className="text-gray-500 text-sm mb-1">
                   We sent a 6-digit OTP to
                 </p>
-                <p className="font-bold text-gray-900 text-sm mb-4">{form.email}</p>
+                <p className="font-bold text-gray-900 text-sm mb-4">+91 {form.mobile}</p>
 
                 {generatedOtp && (
                   <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-xl w-full max-w-xs">
