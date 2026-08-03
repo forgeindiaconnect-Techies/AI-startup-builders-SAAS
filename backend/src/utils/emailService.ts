@@ -1,7 +1,15 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import dns from 'dns';
 
 dotenv.config();
+
+// Force Node.js to use IPv4 first for DNS lookups (prevents ENETUNREACH IPv6 errors on Render)
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch (e) {
+  // Ignore on older Node versions
+}
 
 // Create a transporter using SMTP
 // Force IPv4 and short timeouts to prevent hanging on Render (which blocks IPv6 SMTP)
