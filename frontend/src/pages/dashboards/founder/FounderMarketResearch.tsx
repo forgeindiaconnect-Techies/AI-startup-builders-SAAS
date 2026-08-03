@@ -14,6 +14,11 @@ const FounderMarketResearch: React.FC<Props> = ({ startupData = {} }) => {
     return Array.isArray(items) ? items : [items];
   };
 
+  const formatRupee = (val: string | undefined | null) => {
+    if (!val) return 'N/A';
+    return val.replace(/\$/g, '₹');
+  };
+
   return (
     <div className="animate-fade-in-up">
       <div className="mb-8">
@@ -34,7 +39,7 @@ const FounderMarketResearch: React.FC<Props> = ({ startupData = {} }) => {
                 <Globe size={20} className="text-[#FBBF24]" />
                 <span className="text-sm font-bold text-white/70">TAM</span>
               </div>
-              <p className="text-3xl font-extrabold">{mr?.tam || 'N/A'}</p>
+              <p className="text-3xl font-extrabold">{formatRupee(mr?.tam)}</p>
               <p className="text-sm text-white/60 mt-1">Total Addressable Market</p>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
@@ -42,7 +47,7 @@ const FounderMarketResearch: React.FC<Props> = ({ startupData = {} }) => {
                 <Users size={20} className="text-blue-500" />
                 <span className="text-sm font-bold text-gray-500">SAM</span>
               </div>
-              <p className="text-3xl font-extrabold text-gray-900">{mr?.sam || 'N/A'}</p>
+              <p className="text-3xl font-extrabold text-gray-900">{formatRupee(mr?.sam)}</p>
               <p className="text-sm text-gray-500 mt-1">Serviceable Addressable Market</p>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
@@ -50,7 +55,7 @@ const FounderMarketResearch: React.FC<Props> = ({ startupData = {} }) => {
                 <TrendingUp size={20} className="text-emerald-500" />
                 <span className="text-sm font-bold text-gray-500">SOM</span>
               </div>
-              <p className="text-3xl font-extrabold text-gray-900">{mr?.som || 'N/A'}</p>
+              <p className="text-3xl font-extrabold text-gray-900">{formatRupee(mr?.som)}</p>
               <p className="text-sm text-gray-500 mt-1">Serviceable Obtainable Market</p>
             </div>
           </div>

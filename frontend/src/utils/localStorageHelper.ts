@@ -443,9 +443,9 @@ Style: Minimal, elegant, premium, vector-based. Colors: Coffee brown (#4B2E1E), 
     ];
 
     marketResearch = {
-      tam: "$50M (Regional Market)",
-      sam: "$5M (City/District Market)",
-      som: "$500k (Local Neighborhood Target)",
+      tam: "₹50M (Regional Market)",
+      sam: "₹5M (City/District Market)",
+      som: "₹500k (Local Neighborhood Target)",
       customerSegments: ["Daily Commuters", "Weekend Socializers", "Remote Workers", "Health-conscious locals"],
       competitorAnalysis: "Local Mom-and-Pop Shops (outdated), Generic Chains (impersonal). We win on quality and aesthetics.",
       marketTrends: ["Experiential Retail", "Premiumization", "Aesthetic Environments", "Local Sourcing"],
@@ -541,9 +541,9 @@ Style: Minimal, futuristic, clean. Colors: Indigo (#4F46E5), Dark Slate (#111827
     ];
 
     marketResearch = {
-      tam: "$10B (Global SaaS Market for Niche)",
-      sam: "$1B (Target Geography & Segment)",
-      som: "$10M (Attainable Year 1-3)",
+      tam: "₹10B (Global SaaS Market for Niche)",
+      sam: "₹1B (Target Geography & Segment)",
+      som: "₹10M (Attainable Year 1-3)",
       customerSegments: ["Operations Teams", "Marketing Agencies", "IT Departments", "Founders"],
       competitorAnalysis: "Legacy Incumbents (too complex/expensive), Horizontal Tools like Notion (too generic).",
       marketTrends: ["AI Integration", "No-code/Low-code tools", "Remote Work Enablement"],
