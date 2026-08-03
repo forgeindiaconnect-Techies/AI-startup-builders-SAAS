@@ -5,7 +5,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { API_URL } from '../../../config/api';
-import { saveDocument, getDocuments } from '../../../utils/localStorageHelper';
+import { saveDocument, getDocuments, CATEGORY_DOCUMENT_MAP } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
 
 interface Props {
@@ -152,6 +152,18 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
     "Aadhaar Card": "https://appointments.uidai.gov.in/"
   };
 
+  const categoryApplyLinks = (() => {
+    const map: Record<string, string> = {};
+    Object.values(CATEGORY_DOCUMENT_MAP).forEach((cat: any) => {
+      [...cat.essential, ...cat.optional].forEach((d: any) => {
+        if (d.applyLink && !map[d.name]) map[d.name] = d.applyLink;
+      });
+    });
+    return map;
+  })();
+
+  const UPLOADABLE_DOCS = ['Aadhaar Card', 'PAN Card', 'PAN Card (Proprietor/Company)'];
+
   const [toast, setToast] = useState<string | null>(null);
   const [dbDocs, setDbDocs] = useState<any[]>([]);
 
@@ -170,7 +182,7 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
   }, [startupData.startupId]);
 
   const handleCardClick = (name: string) => {
-    const url = officialLinks[name];
+    const url = officialLinks[name] || categoryApplyLinks[name];
     if (url) {
       window.open(url, "_blank", "noopener,noreferrer");
     }
@@ -250,8 +262,9 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
   const DocList = ({ docs, section }: { docs: any[]; section: string }) => (
     <div className="space-y-2 pt-3">
       {docs?.map((doc: any, i: number) => {
-        const link = officialLinks[doc.name];
+        const link = officialLinks[doc.name] || categoryApplyLinks[doc.name];
         const isClickable = !!link;
+        const canUpload = UPLOADABLE_DOCS.includes(doc.name);
         
         const realDoc = dbDocs.find((d: any) => d.documentType === doc.name);
         const status = realDoc?.status || 'Pending';
@@ -284,34 +297,34 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0 mt-3 sm:mt-0 sm:ml-3 flex-wrap" onClick={(e) => e.stopPropagation()}>
-              {isClickable && !hasFile && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCardClick(doc.name);
-                  }}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#5B21B6] hover:bg-[#7C3AED] text-white text-[10px] font-bold rounded-full transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
-                  aria-label={`Apply Online for ${doc.name}`}
-                >
-                  Apply Online ↗
-                </button>
-              )}
-              
               {!hasFile ? (
-                <>
-                  <input
-                    type="file"
-                    id={`upload-input-${doc.name.replace(/\s+/g, '_')}`}
-                    className="hidden"
-                    onChange={(e) => handleFileChange(doc.name, doc.reason, section, e)}
-                  />
+                canUpload ? (
+                  <>
+                    <input
+                      type="file"
+                      id={`upload-input-${doc.name.replace(/\s+/g, '_')}`}
+                      className="hidden"
+                      onChange={(e) => handleFileChange(doc.name, doc.reason, section, e)}
+                    />
+                    <button
+                      onClick={() => handleUploadClick(doc.name)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-full transition-colors shadow-sm focus:outline-none"
+                    >
+                      Upload Document
+                    </button>
+                  </>
+                ) : isClickable ? (
                   <button
-                    onClick={() => handleUploadClick(doc.name)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-full transition-colors shadow-sm focus:outline-none"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCardClick(doc.name);
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#5B21B6] hover:bg-[#7C3AED] text-white text-[10px] font-bold rounded-full transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    aria-label={`Apply Online for ${doc.name}`}
                   >
-                    Upload Document
+                    Apply Online ↗
                   </button>
-                </>
+                ) : null
               ) : (
                 <div className="flex items-center gap-1.5">
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getStatusStyle(status)}`}>
