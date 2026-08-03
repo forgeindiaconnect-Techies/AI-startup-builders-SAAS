@@ -6,6 +6,9 @@ const DB_CONFIG = {
 
 export const connectDB = async (): Promise<void> => {
   try {
+    // Disable buffering globally so Mongoose fails fast on operations if disconnected
+    mongoose.set('bufferCommands', false);
+
     const conn = await mongoose.connect(DB_CONFIG.uri, {
       dbName: 'ai-startup-builder', // always use this DB, regardless of URI
     });
