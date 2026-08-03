@@ -46,14 +46,18 @@ const AdminUsers: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const loadUsers = () => {
+  // Tracks when the next background refresh is allowed (locked after manual changes)
+  const lockUntilRef = React.useRef<number>(0);
+
+  const loadUsers = (force = false) => {
+    if (!force && Date.now() < lockUntilRef.current) return; // skip if locked
     refreshUsers();
     setUsersList(getAllUsers());
   };
 
   useEffect(() => {
-    loadUsers();
-    const interval = setInterval(loadUsers, 3000);
+    loadUsers(true);
+    const interval = setInterval(() => loadUsers(), 10000); // poll every 10s
     return () => clearInterval(interval);
   }, []);
 
@@ -93,13 +97,15 @@ const AdminUsers: React.FC = () => {
       if (!window.confirm(`Reject ${userName}'s account? They will not be able to log in.`)) {
         return;
       }
-      // Optimistic update
-      setUsersList(prev => prev.map(u => u.id === userId ? { ...u, approvalStatus: newApproval } : u));
+      // Lock polling for 10s so background refresh doesn't overwrite this change
+      lockUntilRef.current = Date.now() + 10000;
+      setUsersList(prev => prev.map(u => u.id === userId ? { ...u, approvalStatus: 'rejected' } : u));
       rejectUser(userId);
       showToast(`${userName}'s account has been rejected.`);
     } else if (newApproval === 'approved') {
-      // Optimistic update
-      setUsersList(prev => prev.map(u => u.id === userId ? { ...u, approvalStatus: newApproval } : u));
+      // Lock polling for 10s so background refresh doesn't overwrite this change
+      lockUntilRef.current = Date.now() + 10000;
+      setUsersList(prev => prev.map(u => u.id === userId ? { ...u, approvalStatus: 'approved' } : u));
       approveUser(userId);
       showToast(`${userName}'s account has been approved.`);
     }
