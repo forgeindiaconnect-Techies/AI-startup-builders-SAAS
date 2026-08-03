@@ -297,6 +297,7 @@ const PasswordField: React.FC<{
           placeholder="Min. 8 characters"
           value={value}
           onChange={e => onChange(e.target.value)}
+          autoComplete="new-password"
         />
         <button type="button" onClick={onToggle} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#6C4CF1] transition-colors">
           {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
