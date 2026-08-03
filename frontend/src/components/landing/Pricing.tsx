@@ -1,32 +1,33 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Shield, Zap, Star, Crown } from 'lucide-react';
+import { Check, Shield, Zap, Crown } from 'lucide-react';
 
 const plans = [
   {
-    name: 'Free',
-    price: { monthly: 0, annual: 0 },
-    badge: 'Free Forever',
+    name: 'Free Trial',
+    price: 0,
+    badge: 'Free 1 Day',
     badgeColor: 'bg-gray-100 text-gray-600',
     icon: Zap,
     iconBg: 'bg-gray-100',
     iconColor: 'text-gray-600',
-    desc: 'Perfect for exploring the platform.',
+    desc: '1 day to explore the platform fully.',
     buttonText: 'Get Started',
     buttonStyle: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
     popular: false,
     features: [
-      '1 Startup Idea',
-      '5 AI Reports per Month',
+      'Basic AI Startup Idea Generator',
       'Basic Business Plan',
-      'Basic SWOT Analysis',
-      'Basic Startup Roadmap',
+      'Basic Pitch Deck',
+      'Basic Market Research',
+      'Limited AI Reports',
+      'Limited Document Export',
       'Community Support'
     ]
   },
   {
-    name: 'Silver',
-    price: { monthly: 799, annual: 7999 },
+    name: 'Pro Plan',
+    price: 999,
     badge: 'Best Value',
     badgeColor: 'bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] text-white',
     icon: Shield,
@@ -37,19 +38,22 @@ const plans = [
     buttonStyle: 'bg-[#5B21B6] text-white hover:bg-[#7C3AED] shadow-lg shadow-purple-500/20',
     popular: false,
     features: [
-      '5 Startup Ideas',
-      'Unlimited AI Reports',
-      'Business Plan Generator',
-      'SWOT Analysis',
-      'Market Research',
-      'Competitor Analysis',
-      'AI Logo Suggestions',
-      'Email Support'
+      'Full AI Startup Idea Generator',
+      'Detailed Business Plan Generator',
+      'Detailed Pitch Deck Generator',
+      'Full Market Research',
+      'AI Reports',
+      'Roadmap & Tasks',
+      'Logo & Branding Suggestions',
+      'PDF & Word Export',
+      'Mentor Request Access',
+      'AI Chat Assistant',
+      'Save Multiple Startup Ideas'
     ]
   },
   {
-    name: 'Gold',
-    price: { monthly: 1999, annual: 19999 },
+    name: 'Premium Startup Business Builder',
+    price: 2999,
     badge: 'Most Popular',
     badgeColor: 'bg-gradient-to-r from-[#FBBF24] to-[#F59E0B] text-[#111827]',
     icon: Crown,
@@ -60,46 +64,23 @@ const plans = [
     buttonStyle: 'bg-gradient-to-r from-[#FBBF24] to-[#F59E0B] text-[#111827] hover:from-[#FDE68A] hover:to-[#FBBF24] shadow-lg shadow-amber-500/30',
     popular: true,
     features: [
-      'Everything in Silver',
-      'Unlimited Startup Ideas',
-      'AI Pitch Deck Generator',
-      'Financial Forecasting',
-      'Revenue Model Suggestions',
-      'Marketing Strategy Generator',
-      'Mentor Reviews',
-      'Investor Visibility',
-      'Priority Support'
-    ]
-  },
-  {
-    name: 'Platinum',
-    price: { monthly: 4999, annual: 49999 },
-    badge: 'Premium',
-    badgeColor: 'bg-gradient-to-r from-[#111827] to-gray-800 text-white',
-    icon: Star,
-    iconBg: 'bg-gray-100',
-    iconColor: 'text-gray-700',
-    desc: 'For power teams and enterprises.',
-    buttonText: 'Contact Sales',
-    buttonStyle: 'bg-[#111827] text-white hover:bg-gray-800 shadow-lg shadow-gray-900/20',
-    popular: false,
-    features: [
-      'Everything in Gold',
-      'Unlimited AI Credits',
-      'Unlimited Mentor Reviews',
-      'Direct Investor Access',
-      'Team Collaboration',
-      'White-label Branding',
-      'API Access',
-      'Dedicated Account Manager',
-      'Advanced Analytics',
-      'Premium Support'
+      'Everything in Pro Plan',
+      'Investor Marketplace Access',
+      'AI Investor Matching',
+      'Funding Readiness Score',
+      'AI Due Diligence Report',
+      'Advanced Pitch Deck',
+      'ZIP Document Export',
+      'Mentor Session Booking',
+      'Investor Meeting Requests',
+      'Funding Progress Tracking',
+      'Priority Support',
+      'Advanced Startup Growth Dashboard'
     ]
   }
 ];
 
 const Pricing: React.FC = () => {
-  const [isAnnual, setIsAnnual] = useState(false);
   const navigate = useNavigate();
 
   const formatPrice = (price: number) => {
@@ -107,11 +88,7 @@ const Pricing: React.FC = () => {
     return `₹${price.toLocaleString('en-IN')}`;
   };
 
-  const handleButtonClick = (planName: string) => {
-    if (planName === 'Platinum') {
-      window.alert('Please contact our sales team for Platinum plan details');
-      return;
-    }
+  const handleButtonClick = () => {
     navigate('/login');
   };
 
@@ -131,29 +108,7 @@ const Pricing: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-col items-center mb-14 reveal delay-100">
-          <div className="flex items-center gap-4 bg-white p-1.5 rounded-2xl border border-gray-200 shadow-sm">
-            <button
-              onClick={() => setIsAnnual(false)}
-              className={`px-6 py-2.5 rounded-xl font-['Poppins'] font-medium text-sm transition-all duration-300 ${!isAnnual ? 'bg-[#5B21B6] text-white shadow-md shadow-purple-500/20' : 'text-[#6B7280] hover:text-[#1F2937]'}`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setIsAnnual(true)}
-              className={`px-6 py-2.5 rounded-xl font-['Poppins'] font-medium text-sm transition-all duration-300 relative ${isAnnual ? 'bg-[#5B21B6] text-white shadow-md shadow-purple-500/20' : 'text-[#6B7280] hover:text-[#1F2937]'}`}
-            >
-              Annual
-            </button>
-          </div>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs font-medium text-[#10B981] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-              Save up to 20% with Annual Billing
-            </span>
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
           {plans.map((plan) => (
             <div
               key={plan.name}
@@ -181,23 +136,16 @@ const Pricing: React.FC = () => {
                 <p className="text-xs text-[#6B7280] mb-5">{plan.desc}</p>
 
                 <div className="mb-6">
-                  {plan.price.monthly === 0 ? (
+                  {plan.price === 0 ? (
                     <div className="text-4xl font-['Poppins'] font-black text-[#1F2937]">₹0</div>
                   ) : (
                     <>
                       <div className="flex items-baseline gap-1">
                         <span className="text-4xl font-['Poppins'] font-black text-[#1F2937]">
-                          {formatPrice(isAnnual ? plan.price.annual : plan.price.monthly)}
+                          {formatPrice(plan.price)}
                         </span>
-                        <span className="text-sm text-[#6B7280] font-medium">
-                          {isAnnual ? '/year' : '/month'}
-                        </span>
+                        <span className="text-sm text-[#6B7280] font-medium">/month</span>
                       </div>
-                      {isAnnual && (
-                        <div className="text-xs text-[#10B981] font-medium mt-1">
-                          ₹{plan.price.monthly.toLocaleString('en-IN')}/mo billed annually
-                        </div>
-                      )}
                     </>
                   )}
                 </div>
@@ -212,7 +160,7 @@ const Pricing: React.FC = () => {
                 </ul>
 
                 <button
-                  onClick={() => handleButtonClick(plan.name)}
+                  onClick={handleButtonClick}
                   className={`w-full py-3.5 rounded-xl font-['Poppins'] font-semibold text-sm transition-all duration-300 cursor-pointer ${plan.buttonStyle} ${
                     plan.popular ? 'group-hover:shadow-xl group-hover:shadow-amber-500/40' : ''
                   }`}
