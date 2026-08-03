@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { MessageSquare, Bell } from 'lucide-react';
-import FounderMessages from './FounderMessages';
+import { Bell } from 'lucide-react';
 import FounderNotifications from './FounderNotifications';
 
 const tabs = [
-  { id: 'messages', label: 'Messages', icon: MessageSquare, component: FounderMessages },
   { id: 'notifications', label: 'Notifications', icon: Bell, component: FounderNotifications },
 ];
 
 const SharedInbox: React.FC = () => {
   const location = useLocation();
   const [active, setActive] = useState(() => {
-    return (location.state && location.state.activeTab) ? location.state.activeTab : 'messages';
+    return (location.state && location.state.activeTab) ? location.state.activeTab : 'notifications';
   });
 
   useEffect(() => {
@@ -21,13 +19,13 @@ const SharedInbox: React.FC = () => {
     }
   }, [location.state]);
 
-  const ActiveComponent = tabs.find(t => t.id === active)?.component || FounderMessages;
+  const ActiveComponent = tabs.find(t => t.id === active)?.component || FounderNotifications;
 
   return (
     <div className="animate-fade-in-up">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Inbox</h1>
-        <p className="text-gray-500 mt-1">Your messages and alerts all in one unified communication hub.</p>
+        <p className="text-gray-500 mt-1">Your notifications and alerts in one unified hub.</p>
       </div>
 
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-7 w-fit">

@@ -81,7 +81,6 @@ import AdminManageVideos     from './pages/dashboards/admin/AdminManageVideos';
 import AdminDocumentVerification from './pages/dashboards/admin/AdminDocumentVerification';
 import AdminInviteLinks        from './pages/dashboards/admin/AdminInviteLinks';
 
-import SharedMessages      from './pages/dashboards/founder/FounderMessages';
 import SharedNotifications from './pages/dashboards/founder/FounderNotifications';
 import SharedHelp          from './pages/dashboards/founder/FounderHelp';
 import AdminProfile        from './pages/dashboards/founder/FounderProfile';
@@ -153,7 +152,6 @@ function App() {
                     <Route path="market-research" element={<FounderMarketResearch />} />
                     <Route path="reports"         element={<FounderReports />} />
                     <Route path="ai-chat"         element={<FounderAIChat />} />
-                    <Route path="messages"        element={<SharedMessages />} />
                     <Route path="notifications"   element={<SharedNotifications />} />
                     <Route path="profile"         element={<FounderProfile />} />
                     <Route path="billing"         element={<FounderBilling />} />
@@ -185,7 +183,6 @@ function App() {
                     <Route path="reports"            element={<AdminReports />} />
                     <Route path="billing"            element={<AdminBilling />} />
                     <Route path="settings"           element={<AdminSettings />} />
-                    <Route path="messages"           element={<SharedMessages />} />
                     <Route path="notifications"      element={<SharedNotifications />} />
                     <Route path="profile"            element={<AdminProfile />} />
                     <Route path="help"              element={<SharedHelp />} />
@@ -205,7 +202,6 @@ function App() {
                     <Route path="feedback"      element={<MentorFeedback />} />
                     <Route path="ratings"       element={<MentorRatings />} />
                     <Route path="payout"        element={<MentorPayout />} />
-                    <Route path="messages"      element={<SharedMessages />} />
                     <Route path="notifications" element={<SharedNotifications />} />
                     <Route path="help"          element={<SharedHelp />} />
                   </Route>
@@ -228,7 +224,6 @@ function App() {
                     <Route path="reports"         element={<InvestorReports />} />
                     <Route path="profile"         element={<InvestorProfileDetails />} />
                     <Route path="kyc"             element={<InvestorKYC />} />
-                    <Route path="messages"        element={<SharedMessages />} />
                     <Route path="notifications"   element={<SharedNotifications />} />
                     <Route path="help"            element={<SharedHelp />} />
                   </Route>
