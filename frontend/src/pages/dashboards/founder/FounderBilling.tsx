@@ -13,6 +13,7 @@ const PLANS = [
     id: 'free_trial',
     name: 'Free Trial',
     price: 0,
+    annualPrice: 0,
     badge: 'Current',
     icon: Zap,
     iconBg: 'bg-gray-100',
@@ -35,6 +36,7 @@ const PLANS = [
     id: 'pro',
     name: 'Pro Plan',
     price: 999,
+    annualPrice: 9990,
     badge: 'Best Value',
     icon: Shield,
     iconBg: 'bg-purple-100',
@@ -62,6 +64,7 @@ const PLANS = [
     id: 'premium_startup_builder',
     name: 'Premium Startup Business Builder',
     price: 2999,
+    annualPrice: 29990,
     badge: 'Most Popular',
     icon: Crown,
     iconBg: 'bg-amber-100',
@@ -137,6 +140,7 @@ const FounderBilling: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [targetPlan, setTargetPlan] = useState<typeof PLANS[0] | null>(null);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
   const [paymentApp, setPaymentApp] = useState('UPI');
   const [transactionId, setTransactionId] = useState('');
   const [screenshot, setScreenshot] = useState('');
@@ -212,7 +216,8 @@ const FounderBilling: React.FC = () => {
         },
         body: JSON.stringify({
           planName: targetPlan.id,
-          amount: targetPlan.price,
+          amount: billingPeriod === 'annual' ? targetPlan.annualPrice : targetPlan.price,
+          billingPeriod,
           paymentMethod: paymentApp,
           transactionId: transactionId.trim(),
           screenshot,
@@ -315,6 +320,27 @@ const FounderBilling: React.FC = () => {
         )}
       </div>
 
+      {/* Billing Period Toggle */}
+      <div className="flex items-center justify-center mb-8">
+        <div className="flex items-center gap-4 bg-white p-1.5 rounded-2xl border border-gray-200 shadow-sm">
+          <button
+            onClick={() => setBillingPeriod('monthly')}
+            className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${billingPeriod === 'monthly' ? 'bg-[#5B21B6] text-white shadow-md shadow-purple-500/20' : 'text-[#6B7280] hover:text-[#1F2937]'}`}
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setBillingPeriod('annual')}
+            className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 ${billingPeriod === 'annual' ? 'bg-[#5B21B6] text-white shadow-md shadow-purple-500/20' : 'text-[#6B7280] hover:text-[#1F2937]'}`}
+          >
+            Annual
+          </button>
+        </div>
+        <span className="ml-4 text-xs font-medium text-[#10B981] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+          Save up to 17% with Annual Billing (2 months free)
+        </span>
+      </div>
+
       {/* Plan Cards */}
       <div className="grid md:grid-cols-3 gap-6 mb-12">
         {PLANS.map((plan) => {
@@ -351,9 +377,16 @@ const FounderBilling: React.FC = () => {
                   {plan.price === 0 ? (
                     <div className="text-3xl font-black text-[#1F2937]">₹0 <span className="text-base font-medium text-gray-400">/ 1 day</span></div>
                   ) : (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-black text-[#1F2937]">₹{plan.price.toLocaleString('en-IN')}</span>
-                      <span className="text-sm text-[#6B7280] font-medium">/month</span>
+                    <div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-black text-[#1F2937]">₹{(billingPeriod === 'annual' ? plan.annualPrice : plan.price).toLocaleString('en-IN')}</span>
+                        <span className="text-sm text-[#6B7280] font-medium">{billingPeriod === 'annual' ? '/year' : '/month'}</span>
+                      </div>
+                      {billingPeriod === 'annual' && (
+                        <div className="text-xs text-[#10B981] font-medium mt-1">
+                          ₹{plan.price.toLocaleString('en-IN')}/mo billed annually • Save {Math.round((1 - plan.annualPrice / (plan.price * 12)) * 100)}%
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -471,8 +504,8 @@ const FounderBilling: React.FC = () => {
                       <p className="text-lg font-extrabold text-[#1F2937]">{targetPlan.name}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-black text-purple-700">₹{targetPlan.price.toLocaleString('en-IN')}</p>
-                      <p className="text-xs text-purple-500 font-semibold">per month</p>
+                      <p className="text-2xl font-black text-purple-700">₹{(billingPeriod === 'annual' ? targetPlan.annualPrice : targetPlan.price).toLocaleString('en-IN')}</p>
+                      <p className="text-xs text-purple-500 font-semibold">{billingPeriod === 'annual' ? 'per year' : 'per month'}</p>
                     </div>
                   </div>
 

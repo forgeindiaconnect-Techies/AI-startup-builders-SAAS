@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, Shield, Zap, Crown } from 'lucide-react';
 
 const plans = [
   {
     name: 'Free Trial',
-    price: 0,
+    price: { monthly: 0, annual: 0 },
     badge: 'Free 1 Day',
     badgeColor: 'bg-gray-100 text-gray-600',
     icon: Zap,
@@ -27,7 +27,7 @@ const plans = [
   },
   {
     name: 'Pro Plan',
-    price: 999,
+    price: { monthly: 999, annual: 9990 },
     badge: 'Best Value',
     badgeColor: 'bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] text-white',
     icon: Shield,
@@ -53,7 +53,7 @@ const plans = [
   },
   {
     name: 'Premium Startup Business Builder',
-    price: 2999,
+    price: { monthly: 2999, annual: 29990 },
     badge: 'Most Popular',
     badgeColor: 'bg-gradient-to-r from-[#FBBF24] to-[#F59E0B] text-[#111827]',
     icon: Crown,
@@ -81,6 +81,7 @@ const plans = [
 ];
 
 const Pricing: React.FC = () => {
+  const [isAnnual, setIsAnnual] = useState(false);
   const navigate = useNavigate();
 
   const formatPrice = (price: number) => {
@@ -106,6 +107,28 @@ const Pricing: React.FC = () => {
           <p className="text-[#6B7280] text-lg">
             Start building for free, scale with premium tools.
           </p>
+        </div>
+
+        <div className="flex flex-col items-center mb-14 reveal delay-100">
+          <div className="flex items-center gap-4 bg-white p-1.5 rounded-2xl border border-gray-200 shadow-sm">
+            <button
+              onClick={() => setIsAnnual(false)}
+              className={`px-6 py-2.5 rounded-xl font-['Poppins'] font-medium text-sm transition-all duration-300 ${!isAnnual ? 'bg-[#5B21B6] text-white shadow-md shadow-purple-500/20' : 'text-[#6B7280] hover:text-[#1F2937]'}`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setIsAnnual(true)}
+              className={`px-6 py-2.5 rounded-xl font-['Poppins'] font-medium text-sm transition-all duration-300 relative ${isAnnual ? 'bg-[#5B21B6] text-white shadow-md shadow-purple-500/20' : 'text-[#6B7280] hover:text-[#1F2937]'}`}
+            >
+              Annual
+            </button>
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-xs font-medium text-[#10B981] bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+              Save up to 17% with Annual Billing (2 months free)
+            </span>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
@@ -136,16 +159,23 @@ const Pricing: React.FC = () => {
                 <p className="text-xs text-[#6B7280] mb-5">{plan.desc}</p>
 
                 <div className="mb-6">
-                  {plan.price === 0 ? (
+                  {plan.price.monthly === 0 ? (
                     <div className="text-4xl font-['Poppins'] font-black text-[#1F2937]">₹0</div>
                   ) : (
                     <>
                       <div className="flex items-baseline gap-1">
                         <span className="text-4xl font-['Poppins'] font-black text-[#1F2937]">
-                          {formatPrice(plan.price)}
+                          {formatPrice(isAnnual ? plan.price.annual : plan.price.monthly)}
                         </span>
-                        <span className="text-sm text-[#6B7280] font-medium">/month</span>
+                        <span className="text-sm text-[#6B7280] font-medium">
+                          {isAnnual ? '/year' : '/month'}
+                        </span>
                       </div>
+                      {isAnnual && (
+                        <div className="text-xs text-[#10B981] font-medium mt-1">
+                          ₹{plan.price.monthly.toLocaleString('en-IN')}/mo billed annually • Save {Math.round((1 - plan.price.annual / (plan.price.monthly * 12)) * 100)}%
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
