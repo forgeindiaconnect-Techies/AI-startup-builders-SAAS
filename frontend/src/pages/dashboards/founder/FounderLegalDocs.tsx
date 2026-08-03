@@ -191,6 +191,11 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
     [/medical council/i, 'https://www.indiafilings.com/learn/medical-council-registration'],
     [/data protection|soc.?2/i, 'https://www.indiafilings.com/learn/data-protection-compliance'],
     [/nabh|accreditation/i, 'https://www.nabh.co/'],
+    [/rbi|sebi|irdai|payment aggregator|payment gateway|gateway license|regulatory approval/i, 'https://www.rbi.org.in/'],
+    [/npci|\bupi\b/i, 'https://www.npci.org.in/'],
+    [/factory license|factory licence|factory act/i, 'https://services.india.gov.in/'],
+    [/warehouse|storage facility|fulfilment|fulfillment/i, 'https://services.india.gov.in/'],
+    [/biomedical waste/i, 'https://cpcb.gov.in/'],
   ];
 
   const resolveApplyLink = (name: string): string => {
