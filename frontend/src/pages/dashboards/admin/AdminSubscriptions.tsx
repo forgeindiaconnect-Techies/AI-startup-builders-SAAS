@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { Check, Pencil, Plus, Zap, Shield, Crown, Star, TrendingUp, Users, DollarSign } from 'lucide-react';
+import { Check, Pencil, Plus, Zap, Shield, Crown, TrendingUp, Users, DollarSign } from 'lucide-react';
 
 const plans = [
   {
     id: 1,
-    name: 'Free',
+    name: 'Free Trial',
     price: { monthly: 0, annual: 0 },
-    badge: 'Free Forever',
+    badge: 'Free 1 Day',
     badgeColor: 'bg-gray-100 text-gray-600',
     icon: Zap,
     iconBg: 'bg-gray-100',
     iconColor: 'text-gray-600',
-    desc: 'Perfect for exploring the platform.',
+    desc: '1 day to explore the platform fully.',
     buttonText: 'Get Started',
     buttonStyle: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
     popular: false,
@@ -19,18 +19,19 @@ const plans = [
     revenue: 0,
     active: true,
     features: [
-      '1 Startup Idea',
-      '5 AI Reports per Month',
+      'Basic AI Startup Idea Generator',
       'Basic Business Plan',
-      'Basic SWOT Analysis',
-      'Basic Startup Roadmap',
+      'Basic Pitch Deck',
+      'Basic Market Research',
+      'Limited AI Reports',
+      'Limited Document Export',
       'Community Support'
     ]
   },
   {
     id: 2,
-    name: 'Silver',
-    price: { monthly: 799, annual: 7999 },
+    name: 'Pro Plan',
+    price: { monthly: 999, annual: 9990 },
     badge: 'Best Value',
     badgeColor: 'bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] text-white',
     icon: Shield,
@@ -44,20 +45,23 @@ const plans = [
     revenue: 247690,
     active: true,
     features: [
-      '5 Startup Ideas',
-      'Unlimited AI Reports',
-      'Business Plan Generator',
-      'SWOT Analysis',
-      'Market Research',
-      'Competitor Analysis',
-      'AI Logo Suggestions',
-      'Email Support'
+      'Full AI Startup Idea Generator',
+      'Detailed Business Plan Generator',
+      'Detailed Pitch Deck Generator',
+      'Full Market Research',
+      'AI Reports',
+      'Roadmap & Tasks',
+      'Logo & Branding Suggestions',
+      'PDF & Word Export',
+      'Mentor Request Access',
+      'AI Chat Assistant',
+      'Save Multiple Startup Ideas'
     ]
   },
   {
     id: 3,
-    name: 'Gold',
-    price: { monthly: 1999, annual: 19999 },
+    name: 'Premium Startup Business Builder',
+    price: { monthly: 2999, annual: 29990 },
     badge: 'Most Popular',
     badgeColor: 'bg-gradient-to-r from-[#FBBF24] to-[#F59E0B] text-[#111827]',
     icon: Crown,
@@ -71,44 +75,18 @@ const plans = [
     revenue: 2398800,
     active: true,
     features: [
-      'Everything in Silver',
-      'Unlimited Startup Ideas',
-      'AI Pitch Deck Generator',
-      'Financial Forecasting',
-      'Revenue Model Suggestions',
-      'Marketing Strategy Generator',
-      'Mentor Reviews',
-      'Investor Visibility',
-      'Priority Support'
-    ]
-  },
-  {
-    id: 4,
-    name: 'Platinum',
-    price: { monthly: 4999, annual: 49999 },
-    badge: 'Premium',
-    badgeColor: 'bg-gradient-to-r from-[#111827] to-gray-800 text-white',
-    icon: Star,
-    iconBg: 'bg-gray-100',
-    iconColor: 'text-gray-700',
-    desc: 'For power teams and enterprises.',
-    buttonText: 'Contact Sales',
-    buttonStyle: 'bg-[#111827] text-white hover:bg-gray-800 shadow-lg shadow-gray-900/20',
-    popular: false,
-    subscribers: 8,
-    revenue: 399992,
-    active: true,
-    features: [
-      'Everything in Gold',
-      'Unlimited AI Credits',
-      'Unlimited Mentor Reviews',
-      'Direct Investor Access',
-      'Team Collaboration',
-      'White-label Branding',
-      'API Access',
-      'Dedicated Account Manager',
-      'Advanced Analytics',
-      'Premium Support'
+      'Everything in Pro Plan',
+      'Investor Marketplace Access',
+      'AI Investor Matching',
+      'Funding Readiness Score',
+      'AI Due Diligence Report',
+      'Advanced Pitch Deck',
+      'ZIP Document Export',
+      'Mentor Session Booking',
+      'Investor Meeting Requests',
+      'Funding Progress Tracking',
+      'Priority Support',
+      'Advanced Startup Growth Dashboard'
     ]
   }
 ];
@@ -199,7 +177,7 @@ const AdminSubscriptions: React.FC = () => {
       </div>
 
       {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
         {plans.map((plan) => (
           <div
             key={plan.id}
@@ -210,7 +188,7 @@ const AdminSubscriptions: React.FC = () => {
             } ${!plan.active ? 'opacity-60' : ''}`}
             style={plan.popular ? { boxShadow: '0 0 30px rgba(91,33,182,0.12), 0 0 60px rgba(251,191,36,0.08)' } : {}}
           >
-            {/* Glow for Gold */}
+            {/* Glow for popular plan */}
             {plan.popular && (
               <div className="absolute inset-0 rounded-[20px] bg-gradient-to-b from-[#5B21B6]/5 via-transparent to-[#FBBF24]/5 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
             )}
