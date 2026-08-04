@@ -25,34 +25,40 @@ const FounderNotifications: React.FC = () => {
   useEffect(() => {
     if (!authUser) return;
     
-    const local = getNotifications()
-      .filter((n: any) => 
-        !n.userId || 
-        n.userId === authUser.id || 
-        n.userId === 'all' || 
-        n.userId === 'founder_demo_user' ||
-        (authUser.role === 'admin' && n.userId === 'admin')
-      )
-      .map((n: any) => ({
-        id: n.id || Date.now(),
-        title: n.title,
-        desc: n.message || n.desc,
-        time: n.time || (n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'),
-        read: n.isRead !== undefined ? n.isRead : !n.unread,
-        type: n.type,
-        ...getTypeStyles(n.type)
-      }));
-    const combined = [...local, ...initialNotifs];
-    setNotifs(combined);
+    const load = () => {
+      const local = getNotifications()
+        .filter((n: any) => 
+          !n.userId || 
+          n.userId === authUser.id || 
+          n.userId === 'all' || 
+          n.userId === 'founder_demo_user' ||
+          (authUser.role === 'admin' && n.userId === 'admin')
+        )
+        .map((n: any) => ({
+          id: n.id || Date.now(),
+          title: n.title,
+          desc: n.message || n.desc,
+          time: n.time || (n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'),
+          read: n.isRead !== undefined ? n.isRead : !n.unread,
+          type: n.type,
+          ...getTypeStyles(n.type)
+        }));
+      const combined = [...local, ...initialNotifs];
+      setNotifs(combined);
 
-    // If navigated from NotificationDropdown with selectedNotifId, auto open details
-    if (location.state && location.state.selectedNotifId) {
-      const found = combined.find(x => x.id === location.state.selectedNotifId);
-      if (found) {
-        setSelectedNotif(found);
-        markOne(found.id);
+      // If navigated from NotificationDropdown with selectedNotifId, auto open details
+      if (location.state && location.state.selectedNotifId) {
+        const found = combined.find(x => x.id === location.state.selectedNotifId);
+        if (found) {
+          setSelectedNotif(found);
+          markOne(found.id);
+        }
       }
-    }
+    };
+
+    load();
+    window.addEventListener('storage', load);
+    return () => window.removeEventListener('storage', load);
   }, [authUser]);
 
   const markAll = () => {
