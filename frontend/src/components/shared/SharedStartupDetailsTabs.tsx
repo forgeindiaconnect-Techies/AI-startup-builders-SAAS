@@ -1,21 +1,27 @@
 import React, { useState } from 'react';
-import { Lightbulb, FileText, BarChart, Search, ClipboardList } from 'lucide-react';
+import { Lightbulb, Sparkles, FileText, BarChart3, Search, Scale, ClipboardList, MessageSquare } from 'lucide-react';
 import FounderIdeaGenerator from '../../pages/dashboards/founder/FounderIdeaGenerator';
+import FounderBranding from '../../pages/dashboards/founder/FounderBranding';
 import FounderBusinessPlan from '../../pages/dashboards/founder/FounderBusinessPlan';
 import FounderPitchDeck from '../../pages/dashboards/founder/FounderPitchDeck';
 import FounderMarketResearch from '../../pages/dashboards/founder/FounderMarketResearch';
+import FounderLegalDocs from '../../pages/dashboards/founder/FounderLegalDocs';
 import FounderReports from '../../pages/dashboards/founder/FounderReports';
+import FounderAIChat from '../../pages/dashboards/founder/FounderAIChat';
 
 interface Props {
   startupData: any;
 }
 
 const tabs = [
-  { id: 'idea', label: 'AI Idea Generator', icon: Lightbulb, component: FounderIdeaGenerator },
-  { id: 'plan', label: 'Business Plan', icon: FileText, component: FounderBusinessPlan },
-  { id: 'deck', label: 'Pitch Deck', icon: BarChart, component: FounderPitchDeck },
-  { id: 'research', label: 'Market Research', icon: Search, component: FounderMarketResearch },
-  { id: 'reports', label: 'AI Reports', icon: ClipboardList, component: FounderReports },
+  { id: 'idea',     label: 'AI Idea Generator',    icon: Lightbulb,    component: FounderIdeaGenerator },
+  { id: 'branding', label: 'Logo & Branding',      icon: Sparkles,     component: FounderBranding },
+  { id: 'plan',     label: 'Business Plan',         icon: FileText,     component: FounderBusinessPlan },
+  { id: 'pitch',    label: 'Pitch Deck',             icon: BarChart3,    component: FounderPitchDeck },
+  { id: 'market',   label: 'Market Research',        icon: Search,       component: FounderMarketResearch },
+  { id: 'legal',    label: 'Legal & Documents',      icon: Scale,        component: FounderLegalDocs },
+  { id: 'reports',  label: 'AI Reports',             icon: ClipboardList,component: FounderReports },
+  { id: 'chat',     label: 'AI Chat',                icon: MessageSquare,component: FounderAIChat },
 ];
 
 const SharedStartupDetailsTabs: React.FC<Props> = ({ startupData }) => {
