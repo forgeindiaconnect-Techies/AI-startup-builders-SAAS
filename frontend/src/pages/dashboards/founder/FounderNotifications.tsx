@@ -26,12 +26,18 @@ const FounderNotifications: React.FC = () => {
     if (!authUser) return;
     
     const local = getNotifications()
-      .filter((n: any) => n.userId === authUser.id || (authUser.role === 'admin' && n.userId === 'admin') || n.userId === 'all')
+      .filter((n: any) => 
+        !n.userId || 
+        n.userId === authUser.id || 
+        n.userId === 'all' || 
+        n.userId === 'founder_demo_user' ||
+        (authUser.role === 'admin' && n.userId === 'admin')
+      )
       .map((n: any) => ({
         id: n.id || Date.now(),
         title: n.title,
         desc: n.message || n.desc,
-        time: n.time || new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || 'Just now',
+        time: n.time || (n.createdAt ? new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'),
         read: n.isRead !== undefined ? n.isRead : !n.unread,
         type: n.type,
         ...getTypeStyles(n.type)

@@ -22,14 +22,22 @@ const NotificationDropdown: React.FC = () => {
   useEffect(() => {
     // Load notifications from local storage
     const loadNotifications = () => {
-      const stored = getNotifications().map((n: any) => ({
-        id: n.id || Date.now(),
-        title: n.title,
-        desc: n.message || n.desc || n.message,
-        time: n.time || n.createdAt ? new Date(n.createdAt || n.time).toLocaleString() : 'Just now',
-        read: n.isRead !== undefined ? n.isRead : !n.unread,
-        ...getTypeStyles(n.type)
-      }));
+      const stored = getNotifications()
+        .filter((n: any) => 
+          !n.userId || 
+          n.userId === user?.id || 
+          n.userId === 'all' || 
+          n.userId === 'founder_demo_user' ||
+          (user?.role === 'admin' && n.userId === 'admin')
+        )
+        .map((n: any) => ({
+          id: n.id || Date.now(),
+          title: n.title,
+          desc: n.message || n.desc || n.message,
+          time: n.time || (n.createdAt ? new Date(n.createdAt).toLocaleString() : 'Just now'),
+          read: n.isRead !== undefined ? n.isRead : !n.unread,
+          ...getTypeStyles(n.type)
+        }));
       setNotifications(stored);
     };
     
