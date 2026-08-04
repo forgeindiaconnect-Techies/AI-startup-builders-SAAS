@@ -11,7 +11,6 @@ import { saveAs } from 'file-saver';
 
 const AdminStartups: React.FC = () => {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All Statuses');
   const [startups, setStartups] = React.useState<any[]>([]);
   const [documents, setDocuments] = React.useState<any[]>([]);
   const [selectedStartup, setSelectedStartup] = React.useState<any>(null);
@@ -718,22 +717,15 @@ const AdminStartups: React.FC = () => {
     }
   }, []);
 
-  const getDisplayStatus = (rawStatus: string) => {
-    if (rawStatus === 'generated') return 'Active';
-    return 'Pending';
-  };
-
   const filtered = startups.filter(s => {
-    if (!search.trim()) return statusFilter === 'All Statuses' || getDisplayStatus(s.status) === statusFilter;
+    if (!search.trim()) return true;
     const q = search.toLowerCase();
     const matchFields = [
       s.startupName, s.name, s.startupIdea, s.description,
       s.founderId, s.id, s.startupId,
       s.aiGenerated?.ideaAnalysis?.businessModel
     ];
-    const matchesSearch = matchFields.some(f => f && f.toString().toLowerCase().includes(q));
-    const matchesStatus = statusFilter === 'All Statuses' || getDisplayStatus(s.status) === statusFilter;
-    return matchesSearch && matchesStatus;
+    return matchFields.some(f => f && f.toString().toLowerCase().includes(q));
   });
 
   return (
@@ -762,15 +754,6 @@ const AdminStartups: React.FC = () => {
           >
             <Download size={15} className="mr-2 text-gray-600" /> Export CSV
           </button>
-          <select 
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="px-3 py-2 border border-[#5B21B6] rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#5B21B6] font-semibold text-gray-700 cursor-pointer"
-          >
-            <option value="All Statuses">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="Pending">Pending</option>
-          </select>
         </div>
       </div>
       
@@ -789,7 +772,7 @@ const AdminStartups: React.FC = () => {
           <tbody className="divide-y divide-gray-100">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-10 text-center text-gray-400 text-sm">No startups match your search or filters.</td>
+                <td colSpan={7} className="px-6 py-10 text-center text-gray-400 text-sm">No startups match your search.</td>
               </tr>
             ) : (
               filtered.map(s => (
