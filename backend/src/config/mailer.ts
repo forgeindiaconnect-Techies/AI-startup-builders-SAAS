@@ -3,8 +3,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const MAIL_USER = process.env.MAIL_USER || "";
-const MAIL_PASS = process.env.MAIL_PASS || "";
+const MAIL_USER = process.env.MAIL_USER || process.env.SMTP_USER || "";
+const MAIL_PASS = process.env.MAIL_PASS || process.env.SMTP_PASS || "";
 
 if (!MAIL_USER || !MAIL_PASS) {
     console.warn("⚠️ WARNING: MAIL_USER or MAIL_PASS is missing in environment variables. Email sending will fail.");
