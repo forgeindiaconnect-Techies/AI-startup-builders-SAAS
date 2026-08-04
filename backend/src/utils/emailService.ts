@@ -1,64 +1,63 @@
-import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
-import dns from 'dns';
 
 dotenv.config();
 
-// Force Node.js to use IPv4 first for DNS lookups (prevents ENETUNREACH IPv6 errors on Render)
-try {
-  dns.setDefaultResultOrder('ipv4first');
-} catch (e) {
-  // Ignore on older Node versions
-}
-
-// Create a transporter using SMTP
-// Force IPv4 and short timeouts to prevent hanging on Render (which blocks IPv6 SMTP)
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587', 10),
-  secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-  family: 4, // Force IPv4 — prevents ENETUNREACH on Render
-  connectionTimeout: 8000,  // fail fast after 8s (not 40s)
-  socketTimeout: 8000,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-} as any);
+const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
+const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || "renugopal603@gmail.com";
+const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || "AI-startup";
 
 export const sendOTPEmail = async (to: string, otpCode: string) => {
-  // If SMTP is not configured, fallback to console log
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn('\n⚠️ SMTP credentials not configured in .env');
+  // If API key is not configured, fallback to console log
+  if (!BREVO_API_KEY) {
+    console.warn('\n⚠️ BREVO_API_KEY not configured in .env');
     console.warn(`📧 WOULD HAVE SENT EMAIL TO: ${to}`);
     console.warn(`🔑 OTP CODE: ${otpCode}\n`);
     return true; // Pretend it succeeded for development
   }
 
-  const mailOptions = {
-    from: `"AI Startup Builder" <${process.env.SMTP_USER}>`,
-    to,
-    subject: 'Your Verification Code - AI Startup Builder',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px;">
-        <h2 style="color: #6C4CF1; text-align: center;">AI Startup Builder</h2>
-        <p style="font-size: 16px; color: #333;">Hello,</p>
-        <p style="font-size: 16px; color: #333;">Please use the verification code below to complete your registration. This code is valid for 10 minutes.</p>
-        
-        <div style="background-color: #f4f4f5; padding: 15px; border-radius: 8px; text-align: center; margin: 30px 0;">
-          <h1 style="font-size: 32px; letter-spacing: 5px; color: #333; margin: 0;">${otpCode}</h1>
-        </div>
-        
-        <p style="font-size: 14px; color: #666; text-align: center;">If you didn't request this code, you can safely ignore this email.</p>
-        <hr style="border: 0; border-top: 1px solid #eaeaec; margin: 30px 0;" />
-        <p style="font-size: 12px; color: #999; text-align: center;">© ${new Date().getFullYear()} AI Startup Builder. All rights reserved.</p>
+  const subject = 'Your Verification Code - AI Startup Builder';
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px;">
+      <h2 style="color: #6C4CF1; text-align: center;">AI Startup Builder</h2>
+      <p style="font-size: 16px; color: #333;">Hello,</p>
+      <p style="font-size: 16px; color: #333;">Please use the verification code below to complete your registration. This code is valid for 10 minutes.</p>
+      
+      <div style="background-color: #f4f4f5; padding: 15px; border-radius: 8px; text-align: center; margin: 30px 0;">
+        <h1 style="font-size: 32px; letter-spacing: 5px; color: #333; margin: 0;">${otpCode}</h1>
       </div>
-    `,
-  };
+      
+      <p style="font-size: 14px; color: #666; text-align: center;">If you didn't request this code, you can safely ignore this email.</p>
+      <hr style="border: 0; border-top: 1px solid #eaeaec; margin: 30px 0;" />
+      <p style="font-size: 12px; color: #999; text-align: center;">© ${new Date().getFullYear()} AI Startup Builder. All rights reserved.</p>
+    </div>
+  `;
 
   try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✉️ Email sent to ${to}: ${info.messageId}`);
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL
+        },
+        to: [{ email: to }],
+        subject: subject,
+        htmlContent: htmlContent
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Brevo API Error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log(`✉️ OTP Email sent via Brevo to ${to}: ${data.messageId || 'Success'}`);
     return true;
   } catch (error) {
     // Do NOT throw — log the error and fall back to console so registration still works
