@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
-  Rocket, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight,
+  Rocket, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft,
   Loader2, Mail, User, Phone, Lock, Check, Gift, Zap,
   Briefcase, TrendingUp, Building2, ChevronRight, Link2, ShieldAlert,
+  MapPin, GraduationCap, PenLine,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config/api';
@@ -11,7 +12,7 @@ import { validateInvite, markInviteUsed, getInviteByToken } from '../../utils/in
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type UserRole = 'founder' | 'mentor' | 'investor';
-type Step = 'role' | 'form' | 'phone_otp' | 'welcome';
+type Step = 'role' | 'basic' | 'professional' | 'form' | 'otp' | 'phone_otp' | 'welcome';
 
 interface FormData {
   fullName: string;
@@ -20,19 +21,11 @@ interface FormData {
   location: string;
   password: string;
   confirmPassword: string;
-  // Mentor fields
+  // Mentor professional fields
   expertise: string;
   experienceYears: string;
-  industriesWorkedWith: string;
-  previousExperience: string;
-  mentoredStartupsCount: string;
   linkedin: string;
-  portfolioWebsite: string;
-  achievements: string;
-  certifications: string;
   bio: string;
-  availableDays: string[];
-  preferredSessionType: string;
   // Investor fields
   companyName: string;
   investorType: string;
@@ -43,9 +36,7 @@ interface FormData {
 
 const emptyForm: FormData = {
   fullName: '', email: '', mobile: '', location: '', password: '', confirmPassword: '',
-  expertise: '', experienceYears: '', industriesWorkedWith: '', previousExperience: '',
-  mentoredStartupsCount: '', linkedin: '', portfolioWebsite: '', achievements: '',
-  certifications: '', bio: '', availableDays: [], preferredSessionType: '',
+  expertise: '', experienceYears: '', linkedin: '', bio: '',
   companyName: '', investorType: '', preferredIndustry: '', minInvestment: '', maxInvestment: '',
 };
 
@@ -57,12 +48,17 @@ const ROLES: { id: UserRole; title: string; icon: React.FC<any>; color: string; 
 ];
 
 const EXPERTISE_OPTIONS = [
-  'Product Management', 'Marketing & Growth', 'Technology & Engineering',
-  'Finance & Accounting', 'Legal & Compliance', 'Sales & Business Dev',
-  'HR & People Ops', 'Design & UX', 'Fundraising & IR', 'Other',
+  'Business Strategy', 'Marketing', 'Finance', 'Technology',
+  'Product Development', 'Legal', 'Sales', 'HR', 'Operations',
+  'AI/ML', 'Other',
 ];
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const EXPERIENCE_OPTIONS = [
+  { value: '1-3', label: '1 - 3 years' },
+  { value: '3-5', label: '3 - 5 years' },
+  { value: '5-10', label: '5 - 10 years' },
+  { value: '10+', label: '10+ years' },
+];
 
 // ── OTP Input ─────────────────────────────────────────────────────────────────
 const OTPInput: React.FC<{ value: string[]; onChange: (val: string[]) => void }> = ({ value, onChange }) => {
@@ -240,10 +236,11 @@ const LeftPanel: React.FC = () => (
 
 // ── Input Component ───────────────────────────────────────────────────────────
 const Field: React.FC<{
-  label: string; icon: React.ReactNode; type?: string; placeholder?: string;
+  label: string; icon?: React.ReactNode; type?: string; placeholder?: string;
   value: string; onChange: (v: string) => void; error?: string;
   maxLength?: number; inputMode?: string; rows?: number; disabled?: boolean;
-}> = ({ label, icon, type = 'text', placeholder, value, onChange, error, maxLength, inputMode, rows, disabled }) => (
+  hint?: string;
+}> = ({ label, icon, type = 'text', placeholder, value, onChange, error, maxLength, inputMode, rows, disabled, hint }) => (
   <div>
     <label className="block text-sm font-semibold text-gray-900 mb-1.5">{label}</label>
     <div className="relative">
@@ -276,6 +273,7 @@ const Field: React.FC<{
         />
       )}
     </div>
+    {hint && !error && <p className="text-gray-400 text-xs mt-1">{hint}</p>}
     {error && <p className="text-red-500 text-xs mt-1 font-medium">{error}</p>}
   </div>
 );
@@ -320,6 +318,14 @@ const PasswordField: React.FC<{
   );
 };
 
+// ── Section Heading ───────────────────────────────────────────────────────────
+const SectionHeading: React.FC<{ title: string; subtitle: string }> = ({ title, subtitle }) => (
+  <div className="mb-6">
+    <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">{title}</h2>
+    <p className="text-gray-500 text-sm mt-1">{subtitle}</p>
+  </div>
+);
+
 // ── Main Component ────────────────────────────────────────────────────────────
 const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -333,8 +339,8 @@ const Signup: React.FC = () => {
   const [inviteValid, setInviteValid] = useState<boolean | null>(isInviteFlow ? null : true);
   const [inviteData, setInviteData] = useState<any>(null);
 
-  // If invite flow, always start at form step (skip role selection)
-  const getInitialStep = (): Step => isInviteFlow ? 'form' : 'role';
+  // If invite flow, always start at step 1 (skip role selection)
+  const getInitialStep = (): Step => isInviteFlow ? 'basic' : 'role';
   const getInitialRole = (): UserRole | null => isInviteFlow ? 'mentor' : null;
 
   const [step, setStep] = useState<Step>(getInitialStep());
@@ -346,7 +352,7 @@ const Signup: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState('');
 
-  const [emailOtp, setEmailOtp] = useState(['', '', '', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState('');
   const [otpCooldown, setOtpCooldown] = useState(0);
@@ -431,10 +437,21 @@ const Signup: React.FC = () => {
     }, 1000);
   };
 
-  // ── Validation ────────────────────────────────────────────────────────────
-  const validateForm = (): boolean => {
-    const e: Record<string, string> = {};
+  const resetForm = () => {
+    setForm({ ...emptyForm });
+    setErrors({});
+    setApiError('');
+  };
 
+  const goToRole = () => {
+    setStep('role');
+    setSelectedRole(null);
+    resetForm();
+  };
+
+  // ── Step 1 Validation (Mentor) ──────────────────────────────────────────
+  const validateBasic = (): boolean => {
+    const e: Record<string, string> = {};
     if (!form.fullName.trim() || form.fullName.trim().length < 2) e.fullName = 'Full name must be at least 2 characters';
     if (!form.email.trim()) e.email = 'Email is required';
     else if (!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(form.email.trim())) e.email = 'Please enter a valid email address';
@@ -448,45 +465,67 @@ const Signup: React.FC = () => {
       else if (!/[^A-Za-z0-9]/.test(form.password)) e.password = 'Must contain at least one special character';
     }
     if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
-
-    // Mentor-specific
-    if (selectedRole === 'mentor') {
-      if (!form.expertise.trim()) e.expertise = 'Expertise is required';
-      if (!form.experienceYears.trim()) e.experienceYears = 'Years of experience is required';
-      if (!form.industriesWorkedWith.trim()) e.industriesWorkedWith = 'Please specify industries';
-      if (!form.linkedin.trim()) e.linkedin = 'LinkedIn profile is required';
-      if (!form.bio.trim()) e.bio = 'Short bio is required';
-    }
-
-    // Investor-specific
-    if (selectedRole === 'investor') {
-      if (!form.companyName.trim()) e.companyName = 'Company / Firm name is required';
-      if (!form.investorType.trim()) e.investorType = 'Investor type is required';
-    }
-
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  // ── Send Phone OTP ──────────────────────────────────────────────────────
-  const handleSendOtp = async () => {
-    if (!validateForm()) return;
+  // ── Step 2 Validation (Mentor) ──────────────────────────────────────────
+  const validateProfessional = (): boolean => {
+    const e: Record<string, string> = {};
+    if (!form.expertise.trim()) e.expertise = 'Please select your area of expertise';
+    if (!form.experienceYears.trim()) e.experienceYears = 'Please select your years of experience';
+    if (!form.linkedin.trim()) e.linkedin = 'LinkedIn profile is required';
+    const bioLen = form.bio.trim().length;
+    if (!form.bio.trim()) e.bio = 'Short bio is required';
+    else if (bioLen < 100) e.bio = `Bio must be at least 100 characters (${bioLen}/100)`;
+    else if (bioLen > 300) e.bio = `Bio must be at most 300 characters (${bioLen}/300)`;
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  // ── Non-Mentor Form Validation ──────────────────────────────────────────
+  const validateForm = (): boolean => {
+    const e: Record<string, string> = {};
+    if (!form.fullName.trim() || form.fullName.trim().length < 2) e.fullName = 'Full name must be at least 2 characters';
+    if (!form.email.trim()) e.email = 'Email is required';
+    else if (!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(form.email.trim())) e.email = 'Please enter a valid email address';
+    if (!form.mobile.trim()) e.mobile = 'Mobile number is required';
+    else if (!/^[0-9]{10}$/.test(form.mobile)) e.mobile = 'Mobile number must be exactly 10 digits';
+    if (!form.password) e.password = 'Password is required';
+    else {
+      if (form.password.length < 8) e.password = 'Password must be at least 8 characters';
+      else if (!/[A-Z]/.test(form.password)) e.password = 'Must contain at least one uppercase letter';
+      else if (!/[0-9]/.test(form.password)) e.password = 'Must contain at least one number';
+      else if (!/[^A-Za-z0-9]/.test(form.password)) e.password = 'Must contain at least one special character';
+    }
+    if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
+    if (selectedRole === 'investor') {
+      if (!form.companyName.trim()) e.companyName = 'Company / Firm name is required';
+      if (!form.investorType.trim()) e.investorType = 'Investor type is required';
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  // ── Send Email OTP (Mentor) ─────────────────────────────────────────────
+  const handleSendEmailOtp = async () => {
+    if (!validateProfessional()) return;
     setIsSubmitting(true);
     setApiError('');
     try {
-      const res = await fetch(`${API_URL}/auth/send-phone-otp`, {
+      const res = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: form.mobile.trim() }),
+        body: JSON.stringify({ email: form.email.trim() }),
       });
       const json = await res.json();
       if (json.success) {
         setGeneratedOtp(json.otp || '');
-        setEmailOtp(['', '', '', '', '', '']);
+        setOtp(['', '', '', '', '', '']);
         setOtpError('');
         startCooldown();
-        setStep('phone_otp');
-        showToast(`Phone notification sent successfully! Demo OTP: ${json.otp}`, 'success');
+        setStep('otp');
+        showToast(`Verification code sent to ${form.email}!`, 'success');
       } else {
         setApiError(json.error || 'Failed to send OTP. Please try again.');
       }
@@ -497,24 +536,23 @@ const Signup: React.FC = () => {
     }
   };
 
-  // ── Resend OTP ──────────────────────────────────────────────────────────
-  const handleResendOtp = async () => {
+  const handleResendEmailOtp = async () => {
     if (otpCooldown > 0) return;
     setIsSubmitting(true);
     setOtpError('');
     try {
-      const res = await fetch(`${API_URL}/auth/send-phone-otp`, {
+      const res = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: form.mobile.trim() }),
+        body: JSON.stringify({ email: form.email.trim() }),
       });
       const json = await res.json();
       if (json.success) {
         setGeneratedOtp(json.otp || '');
-        setEmailOtp(['', '', '', '', '', '']);
+        setOtp(['', '', '', '', '', '']);
         setOtpError('');
         startCooldown();
-        showToast(`OTP resent successfully! Demo OTP: ${json.otp}`, 'success');
+        showToast(`OTP resent to ${form.email}!`, 'success');
       } else {
         setOtpError(json.error || 'Failed to resend OTP.');
       }
@@ -525,9 +563,9 @@ const Signup: React.FC = () => {
     }
   };
 
-  // ── Verify OTP & Create Account ─────────────────────────────────────────
-  const handleVerifyOtp = async () => {
-    const code = emailOtp.join('');
+  // ── Verify Email OTP & Create Mentor Account ────────────────────────────
+  const handleVerifyEmailOtp = async () => {
+    const code = otp.join('');
     if (code.length !== 6) {
       setOtpError('Please enter the complete 6-digit OTP.');
       return;
@@ -535,55 +573,22 @@ const Signup: React.FC = () => {
     setOtpLoading(true);
     setOtpError('');
     try {
-      // Step 1: Verify Phone OTP
-      const verifyRes = await fetch(`${API_URL}/auth/verify-phone-otp`, {
+      const res = await fetch(`${API_URL}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: form.mobile.trim(), otp: code }),
-      });
-      const verifyJson = await verifyRes.json();
-      
-      if (!verifyJson.success) {
-        setOtpError(verifyJson.error || 'Invalid or expired OTP. Please try again.');
-        setOtpLoading(false);
-        return;
-      }
-
-      // Step 2: Complete Signup
-      const body: Record<string, any> = {
-        email: form.email.trim(),
-        password: form.password,
-        role: selectedRole,
-        fullName: form.fullName.trim(),
-        mobile: form.mobile,
-      };
-
-      if (selectedRole === 'mentor') {
-        body.location = form.location;
-        body.expertise = form.expertise;
-        body.experienceYears = form.experienceYears;
-        body.industriesWorkedWith = form.industriesWorkedWith;
-        body.previousExperience = form.previousExperience;
-        body.mentoredStartupsCount = form.mentoredStartupsCount;
-        body.linkedin = form.linkedin;
-        body.portfolioWebsite = form.portfolioWebsite;
-        body.achievements = form.achievements;
-        body.certifications = form.certifications;
-        body.bio = form.bio;
-        body.availableDays = form.availableDays;
-        body.preferredSessionType = form.preferredSessionType;
-      } else if (selectedRole === 'investor') {
-        body.companyName = form.companyName;
-        body.investorType = form.investorType;
-        body.preferredIndustry = form.preferredIndustry;
-        body.minInvestment = form.minInvestment;
-        body.maxInvestment = form.maxInvestment;
-      }
-
-      const res = await fetch(`${API_URL}/auth/complete-phone-signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          email: form.email.trim(),
+          otp: code,
+          password: form.password,
+          role: 'mentor',
+          fullName: form.fullName.trim(),
+          mobile: form.mobile,
+          location: form.location.trim(),
+          expertise: form.expertise,
+          experienceYears: form.experienceYears,
+          linkedin: form.linkedin.trim(),
+          bio: form.bio.trim(),
+        }),
       });
       const json = await res.json();
 
@@ -601,14 +606,122 @@ const Signup: React.FC = () => {
         }
 
         await checkAuth();
+        navigate('/dashboard/mentor', { replace: true });
+      } else {
+        setOtpError(json.error || 'Invalid or expired OTP. Please try again.');
+      }
+    } catch {
+      setOtpError('Network error. Please try again.');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
 
-        // For mentor/invite flow, redirect to pending approval
-        if (selectedRole === 'mentor') {
-          navigate('/pending-approval?role=mentor', { replace: true });
-        } else {
-          showToast('Phone verified successfully! Your account is created.', 'success');
-          setStep('welcome');
-        }
+  // ── Phone OTP Flow (Founder / Investor) ─────────────────────────────────
+  const handleSendPhoneOtp = async () => {
+    if (!validateForm()) return;
+    setIsSubmitting(true);
+    setApiError('');
+    try {
+      const res = await fetch(`${API_URL}/auth/send-phone-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: form.mobile.trim() }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setGeneratedOtp(json.otp || '');
+        setOtp(['', '', '', '', '', '']);
+        setOtpError('');
+        startCooldown();
+        setStep('phone_otp');
+        showToast(`Phone notification sent successfully! Demo OTP: ${json.otp}`, 'success');
+      } else {
+        setApiError(json.error || 'Failed to send OTP. Please try again.');
+      }
+    } catch {
+      setApiError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResendPhoneOtp = async () => {
+    if (otpCooldown > 0) return;
+    setIsSubmitting(true);
+    setOtpError('');
+    try {
+      const res = await fetch(`${API_URL}/auth/send-phone-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: form.mobile.trim() }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setGeneratedOtp(json.otp || '');
+        setOtp(['', '', '', '', '', '']);
+        setOtpError('');
+        startCooldown();
+        showToast(`OTP resent successfully! Demo OTP: ${json.otp}`, 'success');
+      } else {
+        setOtpError(json.error || 'Failed to resend OTP.');
+      }
+    } catch {
+      setOtpError('Network error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleVerifyPhoneOtp = async () => {
+    const code = otp.join('');
+    if (code.length !== 6) {
+      setOtpError('Please enter the complete 6-digit OTP.');
+      return;
+    }
+    setOtpLoading(true);
+    setOtpError('');
+    try {
+      const verifyRes = await fetch(`${API_URL}/auth/verify-phone-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: form.mobile.trim(), otp: code }),
+      });
+      const verifyJson = await verifyRes.json();
+
+      if (!verifyJson.success) {
+        setOtpError(verifyJson.error || 'Invalid or expired OTP. Please try again.');
+        setOtpLoading(false);
+        return;
+      }
+
+      const body: Record<string, any> = {
+        email: form.email.trim(),
+        password: form.password,
+        role: selectedRole,
+        fullName: form.fullName.trim(),
+        mobile: form.mobile,
+      };
+
+      if (selectedRole === 'investor') {
+        body.companyName = form.companyName;
+        body.investorType = form.investorType;
+        body.preferredIndustry = form.preferredIndustry;
+        body.minInvestment = form.minInvestment;
+        body.maxInvestment = form.maxInvestment;
+      }
+
+      const res = await fetch(`${API_URL}/auth/complete-phone-signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+
+      if (json.success && json.token) {
+        localStorage.setItem('ai_startup_builder_jwt', json.token);
+        await checkAuth();
+        setStep('welcome');
       } else {
         setOtpError(json.error || 'Failed to create account. Please try again.');
       }
@@ -626,23 +739,46 @@ const Signup: React.FC = () => {
   };
 
   // ── Step Indicator ──────────────────────────────────────────────────────
-  const steps = step === 'role'
-    ? [{ num: 1, label: 'Choose Role' }]
-    : step === 'form'
-    ? isInviteFlow
-      ? [{ num: 1, label: 'Account Details' }]
-      : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }]
-    : step === 'phone_otp'
-    ? isInviteFlow
-      ? [{ num: 1, label: 'Account Details' }, { num: 2, label: 'Verify Phone' }]
-      : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }, { num: 3, label: 'Verify Phone' }]
-    : isInviteFlow
-      ? [{ num: 1, label: 'Account Details' }, { num: 2, label: 'Verify Phone' }]
-      : [{ num: 1, label: 'Choose Role' }, { num: 2, label: 'Account Details' }, { num: 3, label: 'Verify Phone' }];
+  const getSteps = (): { num: number; label: string }[] => {
+    if (selectedRole === 'mentor') {
+      return isInviteFlow
+        ? [
+            { num: 1, label: 'Basic Information' },
+            { num: 2, label: 'Professional Info' },
+            { num: 3, label: 'Verify Email' },
+          ]
+        : [
+            { num: 1, label: 'Choose Role' },
+            { num: 2, label: 'Basic Information' },
+            { num: 3, label: 'Professional Info' },
+            { num: 4, label: 'Verify Email' },
+          ];
+    }
+    if (selectedRole === 'founder' || selectedRole === 'investor') {
+      return [
+        { num: 1, label: 'Choose Role' },
+        { num: 2, label: 'Account Details' },
+        { num: 3, label: 'Verify Phone' },
+      ];
+    }
+    return [{ num: 1, label: 'Choose Role' }];
+  };
 
-  const currentStepIdx = isInviteFlow
-    ? (step === 'form' ? 0 : 1)
-    : (step === 'role' ? 0 : step === 'form' ? 1 : 2);
+  const getCurrentStepIdx = (): number => {
+    if (step === 'role') return 0;
+    if (selectedRole === 'mentor') {
+      if (step === 'basic') return isInviteFlow ? 0 : 1;
+      if (step === 'professional') return isInviteFlow ? 1 : 2;
+      if (step === 'otp') return isInviteFlow ? 2 : 3;
+    }
+    if (step === 'form') return 1;
+    if (step === 'phone_otp') return 2;
+    return 0;
+  };
+
+  const steps = getSteps();
+  const currentStepIdx = getCurrentStepIdx();
+  const bioLen = form.bio.trim().length;
 
   // Invalid invite screen
   if (isInviteFlow && inviteValid === false) {
@@ -729,7 +865,7 @@ const Signup: React.FC = () => {
               </div>
             )}
 
-            {/* ── STEP 1: Role Selection ── */}
+            {/* ── ROLE SELECTION ── */}
             {step === 'role' && (
               <div className="animate-in fade-in duration-300">
                 <div className="mb-6">
@@ -743,7 +879,11 @@ const Signup: React.FC = () => {
                     return (
                       <button
                         key={role.id}
-                        onClick={() => { setSelectedRole(role.id); setStep('form'); }}
+                        onClick={() => {
+                          setSelectedRole(role.id);
+                          resetForm();
+                          setStep(role.id === 'mentor' ? 'basic' : 'form');
+                        }}
                         className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-100 hover:border-[#6C4CF1]/30 hover:bg-[#6C4CF1]/[0.02] transition-all duration-200 text-left group"
                       >
                         <div className={`w-12 h-12 rounded-xl ${role.bg} ${role.color} flex items-center justify-center shrink-0`}>
@@ -768,28 +908,21 @@ const Signup: React.FC = () => {
               </div>
             )}
 
-            {/* ── STEP 2: Form ── */}
-            {step === 'form' && (
+            {/* ── STEP 1: BASIC INFORMATION (Mentor) ── */}
+            {step === 'basic' && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="mb-6">
-                  {!isInviteFlow && (
-                    <div className="flex items-center gap-2 mb-1">
-                      <button onClick={() => { setStep('role'); setForm({ ...emptyForm }); setErrors({}); }} className="text-gray-400 hover:text-gray-600 transition-colors text-sm">
-                        ← Back
-                      </button>
-                    </div>
-                  )}
-                  <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
-                    {selectedRole === 'founder' && 'Create Founder Account'}
-                    {selectedRole === 'mentor' && 'Create Mentor Account'}
-                    {selectedRole === 'investor' && 'Create Investor Account'}
-                  </h2>
-                  <p className="text-gray-500 text-sm mt-1">
-                    {selectedRole === 'founder' && 'Join thousands of founders building the future.'}
-                    {selectedRole === 'mentor' && 'Share your expertise and guide the next generation.'}
-                    {selectedRole === 'investor' && 'Discover promising startups to invest in.'}
-                  </p>
-                </div>
+                {!isInviteFlow && (
+                  <button
+                    onClick={goToRole}
+                    className="mb-4 inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors text-sm"
+                  >
+                    <ArrowLeft size={14} /> Back to Role Selection
+                  </button>
+                )}
+                <SectionHeading
+                  title="Basic Information"
+                  subtitle="Start with the essentials — we'll ask about your expertise next."
+                />
 
                 {apiError && (
                   <div className="mb-5 p-3.5 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm flex items-start gap-2.5">
@@ -799,7 +932,179 @@ const Signup: React.FC = () => {
                 )}
 
                 <div className="space-y-4">
-                  {/* Common fields */}
+                  <Field label="Full Name *" icon={<User size={16} />} placeholder="John Doe" value={form.fullName} onChange={v => update('fullName', v)} error={errors.fullName} />
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <Field label="Email Address *" icon={<Mail size={16} />} type="email" placeholder="name@gmail.com" value={form.email} onChange={v => update('email', v.trim())} error={errors.email} disabled={isInviteFlow} />
+                    <Field label="Mobile Number *" icon={<Phone size={16} />} type="tel" placeholder="10-digit number" value={form.mobile} onChange={v => update('mobile', v)} error={errors.mobile} maxLength={10} inputMode="numeric" />
+                  </div>
+
+                  <Field label="Location" icon={<MapPin size={16} />} placeholder="City, Country" value={form.location} onChange={v => update('location', v)} hint="Optional" />
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <PasswordField label="Password *" value={form.password} onChange={v => update('password', v)} show={showPassword} onToggle={() => setShowPassword(!showPassword)} error={errors.password} showStrength />
+                    <PasswordField label="Confirm Password *" value={form.confirmPassword} onChange={v => update('confirmPassword', v)} show={showConfirm} onToggle={() => setShowConfirm(!showConfirm)} error={errors.confirmPassword} />
+                  </div>
+
+                  <button
+                    onClick={() => { setApiError(''); if (validateBasic()) { setErrors({}); setStep('professional'); } }}
+                    className="w-full h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all flex items-center justify-center gap-2 mt-2"
+                  >
+                    Continue <ArrowRight size={16} />
+                  </button>
+
+                  <p className="text-center text-sm text-gray-500 font-medium">
+                    Already have an account?{' '}
+                    <Link to="/login" className="font-bold text-[#6C4CF1] hover:text-[#5B21B6] transition-colors">
+                      Sign in
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ── STEP 2: PROFESSIONAL INFORMATION (Mentor) ── */}
+            {step === 'professional' && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <button
+                  onClick={() => { setErrors({}); setStep('basic'); }}
+                  className="mb-4 inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors text-sm"
+                >
+                  <ArrowLeft size={14} /> Back
+                </button>
+                <SectionHeading
+                  title="Professional Information"
+                  subtitle="Tell us about your expertise so we can match you with the right founders."
+                />
+
+                {apiError && (
+                  <div className="mb-5 p-3.5 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm flex items-start gap-2.5">
+                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                    <span className="font-medium">{apiError}</span>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-1.5">Expertise *</label>
+                      <div className="relative">
+                        <Briefcase size={16} className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <select
+                          value={form.expertise}
+                          onChange={e => update('expertise', e.target.value)}
+                          className={`block w-full pl-9 px-4 py-3 border-2 ${errors.expertise ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium appearance-none`}
+                          disabled={isInviteFlow && !!inviteData?.expertise}
+                        >
+                          <option value="">Select expertise</option>
+                          {EXPERTISE_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {errors.expertise && <p className="text-red-500 text-xs mt-1 font-medium">{errors.expertise}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-900 mb-1.5">Years of Experience *</label>
+                      <div className="relative">
+                        <GraduationCap size={16} className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <select
+                          value={form.experienceYears}
+                          onChange={e => update('experienceYears', e.target.value)}
+                          className={`block w-full pl-9 px-4 py-3 border-2 ${errors.experienceYears ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium appearance-none`}
+                        >
+                          <option value="">Select years</option>
+                          {EXPERIENCE_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {errors.experienceYears && <p className="text-red-500 text-xs mt-1 font-medium">{errors.experienceYears}</p>}
+                    </div>
+                  </div>
+
+                  <Field
+                    label="LinkedIn Profile *"
+                    icon={<Link2 size={16} />}
+                    placeholder="https://linkedin.com/in/yourprofile"
+                    value={form.linkedin}
+                    onChange={v => update('linkedin', v)}
+                    error={errors.linkedin}
+                  />
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-sm font-semibold text-gray-900">Short Bio *</label>
+                      <span className={`text-xs font-bold ${bioLen >= 100 && bioLen <= 300 ? 'text-emerald-600' : 'text-gray-400'}`}>
+                        {bioLen}/300
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <PenLine size={16} className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <textarea
+                        className={`block w-full pl-9 px-4 py-3 border-2 ${errors.bio ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium resize-none`}
+                        placeholder="Tell us about your mentoring experience and what you can help founders with..."
+                        value={form.bio}
+                        onChange={e => update('bio', e.target.value.slice(0, 300))}
+                        rows={4}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      {errors.bio
+                        ? <p className="text-red-500 text-xs font-medium">{errors.bio}</p>
+                        : <p className="text-gray-400 text-xs">100–300 characters describing your mentoring experience</p>}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => { setErrors({}); setStep('basic'); }}
+                      className="px-6 h-12 text-sm font-bold rounded-xl border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-all"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={handleSendEmailOtp}
+                      disabled={isSubmitting}
+                      className="flex-1 h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] disabled:opacity-70 transition-all flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending OTP...</>
+                      ) : (
+                        <>Send Verification OTP <ArrowRight size={16} /></>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── SINGLE-STEP FORM (Founder / Investor) ── */}
+            {step === 'form' && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <button
+                  onClick={goToRole}
+                  className="mb-4 inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors text-sm"
+                >
+                  <ArrowLeft size={14} /> Back to Role Selection
+                </button>
+                <SectionHeading
+                  title={selectedRole === 'founder' ? 'Create Founder Account' : 'Create Investor Account'}
+                  subtitle={
+                    selectedRole === 'founder'
+                      ? 'Join thousands of founders building the future.'
+                      : 'Discover promising startups to invest in.'
+                  }
+                />
+
+                {apiError && (
+                  <div className="mb-5 p-3.5 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm flex items-start gap-2.5">
+                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                    <span className="font-medium">{apiError}</span>
+                  </div>
+                )}
+
+                <div className="space-y-4">
                   {selectedRole === 'investor' ? (
                     <div className="grid sm:grid-cols-2 gap-4">
                       <Field label="Full Name *" icon={<User size={16} />} placeholder="John Doe" value={form.fullName} onChange={v => update('fullName', v)} error={errors.fullName} />
@@ -810,128 +1115,15 @@ const Signup: React.FC = () => {
                   )}
 
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <Field label="Email Address *" icon={<Mail size={16} />} type="email" placeholder="name@gmail.com" value={form.email} onChange={v => update('email', v.trim())} error={errors.email} disabled={isInviteFlow} />
+                    <Field label="Email Address *" icon={<Mail size={16} />} type="email" placeholder="name@gmail.com" value={form.email} onChange={v => update('email', v.trim())} error={errors.email} />
                     <Field label="Mobile Number *" icon={<Phone size={16} />} type="tel" placeholder="10-digit number" value={form.mobile} onChange={v => update('mobile', v)} error={errors.mobile} maxLength={10} inputMode="numeric" />
                   </div>
-
-                  {selectedRole === 'mentor' && (
-                    <Field label="Location" icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>} placeholder="City, Country" value={form.location} onChange={v => update('location', v)} />
-                  )}
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <PasswordField label="Password *" value={form.password} onChange={v => update('password', v)} show={showPassword} onToggle={() => setShowPassword(!showPassword)} error={errors.password} showStrength />
                     <PasswordField label="Confirm Password *" value={form.confirmPassword} onChange={v => update('confirmPassword', v)} show={showConfirm} onToggle={() => setShowConfirm(!showConfirm)} error={errors.confirmPassword} />
                   </div>
 
-                  {/* ── Mentor-specific fields ── */}
-                  {selectedRole === 'mentor' && (
-                    <>
-                      <div className="pt-2 border-t border-gray-100">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Experience</p>
-                      </div>
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-900 mb-1.5">Expertise *</label>
-                          <select
-                            value={form.expertise}
-                            onChange={e => update('expertise', e.target.value)}
-                            className={`block w-full px-4 py-3 border-2 ${errors.expertise ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium`}
-                            disabled={isInviteFlow && !!inviteData?.expertise}
-                          >
-                            <option value="">Select expertise</option>
-                            {EXPERTISE_OPTIONS.map(opt => (
-                              <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                          </select>
-                          {errors.expertise && <p className="text-red-500 text-xs mt-1 font-medium">{errors.expertise}</p>}
-                        </div>
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-900 mb-1.5">Years of Experience *</label>
-                          <select
-                            value={form.experienceYears}
-                            onChange={e => update('experienceYears', e.target.value)}
-                            className={`block w-full px-4 py-3 border-2 ${errors.experienceYears ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium`}
-                          >
-                            <option value="">Select years</option>
-                            <option value="1-3">1 - 3 years</option>
-                            <option value="3-5">3 - 5 years</option>
-                            <option value="5-10">5 - 10 years</option>
-                            <option value="10+">10+ years</option>
-                          </select>
-                          {errors.experienceYears && <p className="text-red-500 text-xs mt-1 font-medium">{errors.experienceYears}</p>}
-                        </div>
-                      </div>
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <Field label="Industries Worked With *" icon={<Briefcase size={16} />} placeholder="e.g. FinTech, HealthTech, EdTech" value={form.industriesWorkedWith} onChange={v => update('industriesWorkedWith', v)} error={errors.industriesWorkedWith} />
-                        <Field label="Mentored Startups Count" icon={null} type="number" placeholder="e.g. 5" value={form.mentoredStartupsCount} onChange={v => update('mentoredStartupsCount', v)} inputMode="numeric" />
-                      </div>
-                      <Field label="Previous Company / Startup Experience" icon={null} placeholder="e.g. CTO at TechCorp, Founder of StartupXYZ..." value={form.previousExperience} onChange={v => update('previousExperience', v)} rows={3} />
-
-                      <div className="pt-2 border-t border-gray-100">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Previous Work</p>
-                      </div>
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <Field label="LinkedIn Profile *" icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>} placeholder="https://linkedin.com/in/yourprofile" value={form.linkedin} onChange={v => update('linkedin', v)} error={errors.linkedin} />
-                        <Field label="Portfolio / Website Link" icon={null} placeholder="https://yourportfolio.com" value={form.portfolioWebsite} onChange={v => update('portfolioWebsite', v)} />
-                      </div>
-                      <Field label="Achievements" icon={null} placeholder="Notable achievements, awards, recognitions..." value={form.achievements} onChange={v => update('achievements', v)} rows={2} />
-                      <Field label="Certifications" icon={null} placeholder="Relevant certifications and qualifications..." value={form.certifications} onChange={v => update('certifications', v)} rows={2} />
-                      <Field label="Short Bio *" icon={null} placeholder="Tell us about your experience and what you can help with..." value={form.bio} onChange={v => update('bio', v)} error={errors.bio} rows={3} />
-
-                      <div className="pt-2 border-t border-gray-100">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Availability</p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">Available Days</label>
-                        <div className="flex flex-wrap gap-2">
-                          {DAYS.map(day => {
-                            const isSelected = form.availableDays.includes(day);
-                            return (
-                              <button
-                                key={day}
-                                type="button"
-                                onClick={() => {
-                                  const next = isSelected
-                                    ? form.availableDays.filter(d => d !== day)
-                                    : [...form.availableDays, day];
-                                  update('availableDays', next);
-                                }}
-                                className={`px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
-                                  isSelected
-                                    ? 'bg-[#6C4CF1]/10 border-[#6C4CF1]/30 text-[#6C4CF1]'
-                                    : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'
-                                }`}
-                              >
-                                {isSelected && <Check size={10} className="inline mr-1" />}
-                                {day.slice(0, 3)}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-900 mb-2">Preferred Session Type</label>
-                        <div className="flex gap-3">
-                          {['Chat', 'Video Call', 'Both'].map(type => (
-                            <button
-                              key={type}
-                              type="button"
-                              onClick={() => update('preferredSessionType', type)}
-                              className={`flex-1 px-4 py-3 rounded-xl text-sm font-bold border-2 transition-all ${
-                                form.preferredSessionType === type
-                                  ? 'bg-[#6C4CF1]/10 border-[#6C4CF1]/30 text-[#6C4CF1]'
-                                  : 'bg-gray-50 border-gray-100 text-gray-500 hover:border-gray-200'
-                              }`}
-                            >
-                              {type}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* ── Investor-specific fields ── */}
                   {selectedRole === 'investor' && (
                     <>
                       <div className="pt-2 border-t border-gray-100">
@@ -966,14 +1158,14 @@ const Signup: React.FC = () => {
                   )}
 
                   <button
-                    onClick={handleSendOtp}
+                    onClick={handleSendPhoneOtp}
                     disabled={isSubmitting}
                     className="w-full h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] disabled:opacity-70 transition-all flex items-center justify-center gap-2 mt-2"
                   >
                     {isSubmitting ? (
                       <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending OTP...</>
                     ) : (
-                      <>Send Verification OTP <ArrowRight className="h-4 w-4" /></>
+                      <>Send Verification OTP <ArrowRight size={16} /></>
                     )}
                   </button>
 
@@ -987,7 +1179,68 @@ const Signup: React.FC = () => {
               </div>
             )}
 
-            {/* ── STEP 3: Phone OTP Verification ── */}
+            {/* ── STEP 3: EMAIL OTP VERIFICATION (Mentor) ── */}
+            {step === 'otp' && (
+              <div className="flex flex-col items-center text-center animate-in fade-in slide-in-from-right-4 duration-500">
+                <button
+                  onClick={() => { setErrors({}); setStep('professional'); }}
+                  className="self-start mb-4 inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors text-sm"
+                >
+                  <ArrowLeft size={14} /> Back
+                </button>
+                <div className="w-16 h-16 bg-[#6C4CF1]/10 rounded-2xl flex items-center justify-center mb-5 ring-4 ring-[#6C4CF1]/5">
+                  <Mail size={32} className="text-[#6C4CF1]" />
+                </div>
+                <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Verify your email</h2>
+                <p className="text-gray-500 text-sm mb-1">
+                  We sent a 6-digit verification code to
+                </p>
+                <p className="font-bold text-gray-900 text-sm mb-4">{form.email}</p>
+
+                {generatedOtp && (
+                  <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-xl w-full max-w-xs">
+                    <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Demo Mode — Your OTP</p>
+                    <p className="text-2xl font-black text-amber-700 tracking-[0.3em] font-mono">{generatedOtp}</p>
+                  </div>
+                )}
+
+                <div className="w-full mb-6">
+                  <OTPInput value={otp} onChange={setOtp} />
+                </div>
+
+                {otpError && (
+                  <div className="w-full mb-6 p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2 text-red-600 text-sm font-medium">
+                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                    <span>{otpError}</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleVerifyEmailOtp}
+                  disabled={otpLoading || otp.join('').length !== 6}
+                  className="w-full h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] disabled:opacity-70 transition-all flex items-center justify-center gap-2 mb-6"
+                >
+                  {otpLoading ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying & Creating Account...</>
+                  ) : (
+                    <><CheckCircle2 className="mr-2 h-5 w-5" /> Verify & Create Account</>
+                  )}
+                </button>
+
+                <p className="text-sm text-gray-500">
+                  Didn't receive the code?{' '}
+                  {otpCooldown > 0 ? (
+                    <span className="font-medium opacity-60">Resend in {otpCooldown}s</span>
+                  ) : (
+                    <button onClick={handleResendEmailOtp} disabled={isSubmitting} className="font-bold text-[#6C4CF1] hover:text-[#5B21B6] transition-colors">
+                      Resend OTP
+                    </button>
+                  )}
+                </p>
+              </div>
+            )}
+
+            {/* ── PHONE OTP VERIFICATION (Founder / Investor) ── */}
             {step === 'phone_otp' && (
               <div className="flex flex-col items-center text-center animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="w-16 h-16 bg-[#6C4CF1]/10 rounded-2xl flex items-center justify-center mb-5 ring-4 ring-[#6C4CF1]/5">
@@ -1007,7 +1260,7 @@ const Signup: React.FC = () => {
                 )}
 
                 <div className="w-full mb-6">
-                  <OTPInput value={emailOtp} onChange={setEmailOtp} />
+                  <OTPInput value={otp} onChange={setOtp} />
                 </div>
 
                 {otpError && (
@@ -1018,8 +1271,8 @@ const Signup: React.FC = () => {
                 )}
 
                 <button
-                  onClick={handleVerifyOtp}
-                  disabled={otpLoading || emailOtp.join('').length !== 6}
+                  onClick={handleVerifyPhoneOtp}
+                  disabled={otpLoading || otp.join('').length !== 6}
                   className="w-full h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] disabled:opacity-70 transition-all flex items-center justify-center gap-2 mb-6"
                 >
                   {otpLoading ? (
@@ -1034,14 +1287,14 @@ const Signup: React.FC = () => {
                   {otpCooldown > 0 ? (
                     <span className="font-medium opacity-60">Resend in {otpCooldown}s</span>
                   ) : (
-                    <button onClick={handleResendOtp} disabled={isSubmitting} className="font-bold text-[#6C4CF1] hover:text-[#5B21B6] transition-colors">
+                    <button onClick={handleResendPhoneOtp} disabled={isSubmitting} className="font-bold text-[#6C4CF1] hover:text-[#5B21B6] transition-colors">
                       Resend OTP
                     </button>
                   )}
                 </p>
 
                 <button
-                  onClick={() => { setStep('form'); setEmailOtp(['', '', '', '', '', '']); setOtpError(''); }}
+                  onClick={() => { setStep('form'); setOtp(['', '', '', '', '', '']); setOtpError(''); }}
                   className="mt-6 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
                 >
                   ← Go back
@@ -1049,7 +1302,7 @@ const Signup: React.FC = () => {
               </div>
             )}
 
-            {/* ── STEP 4: Welcome ── */}
+            {/* ── WELCOME (Founder / Investor) ── */}
             {step === 'welcome' && selectedRole && (
               <FreeTrialWelcome
                 name={form.fullName || selectedRole}

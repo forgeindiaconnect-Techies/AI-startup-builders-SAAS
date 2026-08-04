@@ -19,6 +19,7 @@ export interface IUser extends mongoose.Document {
   profileCompleted?: boolean;
 
   // Mentor fields
+  location?: string;
   expertise?: string;
   experienceYears?: string;
   linkedin?: string;
@@ -54,6 +55,7 @@ const userSchema = new mongoose.Schema({
   profileCompleted: { type: Boolean, default: false },
 
   // Mentor fields
+  location: { type: String },
   expertise: { type: String },
   experienceYears: { type: String },
   linkedin: { type: String },
