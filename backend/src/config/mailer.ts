@@ -14,11 +14,14 @@ export const transporter = nodemailer.createTransport({
     host: process.env.MAIL_HOST || "smtp.gmail.com",
     port: Number(process.env.MAIL_PORT) || 587,
     secure: false,
+    family: 4, // Force IPv4 - prevents ETIMEDOUT/ENETUNREACH on Render
+    connectionTimeout: 8000,
+    socketTimeout: 8000,
     auth: {
         user: MAIL_USER,
         pass: MAIL_PASS,
     },
-});
+} as any);
 
 export const sendEmail = async ({
     to,
