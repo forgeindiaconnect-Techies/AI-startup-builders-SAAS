@@ -131,7 +131,7 @@ const FounderDashboard: React.FC = () => {
                   return (
                     <div
                       key={s.startupId || s.id || idx}
-                      onClick={() => navigate(`/dashboard/founder/ai-builder/${s.startupId || s.id}`)}
+                      onClick={() => navigate(`/dashboard/founder/ai-builder?startupId=${s.startupId || s.id}`)}
                       className="p-4 border border-gray-100 rounded-xl hover:border-purple-200 hover:shadow-sm transition-all cursor-pointer group"
                     >
                       <div className="flex items-center justify-between">
