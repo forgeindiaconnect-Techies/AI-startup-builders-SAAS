@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Link2, Plus, Copy, CheckCircle2, AlertCircle, Trash2, X, RefreshCw,
-  Send, Ban, Users, Clock, CheckCircle, XCircle, Mail, Briefcase,
+  Send, Ban, Users, Clock, CheckCircle, XCircle, Mail,
   Calendar, MessageSquare,
 } from 'lucide-react';
 import { API_URL } from '../../../config/api';
@@ -18,7 +18,7 @@ const AdminInviteLinks: React.FC = () => {
   const [filter, setFilter] = useState<'all' | 'active' | 'used' | 'expired' | 'disabled'>('all');
 
   // Create form state
-  const [form, setForm] = useState({ mentorName: '', mentorEmail: '', expertise: '', expiryDate: '', message: '' });
+  const [form, setForm] = useState({ mentorName: '', mentorEmail: '', expiryDate: '', message: '' });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Generated link state
@@ -64,7 +64,6 @@ const AdminInviteLinks: React.FC = () => {
     if (!form.mentorName.trim()) errs.mentorName = 'Mentor name is required';
     if (!form.mentorEmail.trim()) errs.mentorEmail = 'Email is required';
     else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.mentorEmail)) errs.mentorEmail = 'Invalid email';
-    if (!form.expertise) errs.expertise = 'Expertise is required';
     if (!form.expiryDate) errs.expiryDate = 'Expiry date is required';
     else if (new Date(form.expiryDate) <= new Date()) errs.expiryDate = 'Expiry must be a future date';
     setFormErrors(errs);
@@ -78,7 +77,7 @@ const AdminInviteLinks: React.FC = () => {
         body: JSON.stringify({
           mentorName: form.mentorName.trim(),
           mentorEmail: form.mentorEmail.trim(),
-          expertise: form.expertise,
+          expertise: '',
           expiryDate: form.expiryDate,
           message: form.message.trim(),
         }),
@@ -116,7 +115,7 @@ const AdminInviteLinks: React.FC = () => {
       const invite = createInvite({
         mentorName: form.mentorName.trim(),
         mentorEmail: form.mentorEmail.trim(),
-        expertise: form.expertise,
+        expertise: '',
         expiryDate: form.expiryDate,
         message: form.message.trim(),
       });
@@ -202,7 +201,7 @@ const AdminInviteLinks: React.FC = () => {
             <RefreshCw size={15} /> Refresh
           </button>
           <button
-            onClick={() => { setShowCreateModal(true); setGeneratedLink(null); setForm({ mentorName: '', mentorEmail: '', expertise: '', expiryDate: '', message: '' }); setFormErrors({}); }}
+            onClick={() => { setShowCreateModal(true); setGeneratedLink(null); setForm({ mentorName: '', mentorEmail: '', expiryDate: '', message: '' }); setFormErrors({}); }}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white font-bold rounded-xl text-sm shadow-md hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all"
           >
             <Plus size={16} /> Create Mentor Invite
@@ -471,31 +470,6 @@ const AdminInviteLinks: React.FC = () => {
                       />
                     </div>
                     {formErrors.mentorEmail && <p className="text-red-500 text-xs mt-1 font-medium">{formErrors.mentorEmail}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">Expertise *</label>
-                    <div className="relative">
-                      <Briefcase size={16} className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                      <select
-                        value={form.expertise}
-                        onChange={(e) => { setForm({ ...form, expertise: e.target.value }); if (formErrors.expertise) setFormErrors({ ...formErrors, expertise: '' }); }}
-                        className={`block w-full pl-9 px-4 py-3 border-2 ${formErrors.expertise ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium appearance-none`}
-                      >
-                        <option value="">Select expertise</option>
-                        <option value="Product Management">Product Management</option>
-                        <option value="Marketing & Growth">Marketing & Growth</option>
-                        <option value="Technology & Engineering">Technology & Engineering</option>
-                        <option value="Finance & Accounting">Finance & Accounting</option>
-                        <option value="Legal & Compliance">Legal & Compliance</option>
-                        <option value="Sales & Business Dev">Sales & Business Dev</option>
-                        <option value="HR & People Ops">HR & People Ops</option>
-                        <option value="Design & UX">Design & UX</option>
-                        <option value="Fundraising & IR">Fundraising & IR</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                    {formErrors.expertise && <p className="text-red-500 text-xs mt-1 font-medium">{formErrors.expertise}</p>}
                   </div>
 
                   <div>
