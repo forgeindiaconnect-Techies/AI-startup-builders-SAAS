@@ -19,7 +19,7 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
   const [error, setError] = useState('');
   const [savedToDocs, setSavedToDocs] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    category: true, essential: true, optional: false, investor: false
+    category: true, essential: true, optional: false
   });
 
   const toggle = (key: string) => setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
@@ -109,7 +109,6 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
 
     data.essentialDocuments?.forEach((doc: any) => addPendingDoc(doc.name, doc.reason, true, doc.uploadRequired === 'Yes', 'Essential'));
     data.optionalDocuments?.forEach((doc: any) => addPendingDoc(doc.name, doc.reason, false, doc.uploadRequired === 'Yes', 'Optional'));
-    data.investorDocuments?.forEach((doc: any) => addPendingDoc(doc.name, doc.reason, false, false, 'Investor'));
 
     allDocs.forEach(doc => saveDocument(doc));
     setSavedToDocs(true);
@@ -433,7 +432,7 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
         </div>
         <h3 className="text-xl font-bold text-gray-900 mb-2">Legal & Documents Generator</h3>
         <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
-          AI will analyze your business idea and generate category-specific essential documents, optional docs, and investor-ready documents.
+          AI will analyze your business idea and generate category-specific essential and optional documents.
         </p>
         <div className="bg-purple-50 rounded-xl p-4 mb-6 border border-purple-100 text-left max-w-md mx-auto">
           <p className="text-xs font-bold text-purple-900 mb-1">For: {startupData.startupName}</p>
@@ -490,11 +489,6 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
         <DocList docs={legalData.optionalDocuments} section="Optional" />
       </Section>
 
-      {/* Investor Documents */}
-      <Section id="investor" title="Investor Documents" icon={FileCheck} count={legalData.investorDocuments?.length}>
-        <DocList docs={legalData.investorDocuments} section="Investor" />
-      </Section>
-
       {/* Saved notice */}
       {savedToDocs && (
         <div className="bg-green-50 border border-green-200 rounded-2xl p-5 flex items-start gap-3">
@@ -502,7 +496,7 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
           <div>
             <p className="text-sm font-bold text-green-800">Documents saved</p>
             <p className="text-xs text-green-700 mt-1">
-              All essential, optional, and investor documents have been added as pending entries below.
+              All essential and optional documents have been added as pending entries below.
               Upload the required documents directly from here.
             </p>
           </div>
