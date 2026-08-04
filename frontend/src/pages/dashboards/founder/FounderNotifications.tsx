@@ -217,21 +217,23 @@ const FounderNotifications: React.FC = () => {
                     : 'bg-white border-[#5B21B6]/30 shadow-sm hover:shadow-md hover:border-[#5B21B6]/50'
                 }`}
               >
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${n.bg}`}>
+                <div className={`relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${n.bg}`}>
                   <Icon size={22} className={n.color} />
+                  {!n.read && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#5B21B6] border-2 border-white" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-3">
                     <p className={`text-sm font-bold ${n.read ? 'text-gray-700' : 'text-gray-900'}`}>{n.title}</p>
-                    <span className="text-[11px] text-gray-400 flex-shrink-0 font-medium">{n.time}</span>
+                    <span className="text-[11px] text-gray-400 flex-shrink-0 whitespace-nowrap font-medium">{n.time}</span>
                   </div>
                   <p className="text-sm text-gray-500 mt-0.5 leading-relaxed line-clamp-2">{n.desc}</p>
                 </div>
-                <div className="flex items-center gap-2.5 flex-shrink-0 self-center">
-                  {!n.read && <div className="w-2.5 h-2.5 rounded-full bg-[#5B21B6]" />}
+                <div className="flex items-center flex-shrink-0 self-center">
                   <button
                     onClick={(e) => { e.stopPropagation(); markOne(n.id); setSelectedNotif(n); }}
-                    className="px-3 py-1.5 bg-gray-50 hover:bg-purple-50 text-gray-600 hover:text-[#5B21B6] rounded-lg text-xs font-bold transition-colors flex items-center gap-1 border border-gray-200/80 hover:border-purple-200"
+                    className="w-[80px] px-3 py-1.5 justify-center bg-gray-50 hover:bg-purple-50 text-gray-600 hover:text-[#5B21B6] rounded-lg text-xs font-bold transition-colors flex items-center gap-1 border border-gray-200/80 hover:border-purple-200"
                   >
                     View <ChevronRight size={14} />
                   </button>
