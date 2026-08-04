@@ -500,10 +500,10 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
         <div className="bg-green-50 border border-green-200 rounded-2xl p-5 flex items-start gap-3">
           <CheckCircle2 size={20} className="text-green-600 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-green-800">Documents saved to your Documents page</p>
+            <p className="text-sm font-bold text-green-800">Documents saved</p>
             <p className="text-xs text-green-700 mt-1">
-              All essential and optional documents have been added as pending entries.
-              Go to <strong>Documents</strong> in the sidebar to upload each document.
+              All essential, optional, and investor documents have been added as pending entries below.
+              Upload the required documents directly from here.
             </p>
           </div>
         </div>
