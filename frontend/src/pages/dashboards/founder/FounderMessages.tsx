@@ -110,7 +110,7 @@ const SharedMessages: React.FC = () => {
       <div className="animate-fade-in-up">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">
-            {user?.role === 'admin' ? 'Support Center Inbox' : 'Messages'}
+            {user?.role === 'admin' ? 'Notifications Inbox' : 'Messages'}
           </h1>
         </div>
         <div className="p-8 text-center text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
@@ -126,7 +126,7 @@ const SharedMessages: React.FC = () => {
     <div className="animate-fade-in-up flex flex-col h-[calc(100vh-160px)] min-h-[500px]">
       <div className="mb-6 flex-shrink-0">
         <h1 className="text-2xl font-bold text-gray-900">
-          {user?.role === 'admin' ? 'Support Center Inbox' : 'Messages'}
+          {user?.role === 'admin' ? 'Notifications Inbox' : 'Messages'}
         </h1>
         <p className="text-gray-500 mt-1">
           {user?.role === 'admin' 

@@ -77,7 +77,7 @@ import AdminLogs             from './pages/dashboards/admin/AdminLogs';
 import AdminReports          from './pages/dashboards/admin/AdminReports';
 import AdminBilling          from './pages/dashboards/admin/AdminBilling';
 import AdminSettings         from './pages/dashboards/admin/AdminSettings';
-import AdminManageVideos     from './pages/dashboards/admin/AdminManageVideos';
+import AdminApprovalsHub      from './pages/dashboards/admin/AdminApprovalsHub';
 import AdminDocumentVerification from './pages/dashboards/admin/AdminDocumentVerification';
 import AdminInviteLinks        from './pages/dashboards/admin/AdminInviteLinks';
 
@@ -98,7 +98,6 @@ import InvestorPortfolioHub    from './pages/dashboards/investor/InvestorPortfol
 import InvestorProfileKYC      from './pages/dashboards/investor/InvestorProfileKYC';
 
 // ── Admin Combined Pages ────────────────────────────────────────────
-import AdminApprovalsHub       from './pages/dashboards/admin/AdminApprovalsHub';
 import AdminSubPayments        from './pages/dashboards/admin/AdminSubPayments';
 import AdminPlatformSettings   from './pages/dashboards/admin/AdminPlatformSettings';
 
@@ -163,7 +162,6 @@ function App() {
                     <Route index                     element={<AdminDashboard />} />
                     <Route path="users"              element={<AdminUsers />} />
                     <Route path="startups"           element={<AdminStartups />} />
-                    <Route path="manage-videos"     element={<AdminManageVideos />} />
                     <Route path="approvals-hub"      element={<AdminApprovalsHub />} />
                     <Route path="sub-payments"       element={<AdminSubPayments />} />
                     <Route path="analytics"          element={<AdminAnalytics />} />
