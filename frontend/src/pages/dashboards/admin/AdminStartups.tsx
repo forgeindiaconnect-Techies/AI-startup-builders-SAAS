@@ -143,8 +143,8 @@ const AdminStartups: React.FC = () => {
   };
 
   React.useEffect(() => {
-    const keys = Object.keys(localStorage);
-    const locals: any[] = [];
+    let keys = Object.keys(localStorage);
+    let locals: any[] = [];
     keys.forEach(key => {
       if (key.startsWith('startup_')) {
         try {
@@ -152,9 +152,289 @@ const AdminStartups: React.FC = () => {
         } catch (e) {}
       }
     });
+
+    if (locals.length === 0) {
+      const mockStartups = [
+        {
+          id: 'startup_mock_1',
+          startupId: 'startup_mock_1',
+          founderId: 'founder_renu',
+          startupName: 'GreenCup Cafe',
+          startupIdea: 'A premium, aesthetic cafe offering specialty coffee, organic tea, and healthy snacks with a sustainable, zero-waste operation model.',
+          status: 'generated',
+          approvalStatus: 'approved',
+          createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date().toISOString(),
+          aiGenerated: {
+            ideaAnalysis: {
+              refinedIdea: 'GreenCup Cafe is a premium local specialty coffee and organic tea venue focusing on sustainability, zero-waste packaging, and community networking spaces.',
+              problemStatement: 'Modern urban professionals lack premium, eco-friendly spaces that combine high-quality daily beverages with functional, productive work environments.',
+              solution: 'A highly aesthetic workspace-cafe hybrid using 100% biodegradable packaging, serving organic, locally-sourced beverages and healthy curated snacks.',
+              targetCustomers: ['Remote workers & freelancers', 'Eco-conscious consumers', 'Coffee connoisseurs', 'Local students'],
+              uniqueValueProposition: 'Combining sustainable zero-waste daily consumption with a premium, design-forward community hub.',
+              businessModel: 'Direct-to-Consumer (DTC) Retail & Subscriptions',
+              revenueModel: 'Walk-in retail sales, workspace desk subscription passes, coffee bean retail, and catering events.',
+              coreFeatures: ['Zero-waste serving bar', 'High-speed internet work desks', 'Curated organic menu', 'Loyalty App & subscription'],
+              marketOpportunity: 'Surging demand for remote work hubs and eco-friendly premium dining spaces.',
+              nextSteps: ['Finalize prime street-corner lease', 'Onboard organic coffee cooperative suppliers', 'Complete sustainable interior buildout']
+            },
+            branding: {
+              brandNameSuggestions: ['GreenCup Cafe', 'Leaf & Bean', 'SustainBrew', 'EcoCup'],
+              taglineSuggestions: ['Sip Sustainably.', 'Your Daily Green Escape.', 'Brewed for You and the Planet.'],
+              logoConceptIdeas: 'A clean, green leaf sprouting from a minimalist coffee cup logo.',
+              logoPrompt: 'Create a modern, minimal, premium logo for GreenCup Cafe featuring a green leaf and coffee cup.',
+              logoStyle: 'Minimalist Eco-friendly',
+              brandColorPalette: ['#1B4332 (Forest Green)', '#D8F3DC (Sage)', '#FFFFFF (Pure White)', '#000000 (Jet Black)'],
+              fontStyleSuggestions: 'Playfair Display & Inter',
+              brandPersonality: 'Warm, eco-conscious, aesthetic, reliable.',
+              packagingStyleSuggestions: 'Unbleached kraft paper cups with water-based soy ink print logos.',
+              socialMediaIdeas: 'Instagram reels showcasing local organic coffee farmers, eco-tips, and aesthetic workspace corners.',
+              websiteHero: 'Welcome to GreenCup. Sip premium coffee, save the planet.',
+              marketingCaptions: ['Start your morning green. 🌿☕', 'Your workspace, re-imagined.']
+            },
+            businessPlan: {
+              executiveSummary: 'GreenCup Cafe will establish a network of premium, eco-friendly cafe workspaces catering to the modern remote workforce.',
+              problemAndSolution: 'Provides high-quality specialty coffee and dedicated workspaces to solve the distraction of home offices and generic coffee shops.',
+              productDetails: 'Single-origin specialty coffee, premium loose-leaf organic teas, clean ingredient pastries, and soundproof phone booths.',
+              targetCustomers: 'Remote professionals, freelancers, and design-minded urban dwellers.',
+              businessModel: 'DTC retail sales combined with a monthly workspace subscription model.',
+              pricingStrategy: 'Premium pricing justified by certified organic ingredients and zero-waste sourcing.',
+              goToMarketStrategy: 'Local influencer invites, geo-targeted Instagram ads, and free-workspace pre-launch day.',
+              operationsPlan: 'Operating 7 AM to 8 PM daily, staffed by professional baristas and a dedicated cafe supervisor.',
+              teamRequirement: ['General Manager', 'Head Barista', 'Assistant Barista', 'Part-time Cleaner'],
+              financialProjection: 'First year target revenue of $180,000 with break-even by month 6 and a 22% net margin by Year 2.',
+              fundingAsk: '$80,000 for equipment purchasing, lease deposits, and initial sustainable packaging inventory.'
+            },
+            pitchDeck: [
+              { slide: 1, title: 'GreenCup Cafe', content: 'Premium Eco-Friendly Workspace Cafe' },
+              { slide: 2, title: 'The Problem', content: 'Remote workers lack productive, professional, and sustainable daily environments.' },
+              { slide: 3, title: 'The Solution', content: 'A beautiful workspace cafe hybrid operating under a 100% zero-waste model.' },
+              { slide: 4, title: 'Market Opportunity', content: '$12B global co-working and specialty coffee market expansion.' },
+              { slide: 5, title: 'Product Overview', content: 'Specialty coffee, quiet phone booths, organic menu, loyalty subscription.' },
+              { slide: 6, title: 'Business Model', content: 'Retail sales + monthly workspace passes.' },
+              { slide: 7, title: 'Competitor Landscape', content: 'Wins against Starbucks on sustainability, and against co-working spaces on cost and beverage quality.' },
+              { slide: 8, title: 'Go-To-Market', content: 'Pre-launch workspace days, local SEO, Instagram marketing.' },
+              { slide: 9, title: 'Our Team', content: 'Experienced hospitality operations manager and award-winning head barista.' },
+              { slide: 10, title: 'The Ask', content: '$80k for space buildout, lease acquisition, and launch marketing.' }
+            ],
+            marketResearch: {
+              tam: '₹25,00,00,000',
+              sam: '₹5,00,00,000',
+              som: '₹75,00,000',
+              customerSegments: ['Remote workers', 'Students', 'Eco-conscious clients'],
+              competitorAnalysis: 'Specialty cafes lack remote infrastructure; generic offices lack premium beverages.',
+              marketTrends: ['Sustainability focus', 'Workspace convenience', 'Zero-waste dining'],
+              opportunities: ['Corporate bulk ordering', 'Branded coffee product retailing'],
+              risks: ['Real estate lease price volatility', 'Organic bean sourcing supply issues'],
+              pricingSuggestions: 'Coffee: ₹180-280, Workspace Pass: ₹500/day or ₹6000/month.',
+              locationSuggestions: 'Urban street-corners, near transit hubs and universities.'
+            },
+            aiReport: {
+              investmentReadinessScore: 89,
+              keyStrengths: ['Highly relevant sustainability focus', 'Clear combined revenue channels', 'Strong local community demand'],
+              riskFactors: ['Lease overhead costs', 'Sourcing logistics for organic supply chains'],
+              improvementSuggestions: ['Pre-sell 50 workspace memberships before opening', 'Establish long-term raw supply contracts'],
+              scalabilityScore: 78,
+              fundingReadiness: 'High readiness for local angel funding and small business setup grants.',
+              mentorReviewSummary: 'GreenCup Cafe is a highly viable local business concept. Sourcing and lease terms will define the initial operational success.'
+            }
+          }
+        },
+        {
+          id: 'startup_mock_2',
+          startupId: 'startup_mock_2',
+          founderId: 'founder_renu',
+          startupName: 'SyncAI Tasks',
+          startupIdea: 'An AI-powered task manager and workflow automation tool for teams, automatically generating follow-ups and synchronizing action items across Slack, email, and calendars.',
+          status: 'generated',
+          approvalStatus: 'approved',
+          createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date().toISOString(),
+          aiGenerated: {
+            ideaAnalysis: {
+              refinedIdea: 'SyncAI Tasks is a smart productivity SaaS platform that uses LLMs to automatically extract, assign, and track action items from team chat, email, and meetings.',
+              problemStatement: 'Modern teams lose 30% of their productivity trying to manually log, update, and track tasks across fragmented tools.',
+              solution: 'An AI productivity layer that integrates into Slack, Gmail, and Zoom to automatically populate and manage a centralized task board.',
+              targetCustomers: ['Fast-growing tech startups', 'Remote agencies', 'Product management teams', 'Freelancers'],
+              uniqueValueProposition: 'Zero manual data entry task management. Let AI capture the action items so you can focus on execution.',
+              businessModel: 'B2B Software-as-a-Service (SaaS)',
+              revenueModel: 'Per-seat monthly subscription ($12/user/month), Enterprise custom security plans.',
+              coreFeatures: ['Slack/Teams auto-extractor', 'AI meeting transcription to tasks', 'Self-updating Kanban board', 'Smart automated email follow-ups'],
+              marketOpportunity: 'Accelerating transition to remote/hybrid work and widespread adoption of enterprise AI productivity tools.',
+              nextSteps: ['Complete Slack App directory certification', 'Launch public beta on Product Hunt', 'Secure SOC2 security compliance certification']
+            },
+            branding: {
+              brandNameSuggestions: ['SyncAI Tasks', 'FlowState AI', 'NexusTask', 'AutoDone'],
+              taglineSuggestions: ['Zero Entry. Infinite Productivity.', 'Work, Done Automatically.', 'The AI Project Manager for Modern Teams.'],
+              logoConceptIdeas: 'A modern, geometric infinity loop logo with a clean checkmark integrated inside.',
+              logoPrompt: 'Create a clean, futuristic indigo tech logo for SyncAI Tasks containing an infinity checkmark icon.',
+              logoStyle: 'Modern Tech Geometric',
+              brandColorPalette: ['#4F46E5 (Indigo)', '#1E1B4B (Deep Navy)', '#F3F4F6 (Ice White)', '#10B981 (Success Green)'],
+              fontStyleSuggestions: 'Inter & Roboto Mono',
+              brandPersonality: 'Innovative, professional, efficient, futuristic.',
+              packagingStyleSuggestions: 'Sleek dark-mode dashboard UI with glassmorphic cards and glowing neon indigo gradients.',
+              socialMediaIdeas: 'LinkedIn video walk-throughs of AI task extraction from chaotic Slack chats.',
+              websiteHero: 'SyncAI Tasks - Let AI manage your projects.',
+              marketingCaptions: ['Work smart. Let AI write your to-do lists. ⚡', 'Connect Slack, Gmail, and Zoom instantly.']
+            },
+            businessPlan: {
+              executiveSummary: 'SyncAI Tasks is a next-generation task automation SaaS targeting the $18B project management software market.',
+              problemAndSolution: 'Solves the fragmentation and manual overhead of tools like Jira/Asana using modern context-aware AI integrations.',
+              productDetails: 'Cloud-based dashboard with real-time Slack/Zoom integrations, web hooks, automated dashboard sync, and native reminders.',
+              targetCustomers: 'High-growth teams and technology organizations with extensive remote communications.',
+              businessModel: 'Product-Led Growth (PLG) freemium SaaS model with corporate licensing.',
+              pricingStrategy: 'Competitive seat-based pricing with a value-driven free tier for small teams.',
+              goToMarketStrategy: 'Product Hunt launch, tech newsletters, organic SEO developer guides, and inbound marketing.',
+              operationsPlan: 'Fully remote engineering and support teams, hosted on AWS with automated scalability.',
+              teamRequirement: ['Co-founder & CTO', 'Co-founder & CEO (Growth)', 'Senior Fullstack Engineer', 'UI/UX Designer'],
+              financialProjection: 'Targeting $500,000 ARR in Year 1 with an 85% gross margin, scaling to $2.5M ARR by Year 3.',
+              fundingAsk: '$300,000 Seed round for product development, server infrastructure, and compliance certification.'
+            },
+            pitchDeck: [
+              { slide: 1, title: 'SyncAI Tasks', content: 'AI-Powered Autonomous Project Management' },
+              { slide: 2, title: 'The Problem', content: 'Modern employees spend 40% of their day organizing work instead of actually working.' },
+              { slide: 3, title: 'The Solution', content: 'An autonomous task manager that extracts action items directly from team conversations.' },
+              { slide: 4, title: 'Market Size', content: '$18B+ Project Management software market with a 15% CAGR.' },
+              { slide: 5, title: 'The Product', content: 'Auto-syncing board, Slack app integration, smart follow-up assistant.' },
+              { slide: 6, title: 'Business Model', content: '$12 per user/month premium SaaS subscription.' },
+              { slide: 7, title: 'Traction', content: '1,200 waitlisted companies, 5 active pilot teams.' },
+              { slide: 8, title: 'Competitive Advantage', content: 'Asana/Jira require manual inputs; SyncAI does it automatically via conversation parsing.' },
+              { slide: 9, title: 'Team', content: 'Ex-FAANG senior engineers and repeat SaaS founders.' },
+              { slide: 10, title: 'The Ask', content: '$300,000 pre-seed for 18 months of runway.' }
+            ],
+            marketResearch: {
+              tam: '₹1,50,00,00,000',
+              sam: '₹30,00,00,000',
+              som: '₹2,00,00,000',
+              customerSegments: ['Tech Startups', 'Design Agencies', 'Software Development Teams'],
+              competitorAnalysis: 'Asana/Jira/Trello (Manual, complex), Zoom/Slack (Communication only). SyncAI bridges the gap.',
+              marketTrends: ['Generative AI in SaaS', 'Autonomous agents', 'Unified work communication workspaces'],
+              opportunities: ['Direct partnership integrations', 'White-labeled enterprise task hubs'],
+              risks: ['Data privacy/security compliance concerns', 'API dependency on Slack/Zoom'],
+              pricingSuggestions: 'Free for up to 5 seats; Pro: $12/user/month; Enterprise: custom.',
+              locationSuggestions: 'Global SaaS delivery, cloud-hosted.'
+            },
+            aiReport: {
+              investmentReadinessScore: 92,
+              keyStrengths: ['Extremely scalable software architecture', 'Clear competitive edge via LLM automation', 'High willingness to pay in B2B market'],
+              riskFactors: ['Customer churn if integrations break', 'Data security compliance barriers'],
+              improvementSuggestions: ['Obtain SOC2 Type 1 certification early', 'Focus heavily on onboarding simplicity to drive viral growth'],
+              scalabilityScore: 95,
+              fundingReadiness: 'Very high readiness for venture capital and top-tier accelerator programs.',
+              mentorReviewSummary: 'Excellent SaaS model. The key to success is building highly reliable integrations and maintaining user trust with data security.'
+            }
+          }
+        }
+      ];
+
+      mockStartups.forEach(s => {
+        localStorage.setItem(s.id, JSON.stringify(s));
+      });
+      locals = mockStartups;
+    }
+
     locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     setStartups(locals);
-    setDocuments(getDocuments());
+
+    let docs = getDocuments();
+    if (docs.length === 0) {
+      const mockDocs = [
+        {
+          id: 'doc_cat_startup_mock_1_0',
+          startupId: 'startup_mock_1',
+          founderId: 'founder_renu',
+          fileName: 'GreenCup_Cafe_FSSAI_License.pdf',
+          fileType: 'PDF',
+          fileSize: '1.2 MB',
+          category: 'Founder Documents',
+          documentType: 'FSSAI Registration / License',
+          documentLabel: 'FSSAI License',
+          status: 'verified',
+          verificationStatus: 'verified',
+          sharedWith: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'doc_cat_startup_mock_1_1',
+          startupId: 'startup_mock_1',
+          founderId: 'founder_renu',
+          fileName: 'GreenCup_Cafe_GST_Certificate.pdf',
+          fileType: 'PDF',
+          fileSize: '850 KB',
+          category: 'Founder Documents',
+          documentType: 'GST Registration',
+          documentLabel: 'GST Certificate',
+          status: 'verified',
+          verificationStatus: 'verified',
+          sharedWith: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          id: 'doc_cat_startup_mock_2_0',
+          startupId: 'startup_mock_2',
+          founderId: 'founder_renu',
+          fileName: 'SyncAI_Tasks_Incorporation_Certificate.pdf',
+          fileType: 'PDF',
+          fileSize: '2.1 MB',
+          category: 'Founder Documents',
+          documentType: 'Company Incorporation',
+          documentLabel: 'Company Incorporation',
+          status: 'verified',
+          verificationStatus: 'verified',
+          sharedWith: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      localStorage.setItem('ai_startup_builder_documents', JSON.stringify(mockDocs));
+      docs = mockDocs;
+    }
+    setDocuments(docs);
+
+    const savedOffers = localStorage.getItem('ai_startup_builder_funding_offers');
+    if (!savedOffers || JSON.parse(savedOffers).length === 0) {
+      const mockOffers = [
+        {
+          id: 'offer_mock_1',
+          startupId: 'startup_mock_1',
+          startupName: 'GreenCup Cafe',
+          founderId: 'founder_renu',
+          founderName: 'Renu',
+          investorId: 'investor_selva',
+          investorName: 'Selva',
+          investorCompany: 'Impact Ventures',
+          investorEmail: 'selva@impactventures.com',
+          investorAddress: 'Bangalore, India',
+          offerAmount: 50000,
+          currency: 'USD',
+          equityPercentage: 8,
+          valuationCap: 625000,
+          instrument: 'SAFE',
+          discount: 20,
+          expiresInDays: 30,
+          investorMessage: 'We love your sustainability model and the community hub approach. Looking forward to backing this!',
+          founderResponse: '',
+          counterOffer: { amount: null, equityPercentage: null, message: '' },
+          adminNote: 'Documents verified by Admin.',
+          status: 'offer_received',
+          history: [
+            {
+              action: 'offer_received',
+              performedBy: 'Impact Ventures',
+              role: 'investor',
+              message: 'Submitted investment offer of $50,000 for 8% equity.',
+              createdAt: new Date().toISOString()
+            }
+          ],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      localStorage.setItem('ai_startup_builder_funding_offers', JSON.stringify(mockOffers));
+      window.dispatchEvent(new Event('storage'));
+    }
   }, []);
 
   const getDisplayStatus = (rawStatus: string) => {
