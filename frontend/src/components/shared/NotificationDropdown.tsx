@@ -88,7 +88,7 @@ const NotificationDropdown: React.FC = () => {
                     className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${notif.read ? 'opacity-70' : ''}`}
                     onClick={() => {
                       setIsOpen(false);
-                      navigate(`/dashboard/${user?.role || 'admin'}/inbox`, { state: { activeTab: 'notifications', selectedNotifId: notif.id } });
+                      navigate(`/dashboard/${user?.role || 'admin'}/notifications`, { state: { selectedNotifId: notif.id } });
                     }}
                   >
                     <div className="flex gap-3">
@@ -113,7 +113,7 @@ const NotificationDropdown: React.FC = () => {
             <button 
               onClick={() => {
                 setIsOpen(false);
-                navigate(`/dashboard/${user?.role || 'admin'}/inbox`, { state: { activeTab: 'notifications' } });
+                navigate(`/dashboard/${user?.role || 'admin'}/notifications`);
               }}
               className="text-sm font-semibold text-[#5B21B6] hover:text-[#7C3AED] transition-colors"
             >

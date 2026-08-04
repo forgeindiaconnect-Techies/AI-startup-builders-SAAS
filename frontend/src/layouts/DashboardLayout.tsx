@@ -7,7 +7,7 @@ import {
   File, Lightbulb, CalendarClock, Handshake, ClipboardList,
   Briefcase, Building2, UserCog, Inbox, CreditCard,
   BarChart2, Settings, CheckSquare, ShieldCheck,
-  Map, IndianRupee, Film, Link2,
+  Map, IndianRupee, Film, Link2, Bell,
 } from 'lucide-react';
 import NotificationDropdown from '../components/shared/NotificationDropdown';
 
@@ -29,7 +29,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Subscription',     icon: CreditCard,      path: '/dashboard/founder/billing' },
         { name: 'Documents',        icon: File,            path: '/dashboard/founder/documents' },
         { name: 'Learning Videos',  icon: Film,            path: '/dashboard/founder/learning-videos' },
-        { name: 'User Support',     icon: Inbox,           path: '/dashboard/founder/inbox' },
+        { name: 'Notifications',    icon: Bell,           path: '/dashboard/founder/notifications' },
         { name: 'Profile',           icon: UserCog,         path: '/dashboard/founder/profile-billing' },
       ],
     },
