@@ -55,18 +55,29 @@ export const createMentorInvite = async (req: Request, res: Response) => {
       emailedAt: new Date(),
     });
 
-    await sendMentorInviteEmail({
-      mentorName,
-      mentorEmail,
-      inviteLink: fullLink,
-      message: message || '',
-      expertise: expertise || '',
-      expiresAt,
-    });
+    let emailSent = true;
+    let emailError = '';
+    try {
+      await sendMentorInviteEmail({
+        mentorName,
+        mentorEmail,
+        inviteLink: fullLink,
+        message: message || '',
+        expertise: expertise || '',
+        expiresAt,
+      });
+    } catch (e: any) {
+      emailSent = false;
+      emailError = e.message || 'Email send failed';
+    }
 
     return res.status(201).json({
       success: true,
-      message: 'Mentor invite created and email sent successfully',
+      message: emailSent
+        ? 'Mentor invite created and email sent successfully'
+        : 'Mentor invite created, but the email could not be sent',
+      emailSent,
+      emailError,
       invite: toInviteJson(invite),
     });
   } catch (error: any) {
@@ -113,21 +124,32 @@ export const resendInvite = async (req: Request, res: Response) => {
 
     const fullLink = req.body.inviteLink || `${getBaseOrigin(req)}${invite.inviteUrl}`;
 
-    await sendMentorInviteEmail({
-      mentorName: invite.mentorName,
-      mentorEmail: invite.mentorEmail,
-      inviteLink: fullLink,
-      message: invite.message,
-      expertise: invite.expertise,
-      expiresAt: invite.expiresAt,
-    });
+    let emailSent = true;
+    let emailError = '';
+    try {
+      await sendMentorInviteEmail({
+        mentorName: invite.mentorName,
+        mentorEmail: invite.mentorEmail,
+        inviteLink: fullLink,
+        message: invite.message,
+        expertise: invite.expertise,
+        expiresAt: invite.expiresAt,
+      });
+    } catch (e: any) {
+      emailSent = false;
+      emailError = e.message || 'Email send failed';
+    }
 
     invite.emailedAt = new Date();
     await invite.save();
 
     return res.json({
       success: true,
-      message: 'Invite email resent successfully',
+      message: emailSent
+        ? 'Invite email resent successfully'
+        : 'Invite email could not be sent',
+      emailSent,
+      emailError,
       invite: toInviteJson(invite),
     });
   } catch (error: any) {

@@ -100,7 +100,11 @@ const AdminInviteLinks: React.FC = () => {
         });
         setGeneratedLink(invite);
         loadInvites();
-        showToast(`Invite created & email sent to ${serverInvite.mentorEmail}!`, 'success');
+        if (json.emailSent === false) {
+          showToast(`Invite created, but the email could not be sent to ${serverInvite.mentorEmail}. Use Resend to try again.`, 'error');
+        } else {
+          showToast(`Invite created & email sent to ${serverInvite.mentorEmail}!`, 'success');
+        }
         return;
       }
 
@@ -148,7 +152,11 @@ const AdminInviteLinks: React.FC = () => {
       const json = await res.json();
       if (json.success) {
         loadInvites();
-        showToast(`Invite email resent to ${inv.mentorEmail}!`, 'success');
+        if (json.emailSent === false) {
+          showToast(`Email could not be sent to ${inv.mentorEmail}. Check the SMTP settings.`, 'error');
+        } else {
+          showToast(`Invite email resent to ${inv.mentorEmail}!`, 'success');
+        }
       } else {
         showToast(json.error || 'Failed to resend email', 'error');
       }
