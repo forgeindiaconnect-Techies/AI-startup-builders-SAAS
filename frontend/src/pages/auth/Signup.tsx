@@ -365,12 +365,14 @@ const Signup: React.FC = () => {
       setInviteValid(true);
       return;
     }
-    const result = validateInvite(inviteTokenParam!);
-    if (result.valid) {
+    let cancelled = false;
+
+    const applyLocalFallback = (): boolean => {
+      const result = validateInvite(inviteTokenParam!);
+      if (!result.valid) return false;
+      const inv = getInviteByToken(inviteTokenParam!);
       setInviteValid(true);
       setInviteData(result);
-      // Pre-fill form with invite data
-      const inv = getInviteByToken(inviteTokenParam!);
       if (inv) {
         setForm(prev => ({
           ...prev,
@@ -378,9 +380,40 @@ const Signup: React.FC = () => {
           expertise: inv.expertise || '',
         }));
       }
-    } else {
-      setInviteValid(false);
-    }
+      return true;
+    };
+
+    const validate = async () => {
+      try {
+        const res = await fetch(`${API_URL}/invites/${inviteTokenParam}`, {
+          method: 'GET',
+        });
+        const json = await res.json();
+        if (json.success && json.invite) {
+          if (!cancelled) {
+            setInviteValid(true);
+            setInviteData(json.invite);
+            setForm(prev => ({
+              ...prev,
+              fullName: json.invite.mentorName || prev.fullName,
+              email: json.invite.mentorEmail || prev.email,
+              expertise: json.invite.expertise || prev.expertise,
+            }));
+          }
+          return;
+        }
+        if (!cancelled && !applyLocalFallback()) {
+          setInviteValid(false);
+        }
+      } catch {
+        if (!cancelled && !applyLocalFallback()) {
+          setInviteValid(false);
+        }
+      }
+    };
+
+    validate();
+    return () => { cancelled = true; };
   }, [isInviteFlow, inviteTokenParam]);
 
   const update = (field: keyof FormData, value: any) => {
@@ -560,6 +593,11 @@ const Signup: React.FC = () => {
         // Mark invite as used if invite flow
         if (isInviteFlow && inviteTokenParam) {
           markInviteUsed(inviteTokenParam);
+          try {
+            await fetch(`${API_URL}/invites/${inviteTokenParam}/use`, { method: 'POST' });
+          } catch {
+            // server may be offline; local mark is enough for the same browser
+          }
         }
 
         await checkAuth();

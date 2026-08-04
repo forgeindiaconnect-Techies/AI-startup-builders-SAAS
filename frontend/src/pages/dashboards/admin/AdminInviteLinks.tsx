@@ -4,8 +4,10 @@ import {
   Send, Ban, Users, Clock, CheckCircle, XCircle, Mail, Briefcase,
   Calendar, MessageSquare,
 } from 'lucide-react';
+import { API_URL } from '../../../config/api';
 import {
-  getInvites, createInvite, deleteInvite, disableInvite, resendInvite,
+  getInvites, createInvite, deleteInvite, disableInvite, storeInvite,
+  getInviteByToken,
   type MentorInvite,
 } from '../../../utils/inviteLinks';
 
@@ -22,6 +24,7 @@ const AdminInviteLinks: React.FC = () => {
   // Generated link state
   const [generatedLink, setGeneratedLink] = useState<MentorInvite | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
 
   const loadInvites = useCallback(() => setInvites(getInvites()), []);
 
@@ -55,7 +58,7 @@ const AdminInviteLinks: React.FC = () => {
     });
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     const errs: Record<string, string> = {};
     if (!form.mentorName.trim()) errs.mentorName = 'Mentor name is required';
     if (!form.mentorEmail.trim()) errs.mentorEmail = 'Email is required';
@@ -66,16 +69,57 @@ const AdminInviteLinks: React.FC = () => {
     setFormErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
-    const invite = createInvite({
-      mentorName: form.mentorName.trim(),
-      mentorEmail: form.mentorEmail.trim(),
-      expertise: form.expertise,
-      expiryDate: form.expiryDate,
-      message: form.message.trim(),
-    });
-    setGeneratedLink(invite);
-    loadInvites();
-    showToast('Invite link created successfully!', 'success');
+    setSending(true);
+    try {
+      const res = await fetch(`${API_URL}/invites/mentor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mentorName: form.mentorName.trim(),
+          mentorEmail: form.mentorEmail.trim(),
+          expertise: form.expertise,
+          expiryDate: form.expiryDate,
+          message: form.message.trim(),
+        }),
+      });
+      const json = await res.json();
+
+      if (json.success && json.invite) {
+        const serverInvite = json.invite;
+        const invite = storeInvite({
+          id: serverInvite.id,
+          mentorName: serverInvite.mentorName,
+          mentorEmail: serverInvite.mentorEmail,
+          expertise: serverInvite.expertise,
+          inviteToken: serverInvite.inviteToken,
+          inviteUrl: serverInvite.inviteUrl,
+          status: serverInvite.status,
+          createdAt: serverInvite.createdAt,
+          expiryDate: serverInvite.expiryDate || serverInvite.expiresAt,
+          message: serverInvite.message,
+        });
+        setGeneratedLink(invite);
+        loadInvites();
+        showToast(`Invite created & email sent to ${serverInvite.mentorEmail}!`, 'success');
+        return;
+      }
+
+      throw new Error(json.error || 'Failed to create invite');
+    } catch (err: any) {
+      // Server offline → fall back to a local-only invite (manual copy)
+      const invite = createInvite({
+        mentorName: form.mentorName.trim(),
+        mentorEmail: form.mentorEmail.trim(),
+        expertise: form.expertise,
+        expiryDate: form.expiryDate,
+        message: form.message.trim(),
+      });
+      setGeneratedLink(invite);
+      loadInvites();
+      showToast('Invite created, but the email could not be sent (server offline). Copy the link manually.', 'error');
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleDelete = (token: string) => {
@@ -91,10 +135,26 @@ const AdminInviteLinks: React.FC = () => {
     showToast('Invite disabled.', 'success');
   };
 
-  const handleResend = (token: string) => {
-    resendInvite(token);
-    loadInvites();
-    showToast('Invite timestamp refreshed.', 'success');
+  const handleResend = async (token: string) => {
+    const inv = getInviteByToken(token);
+    if (!inv) return;
+    const fullUrl = `${window.location.origin}${inv.inviteUrl}`;
+    try {
+      const res = await fetch(`${API_URL}/invites/${token}/resend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inviteLink: fullUrl }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        loadInvites();
+        showToast(`Invite email resent to ${inv.mentorEmail}!`, 'success');
+      } else {
+        showToast(json.error || 'Failed to resend email', 'error');
+      }
+    } catch {
+      showToast('Email could not be sent (server offline)', 'error');
+    }
   };
 
   const filtered = invites.filter((inv) => {
@@ -317,11 +377,16 @@ const AdminInviteLinks: React.FC = () => {
               {generatedLink ? (
                 <div className="text-center space-y-5">
                   <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto">
-                    <CheckCircle2 size={32} className="text-emerald-600" />
+                    <Mail size={32} className="text-emerald-600" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900 text-lg">Invite Created!</h4>
-                    <p className="text-gray-500 text-sm mt-1">Share this link with <strong>{generatedLink.mentorName}</strong></p>
+                    <h4 className="font-bold text-gray-900 text-lg">Invite Email Sent!</h4>
+                    <p className="text-gray-500 text-sm mt-1">
+                      Invitation sent to <strong>{generatedLink.mentorEmail}</strong>
+                    </p>
+                    <p className="text-gray-400 text-xs mt-1">
+                      {generatedLink.mentorName} can click the link in the email to open the mentor signup page.
+                    </p>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Invite Link</label>
@@ -334,7 +399,7 @@ const AdminInviteLinks: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3 text-left">
                     <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
                       <span className="text-xs font-bold text-gray-400 uppercase block mb-1">Status</span>
-                      <span className="text-sm font-bold text-emerald-600">Active</span>
+                      <span className="text-sm font-bold text-emerald-600">Email Sent</span>
                     </div>
                     <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
                       <span className="text-xs font-bold text-gray-400 uppercase block mb-1">Expires</span>
@@ -455,9 +520,18 @@ const AdminInviteLinks: React.FC = () => {
                 </button>
                 <button
                   onClick={handleCreate}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white font-bold text-sm rounded-xl shadow-md hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all"
+                  disabled={sending}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white font-bold text-sm rounded-xl shadow-md hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Link2 size={15} /> Generate Invite Link
+                  {sending ? (
+                    <>
+                      <RefreshCw size={15} className="animate-spin" /> Sending Email...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={15} /> Create Invite &amp; Send Email
+                    </>
+                  )}
                 </button>
               </div>
             )}

@@ -1,4 +1,7 @@
 import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const MAIL_USER = process.env.MAIL_USER || "";
 const MAIL_PASS = process.env.MAIL_PASS || "";

@@ -57,6 +57,31 @@ export function getInviteByToken(token: string): MentorInvite | undefined {
   return getInvites().find((inv) => inv.inviteToken === token);
 }
 
+export function storeInvite(invite: Partial<MentorInvite> & { inviteToken: string }): MentorInvite {
+  const invites = getInvites();
+  const existingIdx = invites.findIndex((inv) => inv.inviteToken === invite.inviteToken);
+  const full: MentorInvite = {
+    id: invite.id || `inv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    mentorName: invite.mentorName || '',
+    mentorEmail: invite.mentorEmail || '',
+    expertise: invite.expertise || '',
+    inviteToken: invite.inviteToken,
+    inviteUrl: invite.inviteUrl || `/signup?role=mentor&inviteToken=${invite.inviteToken}`,
+    status: (invite.status as MentorInvite['status']) || 'active',
+    createdAt: invite.createdAt || new Date().toISOString(),
+    expiryDate: invite.expiryDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    message: invite.message || '',
+    usedAt: invite.usedAt,
+  };
+  if (existingIdx !== -1) {
+    invites[existingIdx] = full;
+  } else {
+    invites.unshift(full);
+  }
+  saveInvites(invites);
+  return full;
+}
+
 export function validateInvite(token: string): { valid: boolean; reason?: string } {
   const invite = getInviteByToken(token);
   if (!invite) return { valid: false, reason: 'not_found' };
