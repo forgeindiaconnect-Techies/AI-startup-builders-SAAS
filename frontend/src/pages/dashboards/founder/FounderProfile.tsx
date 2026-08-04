@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Save, CheckCircle2, Clock, ShieldAlert, MapPin, Mail, Phone, User } from 'lucide-react';
+import { Camera, Save, CheckCircle2, Clock, ShieldAlert, Mail, Phone, User } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { addNotification } from '../../../utils/localStorageHelper';
 
 const FounderProfile: React.FC = () => {
   const { user } = useAuth();
@@ -9,8 +10,6 @@ const FounderProfile: React.FC = () => {
     name: '',
     email: '',
     phone: '',
-    location: '',
-    bio: '',
   });
 
   useEffect(() => {
@@ -19,8 +18,6 @@ const FounderProfile: React.FC = () => {
         name: user.fullName || user.name || prev.name,
         email: user.email || prev.email,
         phone: user.phone || user.mobile || user.phoneNumber || prev.phone,
-        location: user.location || user.city || prev.location,
-        bio: user.bio || user.about || prev.bio,
       }));
     }
   }, [user]);
@@ -63,6 +60,16 @@ const FounderProfile: React.FC = () => {
       if (idx >= 0) profiles[idx] = { ...profiles[idx], ...updatedEntry };
       else profiles.push(updatedEntry);
       localStorage.setItem(key, JSON.stringify(profiles));
+      addNotification({
+        id: `notification_${Date.now()}`,
+        userId: 'admin',
+        title: 'Profile Updated',
+        message: `${form.name || 'A user'} updated their profile. Mobile Number: ${form.phone || '—'} | Email: ${form.email || '—'}`,
+        type: 'profile_update',
+        isRead: false,
+        actionUrl: `/dashboard/admin/notifications`,
+        createdAt: new Date().toISOString()
+      });
       window.dispatchEvent(new Event('storage'));
       window.alert('Profile settings saved successfully! Your details are now visible to the Admin Dashboard.');
     } catch (e) {
@@ -93,7 +100,6 @@ const FounderProfile: React.FC = () => {
           </div>
           <p className="font-bold text-gray-900 text-lg">{form.name}</p>
           <p className="text-sm text-[#5B21B6] font-bold uppercase tracking-widest mt-1">User</p>
-          <p className="text-sm text-gray-500 mt-3 leading-relaxed">{form.location || 'Location not set'}</p>
 
           <div className="w-full border-t border-gray-100 mt-6 pt-5 space-y-3.5 text-left text-xs">
             <div className="flex justify-between items-center">
@@ -101,12 +107,8 @@ const FounderProfile: React.FC = () => {
               <span className="font-bold text-gray-900 truncate max-w-[140px]">{form.email || '—'}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-500 font-medium flex items-center gap-1.5"><Phone size={13} /> Phone</span>
+              <span className="text-gray-500 font-medium flex items-center gap-1.5"><Phone size={13} /> Mobile Number</span>
               <span className="font-bold text-gray-900">{form.phone || '—'}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500 font-medium flex items-center gap-1.5"><MapPin size={13} /> Location</span>
-              <span className="font-bold text-gray-900 truncate max-w-[140px]">{form.location || '—'}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-500 font-medium flex items-center gap-1.5"><User size={13} /> Role</span>
@@ -123,8 +125,7 @@ const FounderProfile: React.FC = () => {
               {[
                 { label: 'Full Name', key: 'name', type: 'text' },
                 { label: 'Email', key: 'email', type: 'email' },
-                { label: 'Phone', key: 'phone', type: 'tel' },
-                { label: 'Location', key: 'location', type: 'text' },
+                { label: 'Mobile Number', key: 'phone', type: 'tel' },
               ].map(f => (
                 <div key={f.key}>
                   <label className="block text-sm font-bold text-gray-700 mb-1.5">{f.label}</label>
@@ -132,11 +133,6 @@ const FounderProfile: React.FC = () => {
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]" />
                 </div>
               ))}
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">Bio</label>
-                <textarea value={form.bio} onChange={e => update('bio', e.target.value)} rows={3}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] resize-none" />
-              </div>
             </div>
 
             <div className="flex justify-end pt-4 border-t border-gray-100 mt-6">
