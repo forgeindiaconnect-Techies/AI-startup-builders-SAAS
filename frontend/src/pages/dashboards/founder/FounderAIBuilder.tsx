@@ -282,15 +282,6 @@ const FounderAIBuilder: React.FC = () => {
         {startupData && startupData.status === 'generated' && (
           <div className="flex flex-wrap items-center gap-3">
             <button 
-              onClick={handleGenerate}
-              disabled={generating}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition-colors flex items-center"
-            >
-              <RefreshCw size={16} className={`mr-2 ${generating ? 'animate-spin' : ''}`} />
-              Regenerate
-            </button>
-            
-            <button 
               onClick={() => {
                 alert('Saved to My Startups!');
                 window.location.href = '/dashboard/founder/startups';
@@ -299,17 +290,6 @@ const FounderAIBuilder: React.FC = () => {
             >
               <FileIcon size={16} className="mr-2" />
               Save to My Startups
-            </button>
-
-            <button 
-              onClick={() => {
-                navigator.clipboard.writeText(JSON.stringify(startupData.aiGenerated, null, 2));
-                alert('Startup data copied to clipboard!');
-              }}
-              className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-xl text-sm transition-colors flex items-center border border-gray-200"
-            >
-              <ClipboardList size={16} className="mr-2" />
-              Copy
             </button>
 
             <div className="relative">
