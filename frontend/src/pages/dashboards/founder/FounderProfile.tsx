@@ -73,7 +73,7 @@ const FounderProfile: React.FC = () => {
       if (idx >= 0) profiles[idx] = { ...profiles[idx], ...updatedEntry };
       else profiles.push(updatedEntry);
       localStorage.setItem(key, JSON.stringify(profiles));
-      addNotification({
+      const updatedNotifs = addNotification({
         id: `notification_${Date.now()}`,
         userId: 'admin',
         title: 'Profile Updated',
@@ -83,6 +83,12 @@ const FounderProfile: React.FC = () => {
         actionUrl: `/dashboard/admin/notifications`,
         createdAt: new Date().toISOString()
       });
+      // Sync every notification consumer (ChatContext, FundingContext, notification pages)
+      // with a real StorageEvent so the stale in-memory state cannot wipe this notification.
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'ai_startup_builder_notifications',
+        newValue: JSON.stringify(updatedNotifs),
+      }));
       window.dispatchEvent(new Event('storage'));
       window.alert('Profile settings saved successfully! Your details are now visible to the Admin Dashboard.');
       setIsEditing(false);
