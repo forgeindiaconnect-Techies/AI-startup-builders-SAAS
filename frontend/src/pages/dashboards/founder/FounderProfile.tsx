@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Save, CheckCircle2, Clock, ShieldAlert, Mail, Phone, User } from 'lucide-react';
+import { Camera, Save, CheckCircle2, Clock, ShieldAlert, Mail, Phone, User, Pencil } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { addNotification } from '../../../utils/localStorageHelper';
 
@@ -12,6 +12,8 @@ const FounderProfile: React.FC = () => {
     phone: '',
   });
 
+  const [isEditing, setIsEditing] = useState(false);
+
   useEffect(() => {
     if (user) {
       setForm(prev => ({
@@ -23,6 +25,17 @@ const FounderProfile: React.FC = () => {
   }, [user]);
 
   const update = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleCancel = () => {
+    if (user) {
+      setForm({
+        name: user.fullName || user.name || '',
+        email: user.email || '',
+        phone: user.phone || user.mobile || user.phoneNumber || '',
+      });
+    }
+    setIsEditing(false);
+  };
 
   const initial = (user?.fullName || user?.name || 'S').charAt(0).toUpperCase();
 
@@ -72,6 +85,7 @@ const FounderProfile: React.FC = () => {
       });
       window.dispatchEvent(new Event('storage'));
       window.alert('Profile settings saved successfully! Your details are now visible to the Admin Dashboard.');
+      setIsEditing(false);
     } catch (e) {
       window.alert('Error saving profile settings.');
     }
@@ -120,7 +134,17 @@ const FounderProfile: React.FC = () => {
         {/* Form */}
         <div className="lg:col-span-2 space-y-5">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="text-base font-bold text-gray-900 mb-5 pb-4 border-b border-gray-100">Personal Information</h2>
+            <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
+              <h2 className="text-base font-bold text-gray-900">Personal Information</h2>
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-lg border border-gray-200 text-sm transition-colors shadow-sm"
+                >
+                  <Pencil size={14} className="mr-2" /> Edit Profile
+                </button>
+              )}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 { label: 'Full Name', key: 'name', type: 'text' },
@@ -129,19 +153,29 @@ const FounderProfile: React.FC = () => {
               ].map(f => (
                 <div key={f.key}>
                   <label className="block text-sm font-bold text-gray-700 mb-1.5">{f.label}</label>
-                  <input type={f.type} value={form[f.key as keyof typeof form]} onChange={e => update(f.key, e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]" />
+                  <input type={f.type} value={form[f.key as keyof typeof form]} onChange={e => update(f.key, e.target.value)} disabled={!isEditing}
+                    className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] ${isEditing ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'}`} />
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-end pt-4 border-t border-gray-100 mt-6">
-              <button 
-                onClick={handleSave}
-                className="flex items-center justify-center px-8 py-3.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm transition-all transform hover:-translate-y-0.5"
-              >
-                <Save size={18} className="mr-2" /> Save Changes
-              </button>
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
+              {isEditing && (
+                <>
+                  <button
+                    onClick={handleCancel}
+                    className="flex items-center justify-center px-8 py-3.5 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-xl border border-gray-200 text-sm transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    className="flex items-center justify-center px-8 py-3.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm transition-all transform hover:-translate-y-0.5"
+                  >
+                    <Save size={18} className="mr-2" /> Save Changes
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
