@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Pencil, Plus, Zap, Shield, Crown, TrendingUp, Users, DollarSign } from 'lucide-react';
+import { Check, Pencil, Plus, Zap, Shield, Crown, TrendingUp } from 'lucide-react';
 
 const plans = [
   {
@@ -15,8 +15,6 @@ const plans = [
     buttonText: 'Get Started',
     buttonStyle: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
     popular: false,
-    subscribers: 420,
-    revenue: 0,
     active: true,
     features: [
       'Basic AI Startup Idea Generator',
@@ -41,8 +39,6 @@ const plans = [
     buttonText: 'Upgrade',
     buttonStyle: 'bg-[#5B21B6] text-white hover:bg-[#7C3AED] shadow-lg shadow-purple-500/20',
     popular: false,
-    subscribers: 310,
-    revenue: 247690,
     active: true,
     features: [
       'Full AI Startup Idea Generator',
@@ -71,8 +67,6 @@ const plans = [
     buttonText: 'Upgrade Now',
     buttonStyle: 'bg-gradient-to-r from-[#FBBF24] to-[#F59E0B] text-[#111827] hover:from-[#FDE68A] hover:to-[#FBBF24] shadow-lg shadow-amber-500/30',
     popular: true,
-    subscribers: 120,
-    revenue: 2398800,
     active: true,
     features: [
       'Everything in Pro Plan',
@@ -100,15 +94,6 @@ const AdminSubscriptions: React.FC = () => {
     return `₹${price.toLocaleString('en-IN')}`;
   };
 
-  const formatRevenue = (amount: number) => {
-    if (amount === 0) return '₹0';
-    if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
-    return `₹${amount.toLocaleString('en-IN')}`;
-  };
-
-  const totalSubscribers = plans.reduce((sum, p) => sum + p.subscribers, 0);
-  const totalRevenue = plans.reduce((sum, p) => sum + p.revenue, 0);
-
   return (
     <div className="animate-fade-in-up pb-10">
       {/* Header with Stats */}
@@ -127,25 +112,7 @@ const AdminSubscriptions: React.FC = () => {
         </div>
 
         {/* Stats bar */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-100 text-[#5B21B6] flex items-center justify-center">
-              <Users size={20} />
-            </div>
-            <div>
-              <p className="text-xs text-[#6B7280] font-medium">Total Subscribers</p>
-              <p className="font-['Poppins'] text-xl font-bold text-[#1F2937]">{totalSubscribers}</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-100 text-[#F59E0B] flex items-center justify-center">
-              <DollarSign size={20} />
-            </div>
-            <div>
-              <p className="text-xs text-[#6B7280] font-medium">Monthly Revenue</p>
-              <p className="font-['Poppins'] text-xl font-bold text-[#1F2937]">{formatRevenue(totalRevenue)}</p>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-100 text-[#10B981] flex items-center justify-center">
               <TrendingUp size={20} />
@@ -245,20 +212,6 @@ const AdminSubscriptions: React.FC = () => {
                   </li>
                 ))}
               </ul>
-
-              {/* Admin Stats */}
-              <div className="flex items-center justify-between mb-4 pt-4 border-t border-gray-100">
-                <div>
-                  <p className="text-[10px] text-[#9CA3AF] font-medium uppercase tracking-wider">Subscribers</p>
-                  <p className="font-['Poppins'] text-sm font-bold text-[#1F2937]">{plan.subscribers}</p>
-                </div>
-                {plan.revenue > 0 && (
-                  <div className="text-right">
-                    <p className="text-[10px] text-[#9CA3AF] font-medium uppercase tracking-wider">Revenue</p>
-                    <p className="font-['Poppins'] text-sm font-bold text-[#10B981]">{formatRevenue(plan.revenue)}</p>
-                  </div>
-                )}
-              </div>
 
               {/* Edit Button */}
               <button
