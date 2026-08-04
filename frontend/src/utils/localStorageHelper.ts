@@ -1,6 +1,331 @@
+export const seedDemoStartups = () => {
+  const mockStartups = [
+    {
+      id: 'startup_mock_1', startupId: 'startup_mock_1', founderId: 'founder_renu',
+      startupName: 'Tourists', startupIdea: 'I want to start the tourists platform.',
+      status: 'generated', approvalStatus: 'approved',
+      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date().toISOString(),
+      aiGenerated: {
+        ideaAnalysis: {
+          refinedIdea: 'Tourists is a next-generation travel platform connecting international travelers with local guides, customized off-beat itineraries, and experiential tourism options.',
+          problemStatement: 'Travelers struggle to find authentic local experiences and reliable local guides, relying instead on crowded commercial tour packages.',
+          solution: 'An intuitive platform that matches travelers with vetted local experts for personalized, safe, and unique cultural explorations.',
+          targetCustomers: ['Solo travelers & backpackers', 'Adventure seekers', 'Cultural tourists', 'Family vacationers'],
+          uniqueValueProposition: 'Live like a local: Safe, verified, and completely customized micro-tourism experiences at your fingertips.',
+          businessModel: 'Commission-based Marketplace Model',
+          revenueModel: '15% booking fee from guides, premium itinerary planner subscription, and travel insurance partnerships.',
+          coreFeatures: ['Verified Local Guide Profiles', 'Live Itinerary Planner', 'Safe Escrow Payments', '24/7 Emergency Support'],
+          marketOpportunity: 'Surging post-pandemic demand for authentic, experiential, and outdoor-centric tourism.',
+          nextSteps: ['Complete Android/iOS app beta testing', 'Onboard initial 50 local guides in pilot cities', 'Launch tourism board partnership campaigns']
+        },
+        branding: {
+          brandNameSuggestions: ['Tourists', 'LocalQuest', 'WanderLocal', 'GuideGo'],
+          taglineSuggestions: ['Live the destination.', 'Your local travel co-pilot.', 'Authentic journeys start here.'],
+          logoConceptIdeas: 'A minimal compass combined with a location pin in vibrant sky blue.',
+          logoPrompt: 'Create a clean, modern, premium travel logo for Tourists featuring a compass location pin.',
+          logoStyle: 'Modern Travel Minimalist',
+          brandColorPalette: ['#0284C7 (Sky Blue)', '#F0F9FF (Ice)', '#FFFFFF (Pure White)', '#0F172A (Slate)'],
+          fontStyleSuggestions: 'Outfit & Inter',
+          brandPersonality: 'Adventurous, trustworthy, friendly, native.',
+          packagingStyleSuggestions: 'Premium digital UI with stunning high-resolution local photography and smooth card transitions.',
+          socialMediaIdeas: 'Short guide spotlight videos, traveler testimonial reels, and off-beat destination guides.',
+          websiteHero: 'Wander like a local. Discover authentic adventures with Tourists.',
+          marketingCaptions: ['Skip the tourist traps. 🗺️✈️', 'Meet your new local best friend.']
+        },
+        businessPlan: {
+          executiveSummary: 'Tourists connects travelers with verified local hosts to deliver authentic micro-tours and experiential stays.',
+          problemAndSolution: 'Solves the lack of authenticity and trust in traditional booking systems by offering peer-reviewed local matches.',
+          productDetails: 'Mobile-first platform with video-profile matching, instant messaging, geolocation guide tracking, and automated translation.',
+          targetCustomers: 'Millennial and Gen-Z travelers looking for unique cultural immersion.',
+          businessModel: 'Two-sided marketplace taking a transaction fee on bookings.',
+          pricingStrategy: 'Guides set their own rates; Tourists platform charges a flat 15% service fee.',
+          goToMarketStrategy: 'Travel influencer sponsorships, destination-based SEO content, and local hostel partnerships.',
+          operationsPlan: 'Customer support teams handling safety and dispute resolution, alongside automated host verification checklists.',
+          teamRequirement: ['Co-founder & CTO', 'Operations Lead', 'Guide Acquisition Manager', 'Marketing Designer'],
+          financialProjection: 'First year target of $240,000 gross merchandise value (GMV) with 30% month-over-month guide acquisition growth.',
+          fundingAsk: '$100,000 for guide onboarding operations, marketing launch, and regional scaling.'
+        },
+        pitchDeck: [
+          { slide: 1, title: 'Tourists', content: 'Authentic Local Tourism Marketplace' },
+          { slide: 2, title: 'The Problem', content: 'Commercial tour packages are generic, overcrowded, and isolate travelers from authentic culture.' },
+          { slide: 3, title: 'The Solution', content: 'A peer-to-peer marketplace matching travelers with vetted local experts for custom experiences.' },
+          { slide: 4, title: 'Market Size', content: '$800B+ global experiential and adventure travel market.' },
+          { slide: 5, title: 'Product Overview', content: 'Custom itinerary builder, interactive mapping, safety tracking, video profiles.' },
+          { slide: 6, title: 'Business Model', content: '15% booking commission on all transactions.' },
+          { slide: 7, title: 'Competitor Landscape', content: 'More localized and flexible than Airbnb Experiences, more affordable than traditional agencies.' },
+          { slide: 8, title: 'Go-To-Market', content: 'Travel vlogger partnerships, localized SEO guides, digital ads.' },
+          { slide: 9, title: 'Our Team', content: 'Ex-Booking.com product managers and local travel organizers.' },
+          { slide: 10, title: 'The Ask', content: '$100k for engineering, host acquisition, and pilot marketing.' }
+        ],
+        marketResearch: {
+          tam: '₹50,00,00,000', sam: '₹12,00,00,000', som: '₹2,50,00,000',
+          customerSegments: ['Solo backpackers', 'Cultural explorers', 'Experiential group travelers'],
+          competitorAnalysis: 'Airbnb Experiences has high overhead; TripAdvisor is outdated. Tourists offers direct customization.',
+          marketTrends: ['Experiential travel growth', 'Local guide demand', 'Eco-friendly/sustainable tourism'],
+          opportunities: ['Partnerships with state tourism departments', 'Corporate team-building tours'],
+          risks: ['Safety compliance verification', 'Seasonal travel fluctuations'],
+          pricingSuggestions: 'Average guide tour: ₹1500-4000 per day. Platform commission: 15%.',
+          locationSuggestions: 'Launch pilots in major historical/adventure hubs like Rajasthan, Kerala, and Himachal.'
+        },
+        aiReport: {
+          investmentReadinessScore: 88,
+          keyStrengths: ['Highly relevant tourism shift', 'Scalable P2P model', 'High-margin transaction fee structure'],
+          riskFactors: ['Guide verification overhead', 'Geographical regulatory compliance'],
+          improvementSuggestions: ['Standardize guide background checks', 'Create safety buttons and active tracking in app'],
+          scalabilityScore: 85,
+          fundingReadiness: 'Strong potential for seed-stage venture capital or startup accelerator backing.',
+          mentorReviewSummary: 'Tourists is a highly scalable travel tech concept. Prioritize user safety features and guide quality control in the pilot phase.'
+        }
+      }
+    },
+    {
+      id: 'startup_mock_2', startupId: 'startup_mock_2', founderId: 'founder_renu',
+      startupName: 'Bakery', startupIdea: 'i want to start bakery shop, in the bakery shop add snacks, sweet, chips etc..',
+      status: 'generated', approvalStatus: 'approved',
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date().toISOString(),
+      aiGenerated: {
+        ideaAnalysis: {
+          refinedIdea: 'Bakery is a modern retail and café concept offering premium freshly baked breads, custom cakes, healthy tea-time snacks, sweets, and gourmet potato chips.',
+          problemStatement: 'Local consumers lack access to premium, hygienic, and fresh baked goods that combine traditional bakery comfort with modern healthy snack alternatives.',
+          solution: 'A hybrid neighborhood bakery & café focusing on clean, premium ingredients, fresh daily baking, and a curated assortment of snacks and sweets.',
+          targetCustomers: ['Neighborhood families', 'Office professionals', 'Evening snack lovers', 'Event/Birthday party organizers'],
+          uniqueValueProposition: 'Freshly baked daily comfort foods, custom designs, and healthy organic snack options under one roof.',
+          businessModel: 'Brick-and-Mortar Retail & Local Delivery',
+          revenueModel: 'Direct over-the-counter sales, custom party orders, subscription-based daily bread delivery, and snack packaging retail.',
+          coreFeatures: ['Open-view live kitchen', 'Self-service snack shelves', 'Custom cake studio', 'Loyalty app & home delivery'],
+          marketOpportunity: 'High growth in premium bakery products and the rising demand for packaged premium snack assortments.',
+          nextSteps: ['Finalize local commercial space lease', 'Acquire commercial ovens and display counters', 'Source high-quality dairy and flour suppliers']
+        },
+        branding: {
+          brandNameSuggestions: ['The Crumb Bakery', 'Golden Crust', 'Sweet & Savory', 'Daily Bake'],
+          taglineSuggestions: ['Baked fresh, every single day.', 'Your neighborhood sweet spot.', 'Fresh crusts, happy hearts.'],
+          logoConceptIdeas: 'A warm golden rolling pin combined with a wheat stalk and a heart icon.',
+          logoPrompt: 'Create a warm, premium bakery logo with a rolling pin and wheat stalk design.',
+          logoStyle: 'Charming Vintage Modern',
+          brandColorPalette: ['#D97706 (Warm Amber)', '#FEF3C7 (Cream)', '#374151 (Charcoal)', '#FFFFFF (White)'],
+          fontStyleSuggestions: 'Lora & Montserrat',
+          brandPersonality: 'Warm, cozy, premium, delicious.',
+          packagingStyleSuggestions: 'Recyclable brown paper boxes with transparent windows and custom branded wax paper.',
+          socialMediaIdeas: 'Hypnotic bread-rising time lapses, custom cake decorating reels, and weekend recipe shares.',
+          websiteHero: 'Freshly baked daily with love. Taste the warmth at Bakery.',
+          marketingCaptions: ['Warm bread cures everything. 🍞❤️', 'Custom cakes made just for you.']
+        },
+        businessPlan: {
+          executiveSummary: 'Bakery is a local culinary brand providing freshly baked goods, high-quality sweets, and packaged snacks to families and events.',
+          problemAndSolution: 'Combines fresh baking with snack accessibility, eliminating stale shelf products.',
+          productDetails: 'Artisan sourdough, traditional sweets, custom cakes, and low-sodium crispy vegetable chips.',
+          targetCustomers: 'Local residents seeking high-quality evening snacks and premium celebration cakes.',
+          businessModel: 'Direct retail sales, takeaway, and local hyper-local delivery apps.',
+          pricingStrategy: 'Competitive mid-premium pricing justified by raw ingredient quality and freshness.',
+          goToMarketStrategy: 'Free tasting boxes to local housing societies, grand opening discount, and Google Maps local SEO.',
+          operationsPlan: 'Kitchen opens at 4 AM for morning baking, retail operational from 8 AM to 9 PM, managed by a head pastry chef.',
+          teamRequirement: ['Head Baker / Pastry Chef', 'Kitchen Assistant', 'Counter Sales Representative', 'Delivery Executive'],
+          financialProjection: 'First year sales target of $150,000 with steady monthly margins of 25% from recurring customers.',
+          fundingAsk: '$50,000 for commercial baking equipment, shop renovation, and initial raw ingredients.'
+        },
+        pitchDeck: [
+          { slide: 1, title: 'Bakery', content: 'Fresh Neighborhood Bakery & Curated Snacks' },
+          { slide: 2, title: 'The Problem', content: 'Mass-manufactured baked goods lack taste, contain preservatives, and local shops lack hygiene.' },
+          { slide: 3, title: 'The Solution', content: 'A transparent, hygienic live bakery offering fresh artisan items alongside high-quality sweets and chips.' },
+          { slide: 4, title: 'Market Size', content: '$8B rising domestic bakery and snack food market.' },
+          { slide: 5, title: 'Product Line', content: 'Breads, celebration cakes, traditional sweets, packaged premium chips, healthy cookies.' },
+          { slide: 6, title: 'Business Model', content: 'DTC Retail, custom event orders, subscription packages.' },
+          { slide: 7, title: 'Traction', content: 'Pre-launch social media interest, partnerships with 3 local event planners.' },
+          { slide: 8, title: 'Go-To-Market', content: 'Neighborhood tastings, active local SEO, geo-targeted social media.' },
+          { slide: 9, title: 'Our Team', content: 'Experienced baker with 10 years of hotel pastry experience.' },
+          { slide: 10, title: 'The Ask', content: '$50k for machinery, interior setup, and initial marketing.' }
+        ],
+        marketResearch: {
+          tam: '₹12,00,00,000', sam: '₹3,00,00,000', som: '₹45,00,000',
+          customerSegments: ['Families', 'Event managers', 'Local tea-time snackers'],
+          competitorAnalysis: 'Chain bakeries are factory-produced; local sweet shops lack baked assortments. We win on variety and fresh kitchen.',
+          marketTrends: ['Clean label products', 'Gourmet tea-time snacks', 'Custom celebration orders'],
+          opportunities: ['Monthly subscription breakfast baskets', 'B2B supply to local cafes'],
+          risks: ['High perishability of fresh products', 'Ingredient price inflation (butter/sugar)'],
+          pricingSuggestions: 'Breads: ₹60-120, Cakes: ₹600-1200/kg, Snacks: ₹80-180/box.',
+          locationSuggestions: 'High-density residential complexes, neighborhood high street with parking.'
+        },
+        aiReport: {
+          investmentReadinessScore: 82,
+          keyStrengths: ['High daily repeat transactions', 'Strong margin on custom orders', 'Diverse snack catalog'],
+          riskFactors: ['High waste management/perishables', 'Staff retention in baking operations'],
+          improvementSuggestions: ['Implement real-time inventory management software', 'Pre-sell custom event packages to local corporate offices'],
+          scalabilityScore: 70,
+          fundingReadiness: 'Excellent match for local banks, MSME loans, and small business partners.',
+          mentorReviewSummary: 'Bakery is a solid neighborhood business. Focus heavily on waste control, recipe consistency, and local high-street foot traffic.'
+        }
+      }
+    },
+    {
+      id: 'startup_mock_3', startupId: 'startup_mock_3', founderId: 'founder_renu',
+      startupName: 'RESTURANT', startupIdea: 'I want to start the startup business but i have no idea about that tell me how to start the business',
+      status: 'generated', approvalStatus: 'approved',
+      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date().toISOString(),
+      aiGenerated: {
+        ideaAnalysis: {
+          refinedIdea: 'RESTURANT is a premium casual dining restaurant startup featuring a modern multi-cuisine menu, interactive digital ordering, and a design-forward dine-in experience.',
+          problemStatement: 'Aspiring restaurant founders struggle to plan, license, and structure a restaurant concept from scratch without industry experience, leading to high failure rates.',
+          solution: 'A step-by-step optimized restaurant model starting with a highly curated flagship menu, pre-integrated POS system, and detailed setup guidance.',
+          targetCustomers: ['Families & group diners', 'Young professionals', 'Food enthusiasts', 'Event organizers'],
+          uniqueValueProposition: 'Delivering exceptional flavor profiles and interactive customer service in an upscale, aesthetic environment.',
+          businessModel: 'Full-Service Dine-in & Delivery Model',
+          revenueModel: 'Dine-in menu sales, online food delivery channels, private event hosting, and catering packages.',
+          coreFeatures: ['Interactive QR-code ordering', 'Curated chef specialties', 'Aesthetic dine-in layout', 'Integrated food delivery logistics'],
+          marketOpportunity: 'Growing urban culture of dining out, weekend experiential dining, and high online delivery order volume.',
+          nextSteps: ['Create a solid kitchen recipe menu card', 'Acquire municipal health and trade licenses', 'Hire kitchen manager & floor supervisor']
+        },
+        branding: {
+          brandNameSuggestions: ['RESTURANT', 'The Table', 'Urban Feast', 'Palate Central'],
+          taglineSuggestions: ['Experience fine dining.', 'Good food, great memories.', 'A taste of luxury.'],
+          logoConceptIdeas: 'A minimal fork and knife icon forming an abstract crown in gold color.',
+          logoPrompt: 'Create a luxurious gold restaurant logo with a clean serif font.',
+          logoStyle: 'Upscale Modern Casual',
+          brandColorPalette: ['#B45309 (Warm Gold)', '#1E293B (Slate)', '#F8FAFC (Off-White)', '#FFFFFF (Pure White)'],
+          fontStyleSuggestions: 'Lora & Inter',
+          brandPersonality: 'Luxurious, welcoming, professional, delicious.',
+          packagingStyleSuggestions: 'Sturdy, branded paper board boxes with gold foil embossing and heat-retaining technology.',
+          socialMediaIdeas: 'Chef introduction videos, recipe sneak peeks, aesthetic restaurant dining reviews.',
+          websiteHero: 'Welcome to RESTURANT. Where every meal is an experience.',
+          marketingCaptions: ['Savor the flavor. 🍽️✨', 'Reserve your table today.']
+        },
+        businessPlan: {
+          executiveSummary: 'RESTURANT is a premium dine-in and casual dining concept bringing high-quality multi-cuisine items to urban food lovers.',
+          problemAndSolution: 'Eliminates the complexity of traditional restaurant setup by using modern standardized kitchen operations.',
+          productDetails: 'Multi-cuisine premium menu, local specialty drinks, custom cocktails, and seasonal chef items.',
+          targetCustomers: 'Urban families and corporate diners looking for high-quality food and ambient service.',
+          businessModel: 'Dine-in services coupled with hyper-local delivery apps.',
+          pricingStrategy: 'Premium value pricing matching mid-high tier local averages.',
+          goToMarketStrategy: 'Pre-launch tasting event, local food blogger reviews, social media launch offers.',
+          operationsPlan: 'Open 11 AM to 11 PM daily. High kitchen hygiene standards with automated temperature-control storages.',
+          teamRequirement: ['Head Chef', 'Sous Chef', 'F&B Manager', 'Waitstaff (4x)', 'Cleaning Assistant'],
+          financialProjection: 'First year target sales of $320,000 with a projected net profit margin of 18% in Year 1.',
+          fundingAsk: '$120,000 for space lease deposit, interior buildout, commercial kitchen prep systems, and launch marketing.'
+        },
+        pitchDeck: [
+          { slide: 1, title: 'RESTURANT', content: 'Modern Dine-in Experience & Fine Flavors' },
+          { slide: 2, title: 'The Problem', content: 'Lack of premium, high-hygiene multi-cuisine dining options with family-friendly ambiance.' },
+          { slide: 3, title: 'The Solution', content: 'A beautifully designed dine-in space with curated chef specialties and interactive digital order flows.' },
+          { slide: 4, title: 'Market Size', content: '$30B+ rapidly growing urban dining and restaurant industry.' },
+          { slide: 5, title: 'Our Menu', content: 'Appetizers, chef specials, artisanal beverages, curated desserts.' },
+          { slide: 6, title: 'Business Model', content: 'Dine-in revenue (75%) + online deliveries & catering (25%).' },
+          { slide: 7, title: 'Competitor Analysis', content: 'We win on ingredient sourcing transparency, premium dining service, and unique menu items.' },
+          { slide: 8, title: 'Go-To-Market', content: 'Blogger reviews, grand launch night, corporate discount tie-ups.' },
+          { slide: 9, title: 'Our Team', content: 'Led by an executive chef with 15 years of fine dining kitchen management.' },
+          { slide: 10, title: 'The Ask', content: '$120k for space setup, equipment lease, and 3 months runway.' }
+        ],
+        marketResearch: {
+          tam: '₹35,00,00,000', sam: '₹9,00,00,000', som: '₹1,20,00,000',
+          customerSegments: ['Corporate teams', 'Families', 'Food bloggers & young couples'],
+          competitorAnalysis: 'Chain diners lack personalized service; local eateries lack branding. RESTURANT bridges the gap.',
+          marketTrends: ['Experiential casual dining', 'QR-code order adoption', 'Chef-driven menu specialization'],
+          opportunities: ['Hosting private anniversary/corporate parties', 'Premium weekend buffet events'],
+          risks: ['High initial location lease rates', 'Staff attrition in the kitchen'],
+          pricingSuggestions: 'Average customer order value: ₹600-1200. Dine-in target.',
+          locationSuggestions: 'Commercial malls, popular office park food arenas, or upscale residential avenues.'
+        },
+        aiReport: {
+          investmentReadinessScore: 88,
+          keyStrengths: ['Experienced executive chef', 'Scalable dining concept', 'Balanced dine-in/delivery revenue mix'],
+          riskFactors: ['High upfront CapEx requirements', 'Employee retention challenges'],
+          improvementSuggestions: ['Design pre-packaged catering menus for office parks', 'Offer a digital loyalty club membership on launch'],
+          scalabilityScore: 75,
+          fundingReadiness: 'Ready for retail franchise partners, angel backers, and commercial term loans.',
+          mentorReviewSummary: 'RESTURANT has strong fundamentals. Prioritize a high-traffic prime location and keep kitchen inventory tightly managed to ensure early cash flow.'
+        }
+      }
+    },
+    {
+      id: 'startup_mock_4', startupId: 'startup_mock_4', founderId: 'founder_renu',
+      startupName: 'Breaktime', startupIdea: 'I have an idea to start the startup busniess like premium tea, coffee, and snacks brand.',
+      status: 'generated', approvalStatus: 'approved',
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date().toISOString(),
+      aiGenerated: {
+        ideaAnalysis: {
+          refinedIdea: 'Breaktime is a sophisticated, welcoming local premium tea, coffee, and snacks brand focusing on high-quality organic beverages and quick premium refreshments.',
+          problemStatement: 'Urban professionals lack high-quality, quick-service tea and coffee options that are premium yet quickly accessible during their daily work breaks.',
+          solution: 'A highly aesthetic, premium kiosk and cafe concept serving organic loose-leaf tea, single-origin coffee, and healthy snack assortments.',
+          targetCustomers: ['Office workers', 'Students', 'Daily commuters', 'Premium shoppers'],
+          uniqueValueProposition: 'Sophisticated aesthetics, premium ingredients, and exceptionally fast break-time service.',
+          businessModel: 'Quick Service Restaurant (QSR) & Delivery',
+          revenueModel: 'Counter sales, daily beverage subscriptions, event packages, and branded retail merchandise.',
+          coreFeatures: ['Rapid-brew espresso systems', 'Artisanal snack pairings', 'Mobile pre-order app', 'Aesthetic packaging'],
+          marketOpportunity: 'Surging demand for specialty coffee and high-end tea concepts among corporate workforces.',
+          nextSteps: ['Establish supplier deals for single-origin beans', 'Design prototype modular QSR kiosk', 'Submit initial municipality health certifications']
+        },
+        branding: {
+          brandNameSuggestions: ['Breaktime', 'Brew & Pause', 'Tea & Coffee Co.', 'The Breakroom'],
+          taglineSuggestions: ['Your daily escape.', 'Premium brew, fast pause.', 'Taste the difference.'],
+          logoConceptIdeas: 'An elegant clock icon with a steaming coffee cup inside.',
+          logoPrompt: 'Create a clean, premium modern logo for Breaktime featuring a coffee cup clock design.',
+          logoStyle: 'Minimalist Modern Premium',
+          brandColorPalette: ['#4B2E1E (Coffee Brown)', '#F5E6C8 (Warm Cream)', '#D4AF37 (Gold)', '#111111 (Jet Black)'],
+          fontStyleSuggestions: 'Playfair Display & Inter',
+          brandPersonality: 'Welcoming, premium, cozy, fast.',
+          packagingStyleSuggestions: 'Eco-friendly cardboard beverage holders and cups with minimal logo branding.',
+          socialMediaIdeas: 'Aesthetic preparation clips, office break reels, seasonal drink announcements.',
+          websiteHero: 'Elevate your daily break. Discover Breaktime.',
+          marketingCaptions: ['Sip, relax, repeat. ☕🕒', 'Your workspace refreshment partner.']
+        },
+        businessPlan: {
+          executiveSummary: 'Breaktime will launch a network of high-end, rapid-service beverage kiosks inside premium corporate hubs and shopping locations.',
+          problemAndSolution: 'Solves the long wait times and poor beverage quality of corporate cafeterias.',
+          productDetails: 'Organic specialty teas, single-origin espresso drinks, gluten-free cookies, and baked snacks.',
+          targetCustomers: 'High-income office workers and transit commuters.',
+          businessModel: 'Low-overhead kiosk retail and office delivery.',
+          pricingStrategy: 'Value-premium pricing with customer loyalty card benefits.',
+          goToMarketStrategy: 'Free tea/coffee cards for nearby office HR departments, social media ads.',
+          operationsPlan: 'Open 8 AM to 7 PM. Fully automated brewers to ensure consistency and speed.',
+          teamRequirement: ['Kiosk Manager', 'Lead Barista', 'Junior Server'],
+          financialProjection: 'First year sales target of $95,000 per kiosk, with cash flow positive state by Month 3.',
+          fundingAsk: '$35,000 for kiosk construction, espresso machines, and launch marketing.'
+        },
+        pitchDeck: [
+          { slide: 1, title: 'Breaktime', content: 'Premium Tea, Coffee, and Snacks Kiosks' },
+          { slide: 2, title: 'The Problem', content: 'Office workers waste time waiting in long cafe lines, or drink poor quality cafeteria beverages.' },
+          { slide: 3, title: 'The Solution', content: 'High-end modular kiosks serving organic brews in under 90 seconds.' },
+          { slide: 4, title: 'Market Opportunity', content: 'Growing Indian urban QSR and specialty beverage segments.' },
+          { slide: 5, title: 'Product offering', content: 'Espressos, premium organic teas, custom pastries, healthy snack cups.' },
+          { slide: 6, title: 'Low CapEx model', content: 'Modular kiosks allow cheap setup and quick launch.' },
+          { slide: 7, title: 'Competitor Analysis', content: 'Faster than premium dine-in cafes; significantly higher quality than typical office tea stalls.' },
+          { slide: 8, title: 'Go-To-Market', content: 'Corporate vouchers, office HR partnerships, local SEO.' },
+          { slide: 9, title: 'Our Team', content: 'Experienced QSR operators and food supply coordinators.' },
+          { slide: 10, title: 'The Ask', content: '$35k for the prototype kiosk construction and equipment.' }
+        ],
+        marketResearch: {
+          tam: '₹8,00,00,000', sam: '₹2,00,00,000', som: '₹35,00,000',
+          customerSegments: ['Corporate employees', 'Shoppers', 'Daily transit travelers'],
+          competitorAnalysis: 'Local chai wallahs lack hygiene; Starbucks is too expensive and slow. Breaktime wins on speed and quality.',
+          marketTrends: ['Rise of gourmet coffee habits', 'Preference for quick grab-and-go QSRs'],
+          opportunities: ['In-office catering carts', 'Corporate monthly drink plans'],
+          risks: ['High rentals in top commercial parks', 'Employee turnover'],
+          pricingSuggestions: 'Teas: ₹60-120, Coffees: ₹120-220, Snacks: ₹50-150.',
+          locationSuggestions: 'Corporate tech park lobbies, transit terminal gates, mall entrances.'
+        },
+        aiReport: {
+          investmentReadinessScore: 85,
+          keyStrengths: ['Low CapEx kiosk model', 'High gross margin on hot beverages', 'Strong customer repeat rate'],
+          riskFactors: ['Location rent volatility', 'Raw ingredient quality sourcing consistency'],
+          improvementSuggestions: ['Pre-onboard corporate clients for delivery subscriptions', 'Select modular structures that are easy to relocate'],
+          scalabilityScore: 80,
+          fundingReadiness: 'Ready for micro VC backing, private franchise partners, and local business development funds.',
+          mentorReviewSummary: 'Breaktime is a highly efficient retail concept. Prioritize location scouting and fast service times to secure early repeat revenue.'
+        }
+      }
+    }
+  ];
+  mockStartups.forEach(s => {
+    localStorage.setItem(s.id, JSON.stringify(s));
+  });
+  return mockStartups;
+};
+
 export const getStartups = () => {
   const keys = Object.keys(localStorage);
-  const locals: any[] = [];
+  let locals: any[] = [];
   keys.forEach(key => {
     if (key.startsWith('startup_')) {
       try {
@@ -8,6 +333,9 @@ export const getStartups = () => {
       } catch (e) {}
     }
   });
+  if (locals.length === 0) {
+    locals = seedDemoStartups();
+  }
   return locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
