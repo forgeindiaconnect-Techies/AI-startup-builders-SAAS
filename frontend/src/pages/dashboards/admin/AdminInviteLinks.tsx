@@ -23,6 +23,7 @@ const AdminInviteLinks: React.FC = () => {
 
   // Generated link state
   const [generatedLink, setGeneratedLink] = useState<MentorInvite | null>(null);
+  const [emailSentStatus, setEmailSentStatus] = useState<boolean>(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
@@ -99,6 +100,7 @@ const AdminInviteLinks: React.FC = () => {
           message: serverInvite.message,
         });
         setGeneratedLink(invite);
+        setEmailSentStatus(json.emailSent !== false);
         loadInvites();
         if (json.emailSent === false) {
           showToast(`Invite created, but the email could not be sent to ${serverInvite.mentorEmail}. Use Resend to try again.`, 'error');
@@ -384,17 +386,25 @@ const AdminInviteLinks: React.FC = () => {
             <div className="p-5 overflow-y-auto flex-1">
               {generatedLink ? (
                 <div className="text-center space-y-5">
-                  <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto">
-                    <Mail size={32} className="text-emerald-600" />
+                  <div className={`w-16 h-16 ${emailSentStatus ? 'bg-emerald-100' : 'bg-red-100'} rounded-2xl flex items-center justify-center mx-auto`}>
+                    {emailSentStatus ? <Mail size={32} className="text-emerald-600" /> : <AlertCircle size={32} className="text-red-600" />}
                   </div>
                   <div>
-                    <h4 className="font-bold text-gray-900 text-lg">Invite Email Sent!</h4>
+                    <h4 className="font-bold text-gray-900 text-lg">
+                      {emailSentStatus ? 'Invite Email Sent!' : 'Invite Created (Email Failed)'}
+                    </h4>
                     <p className="text-gray-500 text-sm mt-1">
-                      Invitation sent to <strong>{generatedLink.mentorEmail}</strong>
+                      {emailSentStatus ? (
+                        <>Invitation sent to <strong>{generatedLink.mentorEmail}</strong></>
+                      ) : (
+                        <>Could not send email to <strong>{generatedLink.mentorEmail}</strong>. Please copy the link below and send it manually.</>
+                      )}
                     </p>
-                    <p className="text-gray-400 text-xs mt-1">
-                      {generatedLink.mentorName} can click the link in the email to open the mentor signup page.
-                    </p>
+                    {emailSentStatus && (
+                      <p className="text-gray-400 text-xs mt-1">
+                        {generatedLink.mentorName} can click the link in the email to open the mentor signup page.
+                      </p>
+                    )}
                   </div>
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Invite Link</label>
@@ -407,7 +417,9 @@ const AdminInviteLinks: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3 text-left">
                     <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
                       <span className="text-xs font-bold text-gray-400 uppercase block mb-1">Status</span>
-                      <span className="text-sm font-bold text-emerald-600">Email Sent</span>
+                      <span className={`text-sm font-bold ${emailSentStatus ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {emailSentStatus ? 'Email Sent' : 'Email Failed'}
+                      </span>
                     </div>
                     <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
                       <span className="text-xs font-bold text-gray-400 uppercase block mb-1">Expires</span>
