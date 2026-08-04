@@ -115,6 +115,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           isVerified: data.user.isVerified,
           status: data.user.status,
           approvalStatus: data.user.approvalStatus,
+          // Login tracking fields
+          lastLoginAt: data.user.lastLoginAt,
+          loginCount: data.user.loginCount || 0,
+          signupDate: data.user.createdAt,
           // Subscription fields flattened from API
           plan: data.user.plan,
           subscriptionStatus: data.user.subscriptionStatus,
