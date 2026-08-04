@@ -385,10 +385,102 @@ export const updateStartup = (startupId: string, updatedData: any) => {
   return null;
 };
 
+export const seedDemoNotifications = () => {
+  const now = new Date();
+  const demoNotifs = [
+    {
+      id: `notif_seed_1`,
+      userId: 'admin',
+      title: 'New Startup Idea Submitted',
+      message: 'Tourists: I want to start the tourists platform. — submitted by Renu (Founder)',
+      type: 'ai_builder',
+      isRead: false,
+      actionUrl: '/dashboard/admin/startups',
+      createdAt: new Date(now.getTime() - 10 * 60 * 1000).toISOString()
+    },
+    {
+      id: `notif_seed_2`,
+      userId: 'admin',
+      title: 'New Startup Idea Submitted',
+      message: 'Bakery: i want to start bakery shop, in the bakery shop add snacks, sweet, chips etc.. — submitted by Renu (Founder)',
+      type: 'ai_builder',
+      isRead: false,
+      actionUrl: '/dashboard/admin/startups',
+      createdAt: new Date(now.getTime() - 30 * 60 * 1000).toISOString()
+    },
+    {
+      id: `notif_seed_3`,
+      userId: 'admin',
+      title: 'Founder Generated Startup Plan',
+      message: 'RESTURANT: Premium casual dining restaurant startup (Food / Restaurant / Cafe)',
+      type: 'ai_builder',
+      isRead: false,
+      actionUrl: '/dashboard/admin/startups',
+      createdAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: `notif_seed_4`,
+      userId: 'admin',
+      title: 'Founder Generated Startup Plan',
+      message: 'Breaktime: Premium tea, coffee, and snacks brand (Food / Restaurant / Cafe)',
+      type: 'ai_builder',
+      isRead: true,
+      actionUrl: '/dashboard/admin/startups',
+      createdAt: new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: `notif_seed_5`,
+      userId: 'admin',
+      title: 'New User Registration Pending',
+      message: 'Renu has signed up as a Founder and is awaiting approval.',
+      type: 'user_approval',
+      isRead: true,
+      actionUrl: '/dashboard/admin/approvals',
+      createdAt: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: `notif_seed_6`,
+      userId: 'all',
+      title: 'Platform Update',
+      message: 'AI Startup Builder v2.0 is live! New features: Legal Docs Generator, AI Chat, and improved Market Research.',
+      type: 'platform',
+      isRead: false,
+      actionUrl: '/dashboard/founder/ai-builder',
+      createdAt: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: `notif_seed_7`,
+      userId: 'founder_demo_user',
+      title: 'Startup Plan Generated Successfully',
+      message: 'AI has generated your startup plan, roadmap, tasks, and milestones for Tourists.',
+      type: 'ai_builder',
+      isRead: false,
+      actionUrl: '/dashboard/founder/ai-builder?startupId=startup_mock_1',
+      createdAt: new Date(now.getTime() - 15 * 60 * 1000).toISOString()
+    },
+    {
+      id: `notif_seed_8`,
+      userId: 'founder_demo_user',
+      title: 'Funding Offer Received',
+      message: 'Breaktime has received a term sheet from an investor. Review your funding offers.',
+      type: 'funding',
+      isRead: false,
+      actionUrl: '/dashboard/founder/funding',
+      createdAt: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString()
+    },
+  ];
+  localStorage.setItem('ai_startup_builder_notifications', JSON.stringify(demoNotifs));
+  return demoNotifs;
+};
+
 export const getNotifications = () => {
   try {
     const data = localStorage.getItem('ai_startup_builder_notifications');
-    return data ? JSON.parse(data) : [];
+    const parsed = data ? JSON.parse(data) : [];
+    if (parsed.length === 0) {
+      return seedDemoNotifications();
+    }
+    return parsed;
   } catch (e) {
     return [];
   }
