@@ -91,19 +91,86 @@ const AdminStartups: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  const handleDownload = async (name: string, format?: string) => {
-    const finalFormat = format ? format.toLowerCase() : name.split('.').pop()?.toLowerCase() || 'txt';
-    const baseName = name.replace(/\.[^/.]+$/, "");
-    const finalName = `${baseName}.${finalFormat}`;
+  const handleDownload = async (startup: any, format: string) => {
+    const cleanName = startup.startupName.replace(/\s+/g, '_');
+    const finalFormat = format.toLowerCase();
+    const finalName = `${cleanName}_Report.${finalFormat}`;
     
+    const ai = startup.aiGenerated || {};
+    const idea = ai.ideaAnalysis || {};
+    const plan = ai.businessPlan || {};
+    const market = ai.marketResearch || {};
+    const report = ai.aiReport || {};
+
     try {
       if (finalFormat === 'pdf') {
         const doc = new jsPDF();
-        doc.setFontSize(22);
-        doc.text(`Startup Document: ${baseName.replace(/_/g, ' ')}`, 20, 20);
-        doc.setFontSize(12);
-        doc.text("This is an automatically generated document by AI Startup Builder.", 20, 30);
-        doc.text("Contains full strategic planning, market analysis, and AI roadmap.", 20, 40);
+        let y = 20;
+
+        const addTextLine = (text: string, fontSize = 12, isBold = false, color = '#111827') => {
+          if (y > 270) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.setFontSize(fontSize);
+          doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+          doc.setTextColor(color);
+          const lines = doc.splitTextToSize(text, 170);
+          lines.forEach((line: string) => {
+            if (y > 270) {
+              doc.addPage();
+              y = 20;
+              doc.setFontSize(fontSize);
+              doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+              doc.setTextColor(color);
+            }
+            doc.text(line, 20, y);
+            y += fontSize * 0.5 + 4;
+          });
+        };
+
+        addTextLine(`Startup Report: ${startup.startupName}`, 22, true, '#5B21B6');
+        y += 6;
+        addTextLine(`Concept: ${startup.startupIdea}`, 11, false, '#4B5563');
+        y += 10;
+
+        addTextLine('1. AI Idea Analysis', 16, true, '#1E1B4B');
+        y += 2;
+        addTextLine(`Refined Idea: ${idea.refinedIdea || idea.refinedStartupIdea || 'N/A'}`, 11, false);
+        addTextLine(`Problem Statement: ${idea.problemStatement || 'N/A'}`, 11, false);
+        addTextLine(`Solution: ${idea.solution || 'N/A'}`, 11, false);
+        addTextLine(`Target Customers: ${Array.isArray(idea.targetCustomers) ? idea.targetCustomers.join(', ') : idea.targetCustomers || 'N/A'}`, 11, false);
+        addTextLine(`Business Model: ${idea.businessModel || 'N/A'}`, 11, false);
+        addTextLine(`Revenue Model: ${idea.revenueModel || 'N/A'}`, 11, false);
+        addTextLine(`Core Features: ${Array.isArray(idea.coreFeatures) ? idea.coreFeatures.join(', ') : idea.coreFeatures || 'N/A'}`, 11, false);
+        y += 6;
+
+        addTextLine('2. Business Plan', 16, true, '#1E1B4B');
+        y += 2;
+        addTextLine(`Executive Summary: ${plan.executiveSummary || 'N/A'}`, 11, false);
+        addTextLine(`Pricing Strategy: ${plan.pricingStrategy || 'N/A'}`, 11, false);
+        addTextLine(`Go-To-Market Strategy: ${plan.goToMarketStrategy || 'N/A'}`, 11, false);
+        addTextLine(`Operations Plan: ${plan.operationsPlan || 'N/A'}`, 11, false);
+        addTextLine(`Financial Projection: ${plan.financialProjection || 'N/A'}`, 11, false);
+        addTextLine(`Funding Ask: ${plan.fundingAsk || 'N/A'}`, 11, false);
+        y += 6;
+
+        addTextLine('3. Market Research', 16, true, '#1E1B4B');
+        y += 2;
+        addTextLine(`TAM: ${market.tam || 'N/A'} | SAM: ${market.sam || 'N/A'} | SOM: ${market.som || 'N/A'}`, 11, true);
+        addTextLine(`Competitor Analysis: ${Array.isArray(market.competitors) ? market.competitors.join(', ') : market.competitors || market.competitorAnalysis || 'N/A'}`, 11, false);
+        addTextLine(`Pricing Suggestions: ${market.pricingSuggestions || 'N/A'}`, 11, false);
+        addTextLine(`Location/Distribution Suggestions: ${market.locationSuggestions || 'N/A'}`, 11, false);
+        y += 6;
+
+        addTextLine('4. AI Report & Metrics', 16, true, '#1E1B4B');
+        y += 2;
+        addTextLine(`Investment Readiness Score: ${report.investmentReadinessScore || 'N/A'}/100`, 11, true, '#10B981');
+        addTextLine(`Scalability Score: ${report.scalabilityScore || 'N/A'}/100`, 11, true, '#10B981');
+        addTextLine(`Key Strengths: ${Array.isArray(report.keyStrengths) ? report.keyStrengths.join(', ') : report.businessStrengths || 'N/A'}`, 11, false);
+        addTextLine(`Risk Factors: ${Array.isArray(report.riskFactors) ? report.riskFactors.join(', ') : report.weaknesses || 'N/A'}`, 11, false);
+        addTextLine(`Mentor Review Summary: ${report.mentorReviewSummary || 'N/A'}`, 11, false);
+
         doc.save(finalName);
       } else if (finalFormat === 'word' || finalFormat === 'docx' || finalFormat === 'doc') {
         const docx = new DocxDocument({
@@ -112,27 +179,65 @@ const AdminStartups: React.FC = () => {
             children: [
               new Paragraph({
                 children: [
-                  new TextRun({ text: `Startup Document: ${baseName.replace(/_/g, ' ')}`, bold: true, size: 28 }),
+                  new TextRun({ text: `Startup Report: ${startup.startupName}`, bold: true, size: 36, color: '5B21B6' }),
                 ],
               }),
               new Paragraph({
                 children: [
-                  new TextRun({ text: "This is an automatically generated document by AI Startup Builder.", size: 24 }),
+                  new TextRun({ text: `Original Concept: ${startup.startupIdea}`, italics: true, size: 24 }),
                 ],
               }),
+              new Paragraph({ text: '' }),
+
+              new Paragraph({ children: [new TextRun({ text: '1. AI Idea Analysis', bold: true, size: 28, color: '1E1B4B' })] }),
+              new Paragraph({ text: `Refined Idea: ${idea.refinedIdea || idea.refinedStartupIdea || 'N/A'}` }),
+              new Paragraph({ text: `Problem Statement: ${idea.problemStatement || 'N/A'}` }),
+              new Paragraph({ text: `Solution: ${idea.solution || 'N/A'}` }),
+              new Paragraph({ text: `Target Customers: ${Array.isArray(idea.targetCustomers) ? idea.targetCustomers.join(', ') : idea.targetCustomers || 'N/A'}` }),
+              new Paragraph({ text: `Business Model: ${idea.businessModel || 'N/A'}` }),
+              new Paragraph({ text: `Revenue Model: ${idea.revenueModel || 'N/A'}` }),
+              new Paragraph({ text: `Core Features: ${Array.isArray(idea.coreFeatures) ? idea.coreFeatures.join(', ') : idea.coreFeatures || 'N/A'}` }),
+              new Paragraph({ text: '' }),
+
+              new Paragraph({ children: [new TextRun({ text: '2. Business Plan', bold: true, size: 28, color: '1E1B4B' })] }),
+              new Paragraph({ text: `Executive Summary: ${plan.executiveSummary || 'N/A'}` }),
+              new Paragraph({ text: `Pricing Strategy: ${plan.pricingStrategy || 'N/A'}` }),
+              new Paragraph({ text: `Go-To-Market Strategy: ${plan.goToMarketStrategy || 'N/A'}` }),
+              new Paragraph({ text: `Operations Plan: ${plan.operationsPlan || 'N/A'}` }),
+              new Paragraph({ text: `Financial Projection: ${plan.financialProjection || 'N/A'}` }),
+              new Paragraph({ text: `Funding Ask: ${plan.fundingAsk || 'N/A'}` }),
+              new Paragraph({ text: '' }),
+
+              new Paragraph({ children: [new TextRun({ text: '3. Market Research', bold: true, size: 28, color: '1E1B4B' })] }),
+              new Paragraph({ text: `TAM: ${market.tam || 'N/A'} | SAM: ${market.sam || 'N/A'} | SOM: ${market.som || 'N/A'}` }),
+              new Paragraph({ text: `Competitor Analysis: ${Array.isArray(market.competitors) ? market.competitors.join(', ') : market.competitors || market.competitorAnalysis || 'N/A'}` }),
+              new Paragraph({ text: `Pricing Suggestions: ${market.pricingSuggestions || 'N/A'}` }),
+              new Paragraph({ text: `Location Suggestions: ${market.locationSuggestions || 'N/A'}` }),
+              new Paragraph({ text: '' }),
+
+              new Paragraph({ children: [new TextRun({ text: '4. AI Report & Metrics', bold: true, size: 28, color: '1E1B4B' })] }),
+              new Paragraph({ text: `Investment Readiness Score: ${report.investmentReadinessScore || 'N/A'}/100` }),
+              new Paragraph({ text: `Scalability Score: ${report.scalabilityScore || 'N/A'}/100` }),
+              new Paragraph({ text: `Key Strengths: ${Array.isArray(report.keyStrengths) ? report.keyStrengths.join(', ') : report.businessStrengths || 'N/A'}` }),
+              new Paragraph({ text: `Risk Factors: ${Array.isArray(report.riskFactors) ? report.riskFactors.join(', ') : report.weaknesses || 'N/A'}` }),
+              new Paragraph({ text: `Mentor Review Summary: ${report.mentorReviewSummary || 'N/A'}` }),
             ],
           }],
         });
         const blob = await Packer.toBlob(docx);
-        saveAs(blob, `${baseName}.docx`);
+        saveAs(blob, `${cleanName}_Report.docx`);
       } else if (finalFormat === 'zip') {
         const zip = new JSZip();
-        zip.file("readme.txt", "This ZIP contains the startup package documents.");
-        zip.file(`${baseName}.txt`, `Startup Document: ${baseName.replace(/_/g, ' ')}\nThis is an automatically generated document.`);
+        zip.file("README.txt", `Report package for ${startup.startupName}.\nGenerated automatically by AI Startup Builder.`);
+        zip.file("Idea_Analysis.txt", `Refined Idea: ${idea.refinedIdea || idea.refinedStartupIdea || 'N/A'}\n\nProblem Statement: ${idea.problemStatement || 'N/A'}\n\nSolution: ${idea.solution || 'N/A'}\n\nTarget Customers: ${Array.isArray(idea.targetCustomers) ? idea.targetCustomers.join(', ') : idea.targetCustomers || 'N/A'}\n\nBusiness Model: ${idea.businessModel || 'N/A'}\n\nRevenue Model: ${idea.revenueModel || 'N/A'}\n\nCore Features: ${Array.isArray(idea.coreFeatures) ? idea.coreFeatures.join(', ') : idea.coreFeatures || 'N/A'}`);
+        zip.file("Business_Plan.txt", `Executive Summary: ${plan.executiveSummary || 'N/A'}\n\nPricing Strategy: ${plan.pricingStrategy || 'N/A'}\n\nGo-To-Market Strategy: ${plan.goToMarketStrategy || 'N/A'}\n\nOperations Plan: ${plan.operationsPlan || 'N/A'}\n\nFinancial Projection: ${plan.financialProjection || 'N/A'}\n\nFunding Ask: ${plan.fundingAsk || 'N/A'}`);
+        zip.file("Market_Research.txt", `TAM: ${market.tam || 'N/A'}\nSAM: ${market.sam || 'N/A'}\nSOM: ${market.som || 'N/A'}\n\nCompetitor Analysis: ${Array.isArray(market.competitors) ? market.competitors.join(', ') : market.competitors || market.competitorAnalysis || 'N/A'}\n\nPricing Suggestions: ${market.pricingSuggestions || 'N/A'}\n\nLocation Suggestions: ${market.locationSuggestions || 'N/A'}`);
+        zip.file("AI_Metrics.txt", `Investment Readiness Score: ${report.investmentReadinessScore || 'N/A'}/100\n\nScalability Score: ${report.scalabilityScore || 'N/A'}/100\n\nKey Strengths: ${Array.isArray(report.keyStrengths) ? report.keyStrengths.join(', ') : report.businessStrengths || 'N/A'}\n\nRisk Factors: ${Array.isArray(report.riskFactors) ? report.riskFactors.join(', ') : report.weaknesses || 'N/A'}\n\nMentor Review Summary: ${report.mentorReviewSummary || 'N/A'}`);
+        
         const content = await zip.generateAsync({ type: "blob" });
         saveAs(content, finalName);
       } else {
-        const content = `Mock content for ${finalName}`;
+        const content = `Startup Report: ${startup.startupName}\nConcept: ${startup.startupIdea}`;
         const blob = new Blob([content], { type: 'text/plain' });
         saveAs(blob, finalName);
       }
@@ -737,19 +842,19 @@ const AdminStartups: React.FC = () => {
                         {dropdownOpen === s.startupId && (
                           <div className="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-[100] animate-fade-in-up text-left">
                             <button 
-                              onClick={() => { handleDownload(`${s.startupName.replace(/\s+/g, '_')}_Report`, 'PDF'); setDropdownOpen(null); }} 
+                              onClick={() => { handleDownload(s, 'PDF'); setDropdownOpen(null); }} 
                               className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 font-bold transition-colors"
                             >
                               Download PDF Report
                             </button>
                             <button 
-                              onClick={() => { handleDownload(`${s.startupName.replace(/\s+/g, '_')}_Report`, 'WORD'); setDropdownOpen(null); }} 
+                              onClick={() => { handleDownload(s, 'WORD'); setDropdownOpen(null); }} 
                               className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 font-bold transition-colors"
                             >
                               Download Word Report
                             </button>
                             <button 
-                              onClick={() => { handleDownload(`${s.startupName.replace(/\s+/g, '_')}_Full_Package`, 'ZIP'); setDropdownOpen(null); }} 
+                              onClick={() => { handleDownload(s, 'ZIP'); setDropdownOpen(null); }} 
                               className="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 font-bold transition-colors"
                             >
                               Download ZIP Package
