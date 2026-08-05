@@ -233,7 +233,7 @@ export function generateOTP(email: string): string {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   otpStore.set(email.toLowerCase(), {
     otp,
-    expiresAt: Date.now() + 5 * 60 * 1000,
+    expiresAt: Date.now() + 1 * 60 * 1000,
   });
   console.log(`[OTP for ${email}]: ${otp}`);
   return otp;
@@ -258,7 +258,7 @@ export function generateResetOTP(email: string): string {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   resetOtpStore.set(email.toLowerCase(), {
     otp,
-    expiresAt: Date.now() + 5 * 60 * 1000,
+    expiresAt: Date.now() + 1 * 60 * 1000,
   });
   console.log(`[Reset OTP for ${email}]: ${otp}`);
   return otp;

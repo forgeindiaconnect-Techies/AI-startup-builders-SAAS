@@ -20,7 +20,7 @@ export const sendOTPEmail = async (to: string, otpCode: string) => {
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px;">
       <h2 style="color: #6C4CF1; text-align: center;">AI Startup Builder</h2>
       <p style="font-size: 16px; color: #333;">Hello,</p>
-      <p style="font-size: 16px; color: #333;">Please use the verification code below to complete your registration. This code is valid for 10 minutes.</p>
+      <p style="font-size: 16px; color: #333;">Please use the verification code below to complete your registration. This code is valid for 1 minute.</p>
       
       <div style="background-color: #f4f4f5; padding: 15px; border-radius: 8px; text-align: center; margin: 30px 0;">
         <h1 style="font-size: 32px; letter-spacing: 5px; color: #333; margin: 0;">${otpCode}</h1>
