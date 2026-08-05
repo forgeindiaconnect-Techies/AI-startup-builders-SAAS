@@ -24,11 +24,11 @@ const AdminDocumentVerification: React.FC = () => {
   const [rejectModal, setRejectModal] = useState<{ doc: any; reason: string }>({ doc: null, reason: '' });
   const [previewDoc, setPreviewDoc] = useState<any>(null);
 
-  const refreshDocs = useCallback(() => {
+  const refreshDocs = useCallback(async () => {
     const allDocs = getDocuments() || [];
-    const allStartupsList = getStartups() || [];
+    const allStartupsList = await getStartups() || [];
     setAllStartups(allStartupsList);
-    setDocuments(allDocs.filter(d => d.documentType && d.documentType !== '__checklist__'));
+    setDocuments(allDocs.filter((d: any) => d.documentType && d.documentType !== '__checklist__'));
   }, []);
 
   useEffect(() => { refreshDocs(); }, [refreshDocs]);

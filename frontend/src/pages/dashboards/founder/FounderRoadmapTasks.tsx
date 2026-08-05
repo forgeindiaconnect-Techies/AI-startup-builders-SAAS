@@ -17,14 +17,18 @@ const FounderRoadmapTasks: React.FC = () => {
   const startupId = searchParams.get('startupId') || searchParams.get('id');
 
   useEffect(() => {
-    if (startupId) {
-      setStartupData(getStartupById(startupId));
-    } else {
-      const all = getStartups().filter(s => s.status === 'generated');
-      if (all.length > 0) {
-        setStartupData(all[0]);
+    const fetchData = async () => {
+      if (startupId) {
+        setStartupData(await getStartupById(startupId));
+      } else {
+        const startups = await getStartups();
+        const all = startups.filter((s: any) => s.status === 'generated');
+        if (all.length > 0) {
+          setStartupData(all[0]);
+        }
       }
-    }
+    };
+    fetchData();
   }, [startupId]);
 
   const ActiveComponent = tabs.find(t => t.id === active)!.component;

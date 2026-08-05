@@ -43,7 +43,7 @@ const FounderAIBuilder: React.FC = () => {
     const fetchStartup = async () => {
       if (!startupId) {
         // Load all startups if no specific ID is provided
-        const locals = getStartups();
+        const locals = await getStartups();
         setAllStartups(locals);
         return;
       }
@@ -51,14 +51,14 @@ const FounderAIBuilder: React.FC = () => {
       setLoading(true);
       setError('');
       try {
-        const savedData = getStartupById(startupId);
+        const savedData = await getStartupById(startupId);
         if (savedData) {
           setStartupData(savedData);
         } else {
           setError('Could not load startup data. It may not exist.');
         }
       } catch (err) {
-        setError('Failed to load from local storage.');
+        setError('Failed to load from database.');
       } finally {
         setLoading(false);
       }
@@ -73,19 +73,21 @@ const FounderAIBuilder: React.FC = () => {
     setError('');
 
     // Simulate API delay for realism
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
         const aiOutput = generateStartupOutput(startupData);
         const { roadmap, tasks } = generateRoadmapAndTasks(startupData);
         
-        const updatedStartup = updateStartup(startupId, {
+        const updatedStartup = await updateStartup(startupId, {
           status: 'generated',
           aiGenerated: aiOutput,
           roadmap,
           tasks
         });
         
-        setStartupData(updatedStartup);
+        if (updatedStartup) {
+          setStartupData(updatedStartup);
+        }
         
         // Generate category-specific documents based on business type
         const existingDocs = getDocuments().filter((d: any) => d.startupId === startupId);

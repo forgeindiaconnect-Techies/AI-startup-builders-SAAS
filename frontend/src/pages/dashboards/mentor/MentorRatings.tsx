@@ -8,19 +8,22 @@ const MentorRatings: React.FC = () => {
   const [ratings, setRatings] = useState<any[]>(defaultRatings);
 
   useEffect(() => {
-    const locals = getStartups();
-    const realRatings = locals
-      .filter(s => s.mentorReview?.founderRating)
-      .map(s => ({
-        id: s.startupId || s.id,
-        founder: 'Founder',
-        startup: s.startupName || s.name,
-        score: s.mentorReview.founderRating,
-        review: s.mentorReview.founderReview || 'No text review provided.',
-        date: s.mentorReview.founderReviewDate || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      }));
-      
-    setRatings([...realRatings, ...defaultRatings]);
+    const fetchData = async () => {
+      const locals = await getStartups();
+      const realRatings = locals
+        .filter((s: any) => s.mentorReview?.founderRating)
+        .map((s: any) => ({
+          id: s.startupId || s.id || s._id,
+          founder: 'Founder',
+          startup: s.startupName || s.name,
+          score: s.mentorReview.founderRating,
+          review: s.mentorReview.founderReview || 'No text review provided.',
+          date: s.mentorReview.founderReviewDate || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        }));
+        
+      setRatings([...realRatings, ...defaultRatings]);
+    };
+    fetchData();
   }, []);
 
   const totalReviews = ratings.length;

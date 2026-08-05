@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { FileText, IndianRupee, Star, CheckCircle, Mail, Calendar, LogIn, ShieldCheck } from 'lucide-react';
+import { getStartups } from '../../utils/localStorageHelper';
 
 const MentorDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -16,17 +17,12 @@ const MentorDashboard: React.FC = () => {
   };
 
   React.useEffect(() => {
-    const keys = Object.keys(localStorage);
-    const locals: any[] = [];
-    keys.forEach(key => {
-      if (key.startsWith('startup_')) {
-        try {
-          locals.push(JSON.parse(localStorage.getItem(key) || ''));
-        } catch (e) {}
-      }
-    });
-    locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    setStartups(locals);
+    const fetchData = async () => {
+      const locals = await getStartups();
+      locals.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setStartups(locals);
+    };
+    fetchData();
   }, []);
 
   const stats = [
@@ -80,12 +76,6 @@ const MentorDashboard: React.FC = () => {
         <div>
           <p className="text-gray-500">You have <strong className="text-gray-900">4 startups</strong> waiting for review.</p>
         </div>
-        <button 
-          onClick={() => window.alert('Redirecting to Earnings page to withdraw funds...')}
-          className="px-4 py-2 bg-[#1F2937] text-white font-medium rounded-lg"
-        >
-          Withdraw Earnings
-        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -107,10 +97,6 @@ const MentorDashboard: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-lg font-bold text-gray-900">Assigned Startups for Review</h2>
-          <div className="flex gap-2">
-            <button onClick={() => setFilter('Newest')} className={`px-3 py-1 text-sm ${filter === 'Newest' ? 'bg-gray-100 text-gray-700' : 'text-gray-500 hover:bg-gray-50'} rounded-md font-medium`}>Newest</button>
-            <button onClick={() => setFilter('Urgent')} className={`px-3 py-1 text-sm ${filter === 'Urgent' ? 'bg-gray-100 text-gray-700' : 'text-gray-500 hover:bg-gray-50'} rounded-md font-medium`}>Urgent</button>
-          </div>
         </div>
         
         <div className="overflow-x-auto">

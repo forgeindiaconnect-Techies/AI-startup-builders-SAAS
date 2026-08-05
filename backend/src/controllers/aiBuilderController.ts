@@ -276,6 +276,49 @@ export const getStartup = async (req: Request, res: Response) => {
   }
 };
 
+export const getAllStartups = async (req: Request, res: Response) => {
+  try {
+    // Optionally filter by founderId if passed in query
+    const filter: any = {};
+    if (req.query.founderId) {
+      filter.founderId = req.query.founderId;
+    }
+    const startups = await Startup.find(filter).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: startups });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Error fetching startups' });
+  }
+};
+
+export const updateStartup = async (req: Request, res: Response) => {
+  try {
+    const { startupId } = req.params;
+    const updateData = req.body;
+    const startup = await Startup.findByIdAndUpdate(startupId, updateData, { new: true });
+    
+    if (!startup) {
+      return res.status(404).json({ success: false, message: 'Startup not found' });
+    }
+    res.status(200).json({ success: true, data: startup });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Error updating startup' });
+  }
+};
+
+export const deleteStartup = async (req: Request, res: Response) => {
+  try {
+    const { startupId } = req.params;
+    const startup = await Startup.findByIdAndDelete(startupId);
+    
+    if (!startup) {
+      return res.status(404).json({ success: false, message: 'Startup not found' });
+    }
+    res.status(200).json({ success: true, message: 'Startup deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Error deleting startup' });
+  }
+};
+
 export const regenerateStartup = async (req: Request, res: Response) => {
   try {
     const { startupId } = req.params;

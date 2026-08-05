@@ -47,14 +47,14 @@ const FounderStartups: React.FC = () => {
   );
 
   useEffect(() => {
-    // Load startups from localStorage on mount
-    const loadLocalStartups = () => {
+    // Load startups from backend on mount
+    const loadLocalStartups = async () => {
       const deletedDummies = JSON.parse(localStorage.getItem('deleted_dummies') || '[]');
       const filteredInitial = initialStartups.filter(s => !deletedDummies.includes(s.id));
 
-      const localData = getStartups();
-      const mappedStartups = localData.map(data => ({
-        id: data.startupId || data.id,
+      const localData = await getStartups();
+      const mappedStartups = localData.map((data: any) => ({
+        id: data.startupId || data.id || data._id,
         name: data.startupName,
         description: data.startupIdea,
         status: data.status === 'pending_analysis' ? 'Draft' : data.status,
@@ -75,7 +75,11 @@ const FounderStartups: React.FC = () => {
     setError('');
 
     try {
-      const newStartupData = createStartupDraft(newStartupName, newStartupDesc);
+      const newStartupData = await createStartupDraft(newStartupName, newStartupDesc);
+      
+      if (!newStartupData) {
+        throw new Error('Failed to create startup');
+      }
 
       addNotification({
         id: `notification_${Date.now()}`,
@@ -94,7 +98,7 @@ const FounderStartups: React.FC = () => {
       
       navigate(`/dashboard/founder/ai-builder?startupId=${newStartupData.id}`);
     } catch (err) {
-      setError('Failed to save to local storage');
+      setError('Failed to save to database');
     } finally {
       setLoading(false);
     }

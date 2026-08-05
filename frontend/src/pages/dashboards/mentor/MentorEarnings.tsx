@@ -9,9 +9,10 @@ const MentorEarnings: React.FC = () => {
   const [availablePayout, setAvailablePayout] = useState(0);
 
   useEffect(() => {
-    const settings = getMentorPaymentSettings();
-    const startups = getStartups();
-    const storedSessions = JSON.parse(localStorage.getItem('video_sessions') || '[]');
+    const fetchData = async () => {
+      const settings = getMentorPaymentSettings();
+      const startups = await getStartups();
+      const storedSessions = JSON.parse(localStorage.getItem('video_sessions') || '[]');
 
     const mentorSharePercent = (settings.mentorShare || 80) / 100;
     const newTransactions: any[] = [];
@@ -71,7 +72,8 @@ const MentorEarnings: React.FC = () => {
     
     // Available payout = total earnings minus the processed payout
     setAvailablePayout(Math.max(0, earnings - 1200));
-
+    };
+    fetchData();
   }, []);
 
   return (

@@ -1,3 +1,5 @@
+import { API_URL } from '../config/api';
+
 export const seedDemoStartups = () => {
   const mockStartups = [
     {
@@ -323,64 +325,63 @@ export const seedDemoStartups = () => {
   return mockStartups;
 };
 
-export const getStartups = () => {
-  const keys = Object.keys(localStorage);
-  let locals: any[] = [];
-  keys.forEach(key => {
-    if (key.startsWith('startup_')) {
-      try {
-        locals.push(JSON.parse(localStorage.getItem(key) || ''));
-      } catch (e) {}
-    }
-  });
-  if (locals.length === 0) {
-    locals = seedDemoStartups();
-  }
-  return locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-};
-
-export const saveStartups = (startups: any[]) => {
-  startups.forEach(s => {
-    localStorage.setItem(s.startupId || s.id, JSON.stringify(s));
-  });
-};
-
-export const getStartupById = (startupId: string) => {
+export const getStartups = async () => {
   try {
-    const data = localStorage.getItem(startupId);
-    return data ? JSON.parse(data) : null;
+    const res = await fetch(`${API_URL}/startups`);
+    const data = await res.json();
+    if (data.success) {
+      return data.data;
+    }
   } catch (e) {
-    return null;
+    console.error('Error fetching startups', e);
   }
+  return [];
 };
 
-export const createStartupDraft = (startupName: string, startupIdea: string) => {
-  const startupId = `startup_${Date.now()}`;
-  const newStartupData = {
-    id: startupId,
-    startupId,
-    founderId: "current_user",
-    startupName,
-    startupIdea,
-    status: 'pending_analysis',
-    approvalStatus: 'pending',
-    aiGenerated: null,
-    roadmap: [],
-    tasks: [],
-    isSavedToMyStartups: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-  localStorage.setItem(startupId, JSON.stringify(newStartupData));
-  return newStartupData;
+export const saveStartups = async (startups: any[]) => {
+  // Not heavily used, typically we update individual startups
+  console.warn('saveStartups array helper is deprecated, update individual startups via API');
 };
 
-export const updateStartup = (startupId: string, updatedData: any) => {
-  const existing = getStartupById(startupId);
-  if (existing) {
-    const updated = { ...existing, ...updatedData, updatedAt: new Date().toISOString() };
-    localStorage.setItem(startupId, JSON.stringify(updated));
-    return updated;
+export const getStartupById = async (startupId: string) => {
+  try {
+    const res = await fetch(`${API_URL}/startups/${startupId}`);
+    const data = await res.json();
+    if (data.success) return data.data;
+  } catch (e) {
+    console.error('Error fetching startup by id', e);
+  }
+  return null;
+};
+
+export const createStartupDraft = async (startupName: string, startupIdea: string) => {
+  try {
+    const res = await fetch(`${API_URL}/startups/create-draft`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ startupName, startupIdea })
+    });
+    const data = await res.json();
+    if (data.success) {
+      return { id: data.data.startupId, ...data.data };
+    }
+  } catch (e) {
+    console.error('Error creating startup draft', e);
+  }
+  return null;
+};
+
+export const updateStartup = async (startupId: string, updatedData: any) => {
+  try {
+    const res = await fetch(`${API_URL}/startups/${startupId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedData)
+    });
+    const data = await res.json();
+    if (data.success) return data.data;
+  } catch (e) {
+    console.error('Error updating startup', e);
   }
   return null;
 };

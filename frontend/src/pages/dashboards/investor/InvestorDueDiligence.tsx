@@ -34,15 +34,16 @@ const InvestorDueDiligence: React.FC = () => {
   const [activeRoom, setActiveRoom] = useState<any>(null);
 
   useEffect(() => {
-    const allDocs = getDocuments();
-    const startups = getStartups();
-    
-    // Find all documents (since sharing was removed)
-    const investorDocs = allDocs;
-    
-    // Group by startup
-    const roomsMap: any = {};
-    investorDocs.forEach((doc: any) => {
+    const fetchData = async () => {
+      const allDocs = getDocuments();
+      const startups = await getStartups();
+      
+      // Find all documents (since sharing was removed)
+      const investorDocs = allDocs;
+      
+      // Group by startup
+      const roomsMap: any = {};
+      investorDocs.forEach((doc: any) => {
       if (!roomsMap[doc.startupId]) {
         const startup = startups.find((s: any) => s.startupId === doc.startupId);
         roomsMap[doc.startupId] = {
@@ -71,6 +72,8 @@ const InvestorDueDiligence: React.FC = () => {
     if (rooms.length > 0) {
       setActiveRoom(rooms[0]);
     }
+    };
+    fetchData();
   }, []);
 
   const filteredRooms = dataroomData.filter(d => 

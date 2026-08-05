@@ -10,8 +10,11 @@ const FounderDashboard: React.FC = () => {
   const [startups, setStartups] = useState<any[]>([]);
 
   useEffect(() => {
-    const localData = getStartups();
-    setStartups(localData);
+    const fetchStartups = async () => {
+      const localData = await getStartups();
+      setStartups(localData);
+    };
+    fetchStartups();
   }, []);
 
   const formatDate = (dateStr: string | null | undefined) => {

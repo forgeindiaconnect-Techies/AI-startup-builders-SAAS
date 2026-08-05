@@ -14,10 +14,10 @@ const FounderDocuments: React.FC = () => {
   const [allStartups, setAllStartups] = useState<any[]>([]);
   const [selectedStartup, setSelectedStartup] = useState<any>(null);
 
-  const refresh = useCallback(() => {
-    const allStartupsList = getStartups() || [];
+  const refresh = useCallback(async () => {
+    const allStartupsList = await getStartups() || [];
     setAllStartups(allStartupsList);
-    const info = startupId ? getStartupById(startupId) : null;
+    const info = startupId ? await getStartupById(startupId) : null;
     setSelectedStartup(info);
   }, [startupId]);
 

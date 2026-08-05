@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Clock, X, MessageSquare, Send, ArrowLeft } from 'lucide-react';
 import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDetailsTabs';
-import { getDocuments, addNotification, getStartups } from '../../../utils/localStorageHelper';
+import { getDocuments, addNotification, getStartups, updateStartup } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
 
 const MentorReviews: React.FC = () => {
@@ -15,8 +15,11 @@ const MentorReviews: React.FC = () => {
   const [rating, setRating] = useState<'Good' | 'Average' | 'Bad' | null>(null);
 
   useEffect(() => {
-    setStartups(getStartups());
-    setDocuments(getDocuments());
+    const fetchData = async () => {
+      setStartups(await getStartups());
+      setDocuments(getDocuments()); // Assuming documents are still synchronous for now
+    };
+    fetchData();
   }, []);
 
   const handleReviewSubmit = () => {
@@ -40,8 +43,10 @@ const MentorReviews: React.FC = () => {
       mentorReview: review
     };
     
-    localStorage.setItem(`startup_${updated.startupId}`, JSON.stringify(updated));
-    setStartups(prev => prev.map(s => s.startupId === updated.startupId ? updated : s));
+    // Call async update via API wrapper
+    updateStartup(updated.startupId || updated._id, updated).then(() => {
+      setStartups(prev => prev.map(s => (s.startupId || s._id) === (updated.startupId || updated._id) ? updated : s));
+    });
     
     addNotification({
       id: Date.now(),
