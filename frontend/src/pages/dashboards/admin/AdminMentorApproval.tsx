@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Check, X, GraduationCap, Calendar, ExternalLink, Mail, Phone, MapPin, Globe } from 'lucide-react';
+import { Check, X, GraduationCap, Calendar, ExternalLink, Mail, Phone, MapPin, Globe, MessageSquare, Star, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
+import { getStartups } from '../../../utils/localStorageHelper';
 
 const initialApplicants: any[] = [];
 
 const AdminMentorApproval: React.FC = () => {
   const [applicants, setApplicants] = useState<any[]>(initialApplicants);
+  const [allStartups, setAllStartups] = useState<any[]>([]);
+  const [expandedReviews, setExpandedReviews] = useState<Record<string, boolean>>({}); 
 
   const loadApplicants = () => {
     try {
@@ -49,6 +52,10 @@ const AdminMentorApproval: React.FC = () => {
     loadApplicants();
     window.addEventListener('storage', loadApplicants);
     window.addEventListener('mentor_profile_updated', loadApplicants);
+    
+    // Load all startups to find reviews
+    getStartups().then(startups => setAllStartups(startups));
+    
     return () => {
       window.removeEventListener('storage', loadApplicants);
       window.removeEventListener('mentor_profile_updated', loadApplicants);
@@ -153,6 +160,63 @@ const AdminMentorApproval: React.FC = () => {
                   </div>
                   <span className="text-[10px] font-extrabold bg-[#5B21B6] text-white px-2 py-0.5 rounded uppercase tracking-wider">🔒 Admin Private View</span>
                 </div>
+
+                {/* Reviews Given by this Mentor */}
+                {(() => {
+                  const mentorReviews = allStartups.filter(
+                    (s: any) => s.mentorReview && (s.mentorReview.mentorId === a.rawId || s.mentorReview.mentorId === a.id || s.mentorReview.mentorName === a.name)
+                  );
+                  if (mentorReviews.length === 0) return null;
+                  const isExpanded = !!expandedReviews[a.id];
+                  return (
+                    <div className="mt-3 border border-gray-200 rounded-xl overflow-hidden">
+                      <button
+                        onClick={() => setExpandedReviews(prev => ({ ...prev, [a.id]: !prev[a.id] }))}
+                        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 text-sm font-bold text-gray-700 transition-colors"
+                      >
+                        <span className="flex items-center gap-2">
+                          <MessageSquare size={15} className="text-[#5B21B6]" />
+                          Reviews Given ({mentorReviews.length})
+                        </span>
+                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </button>
+                      {isExpanded && (
+                        <div className="divide-y divide-gray-100">
+                          {mentorReviews.map((s: any, rIdx: number) => {
+                            const review = s.mentorReview;
+                            return (
+                              <div key={rIdx} className="px-4 py-4 bg-white">
+                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                                  <span className="font-bold text-gray-900 text-sm">{s.startupName}</span>
+                                  {review.rating && (
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${
+                                      review.rating === 'Good' ? 'bg-green-100 text-green-700 border-green-200' :
+                                      review.rating === 'Average' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                                      'bg-red-100 text-red-700 border-red-200'
+                                    }`}>{review.rating}</span>
+                                  )}
+                                  <span className="text-xs text-gray-400">{review.createdAt ? new Date(review.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</span>
+                                </div>
+                                {review.feedback && (
+                                  <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3 border border-gray-100 mb-2">{review.feedback}</p>
+                                )}
+                                {review.founderReply && (
+                                  <div className="bg-green-50 border border-green-100 rounded-lg p-3">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                      <CheckCircle size={12} className="text-green-600" />
+                                      <span className="text-xs font-bold text-green-700">Founder's Reply</span>
+                                    </div>
+                                    <p className="text-xs text-green-800">{review.founderReply}</p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

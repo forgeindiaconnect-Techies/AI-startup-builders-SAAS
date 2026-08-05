@@ -4,7 +4,7 @@ import {
   AlertTriangle, Building2, X,
 } from 'lucide-react';
 import {
-  getDocuments, updateDocument, getStartups, getStartupById,
+  getDocuments, updateDocument, getStartups,
 } from '../../../utils/localStorageHelper';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -167,7 +167,7 @@ const AdminDocumentVerification: React.FC = () => {
                 </tr>
               ) : (
                 filteredDocs.map((doc) => {
-                  const startup = getStartupById(doc.startupId);
+                  const startup = allStartups.find((s: any) => s.startupId === doc.startupId);
                   return (
                     <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">

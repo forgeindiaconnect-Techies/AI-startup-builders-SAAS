@@ -26,6 +26,7 @@ import FounderTasks     from './pages/dashboards/founder/FounderTasks';
 import FounderDocuments from './pages/dashboards/founder/FounderDocuments';
 import FounderTeam      from './pages/dashboards/founder/FounderTeam';
 import FounderMentors   from './pages/dashboards/founder/FounderMentors';
+import FounderMentorReviews from './pages/dashboards/founder/FounderMentorReviews';
 import FounderFunding   from './pages/dashboards/founder/FounderFunding';
 import FounderIdeaGenerator from './pages/dashboards/founder/FounderIdeaGenerator';
 import FounderBusinessPlan from './pages/dashboards/founder/FounderBusinessPlan';
@@ -139,6 +140,7 @@ function App() {
                     <Route path="mentors"         element={<PlanGate requiredPlans={['pro', 'premium_startup_builder']}><FounderMentors /></PlanGate>} />
                     <Route path="funding"         element={<PlanGate requiredPlans={['premium_startup_builder']}><FounderFunding /></PlanGate>} />
                     <Route path="documents"           element={<FounderDocuments />} />
+                    <Route path="mentor-reviews"      element={<FounderMentorReviews />} />
                     <Route path="learning-videos"    element={<FounderLearningVideos />} />
                     <Route path="inbox"               element={<SharedInbox />} />
                     <Route path="profile-billing" element={<FounderProfileBilling />} />
