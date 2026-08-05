@@ -45,10 +45,14 @@ export const submitPayment = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// 2. Get All Payments (Admin)
+// 2. Get Payments (Admin: all; others: only their own)
 export const getAllPayments = async (req: AuthRequest, res: Response) => {
   try {
-    const payments = await Payment.find().sort({ createdAt: -1 }).populate('userId', 'email mobile');
+    const filter: any = {};
+    if (req.user?.role !== 'admin') {
+      filter.userId = req.user?.id;
+    }
+    const payments = await Payment.find(filter).sort({ createdAt: -1 }).populate('userId', 'email mobile');
     res.json({ success: true, payments });
   } catch (error) {
     console.error('Error fetching payments:', error);

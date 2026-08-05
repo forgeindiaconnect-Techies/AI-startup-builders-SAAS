@@ -7,8 +7,10 @@ const router = Router();
 // Founder routes
 router.post('/submit', protect, submitPayment);
 
+// Founders see their own payments, admins see all (scoped in controller)
+router.get('/', protect, getAllPayments);
+
 // Admin routes
-router.get('/', protect, adminOnly, getAllPayments);
 router.post('/:paymentId/approve', protect, adminOnly, approvePayment);
 router.post('/:paymentId/reject', protect, adminOnly, rejectPayment);
 

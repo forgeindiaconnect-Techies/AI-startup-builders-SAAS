@@ -264,6 +264,9 @@ export const generateStateless = async (req: Request, res: Response) => {
 export const getStartup = async (req: Request, res: Response) => {
   try {
     const { startupId } = req.params;
+    if (!startupId || startupId === 'undefined' || !startupId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ success: false, message: 'Invalid startup id' });
+    }
     const startup = await Startup.findById(startupId);
 
     if (!startup) {
