@@ -340,6 +340,10 @@ const normalizeStartup = (startup: any): any => {
   return { ...startup, startupId, id: startup.id || startupId };
 };
 
+export const sanitizeStartupId = (raw: string | null | undefined): string | null => {
+  return raw && raw !== 'undefined' && raw !== 'null' ? raw : null;
+};
+
 export const getStartups = async () => {
   try {
     const res = await fetch(`${API_URL}/startups`);
@@ -359,7 +363,7 @@ export const saveStartups = async (startups: any[]) => {
 };
 
 export const getStartupById = async (startupId: string) => {
-  if (!startupId) return null;
+  if (!sanitizeStartupId(startupId)) return null;
   try {
     const res = await fetch(`${API_URL}/startups/${startupId}`);
     const data = await res.json();
@@ -388,7 +392,7 @@ export const createStartupDraft = async (startupName: string, startupIdea: strin
 };
 
 export const updateStartup = async (startupId: string, updatedData: any) => {
-  if (!startupId) return null;
+  if (!sanitizeStartupId(startupId)) return null;
   try {
     const res = await fetch(`${API_URL}/startups/${startupId}`, {
       method: 'PUT',

@@ -2,14 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FileText, Building2, RefreshCw, Scale } from 'lucide-react';
 import {
-  getStartups, getStartupById,
+  getStartups, getStartupById, sanitizeStartupId,
 } from '../../../utils/localStorageHelper';
 import FounderLegalDocs from './FounderLegalDocs';
 
 const FounderDocuments: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const startupId = searchParams.get('id') || searchParams.get('startupId');
+  const startupId = sanitizeStartupId(searchParams.get('id') || searchParams.get('startupId'));
 
   const [allStartups, setAllStartups] = useState<any[]>([]);
   const [selectedStartup, setSelectedStartup] = useState<any>(null);

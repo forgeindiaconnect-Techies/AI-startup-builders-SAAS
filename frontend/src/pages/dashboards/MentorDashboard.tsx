@@ -132,7 +132,7 @@ const MentorDashboard: React.FC = () => {
                     </td>
                     <td className="p-4 text-sm text-gray-500">{new Date(startup.createdAt).toLocaleDateString()}</td>
                     <td className="p-4">
-                      <button onClick={() => navigate(`/dashboard/mentor/reviews?startupId=${startup.startupId}`)} className="text-sm font-medium text-[#5B21B6] hover:text-[#7C3AED]">Start Review</button>
+                      <button onClick={() => navigate(`/dashboard/mentor/reviews?startupId=${startup.startupId || startup._id}`)} className="text-sm font-medium text-[#5B21B6] hover:text-[#7C3AED]">Start Review</button>
                     </td>
                   </tr>
                 ))

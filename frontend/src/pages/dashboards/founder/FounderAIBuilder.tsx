@@ -10,7 +10,7 @@ import FounderReports from './FounderReports';
 import FounderAIChat from './FounderAIChat';
 import FounderLegalDocs from './FounderLegalDocs';
 import PlanGate, { usePlanAccess } from '../../../components/shared/PlanGate';
-import { getStartups, getStartupById, updateStartup, generateStartupOutput, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument, detectStartupCategory, generateCategoryDocuments } from '../../../utils/localStorageHelper';
+import { getStartups, getStartupById, updateStartup, generateStartupOutput, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument, detectStartupCategory, generateCategoryDocuments, sanitizeStartupId } from '../../../utils/localStorageHelper';
 
 const tabs = [
   { id: 'idea',     label: 'AI Idea Generator',    icon: Lightbulb,    component: FounderIdeaGenerator },
@@ -33,7 +33,7 @@ const FounderAIBuilder: React.FC = () => {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [error, setError] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
-  const startupId = searchParams.get('id') || searchParams.get('startupId');
+  const startupId = sanitizeStartupId(searchParams.get('id') || searchParams.get('startupId'));
   const { canAccess } = usePlanAccess();
 
   const activeTab = tabs.find(t => t.id === active)!;

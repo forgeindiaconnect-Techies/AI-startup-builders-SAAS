@@ -3,7 +3,7 @@ import { Map, ListChecks } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import FounderRoadmap from './FounderRoadmap';
 import FounderTasks from './FounderTasks';
-import { getStartups, getStartupById } from '../../../utils/localStorageHelper';
+import { getStartups, getStartupById, sanitizeStartupId } from '../../../utils/localStorageHelper';
 
 const tabs = [
   { id: 'roadmap', label: 'Startup Roadmap', icon: Map, component: FounderRoadmap },
@@ -14,7 +14,7 @@ const FounderRoadmapTasks: React.FC = () => {
   const [active, setActive] = useState('roadmap');
   const [startupData, setStartupData] = useState<any>(null);
   const [searchParams] = useSearchParams();
-  const startupId = searchParams.get('startupId') || searchParams.get('id');
+  const startupId = sanitizeStartupId(searchParams.get('startupId') || searchParams.get('id'));
 
   useEffect(() => {
     const fetchData = async () => {
