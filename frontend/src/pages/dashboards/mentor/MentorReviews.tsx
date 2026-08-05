@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Clock, X, MessageSquare, Send, ArrowLeft } from 'lucide-react';
 import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDetailsTabs';
-import { getDocuments, addNotification } from '../../../utils/localStorageHelper';
+import { getDocuments, addNotification, getStartups } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
 
 const MentorReviews: React.FC = () => {
@@ -15,17 +15,7 @@ const MentorReviews: React.FC = () => {
   const [rating, setRating] = useState<'Good' | 'Average' | 'Bad' | null>(null);
 
   useEffect(() => {
-    const keys = Object.keys(localStorage);
-    const locals: any[] = [];
-    keys.forEach(key => {
-      if (key.startsWith('startup_')) {
-        try {
-          locals.push(JSON.parse(localStorage.getItem(key) || ''));
-        } catch (e) {}
-      }
-    });
-    locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    setStartups(locals);
+    setStartups(getStartups());
     setDocuments(getDocuments());
   }, []);
 
