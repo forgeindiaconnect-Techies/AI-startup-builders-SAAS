@@ -3,6 +3,7 @@ import { Router, Request, Response } from 'express';
 import aiBuilderRoutes from './aiBuilderRoutes.js';
 import notificationRoutes from './notificationRoutes.js';
 import startupRoutes from './startupRoutes.js';
+import fundingRoutes from './fundingRoutes.js';
 import authRoutes from './authRoutes.js';
 import paymentRoutes from './paymentRoutes.js';
 import inviteRoutes from './inviteRoutes.js';
@@ -12,6 +13,7 @@ const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/startups', startupRoutes);
+router.use('/funding', fundingRoutes);
 router.use('/ai-builder', aiBuilderRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/payments', paymentRoutes);

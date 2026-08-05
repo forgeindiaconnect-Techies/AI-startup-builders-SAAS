@@ -474,24 +474,119 @@ export const seedDemoNotifications = () => {
   return demoNotifs;
 };
 
-export const getNotifications = () => {
+export const getNotifications = async (userId?: string) => {
   try {
-    const data = localStorage.getItem('ai_startup_builder_notifications');
-    const parsed = data ? JSON.parse(data) : [];
-    if (parsed.length === 0) {
-      return seedDemoNotifications();
-    }
+    const url = userId ? `${API_URL}/notifications?userId=${encodeURIComponent(userId)}` : `${API_URL}/notifications`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.success) return data.data;
+  } catch (e) {
+    console.error('Error fetching notifications', e);
+  }
+  // Fallback to localStorage
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_notifications');
+    const parsed = stored ? JSON.parse(stored) : [];
+    if (parsed.length === 0) return seedDemoNotifications();
     return parsed;
   } catch (e) {
     return [];
   }
 };
 
-export const addNotification = (notification: any) => {
-  const current = getNotifications();
-  const updated = [notification, ...current];
+export const addNotification = async (notification: any) => {
+  try {
+    const res = await fetch(`${API_URL}/notifications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(notification)
+    });
+    const data = await res.json();
+    if (data.success) return data.data;
+  } catch (e) {
+    console.error('Error adding notification', e);
+  }
+  // Fallback to localStorage
+  const current = localStorage.getItem('ai_startup_builder_notifications');
+  const parsed = current ? JSON.parse(current) : [];
+  const updated = [notification, ...parsed];
   localStorage.setItem('ai_startup_builder_notifications', JSON.stringify(updated));
-  return updated;
+  return notification;
+};
+
+export const markNotificationRead = async (id: string) => {
+  try {
+    const res = await fetch(`${API_URL}/notifications/${id}/read`, { method: 'PATCH' });
+    const data = await res.json();
+    if (data.success) return data.data;
+  } catch (e) {
+    console.error('Error marking notification as read', e);
+  }
+};
+
+export const markAllNotificationsRead = async (userId: string) => {
+  try {
+    const res = await fetch(`${API_URL}/notifications/mark-all-read?userId=${encodeURIComponent(userId)}`, { method: 'PATCH' });
+    const data = await res.json();
+    return data.success;
+  } catch (e) {
+    console.error('Error marking all notifications as read', e);
+  }
+};
+
+// ─── Funding Offers API ──────────────────────────────────────────
+
+export const getFundingOffers = async (founderId?: string, investorId?: string) => {
+  try {
+    let url = `${API_URL}/funding`;
+    const params = new URLSearchParams();
+    if (founderId) params.append('founderId', founderId);
+    if (investorId) params.append('investorId', investorId);
+    if (params.toString()) url += `?${params.toString()}`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.success) return data.data;
+  } catch (e) {
+    console.error('Error fetching funding offers', e);
+  }
+  // Fallback to localStorage
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_funding_offers');
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) {
+    return [];
+  }
+};
+
+export const createFundingOffer = async (offerData: any) => {
+  try {
+    const res = await fetch(`${API_URL}/funding`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(offerData)
+    });
+    const data = await res.json();
+    if (data.success) return data.data;
+  } catch (e) {
+    console.error('Error creating funding offer', e);
+  }
+  return null;
+};
+
+export const updateFundingOffer = async (id: string, updates: any) => {
+  try {
+    const res = await fetch(`${API_URL}/funding/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    const data = await res.json();
+    if (data.success) return data.data;
+  } catch (e) {
+    console.error('Error updating funding offer', e);
+  }
+  return null;
 };
 
 export const detectStartupCategory = (startup: any): string => {

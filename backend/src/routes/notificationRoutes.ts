@@ -1,18 +1,18 @@
-import express from 'express';
+import { Router } from 'express';
+import {
+  getNotifications,
+  createNotification,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+} from '../controllers/notificationController.js';
 
-const router = express.Router();
+const router = Router();
 
-// Mock notification endpoint
-router.post('/', (req: express.Request, res: express.Response) => {
-  const { title, message, type } = req.body;
-  
-  // In a real app, save to MongoDB Notification collection
-  console.log(`🔔 Notification Created: [${type}] ${title} - ${message}`);
-
-  res.status(201).json({
-    success: true,
-    message: 'Notification created successfully'
-  });
-});
+router.get('/', getNotifications);
+router.post('/', createNotification);
+router.patch('/mark-all-read', markAllAsRead);
+router.patch('/:id/read', markAsRead);
+router.delete('/:id', deleteNotification);
 
 export default router;
