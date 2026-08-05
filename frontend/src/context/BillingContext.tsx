@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { getPaymentRequests, submitPaymentRequest } from '../utils/localStorageHelper';
 
 export interface Transaction {
   id: string;
@@ -54,7 +55,7 @@ interface BillingContextType {
     paymentMethod: string, 
     transactionId: string,
     screenshotBase64: string
-  ) => void;
+  ) => Promise<void>;
   approvePayment: (paymentId: string) => void;
   rejectPayment: (paymentId: string) => void;
   getUserSubscription: (userId: string) => Subscription | undefined;
@@ -101,14 +102,21 @@ export const BillingProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   });
 
-  const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>(() => {
-    try {
-      const saved = localStorage.getItem('ai_startup_builder_payments');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [paymentRequests, setPaymentRequests] = useState<PaymentRequest[]>([]);
+
+  useEffect(() => {
+    // Load payment requests from backend
+    getPaymentRequests().then(data => {
+      if (data && data.length > 0) setPaymentRequests(data);
+      else {
+        // Fallback to localStorage
+        try {
+          const saved = localStorage.getItem('ai_startup_builder_payments');
+          if (saved) setPaymentRequests(JSON.parse(saved));
+        } catch {}
+      }
+    });
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('ai_startup_builder_subs_v2', JSON.stringify(subscriptions));
@@ -139,13 +147,13 @@ export const BillingProvider: React.FC<{ children: ReactNode }> = ({ children })
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  const submitManualPaymentRequest = (
-    userId: string, 
-    userName: string, 
-    plan: string, 
+  const submitManualPaymentRequest = async (
+    userId: string,
+    userName: string,
+    plan: string,
     billingCycle: string,
-    amount: number, 
-    paymentMethod: string, 
+    amount: number,
+    paymentMethod: string,
     transactionId: string,
     screenshotBase64: string
   ) => {
@@ -156,19 +164,18 @@ export const BillingProvider: React.FC<{ children: ReactNode }> = ({ children })
       planName: plan,
       billingCycle,
       amount,
-      currency: "USD",
+      currency: 'USD',
       paymentMethod,
-      upiId: "startupbuilder@bank",
+      upiId: 'startupbuilder@bank',
       transactionId,
       screenshot: screenshotBase64,
       status: 'pending_verification',
       createdAt: new Date().toISOString()
     };
 
-    setPaymentRequests(prev => [newReq, ...prev]);
-
-    // Send a mock notification to Admin (we'll just use a window alert or custom event if needed)
-    // Realistically, the Notification context would be used here. For now, it's saved in state.
+    // Try to save via API
+    const saved = await submitPaymentRequest(newReq);
+    setPaymentRequests(prev => [saved || newReq, ...prev]);
   };
 
   const approvePayment = (paymentId: string) => {

@@ -1151,17 +1151,28 @@ export const generateRoadmapAndTasks = (startup: any) => {
   return { roadmap, tasks };
 };
 
-export const getDocuments = () => {
+export const getDocuments = async (startupId?: string, userId?: string) => {
   try {
-    const data = localStorage.getItem('ai_startup_builder_documents');
-    return data ? JSON.parse(data) : [];
+    let url = `${API_URL}/documents`;
+    const params = new URLSearchParams();
+    if (startupId) params.append('startupId', startupId);
+    if (userId) params.append('userId', userId);
+    if (params.toString()) url += `?${params.toString()}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.success) return data.data;
   } catch (e) {
-    return [];
+    console.error('Error fetching documents', e);
   }
+  // Fallback to localStorage
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_documents');
+    return stored ? JSON.parse(stored) : [];
+  } catch (e) { return []; }
 };
 
-export const migrateDocumentApplyLinks = () => {
-  const docs = getDocuments();
+export const migrateDocumentApplyLinks = async () => {
+  const docs = await getDocuments();
   let changed = false;
   const updated = docs.map((doc: any) => {
     if (doc.documentLabel && !doc.applyLink) {
@@ -1182,39 +1193,86 @@ export const migrateDocumentApplyLinks = () => {
   return updated;
 };
 
-export const saveDocument = (document: any) => {
-  const current = getDocuments();
-  const updated = [document, ...current];
-  localStorage.setItem('ai_startup_builder_documents', JSON.stringify(updated));
-  return updated;
-};
-
-export const getDocumentById = (id: string) => {
-  const docs = getDocuments();
-  return docs.find((d: any) => d.id === id) || null;
-};
-
-export const updateDocument = (id: string, updatedData: any) => {
-  let docs = getDocuments();
-  let updatedDoc = null;
-  docs = docs.map((d: any) => {
-    if (d.id === id) {
-      updatedDoc = { ...d, ...updatedData };
-      return updatedDoc;
-    }
-    return d;
-  });
-  if (updatedDoc) {
-    localStorage.setItem('ai_startup_builder_documents', JSON.stringify(docs));
+export const saveDocument = async (document: any) => {
+  try {
+    const res = await fetch(`${API_URL}/documents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(document)
+    });
+    const data = await res.json();
+    if (data.success) return data.data;
+  } catch (e) {
+    console.error('Error saving document', e);
   }
-  return updatedDoc;
+  // Fallback to localStorage
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_documents');
+    const current = stored ? JSON.parse(stored) : [];
+    const updated = [document, ...current];
+    localStorage.setItem('ai_startup_builder_documents', JSON.stringify(updated));
+    return document;
+  } catch (e) { return document; }
 };
 
-export const deleteDocument = (id: string) => {
-  const docs = getDocuments();
-  const filtered = docs.filter((d: any) => d.id !== id);
-  localStorage.setItem('ai_startup_builder_documents', JSON.stringify(filtered));
-  return filtered;
+export const getDocumentById = async (id: string) => {
+  try {
+    const res = await fetch(`${API_URL}/documents/${id}`);
+    const data = await res.json();
+    if (data.success) return data.data;
+  } catch (e) {
+    console.error('Error fetching document by id', e);
+  }
+  // Fallback
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_documents');
+    const docs = stored ? JSON.parse(stored) : [];
+    return docs.find((d: any) => d.id === id) || null;
+  } catch (e) { return null; }
+};
+
+export const updateDocument = async (id: string, updatedData: any) => {
+  try {
+    const res = await fetch(`${API_URL}/documents/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedData)
+    });
+    const data = await res.json();
+    if (data.success) return data.data;
+  } catch (e) {
+    console.error('Error updating document', e);
+  }
+  // Fallback
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_documents');
+    let docs = stored ? JSON.parse(stored) : [];
+    let updatedDoc = null;
+    docs = docs.map((d: any) => {
+      if (d.id === id) { updatedDoc = { ...d, ...updatedData }; return updatedDoc; }
+      return d;
+    });
+    if (updatedDoc) localStorage.setItem('ai_startup_builder_documents', JSON.stringify(docs));
+    return updatedDoc;
+  } catch (e) { return null; }
+};
+
+export const deleteDocument = async (id: string) => {
+  try {
+    const res = await fetch(`${API_URL}/documents/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) return true;
+  } catch (e) {
+    console.error('Error deleting document', e);
+  }
+  // Fallback
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_documents');
+    const docs = stored ? JSON.parse(stored) : [];
+    const filtered = docs.filter((d: any) => d.id !== id);
+    localStorage.setItem('ai_startup_builder_documents', JSON.stringify(filtered));
+    return true;
+  } catch (e) { return false; }
 };
 
 // Mentor Payment Settings
@@ -1287,3 +1345,61 @@ export const deleteLogoByStartupId = (startupId: string) => {
   localStorage.setItem('ai_startup_builder_logos', JSON.stringify(filtered));
   return filtered;
 };
+
+// ─── Billing / Subscription / Payment API Helpers ────────────────────────────
+
+export const getSubscription = async (userId: string) => {
+  try {
+    const res = await fetch(`${API_URL}/auth/subscription?userId=${encodeURIComponent(userId)}`);
+    const data = await res.json();
+    if (data.success) return data.data;
+  } catch (e) {
+    console.error('Error fetching subscription', e);
+  }
+  // Fallback to localStorage
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_subs_v2');
+    const subs = stored ? JSON.parse(stored) : [];
+    return subs.find((s: any) => s.userId === userId) || null;
+  } catch (e) { return null; }
+};
+
+export const getPaymentRequests = async (founderId?: string) => {
+  try {
+    const url = founderId
+      ? `${API_URL}/payments?founderId=${encodeURIComponent(founderId)}`
+      : `${API_URL}/payments`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.success) return data.payments || data.data || [];
+  } catch (e) {
+    console.error('Error fetching payment requests', e);
+  }
+  // Fallback to localStorage
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_payments');
+    const all = stored ? JSON.parse(stored) : [];
+    return founderId ? all.filter((p: any) => p.founderId === founderId) : all;
+  } catch (e) { return []; }
+};
+
+export const submitPaymentRequest = async (paymentData: any) => {
+  try {
+    const res = await fetch(`${API_URL}/payments/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(paymentData)
+    });
+    const data = await res.json();
+    if (data.success) return data.payment || data.data;
+  } catch (e) {
+    console.error('Error submitting payment', e);
+  }
+  // Fallback to localStorage
+  const stored = localStorage.getItem('ai_startup_builder_payments');
+  const current = stored ? JSON.parse(stored) : [];
+  const updated = [paymentData, ...current];
+  localStorage.setItem('ai_startup_builder_payments', JSON.stringify(updated));
+  return paymentData;
+};
+
