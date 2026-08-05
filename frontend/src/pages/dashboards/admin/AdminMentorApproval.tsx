@@ -1,21 +1,62 @@
 import React, { useState, useEffect } from 'react';
 import { Check, X, GraduationCap, Calendar, ExternalLink, Mail, Phone, MapPin, Globe, MessageSquare, Star, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
 import { getStartups } from '../../../utils/localStorageHelper';
+import { API_URL } from '../../../config/api';
+import { useAuth } from '../../../context/AuthContext';
 
 const initialApplicants: any[] = [];
 
 const AdminMentorApproval: React.FC = () => {
+  const { getToken } = useAuth();
   const [applicants, setApplicants] = useState<any[]>(initialApplicants);
   const [allStartups, setAllStartups] = useState<any[]>([]);
   const [expandedReviews, setExpandedReviews] = useState<Record<string, boolean>>({}); 
 
-  const loadApplicants = () => {
+  const loadApplicants = async () => {
+    // 1. Load real mentor accounts from the backend
+    let dbMentors: any[] = [];
+    const token = getToken();
+    if (token) {
+      try {
+        const res = await fetch(`${API_URL}/auth/admin/users`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success && data.users) {
+          dbMentors = data.users
+            .filter((u: any) => u.role === 'mentor')
+            .map((u: any) => ({
+              id: u._id,
+              name: u.fullName || 'Anonymous Mentor',
+              expertise: u.expertise || `${u.industry || 'SaaS'} Specialist`,
+              experience: u.experienceYears || '10+ years',
+              applied: u.createdAt || 'Just now',
+              linkedin: u.linkedin || 'linkedin.com',
+              bio: u.bio || 'Experienced mentor.',
+              email: u.email || 'mentor@private.email',
+              phone: u.mobile || 'N/A (Private)',
+              location: u.location || 'Location not specified',
+              category: u.industry || 'SaaS',
+              availability: 'Available',
+              languages: 'English',
+              status: u.approvalStatus === 'approved' ? 'Approved' :
+                      u.approvalStatus === 'rejected' ? 'Rejected' : 'Pending',
+              rawId: u._id,
+              source: 'db'
+            }));
+        }
+      } catch (err) {
+        console.error('Failed to load mentor users:', err);
+      }
+    }
+
+    // 2. Load locally saved mentor profiles (demo/legacy)
+    let localMentors: any[] = [];
     try {
       const stored = localStorage.getItem('ai_startup_builder_mentor_profiles');
-      let loadedMentors: any[] = [];
       if (stored) {
         const parsed = JSON.parse(stored);
-        loadedMentors = parsed.map((p: any, idx: number) => ({
+        localMentors = parsed.map((p: any, idx: number) => ({
           id: p.id || `mentor_dynamic_${idx}`,
           name: p.name || 'Anonymous Mentor',
           expertise: p.expertise || `${p.category || 'SaaS'} Specialist`,
@@ -31,64 +72,93 @@ const AdminMentorApproval: React.FC = () => {
           languages: p.languages || 'English',
           status: p.verificationStatus === 'Verified' ? 'Approved' : 
                   p.verificationStatus === 'Rejected' ? 'Rejected' : 'Pending',
-          rawId: p.id
+          rawId: p.id,
+          source: 'local'
         }));
       }
+    } catch (e) {}
 
-      // Merge dynamically saved mentor profiles at the top, followed by initial demo applicants if not already present
-      const combined = [...loadedMentors];
-      initialApplicants.forEach(sample => {
-        if (!combined.some(c => c.name === sample.name || c.id === sample.id)) {
-          combined.push(sample);
-        }
-      });
-      setApplicants(combined);
-    } catch (e) {
-      setApplicants(initialApplicants);
-    }
+    // 3. Merge DB mentors first, then local profiles not already present, then demo applicants
+    const combined = [...dbMentors];
+    localMentors.forEach(m => {
+      if (!combined.some(c => c.rawId === m.rawId || c.email === m.email || c.name === m.name)) {
+        combined.push(m);
+      }
+    });
+    initialApplicants.forEach(sample => {
+      if (!combined.some(c => c.name === sample.name || c.id === sample.id)) {
+        combined.push(sample);
+      }
+    });
+    setApplicants(combined);
   };
 
   useEffect(() => {
     loadApplicants();
-    window.addEventListener('storage', loadApplicants);
-    window.addEventListener('mentor_profile_updated', loadApplicants);
+    window.addEventListener('storage', loadApplicants as any);
+    window.addEventListener('mentor_profile_updated', loadApplicants as any);
     
     // Load all startups to find reviews
     getStartups().then(startups => setAllStartups(startups));
     
     return () => {
-      window.removeEventListener('storage', loadApplicants);
-      window.removeEventListener('mentor_profile_updated', loadApplicants);
+      window.removeEventListener('storage', loadApplicants as any);
+      window.removeEventListener('mentor_profile_updated', loadApplicants as any);
     };
   }, []);
 
-  const handleApprove = (id: any, name: string) => {
-    setApplicants(prev => prev.map(a => a.id === id ? { ...a, status: 'Approved' } : a));
+  const persistDbAction = async (applicant: any, action: string) => {
+    const token = getToken();
+    if (!token || !applicant || applicant.source !== 'db') return;
     try {
-      const stored = localStorage.getItem('ai_startup_builder_mentor_profiles');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const updated = parsed.map((p: any) => (p.id === id || p.name === name) ? { ...p, verificationStatus: 'Verified' } : p);
-        localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(updated));
-        window.dispatchEvent(new Event('storage'));
-        window.dispatchEvent(new Event('mentor_profile_updated'));
-      }
-    } catch (e) {}
+      await fetch(`${API_URL}/auth/admin/users/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ userId: applicant.rawId || applicant.id, action })
+      });
+      loadApplicants();
+    } catch (err) {
+      console.error('Failed to update mentor approval:', err);
+    }
+  };
+
+  const handleApprove = async (id: any, name: string) => {
+    const applicant = applicants.find(a => a.id === id);
+    setApplicants(prev => prev.map(a => a.id === id ? { ...a, status: 'Approved' } : a));
+    if (applicant?.source === 'db') {
+      await persistDbAction(applicant, 'approve');
+    } else {
+      try {
+        const stored = localStorage.getItem('ai_startup_builder_mentor_profiles');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const updated = parsed.map((p: any) => (p.id === id || p.name === name) ? { ...p, verificationStatus: 'Verified' } : p);
+          localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(updated));
+          window.dispatchEvent(new Event('storage'));
+          window.dispatchEvent(new Event('mentor_profile_updated'));
+        }
+      } catch (e) {}
+    }
     window.alert(`✅ ${name} has been approved as a Mentor!`);
   };
 
-  const handleReject = (id: any, name: string) => {
+  const handleReject = async (id: any, name: string) => {
+    const applicant = applicants.find(a => a.id === id);
     setApplicants(prev => prev.map(a => a.id === id ? { ...a, status: 'Rejected' } : a));
-    try {
-      const stored = localStorage.getItem('ai_startup_builder_mentor_profiles');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const updated = parsed.map((p: any) => (p.id === id || p.name === name) ? { ...p, verificationStatus: 'Pending' } : p);
-        localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(updated));
-        window.dispatchEvent(new Event('storage'));
-        window.dispatchEvent(new Event('mentor_profile_updated'));
-      }
-    } catch (e) {}
+    if (applicant?.source === 'db') {
+      await persistDbAction(applicant, 'reject');
+    } else {
+      try {
+        const stored = localStorage.getItem('ai_startup_builder_mentor_profiles');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const updated = parsed.map((p: any) => (p.id === id || p.name === name) ? { ...p, verificationStatus: 'Pending' } : p);
+          localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(updated));
+          window.dispatchEvent(new Event('storage'));
+          window.dispatchEvent(new Event('mentor_profile_updated'));
+        }
+      } catch (e) {}
+    }
     window.alert(`❌ ${name}'s application has been rejected.`);
   };
 

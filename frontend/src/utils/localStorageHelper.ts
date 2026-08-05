@@ -1,5 +1,14 @@
 import { API_URL } from '../config/api';
 
+const TOKEN_KEY = 'ai_startup_builder_jwt';
+
+const authHeaders = (extra?: Record<string, string>): Record<string, string> => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const headers: Record<string, string> = { ...extra };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
+};
+
 export const seedDemoStartups = () => {
   const mockStartups = [
     {
@@ -1369,7 +1378,7 @@ export const getPaymentRequests = async (founderId?: string) => {
     const url = founderId
       ? `${API_URL}/payments?founderId=${encodeURIComponent(founderId)}`
       : `${API_URL}/payments`;
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: authHeaders() });
     const data = await res.json();
     if (data.success) return data.payments || data.data || [];
   } catch (e) {
@@ -1387,7 +1396,7 @@ export const submitPaymentRequest = async (paymentData: any) => {
   try {
     const res = await fetch(`${API_URL}/payments/submit`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(paymentData)
     });
     const data = await res.json();

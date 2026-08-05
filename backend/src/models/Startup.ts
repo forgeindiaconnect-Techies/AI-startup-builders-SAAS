@@ -13,6 +13,8 @@ export interface IStartup extends Document {
     aiReport?: any;
   };
   isSavedToMyStartups: boolean;
+  mentorFeedback?: string;
+  mentorReview?: any;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,6 +49,14 @@ const StartupSchema: Schema = new Schema(
     isSavedToMyStartups: {
       type: Boolean,
       default: false,
+    },
+    mentorFeedback: {
+      type: String,
+      default: null,
+    },
+    mentorReview: {
+      type: Schema.Types.Mixed,
+      default: null,
     }
   },
   {
