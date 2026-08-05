@@ -293,6 +293,9 @@ export const getAllStartups = async (req: Request, res: Response) => {
 export const updateStartup = async (req: Request, res: Response) => {
   try {
     const { startupId } = req.params;
+    if (!startupId || startupId === 'undefined' || !startupId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ success: false, message: 'Invalid startup id' });
+    }
     const updateData = req.body;
     const startup = await Startup.findByIdAndUpdate(startupId, updateData, { new: true });
     

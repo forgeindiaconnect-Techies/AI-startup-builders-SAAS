@@ -334,12 +334,18 @@ export const seedDemoStartups = () => {
   return mockStartups;
 };
 
+const normalizeStartup = (startup: any): any => {
+  if (!startup) return startup;
+  const startupId = startup.startupId || startup._id;
+  return { ...startup, startupId, id: startup.id || startupId };
+};
+
 export const getStartups = async () => {
   try {
     const res = await fetch(`${API_URL}/startups`);
     const data = await res.json();
     if (data.success) {
-      return data.data;
+      return (Array.isArray(data.data) ? data.data : []).map(normalizeStartup);
     }
   } catch (e) {
     console.error('Error fetching startups', e);
@@ -353,10 +359,11 @@ export const saveStartups = async (startups: any[]) => {
 };
 
 export const getStartupById = async (startupId: string) => {
+  if (!startupId) return null;
   try {
     const res = await fetch(`${API_URL}/startups/${startupId}`);
     const data = await res.json();
-    if (data.success) return data.data;
+    if (data.success) return normalizeStartup(data.data);
   } catch (e) {
     console.error('Error fetching startup by id', e);
   }
@@ -381,6 +388,7 @@ export const createStartupDraft = async (startupName: string, startupIdea: strin
 };
 
 export const updateStartup = async (startupId: string, updatedData: any) => {
+  if (!startupId) return null;
   try {
     const res = await fetch(`${API_URL}/startups/${startupId}`, {
       method: 'PUT',
@@ -388,7 +396,7 @@ export const updateStartup = async (startupId: string, updatedData: any) => {
       body: JSON.stringify(updatedData)
     });
     const data = await res.json();
-    if (data.success) return data.data;
+    if (data.success) return normalizeStartup(data.data);
   } catch (e) {
     console.error('Error updating startup', e);
   }
