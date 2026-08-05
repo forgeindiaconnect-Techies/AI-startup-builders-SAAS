@@ -12,7 +12,7 @@ import { validateInvite, markInviteUsed, getInviteByToken } from '../../utils/in
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type UserRole = 'founder' | 'mentor' | 'investor';
-type Step = 'role' | 'basic' | 'professional' | 'form' | 'otp' | 'phone_otp' | 'welcome';
+type Step = 'role' | 'basic' | 'professional' | 'form' | 'otp' | 'welcome';
 
 interface FormData {
   fullName: string;
@@ -356,7 +356,6 @@ const Signup: React.FC = () => {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState('');
   const [otpCooldown, setOtpCooldown] = useState(0);
-  const [generatedOtp, setGeneratedOtp] = useState('');
 
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -507,9 +506,10 @@ const Signup: React.FC = () => {
     return Object.keys(e).length === 0;
   };
 
-  // ── Send Email OTP (Mentor) ─────────────────────────────────────────────
+  // ── Send Email OTP ──────────────────────────────────────────────────────
   const handleSendEmailOtp = async () => {
-    if (!validateProfessional()) return;
+    const valid = selectedRole === 'mentor' ? validateProfessional() : validateForm();
+    if (!valid) return;
     setIsSubmitting(true);
     setApiError('');
     try {
@@ -520,7 +520,6 @@ const Signup: React.FC = () => {
       });
       const json = await res.json();
       if (json.success) {
-        setGeneratedOtp(json.otp || '');
         setOtp(['', '', '', '', '', '']);
         setOtpError('');
         startCooldown();
@@ -548,7 +547,6 @@ const Signup: React.FC = () => {
       });
       const json = await res.json();
       if (json.success) {
-        setGeneratedOtp(json.otp || '');
         setOtp(['', '', '', '', '', '']);
         setOtpError('');
         startCooldown();
@@ -563,7 +561,7 @@ const Signup: React.FC = () => {
     }
   };
 
-  // ── Verify Email OTP & Create Mentor Account ────────────────────────────
+  // ── Verify Email OTP & Create Account ──────────────────────────────────
   const handleVerifyEmailOtp = async () => {
     const code = otp.join('');
     if (code.length !== 6) {
@@ -573,22 +571,33 @@ const Signup: React.FC = () => {
     setOtpLoading(true);
     setOtpError('');
     try {
+      const body: Record<string, any> = {
+        email: form.email.trim(),
+        otp: code,
+        password: form.password,
+        role: selectedRole,
+        fullName: form.fullName.trim(),
+        mobile: form.mobile,
+        location: form.location.trim(),
+      };
+
+      if (selectedRole === 'mentor') {
+        body.expertise = form.expertise;
+        body.experienceYears = form.experienceYears;
+        body.linkedin = form.linkedin.trim();
+        body.bio = form.bio.trim();
+      } else if (selectedRole === 'investor') {
+        body.companyName = form.companyName;
+        body.investorType = form.investorType;
+        body.preferredIndustry = form.preferredIndustry;
+        body.minInvestment = form.minInvestment;
+        body.maxInvestment = form.maxInvestment;
+      }
+
       const res = await fetch(`${API_URL}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: form.email.trim(),
-          otp: code,
-          password: form.password,
-          role: 'mentor',
-          fullName: form.fullName.trim(),
-          mobile: form.mobile,
-          location: form.location.trim(),
-          expertise: form.expertise,
-          experienceYears: form.experienceYears,
-          linkedin: form.linkedin.trim(),
-          bio: form.bio.trim(),
-        }),
+        body: JSON.stringify(body),
       });
       const json = await res.json();
 
@@ -606,124 +615,13 @@ const Signup: React.FC = () => {
         }
 
         await checkAuth();
-        navigate('/dashboard/mentor', { replace: true });
+        if (selectedRole === 'mentor') {
+          navigate('/dashboard/mentor', { replace: true });
+        } else {
+          setStep('welcome');
+        }
       } else {
         setOtpError(json.error || 'Invalid or expired OTP. Please try again.');
-      }
-    } catch {
-      setOtpError('Network error. Please try again.');
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  // ── Phone OTP Flow (Founder / Investor) ─────────────────────────────────
-  const handleSendPhoneOtp = async () => {
-    if (!validateForm()) return;
-    setIsSubmitting(true);
-    setApiError('');
-    try {
-      const res = await fetch(`${API_URL}/auth/send-phone-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: form.mobile.trim() }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setGeneratedOtp(json.otp || '');
-        setOtp(['', '', '', '', '', '']);
-        setOtpError('');
-        startCooldown();
-        setStep('phone_otp');
-        showToast(`Phone notification sent successfully! Demo OTP: ${json.otp}`, 'success');
-      } else {
-        setApiError(json.error || 'Failed to send OTP. Please try again.');
-      }
-    } catch {
-      setApiError('Network error. Please check your connection and try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleResendPhoneOtp = async () => {
-    if (otpCooldown > 0) return;
-    setIsSubmitting(true);
-    setOtpError('');
-    try {
-      const res = await fetch(`${API_URL}/auth/send-phone-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: form.mobile.trim() }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setGeneratedOtp(json.otp || '');
-        setOtp(['', '', '', '', '', '']);
-        setOtpError('');
-        startCooldown();
-        showToast(`OTP resent successfully! Demo OTP: ${json.otp}`, 'success');
-      } else {
-        setOtpError(json.error || 'Failed to resend OTP.');
-      }
-    } catch {
-      setOtpError('Network error. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleVerifyPhoneOtp = async () => {
-    const code = otp.join('');
-    if (code.length !== 6) {
-      setOtpError('Please enter the complete 6-digit OTP.');
-      return;
-    }
-    setOtpLoading(true);
-    setOtpError('');
-    try {
-      const verifyRes = await fetch(`${API_URL}/auth/verify-phone-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: form.mobile.trim(), otp: code }),
-      });
-      const verifyJson = await verifyRes.json();
-
-      if (!verifyJson.success) {
-        setOtpError(verifyJson.error || 'Invalid or expired OTP. Please try again.');
-        setOtpLoading(false);
-        return;
-      }
-
-      const body: Record<string, any> = {
-        email: form.email.trim(),
-        password: form.password,
-        role: selectedRole,
-        fullName: form.fullName.trim(),
-        mobile: form.mobile,
-      };
-
-      if (selectedRole === 'investor') {
-        body.companyName = form.companyName;
-        body.investorType = form.investorType;
-        body.preferredIndustry = form.preferredIndustry;
-        body.minInvestment = form.minInvestment;
-        body.maxInvestment = form.maxInvestment;
-      }
-
-      const res = await fetch(`${API_URL}/auth/complete-phone-signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const json = await res.json();
-
-      if (json.success && json.token) {
-        localStorage.setItem('ai_startup_builder_jwt', json.token);
-        await checkAuth();
-        setStep('welcome');
-      } else {
-        setOtpError(json.error || 'Failed to create account. Please try again.');
       }
     } catch {
       setOtpError('Network error. Please try again.');
@@ -758,7 +656,7 @@ const Signup: React.FC = () => {
       return [
         { num: 1, label: 'Choose Role' },
         { num: 2, label: 'Account Details' },
-        { num: 3, label: 'Verify Phone' },
+        { num: 3, label: 'Verify Email' },
       ];
     }
     return [{ num: 1, label: 'Choose Role' }];
@@ -772,7 +670,7 @@ const Signup: React.FC = () => {
       if (step === 'otp') return isInviteFlow ? 2 : 3;
     }
     if (step === 'form') return 1;
-    if (step === 'phone_otp') return 2;
+    if (step === 'otp') return 2;
     return 0;
   };
 
@@ -1158,7 +1056,7 @@ const Signup: React.FC = () => {
                   )}
 
                   <button
-                    onClick={handleSendPhoneOtp}
+                    onClick={handleSendEmailOtp}
                     disabled={isSubmitting}
                     className="w-full h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] disabled:opacity-70 transition-all flex items-center justify-center gap-2 mt-2"
                   >
@@ -1179,11 +1077,11 @@ const Signup: React.FC = () => {
               </div>
             )}
 
-            {/* ── STEP 3: EMAIL OTP VERIFICATION (Mentor) ── */}
+            {/* ── EMAIL OTP VERIFICATION ── */}
             {step === 'otp' && (
               <div className="flex flex-col items-center text-center animate-in fade-in slide-in-from-right-4 duration-500">
                 <button
-                  onClick={() => { setErrors({}); setStep('professional'); }}
+                  onClick={() => { setErrors({}); setOtp(['', '', '', '', '', '']); setStep(selectedRole === 'mentor' ? 'professional' : 'form'); }}
                   className="self-start mb-4 inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors text-sm"
                 >
                   <ArrowLeft size={14} /> Back
@@ -1196,13 +1094,6 @@ const Signup: React.FC = () => {
                   We sent a 6-digit verification code to
                 </p>
                 <p className="font-bold text-gray-900 text-sm mb-4">{form.email}</p>
-
-                {generatedOtp && (
-                  <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-xl w-full max-w-xs">
-                    <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Demo Mode — Your OTP</p>
-                    <p className="text-2xl font-black text-amber-700 tracking-[0.3em] font-mono">{generatedOtp}</p>
-                  </div>
-                )}
 
                 <div className="w-full mb-6">
                   <OTPInput value={otp} onChange={setOtp} />
@@ -1237,68 +1128,6 @@ const Signup: React.FC = () => {
                     </button>
                   )}
                 </p>
-              </div>
-            )}
-
-            {/* ── PHONE OTP VERIFICATION (Founder / Investor) ── */}
-            {step === 'phone_otp' && (
-              <div className="flex flex-col items-center text-center animate-in fade-in slide-in-from-right-4 duration-500">
-                <div className="w-16 h-16 bg-[#6C4CF1]/10 rounded-2xl flex items-center justify-center mb-5 ring-4 ring-[#6C4CF1]/5">
-                  <Phone size={32} className="text-[#6C4CF1]" />
-                </div>
-                <h2 className="text-2xl font-extrabold text-gray-900 mb-2">Verify your phone</h2>
-                <p className="text-gray-500 text-sm mb-1">
-                  We sent a 6-digit OTP to
-                </p>
-                <p className="font-bold text-gray-900 text-sm mb-4">+91 {form.mobile}</p>
-
-                {generatedOtp && (
-                  <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-xl w-full max-w-xs">
-                    <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Demo Mode — Your OTP</p>
-                    <p className="text-2xl font-black text-amber-700 tracking-[0.3em] font-mono">{generatedOtp}</p>
-                  </div>
-                )}
-
-                <div className="w-full mb-6">
-                  <OTPInput value={otp} onChange={setOtp} />
-                </div>
-
-                {otpError && (
-                  <div className="w-full mb-6 p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2 text-red-600 text-sm font-medium">
-                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                    <span>{otpError}</span>
-                  </div>
-                )}
-
-                <button
-                  onClick={handleVerifyPhoneOtp}
-                  disabled={otpLoading || otp.join('').length !== 6}
-                  className="w-full h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] disabled:opacity-70 transition-all flex items-center justify-center gap-2 mb-6"
-                >
-                  {otpLoading ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying & Creating Account...</>
-                  ) : (
-                    <><CheckCircle2 className="mr-2 h-5 w-5" /> Verify & Create Account</>
-                  )}
-                </button>
-
-                <p className="text-sm text-gray-500">
-                  Didn't receive the code?{' '}
-                  {otpCooldown > 0 ? (
-                    <span className="font-medium opacity-60">Resend in {otpCooldown}s</span>
-                  ) : (
-                    <button onClick={handleResendPhoneOtp} disabled={isSubmitting} className="font-bold text-[#6C4CF1] hover:text-[#5B21B6] transition-colors">
-                      Resend OTP
-                    </button>
-                  )}
-                </p>
-
-                <button
-                  onClick={() => { setStep('form'); setOtp(['', '', '', '', '', '']); setOtpError(''); }}
-                  className="mt-6 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
-                >
-                  ← Go back
-                </button>
               </div>
             )}
 
