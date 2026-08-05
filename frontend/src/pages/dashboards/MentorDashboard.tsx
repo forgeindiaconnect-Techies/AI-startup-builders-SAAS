@@ -74,7 +74,7 @@ const MentorDashboard: React.FC = () => {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <p className="text-gray-500">You have <strong className="text-gray-900">4 startups</strong> waiting for review.</p>
+          <p className="text-gray-500">You have <strong className="text-gray-900">{startups.length} startups</strong> available to review.</p>
         </div>
       </div>
 
@@ -96,7 +96,7 @@ const MentorDashboard: React.FC = () => {
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-gray-900">Assigned Startups for Review</h2>
+          <h2 className="text-lg font-bold text-gray-900">Startups to Review</h2>
         </div>
         
         <div className="overflow-x-auto">
@@ -106,7 +106,7 @@ const MentorDashboard: React.FC = () => {
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Startup Name</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Industry</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">AI Score</th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Assigned Date</th>
+                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Created Date</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
@@ -114,11 +114,11 @@ const MentorDashboard: React.FC = () => {
               {startups.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-gray-500">
-                    No startups assigned yet.
+                    No startups to review yet.
                   </td>
                 </tr>
               ) : (
-                startups.slice(0, 5).map((startup, idx) => (
+                startups.map((startup, idx) => (
                   <tr key={idx} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
                       <div className="font-bold text-gray-900">{startup.startupName}</div>
