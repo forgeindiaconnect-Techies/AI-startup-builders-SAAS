@@ -25,14 +25,17 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
   const toggle = (key: string) => setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
 
   useEffect(() => {
-    const docs = getDocuments() || [];
-    const existing = docs.find((d: any) =>
-      d.startupId === startupData.startupId && d.category === 'Legal Document' && d.documentType === '__checklist__'
-    );
-    if (existing?.aiLegalData) {
-      setLegalData(existing.aiLegalData);
-      setSavedToDocs(true);
-    }
+    const checkExisting = async () => {
+      const docs = (await getDocuments()) || [];
+      const existing = docs.find((d: any) =>
+        d.startupId === startupData.startupId && d.category === 'Legal Document' && d.documentType === '__checklist__'
+      );
+      if (existing?.aiLegalData) {
+        setLegalData(existing.aiLegalData);
+        setSavedToDocs(true);
+      }
+    };
+    checkExisting();
   }, [startupData.startupId]);
 
   const handleGenerate = async () => {
@@ -47,7 +50,7 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
       const json = await res.json();
       if (json.success) {
         setLegalData(json.data);
-        saveLegalDocsToDocuments(json.data);
+        await saveLegalDocsToDocuments(json.data);
       } else {
         setError(json.message || 'Failed to generate legal documents.');
       }
@@ -58,9 +61,9 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
     }
   };
 
-  const saveLegalDocsToDocuments = (data: any) => {
+  const saveLegalDocsToDocuments = async (data: any) => {
     // First remove any existing legal docs for this startup to avoid duplicates
-    const existingDocs = getDocuments() || [];
+    const existingDocs = (await getDocuments()) || [];
     const cleanedDocs = existingDocs.filter((d: any) =>
       !(d.startupId === startupData.startupId && d.category === 'Legal Document')
     );
@@ -217,8 +220,8 @@ const FounderLegalDocs: React.FC<Props> = ({ startupData }) => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const loadDbDocs = () => {
-    const allDocs = getDocuments() || [];
+  const loadDbDocs = async () => {
+    const allDocs = (await getDocuments()) || [];
     setDbDocs(allDocs.filter((d: any) => d.startupId === startupData.startupId));
   };
 

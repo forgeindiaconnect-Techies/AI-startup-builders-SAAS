@@ -44,7 +44,7 @@ export const markAsRead = async (req: Request, res: Response) => {
 // PATCH /api/notifications/mark-all-read?userId=...
 export const markAllAsRead = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.query;
+    const userId = req.query.userId as string;
     if (!userId) return res.status(400).json({ success: false, message: 'userId required' });
     await NotificationModel.updateMany({ $or: [{ userId }, { userId: 'all' }] }, { isRead: true });
     return res.json({ success: true, message: 'All marked as read' });

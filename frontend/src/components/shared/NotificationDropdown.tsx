@@ -21,8 +21,8 @@ const NotificationDropdown: React.FC = () => {
 
   useEffect(() => {
     // Load notifications from local storage
-    const loadNotifications = () => {
-      const stored = getNotifications()
+    const loadNotifications = async () => {
+      const stored = (await getNotifications())
         .filter((n: any) => 
           !n.userId || 
           n.userId === user?.id || 

@@ -17,7 +17,7 @@ const MentorReviews: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       setStartups(await getStartups());
-      setDocuments(getDocuments()); // Assuming documents are still synchronous for now
+      setDocuments(await getDocuments());
     };
     fetchData();
   }, []);

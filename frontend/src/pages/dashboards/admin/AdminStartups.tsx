@@ -616,9 +616,10 @@ const AdminStartups: React.FC = () => {
     locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     setStartups(locals);
 
-    let docs = getDocuments();
-    if (docs.length === 0) {
-      const mockDocs = [
+    getDocuments().then((fetchedDocs) => {
+      let docs = fetchedDocs;
+      if (docs.length === 0) {
+        const mockDocs = [
         {
           id: 'doc_cat_startup_mock_1_0',
           startupId: 'startup_mock_1',
@@ -672,6 +673,7 @@ const AdminStartups: React.FC = () => {
       docs = mockDocs;
     }
     setDocuments(docs);
+    });
 
     const savedOffers = localStorage.getItem('ai_startup_builder_funding_offers');
     if (!savedOffers || JSON.parse(savedOffers).length === 0) {

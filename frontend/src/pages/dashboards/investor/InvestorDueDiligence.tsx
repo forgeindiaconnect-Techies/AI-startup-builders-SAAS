@@ -35,7 +35,7 @@ const InvestorDueDiligence: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const allDocs = getDocuments();
+      const allDocs = await getDocuments();
       const startups = await getStartups();
       
       // Find all documents (since sharing was removed)

@@ -90,7 +90,7 @@ const FounderAIBuilder: React.FC = () => {
         }
         
         // Generate category-specific documents based on business type
-        const existingDocs = getDocuments().filter((d: any) => d.startupId === startupId);
+        const existingDocs = (await getDocuments()).filter((d: any) => d.startupId === startupId);
         existingDocs.forEach((doc: any) => deleteDocument(doc.id));
 
         const startupCategory = detectStartupCategory(startupData);

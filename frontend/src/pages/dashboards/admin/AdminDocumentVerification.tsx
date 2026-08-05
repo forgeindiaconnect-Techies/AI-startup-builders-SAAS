@@ -25,7 +25,7 @@ const AdminDocumentVerification: React.FC = () => {
   const [previewDoc, setPreviewDoc] = useState<any>(null);
 
   const refreshDocs = useCallback(async () => {
-    const allDocs = getDocuments() || [];
+    const allDocs = (await getDocuments()) || [];
     const allStartupsList = await getStartups() || [];
     setAllStartups(allStartupsList);
     setDocuments(allDocs.filter((d: any) => d.documentType && d.documentType !== '__checklist__'));

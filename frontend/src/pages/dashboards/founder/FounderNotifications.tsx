@@ -76,8 +76,8 @@ const FounderNotifications: React.FC = () => {
   useEffect(() => {
     if (!authUser) return;
 
-    const load = () => {
-      const local = getNotifications()
+    const load = async () => {
+      const local = (await getNotifications())
         .filter((n: any) =>
           !n.userId ||
           n.userId === authUser.id ||
