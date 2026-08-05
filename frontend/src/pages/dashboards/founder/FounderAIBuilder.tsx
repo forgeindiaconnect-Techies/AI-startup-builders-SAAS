@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Lightbulb, FileText, BarChart3, Search, ClipboardList, MessageSquare, RefreshCw, Play, ChevronDown, Download, File as FileIcon, Sparkles, Scale } from 'lucide-react';
+import { Lightbulb, FileText, BarChart3, Search, ClipboardList, MessageSquare, RefreshCw, Play, ChevronDown, Download, File as FileIcon, Sparkles, Scale, Lock } from 'lucide-react';
 import FounderIdeaGenerator from './FounderIdeaGenerator';
 import FounderBranding from './FounderBranding';
 import FounderBusinessPlan from './FounderBusinessPlan';
@@ -9,17 +9,18 @@ import FounderMarketResearch from './FounderMarketResearch';
 import FounderReports from './FounderReports';
 import FounderAIChat from './FounderAIChat';
 import FounderLegalDocs from './FounderLegalDocs';
+import PlanGate, { usePlanAccess } from '../../../components/shared/PlanGate';
 import { getStartups, getStartupById, updateStartup, generateStartupOutput, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument, detectStartupCategory, generateCategoryDocuments } from '../../../utils/localStorageHelper';
 
 const tabs = [
   { id: 'idea',     label: 'AI Idea Generator',    icon: Lightbulb,    component: FounderIdeaGenerator },
-  { id: 'branding', label: 'Logo & Branding',      icon: Sparkles,     component: FounderBranding },
+  { id: 'branding', label: 'Logo & Branding',      icon: Sparkles,     component: FounderBranding, plans: ['pro', 'premium_startup_builder'] },
   { id: 'plan',     label: 'Business Plan',         icon: FileText,     component: FounderBusinessPlan },
   { id: 'pitch',    label: 'Pitch Deck',             icon: BarChart3,    component: FounderPitchDeck },
   { id: 'market',   label: 'Market Research',        icon: Search,       component: FounderMarketResearch },
   { id: 'legal',    label: 'Legal & Documents',      icon: Scale,        component: FounderLegalDocs },
   { id: 'reports',  label: 'AI Reports',             icon: ClipboardList,component: FounderReports },
-  { id: 'chat',     label: 'AI Chat',                icon: MessageSquare,component: FounderAIChat },
+  { id: 'chat',     label: 'AI Chat',                icon: MessageSquare,component: FounderAIChat, plans: ['pro', 'premium_startup_builder'] },
 ];
 
 const FounderAIBuilder: React.FC = () => {
@@ -33,6 +34,10 @@ const FounderAIBuilder: React.FC = () => {
   const [error, setError] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const startupId = searchParams.get('id') || searchParams.get('startupId');
+  const { canAccess } = usePlanAccess();
+
+  const activeTab = tabs.find(t => t.id === active)!;
+  const ActiveComponent = activeTab.component;
 
   useEffect(() => {
     const fetchStartup = async () => {
@@ -148,8 +153,6 @@ const FounderAIBuilder: React.FC = () => {
       window.alert(`All documents successfully exported as ${fileType}!`);
     }, 1500);
   };
-
-  const ActiveComponent = tabs.find(t => t.id === active)!.component;
 
   if (loading) {
     return (
@@ -341,23 +344,33 @@ const FounderAIBuilder: React.FC = () => {
 
       {/* Tab Bar */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-7 overflow-x-auto flex-wrap">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setActive(t.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all duration-200 ${
-              active === t.id
-                ? 'bg-white text-[#5B21B6] shadow-sm'
-                : 'text-gray-500 hover:text-gray-800'
-            }`}
-          >
-            <t.icon size={15} /> {t.label}
-          </button>
-        ))}
+        {tabs.map(t => {
+          const isLocked = t.plans ? !canAccess(t.plans) : false;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setActive(t.id)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all duration-200 ${
+                active === t.id
+                  ? 'bg-white text-[#5B21B6] shadow-sm'
+                  : 'text-gray-500 hover:text-gray-800'
+              } ${isLocked ? 'opacity-80' : ''}`}
+            >
+              <t.icon size={15} /> {t.label}
+              {isLocked && <Lock size={13} className="text-amber-500" />}
+            </button>
+          );
+        })}
       </div>
 
       {startupData && startupData.status === 'generated' && (
-        <ActiveComponent startupData={startupData} setStartupData={setStartupData} />
+        activeTab.plans ? (
+          <PlanGate requiredPlans={activeTab.plans}>
+            <ActiveComponent startupData={startupData} setStartupData={setStartupData} />
+          </PlanGate>
+        ) : (
+          <ActiveComponent startupData={startupData} setStartupData={setStartupData} />
+        )
       )}
     </div>
   );

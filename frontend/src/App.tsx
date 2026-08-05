@@ -15,6 +15,7 @@ import PrivacyPolicyPage from './pages/info/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/info/TermsOfServicePage';
 import CookiePolicyPage from './pages/info/CookiePolicyPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import PlanGate from './components/shared/PlanGate';
 import DashboardLayout from './layouts/DashboardLayout';
 
 // ── Founder Pages ────────────────────────────────────────────────
@@ -134,23 +135,23 @@ function App() {
                     <Route index                  element={<FounderDashboard />} />
                     <Route path="startups"        element={<FounderStartups />} />
                     <Route path="ai-builder"      element={<FounderAIBuilder />} />
-                    <Route path="roadmap-tasks"   element={<FounderRoadmapTasks />} />
-                    <Route path="mentors"         element={<FounderMentors />} />
-                    <Route path="funding"         element={<FounderFunding />} />
+                    <Route path="roadmap-tasks"   element={<PlanGate requiredPlans={['pro', 'premium_startup_builder']}><FounderRoadmapTasks /></PlanGate>} />
+                    <Route path="mentors"         element={<PlanGate requiredPlans={['pro', 'premium_startup_builder']}><FounderMentors /></PlanGate>} />
+                    <Route path="funding"         element={<PlanGate requiredPlans={['premium_startup_builder']}><FounderFunding /></PlanGate>} />
                     <Route path="documents"           element={<FounderDocuments />} />
                     <Route path="learning-videos"    element={<FounderLearningVideos />} />
                     <Route path="inbox"               element={<SharedInbox />} />
                     <Route path="profile-billing" element={<FounderProfileBilling />} />
                     {/* Legacy / Direct paths */}
-                    <Route path="roadmap"         element={<FounderRoadmap />} />
-                    <Route path="tasks"           element={<FounderTasks />} />
+                    <Route path="roadmap"         element={<PlanGate requiredPlans={['pro', 'premium_startup_builder']}><FounderRoadmap /></PlanGate>} />
+                    <Route path="tasks"           element={<PlanGate requiredPlans={['pro', 'premium_startup_builder']}><FounderTasks /></PlanGate>} />
                     <Route path="team"            element={<FounderTeam />} />
                     <Route path="idea-generator"  element={<FounderIdeaGenerator />} />
                     <Route path="business-plan"   element={<FounderBusinessPlan />} />
                     <Route path="pitch-deck"      element={<FounderPitchDeck />} />
                     <Route path="market-research" element={<FounderMarketResearch />} />
                     <Route path="reports"         element={<FounderReports />} />
-                    <Route path="ai-chat"         element={<FounderAIChat />} />
+                    <Route path="ai-chat"         element={<PlanGate requiredPlans={['pro', 'premium_startup_builder']}><FounderAIChat /></PlanGate>} />
                     <Route path="notifications"   element={<SharedNotifications />} />
                     <Route path="profile"         element={<FounderProfile />} />
                     <Route path="billing"         element={<FounderBilling />} />

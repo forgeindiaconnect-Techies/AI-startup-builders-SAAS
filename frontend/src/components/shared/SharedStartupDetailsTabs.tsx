@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lightbulb, Sparkles, FileText, BarChart3, Search, Scale, ClipboardList, MessageSquare } from 'lucide-react';
+import { Lightbulb, Sparkles, FileText, BarChart3, Search, Scale, ClipboardList, MessageSquare, Lock } from 'lucide-react';
 import FounderIdeaGenerator from '../../pages/dashboards/founder/FounderIdeaGenerator';
 import FounderBranding from '../../pages/dashboards/founder/FounderBranding';
 import FounderBusinessPlan from '../../pages/dashboards/founder/FounderBusinessPlan';
@@ -8,6 +8,7 @@ import FounderMarketResearch from '../../pages/dashboards/founder/FounderMarketR
 import FounderLegalDocs from '../../pages/dashboards/founder/FounderLegalDocs';
 import FounderReports from '../../pages/dashboards/founder/FounderReports';
 import FounderAIChat from '../../pages/dashboards/founder/FounderAIChat';
+import PlanGate, { usePlanAccess } from '../shared/PlanGate';
 
 interface Props {
   startupData: any;
@@ -15,19 +16,21 @@ interface Props {
 
 const tabs = [
   { id: 'idea',     label: 'AI Idea Generator',    icon: Lightbulb,    component: FounderIdeaGenerator },
-  { id: 'branding', label: 'Logo & Branding',      icon: Sparkles,     component: FounderBranding },
+  { id: 'branding', label: 'Logo & Branding',      icon: Sparkles,     component: FounderBranding, plans: ['pro', 'premium_startup_builder'] },
   { id: 'plan',     label: 'Business Plan',         icon: FileText,     component: FounderBusinessPlan },
   { id: 'pitch',    label: 'Pitch Deck',             icon: BarChart3,    component: FounderPitchDeck },
   { id: 'market',   label: 'Market Research',        icon: Search,       component: FounderMarketResearch },
   { id: 'legal',    label: 'Legal & Documents',      icon: Scale,        component: FounderLegalDocs },
   { id: 'reports',  label: 'AI Reports',             icon: ClipboardList,component: FounderReports },
-  { id: 'chat',     label: 'AI Chat',                icon: MessageSquare,component: FounderAIChat },
+  { id: 'chat',     label: 'AI Chat',                icon: MessageSquare,component: FounderAIChat, plans: ['pro', 'premium_startup_builder'] },
 ];
 
 const SharedStartupDetailsTabs: React.FC<Props> = ({ startupData }) => {
   const [activeTab, setActiveTab] = useState('idea');
-  
-  const ActiveComponent = tabs.find(t => t.id === activeTab)?.component || FounderIdeaGenerator;
+  const { canAccess } = usePlanAccess();
+
+  const activeTabDef = tabs.find(t => t.id === activeTab) || tabs[0];
+  const ActiveComponent = activeTabDef.component;
 
   return (
     <div className="w-full flex flex-col read-only-view">
@@ -36,6 +39,7 @@ const SharedStartupDetailsTabs: React.FC<Props> = ({ startupData }) => {
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
+          const isLocked = tab.plans ? !canAccess(tab.plans) : false;
           return (
             <button
               key={tab.id}
@@ -48,6 +52,7 @@ const SharedStartupDetailsTabs: React.FC<Props> = ({ startupData }) => {
             >
               <Icon size={16} className={`mr-2 ${isActive ? 'text-[#5B21B6]' : 'text-gray-400'}`} />
               {tab.label}
+              {isLocked && <Lock size={13} className="ml-2 text-amber-500" />}
             </button>
           );
         })}
@@ -56,7 +61,13 @@ const SharedStartupDetailsTabs: React.FC<Props> = ({ startupData }) => {
       {/* Tab Content */}
       <div className="flex-1 w-full relative">
         {/* We pass a dummy setStartupData since it's read-only */}
-        <ActiveComponent startupData={startupData} setStartupData={() => {}} />
+        {activeTabDef.plans ? (
+          <PlanGate requiredPlans={activeTabDef.plans}>
+            <ActiveComponent startupData={startupData} setStartupData={() => {}} />
+          </PlanGate>
+        ) : (
+          <ActiveComponent startupData={startupData} setStartupData={() => {}} />
+        )}
       </div>
     </div>
   );
