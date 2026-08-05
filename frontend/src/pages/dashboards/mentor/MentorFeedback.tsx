@@ -1,28 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, CheckCircle } from 'lucide-react';
-import { addNotification } from '../../../utils/localStorageHelper';
+import { getStartups, updateStartup, addNotification } from '../../../utils/localStorageHelper';
 
 const MentorFeedback: React.FC = () => {
   const [startups, setStartups] = useState<any[]>([]);
 
   useEffect(() => {
-    const keys = Object.keys(localStorage);
-    const locals: any[] = [];
-    keys.forEach(key => {
-      if (key.startsWith('startup_')) {
-        try {
-          locals.push(JSON.parse(localStorage.getItem(key) || ''));
-        } catch (e) {}
-      }
-    });
-    locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    setStartups(locals);
+    const fetchData = async () => {
+      const all = await getStartups();
+      setStartups(all);
+    };
+    fetchData();
   }, []);
 
   const pendingClarifications = startups.filter(s => s.mentorReview?.status === 'Clarification Requested');
   const answeredClarifications = startups.filter(s => s.mentorReview?.status === 'Clarification Answered');
 
-  const handleClarificationAction = (startup: any, action: 'accept' | 'reply') => {
+  const handleClarificationAction = async (startup: any, action: 'accept' | 'reply') => {
+    const id = startup.startupId || startup._id;
     let replyText = '';
     
     if (action === 'reply') {
@@ -39,8 +34,10 @@ const MentorFeedback: React.FC = () => {
         ...(replyText ? { mentorReply: replyText } : {})
       }
     };
-    localStorage.setItem(`startup_${updated.startupId}`, JSON.stringify(updated));
-    setStartups(prev => prev.map(s => s.startupId === updated.startupId ? updated : s));
+    const saved = await updateStartup(id, updated);
+    if (saved) {
+      setStartups(prev => prev.map(s => (s.startupId || s._id) === id ? { ...s, mentorReview: updated.mentorReview } : s));
+    }
 
     addNotification({
       id: Date.now(),
@@ -71,7 +68,7 @@ const MentorFeedback: React.FC = () => {
           </div>
           <div className="divide-y divide-gray-50">
             {pendingClarifications.map(startup => (
-              <div key={startup.startupId} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 gap-4 bg-yellow-50/30">
+              <div key={startup.startupId || startup._id} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 gap-4 bg-yellow-50/30">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-bold text-gray-900">{startup.startupName}</p>
@@ -99,7 +96,7 @@ const MentorFeedback: React.FC = () => {
               </div>
             ))}
             {answeredClarifications.map(startup => (
-              <div key={startup.startupId} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 gap-4">
+              <div key={startup.startupId || startup._id} className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-5 gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-bold text-gray-900">{startup.startupName}</p>

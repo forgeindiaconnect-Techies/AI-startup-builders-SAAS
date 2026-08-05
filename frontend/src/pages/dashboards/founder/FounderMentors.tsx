@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Star, Clock, ArrowRight, Video, Calendar, MoreVertical, X } from 'lucide-react';
-import { addNotification } from '../../../utils/localStorageHelper';
+import { getStartups, updateStartup, addNotification } from '../../../utils/localStorageHelper';
 import VideoCallModal from '../../../components/shared/VideoCallModal';
 
 const initialSampleMentors: any[] = [];
@@ -16,17 +16,11 @@ const FounderMentors: React.FC = () => {
   const [reviewText, setReviewText] = useState('');
 
   useEffect(() => {
-    const keys = Object.keys(localStorage);
-    const locals: any[] = [];
-    keys.forEach(key => {
-      if (key.startsWith('startup_')) {
-        try {
-          locals.push(JSON.parse(localStorage.getItem(key) || ''));
-        } catch (e) {}
-      }
-    });
-    locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    setStartups(locals);
+    const fetchStartups = async () => {
+      const all = await getStartups();
+      setStartups(all);
+    };
+    fetchStartups();
 
     const storedSessions = localStorage.getItem('video_sessions');
     if (storedSessions) {
@@ -80,14 +74,15 @@ const FounderMentors: React.FC = () => {
     window.alert(`Successfully booked a call with ${mentorName} for tomorrow at 11:00 AM!`);
   };
 
-  const handleFeedbackAction = (startup: any, action: 'accept' | 'reject' | 'clarify') => {
+  const handleFeedbackAction = async (startup: any, action: 'accept' | 'reject' | 'clarify') => {
+    const id = startup.startupId || startup._id;
     if (action === 'accept') {
       const updated = {
         ...startup,
         mentorReview: { ...startup.mentorReview, status: 'Accepted' }
       };
-      localStorage.setItem(`startup_${updated.startupId}`, JSON.stringify(updated));
-      setStartups(prev => prev.map(s => s.startupId === updated.startupId ? updated : s));
+      await updateStartup(id, updated);
+      setStartups(prev => prev.map(s => (s.startupId || s._id) === id ? { ...s, mentorReview: updated.mentorReview } : s));
 
       addNotification({
         id: Date.now(),
@@ -103,8 +98,8 @@ const FounderMentors: React.FC = () => {
         ...startup,
         mentorReview: { ...startup.mentorReview, status: 'Rejected' }
       };
-      localStorage.setItem(`startup_${updated.startupId}`, JSON.stringify(updated));
-      setStartups(prev => prev.map(s => s.startupId === updated.startupId ? updated : s));
+      await updateStartup(id, updated);
+      setStartups(prev => prev.map(s => (s.startupId || s._id) === id ? { ...s, mentorReview: updated.mentorReview } : s));
 
       addNotification({
         id: Date.now(),
@@ -127,8 +122,8 @@ const FounderMentors: React.FC = () => {
           clarificationMessage: msg
         }
       };
-      localStorage.setItem(`startup_${updated.startupId}`, JSON.stringify(updated));
-      setStartups(prev => prev.map(s => s.startupId === updated.startupId ? updated : s));
+      await updateStartup(id, updated);
+      setStartups(prev => prev.map(s => (s.startupId || s._id) === id ? { ...s, mentorReview: updated.mentorReview } : s));
 
       addNotification({
         id: Date.now(),
@@ -142,8 +137,9 @@ const FounderMentors: React.FC = () => {
     }
   };
 
-  const handleSubmitRating = () => {
+  const handleSubmitRating = async () => {
     if (!ratingModalStartup || rating === 0) return;
+    const id = ratingModalStartup.startupId || ratingModalStartup._id;
     
     const updated = {
       ...ratingModalStartup,
@@ -155,8 +151,8 @@ const FounderMentors: React.FC = () => {
       }
     };
     
-    localStorage.setItem(`startup_${updated.startupId}`, JSON.stringify(updated));
-    setStartups(prev => prev.map(s => s.startupId === updated.startupId ? updated : s));
+    await updateStartup(id, updated);
+    setStartups(prev => prev.map(s => (s.startupId || s._id) === id ? { ...s, mentorReview: updated.mentorReview } : s));
     
     addNotification({
       id: Date.now(),
@@ -193,7 +189,7 @@ const FounderMentors: React.FC = () => {
               </div>
             ) : (
               reviewedStartups.map(startup => (
-                <div key={startup.startupId} className="p-5 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
+                <div key={startup.startupId || startup._id} className="p-5 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
