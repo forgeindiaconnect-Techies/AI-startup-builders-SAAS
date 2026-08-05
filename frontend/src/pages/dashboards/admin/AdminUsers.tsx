@@ -166,6 +166,7 @@ const AdminUsers: React.FC = () => {
         >
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
+          <option value="suspended">Suspended</option>
         </select>
         <span className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${statusDotColors[currentStatus] || statusDotColors.active}`} />
         <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-current opacity-50 pointer-events-none" />
@@ -176,17 +177,6 @@ const AdminUsers: React.FC = () => {
   const renderApprovalDropdown = (u: any) => {
     const disabled = isSelf(u);
     const currentApproval = u.approvalStatus || 'approved';
-    
-    // If it's already approved or rejected, render a static badge
-    if (currentApproval === 'approved' || currentApproval === 'rejected') {
-      return (
-        <div className={`relative inline-flex items-center pl-6 pr-3 py-1 rounded-full text-[11px] font-bold border ${approvalBgColors[currentApproval] || approvalBgColors.approved}`}>
-          <span className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${approvalDotColors[currentApproval] || approvalDotColors.approved}`} />
-          <span className="capitalize">{currentApproval}</span>
-        </div>
-      );
-    }
-
     return (
       <div className="relative inline-flex">
         <select
@@ -198,8 +188,8 @@ const AdminUsers: React.FC = () => {
           }${approvalBgColors[currentApproval] || approvalBgColors.approved}`}
         >
           <option value="pending" disabled>Pending</option>
-          <option value="approved">Approve</option>
-          <option value="rejected">Reject</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
         </select>
         <span className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${approvalDotColors[currentApproval] || approvalDotColors.approved}`} />
         <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-current opacity-50 pointer-events-none" />
