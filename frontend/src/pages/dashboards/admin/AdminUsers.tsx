@@ -393,6 +393,110 @@ const AdminUsers: React.FC = () => {
 
               <div className="my-4 border-t border-gray-100" />
 
+              {/* Role-Specific Details */}
+              {selectedUser.role === 'mentor' && (
+                <>
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <span className="w-1 h-4 rounded-full bg-blue-500"></span> Mentor Details
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Expertise</span>
+                        <span className="font-bold text-gray-900">{selectedUser.expertise || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Experience</span>
+                        <span className="font-bold text-gray-900">{selectedUser.experienceYears ? `${selectedUser.experienceYears} Years` : '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">LinkedIn</span>
+                        {selectedUser.linkedin ? (
+                          <a href={selectedUser.linkedin} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
+                            {selectedUser.linkedin}
+                          </a>
+                        ) : (
+                          <span className="font-bold text-gray-900">—</span>
+                        )}
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
+                        <span className="font-bold text-gray-900">{selectedUser.location || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Bio</span>
+                        <p className="text-sm text-gray-800">{selectedUser.bio || '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="my-4 border-t border-gray-100" />
+                </>
+              )}
+
+              {selectedUser.role === 'founder' && (
+                <>
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <span className="w-1 h-4 rounded-full bg-yellow-500"></span> Founder Details
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Startup Name</span>
+                        <span className="font-bold text-gray-900">{selectedUser.startupName || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Industry</span>
+                        <span className="font-bold text-gray-900">{selectedUser.industry || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Startup Stage</span>
+                        <span className="font-bold text-gray-900">{selectedUser.startupStage || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Current Role</span>
+                        <span className="font-bold text-gray-900">{selectedUser.currentRole || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile</span>
+                        <span className="font-bold text-gray-900">{selectedUser.mobile || '—'}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="my-4 border-t border-gray-100" />
+                </>
+              )}
+
+              {selectedUser.role === 'investor' && (
+                <>
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <span className="w-1 h-4 rounded-full bg-emerald-500"></span> Investor Details
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Company Name</span>
+                        <span className="font-bold text-gray-900">{selectedUser.companyName || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investor Type</span>
+                        <span className="font-bold text-gray-900">{selectedUser.investorType || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Industry</span>
+                        <span className="font-bold text-gray-900">{selectedUser.preferredIndustry || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Range</span>
+                        <span className="font-bold text-gray-900">
+                          {selectedUser.minInvestment ? `₹${selectedUser.minInvestment}` : '—'} - {selectedUser.maxInvestment ? `₹${selectedUser.maxInvestment}` : '—'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="my-4 border-t border-gray-100" />
+                </>
+              )}
+
               {/* Account Status */}
               <div>
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
