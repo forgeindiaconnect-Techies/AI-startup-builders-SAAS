@@ -511,18 +511,45 @@ const FounderBilling: React.FC = () => {
 
                   {/* UPI Details */}
                   <div className="text-center mb-5">
-                    <p className="text-sm font-bold text-[#1F2937] mb-3">Pay via UPI</p>
-                    <div className="w-44 h-44 bg-gray-50 border-2 border-dashed border-purple-200 rounded-2xl mx-auto flex items-center justify-center mb-3">
-                      <div className="text-center">
-                        <div className="text-4xl mb-2">📲</div>
-                        <p className="text-xs text-gray-500 font-medium">QR Code</p>
-                        <p className="text-[10px] text-gray-400">(Coming Soon)</p>
-                      </div>
-                    </div>
+                    <p className="text-sm font-bold text-[#1F2937] mb-1">Scan & Pay via UPI</p>
+                    <p className="text-xs text-gray-500 mb-3">Scan with GPay, PhonePe, Paytm or any UPI app</p>
+                    
+                    {(() => {
+                      const amount = billingPeriod === 'annual' ? targetPlan.annualPrice : targetPlan.price;
+                      const upiUrl = `upi://pay?pa=aistartupbuilder@okaxis&pn=AI%20Startup%20Builders&am=${amount}&cu=INR&tn=${encodeURIComponent(targetPlan.name + ' Plan Upgrade')}`;
+                      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiUrl)}&margin=10`;
+
+                      return (
+                        <div className="flex flex-col items-center">
+                          <div className="w-44 h-44 bg-white border-2 border-purple-200 rounded-2xl mx-auto flex items-center justify-center p-2.5 shadow-sm hover:shadow-md transition-shadow relative mb-3 group">
+                            <img
+                              src={qrCodeUrl}
+                              alt="UPI Payment QR Code"
+                              className="w-full h-full object-contain rounded-xl"
+                            />
+                            <a
+                              href={upiUrl}
+                              className="absolute inset-0 bg-purple-950/85 rounded-xl opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity font-bold text-xs p-2 text-center"
+                            >
+                              <span>📱 Tap to Pay on Mobile</span>
+                              <span className="text-[10px] text-purple-200 font-normal mt-1">Amount: ₹{amount.toLocaleString('en-IN')}</span>
+                            </a>
+                          </div>
+                          
+                          <a
+                            href={upiUrl}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition-colors mb-3"
+                          >
+                            <span>⚡ Open UPI App Directly</span>
+                          </a>
+                        </div>
+                      );
+                    })()}
+
                     <div className="flex items-center justify-center gap-2 mb-1">
                       <span className="text-sm font-semibold text-gray-600">UPI ID:</span>
-                      <code className="text-sm font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-lg">aistartupbuilder@okaxis</code>
-                      <button onClick={handleCopyUPI} className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-500">
+                      <code className="text-sm font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-lg border border-purple-100 select-all">aistartupbuilder@okaxis</code>
+                      <button onClick={handleCopyUPI} className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-gray-500" title="Copy UPI ID">
                         {copied ? <CheckCircle2 size={14} className="text-emerald-500" /> : <Copy size={14} />}
                       </button>
                     </div>
