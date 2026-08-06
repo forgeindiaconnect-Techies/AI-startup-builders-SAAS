@@ -169,26 +169,31 @@ const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
     setSelectedCard(null);
 
     try {
-      // Attempt real API call first (will fail in demo mode without backend)
-      const response = await fetch(`${API_URL}/generate-logo`, {
+      // Attempt real API call first (Stability AI via backend)
+      const response = await fetch(`${API_URL}/ai-builder/generate-logo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          startupName: startupData?.startupName,
+          startupIdea: startupData?.startupIdea,
           prompt: branding.logoPrompt,
           startupId: startupData?.startupId,
         }),
-        signal: AbortSignal.timeout(4000),
+        signal: AbortSignal.timeout(90000),
       });
 
       if (!response.ok) throw new Error('API not available');
 
-      const data = await response.json();
+      const json = await response.json();
+      if (!json.success) throw new Error(json.message || 'API not available');
+
+      const data = json.data;
       // Real API mode: save logo and show it
       const logoObj = {
         id: `logo_${Date.now()}`,
         startupId: startupData?.startupId,
         startupName: startupData?.startupName,
-        logoImage: data.imageUrl || data.base64,
+        logoImage: data.imageUrl || (data.base64 ? `data:image/png;base64,${data.base64}` : ''),
         logoMode: 'ai_generated',
         tagline,
         colors: colors.map((c: string) => parseColor(c)),
@@ -432,7 +437,7 @@ const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
             </div>
             <div>
               <h3 className="text-base font-bold text-gray-900">Demo Logo Previews</h3>
-              <p className="text-xs text-gray-500">Real AI API not connected — showing 3 CSS demo logos. Select one to save & download.</p>
+              <p className="text-xs text-gray-500">Quick CSS logo previews. Select one to save & download, or generate a real AI logo above.</p>
             </div>
           </div>
 

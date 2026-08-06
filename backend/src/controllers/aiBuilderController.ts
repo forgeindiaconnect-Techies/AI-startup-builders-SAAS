@@ -38,6 +38,7 @@ For every startup, generate:
 - Solution
 - Target Customers
 - Unique Value Proposition
+- Branding (brand name suggestions, taglines, logo concept and detailed logo prompt, logo style, brand color palette with exactly 4 colors formatted as "#HEX (Color Name)", font suggestions, brand personality, packaging/UI style, social media ideas, website hero copy, marketing captions)
 - Business Model
 - Revenue Model
 - Core Features
@@ -82,15 +83,31 @@ AI JSON output structure:
     "marketOpportunity": "",
     "nextSteps": []
   },
+  "branding": {
+    "brandNameSuggestions": [],
+    "taglineSuggestions": [],
+    "logoConceptIdeas": "",
+    "logoPrompt": "",
+    "logoStyle": "",
+    "brandColorPalette": [],
+    "fontStyleSuggestions": "",
+    "brandPersonality": "",
+    "packagingStyleSuggestions": "",
+    "socialMediaIdeas": "",
+    "websiteHero": "",
+    "marketingCaptions": []
+  },
   "businessPlan": {
     "executiveSummary": "",
     "problemAndSolution": "",
-    "marketOpportunity": "",
-    "productAndFeatures": [],
+    "productDetails": "",
+    "targetCustomers": "",
     "businessModel": "",
+    "revenueModel": "",
+    "pricingStrategy": "",
     "goToMarketStrategy": "",
-    "competitiveAnalysis": "",
-    "teamSuggestion": "",
+    "operationsPlan": "",
+    "teamRequirement": [],
     "financialProjection": "",
     "fundingAsk": ""
   },
@@ -162,47 +179,106 @@ AI JSON output structure:
     "som": "",
     "targetMarket": "",
     "customerSegments": [],
-    "competitors": [],
+    "competitorAnalysis": "",
     "marketTrends": [],
     "opportunities": [],
     "risks": [],
-    "pricingSuggestions": []
+    "pricingSuggestions": [],
+    "locationSuggestions": ""
   },
   "aiReport": {
     "investmentReadinessScore": 0,
     "startupScoreReason": "",
-    "keyStrengths": [],
+    "businessStrengths": [],
+    "weaknesses": [],
     "riskFactors": [],
     "improvementSuggestions": [],
+    "scalabilityScore": 0,
     "fundingReadiness": "",
     "mentorReviewSummary": ""
   }
 }`;
 
-async function callAI(startupName: string, startupIdea: string) {
-  if (!aiClient) {
-    throw new Error("AI Client is not configured. Missing API key.");
-  }
-
-  const prompt = `${SYSTEM_PROMPT}\n\nStartup Name: ${startupName}\nStartup Idea: ${startupIdea}\n\nReturn ONLY the JSON object.`;
-  
-  const response = await aiClient.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: {
-        responseMimeType: "application/json"
-    }
-  });
-
-  const text = response.text;
-  if (!text) throw new Error("AI returned empty response");
-  
+function parseJsonResponse(text: string): any {
   let cleanText = text.trim();
   if (cleanText.startsWith('\`\`\`json')) cleanText = cleanText.substring(7);
   if (cleanText.startsWith('\`\`\`')) cleanText = cleanText.substring(3);
   if (cleanText.endsWith('\`\`\`')) cleanText = cleanText.substring(0, cleanText.length - 3);
-
   return JSON.parse(cleanText);
+}
+
+async function callLLMJson(prompt: string): Promise<any> {
+  const retries = 3;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      if (!aiClient) throw new Error('Gemini AI client not configured');
+      const response = await aiClient.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json"
+        }
+      });
+      const text = response.text?.trim();
+      if (!text) throw new Error("AI returned empty response");
+      return parseJsonResponse(text);
+    } catch (err: any) {
+      const isRate = err.status === 'RESOURCE_EXHAUSTED' ||
+                     err.message?.includes('429') ||
+                     err.message?.includes('Quota exceeded') ||
+                     err.message?.includes('RESOURCE_EXHAUSTED') ||
+                     err.message?.includes('UNAVAILABLE') ||
+                     err.message?.includes('high demand');
+
+      if (isRate) {
+        console.warn(`⚠️ Gemini JSON API quota/availability error (attempt ${attempt}/${retries}). Retrying...`);
+        if (attempt < retries) {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue;
+        }
+      } else {
+        console.error(`❌ Gemini JSON generation error (attempt ${attempt}):`, err?.message || err);
+        if (attempt < retries) continue;
+      }
+    }
+  }
+
+  // Automatic Failover to Groq API (JSON mode)
+  console.log('🔄 Failing over to Groq API (llama-3.3-70b-versatile) for JSON generation...');
+  const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_API_kEY;
+  if (groqKey) {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.5
+        })
+      });
+      const data: any = await response.json();
+      const groqText = data?.choices?.[0]?.message?.content?.trim();
+      if (groqText) {
+        console.log('✅ Groq API JSON response generated successfully!');
+        return parseJsonResponse(groqText);
+      }
+    } catch (groqErr: any) {
+      console.error('❌ Groq API failover error:', groqErr?.message || groqErr);
+    }
+  }
+
+  throw new Error('AI usage limit reached. Please wait a moment and try again.');
+}
+
+async function callAI(startupName: string, startupIdea: string) {
+  const prompt = `${SYSTEM_PROMPT}\n\nStartup Name: ${startupName}\nStartup Idea: ${startupIdea}\n\nReturn ONLY the JSON object.`;
+  return callLLMJson(prompt);
 }
 
 export const createDraft = async (req: Request, res: Response) => {
@@ -458,30 +534,71 @@ JSON output structure:
 Return ONLY valid JSON. No markdown. No explanation outside JSON.`;
 
 async function callLegalAI(startupName: string, startupIdea: string, location: string) {
-  if (!aiClient) {
-    throw new Error("AI Client is not configured. Missing API key.");
-  }
-
   const prompt = `${LEGAL_DOCS_PROMPT}\n\nStartup Name: ${startupName}\nStartup Idea: ${startupIdea}\nLocation: ${location}\n\nReturn ONLY the JSON object.`;
-
-  const response = await aiClient.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json"
-    }
-  });
-
-  const text = response.text;
-  if (!text) throw new Error("AI returned empty response");
-
-  let cleanText = text.trim();
-  if (cleanText.startsWith('\`\`\`json')) cleanText = cleanText.substring(7);
-  if (cleanText.startsWith('\`\`\`')) cleanText = cleanText.substring(3);
-  if (cleanText.endsWith('\`\`\`')) cleanText = cleanText.substring(0, cleanText.length - 3);
-
-  return JSON.parse(cleanText);
+  return callLLMJson(prompt);
 }
+
+export const generateLogo = async (req: Request, res: Response) => {
+  try {
+    const { startupName, startupIdea, prompt, style } = req.body;
+    const stabilityKey = process.env.STABILITY_AI;
+
+    if (!stabilityKey) {
+      return res.status(400).json({ success: false, message: 'STABILITY_AI API key is not configured.' });
+    }
+
+    const basePrompt = prompt || (startupName
+      ? `Professional startup logo for "${startupName}". ${startupIdea ? `Business: ${startupIdea}` : ''}`
+      : 'A modern startup logo');
+
+    const styleSuffix = style || 'Minimal, modern, vector logo on a plain white background. No watermark, no 3D, no mockup, no extra text.';
+    const fullPrompt = `${basePrompt}. ${styleSuffix}`;
+
+    const response = await fetch('https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${stabilityKey}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        text_prompts: [{ text: fullPrompt, weight: 1 }],
+        cfg_scale: 7,
+        height: 1024,
+        width: 1024,
+        samples: 1,
+        steps: 30,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Stability AI error:', data?.message || data);
+      return res.status(response.status).json({ success: false, message: data?.message || 'Stability AI generation failed.' });
+    }
+
+    const artifact = data?.artifacts?.[0];
+    if (!artifact?.base64) {
+      return res.status(502).json({ success: false, message: 'Stability AI returned no image.' });
+    }
+
+    const imageBase64 = artifact.base64;
+
+    res.status(200).json({
+      success: true,
+      message: 'Logo generated successfully',
+      data: {
+        base64: imageBase64,
+        imageUrl: `data:image/png;base64,${imageBase64}`,
+        mimeType: 'image/png',
+      },
+    });
+  } catch (error: any) {
+    console.error('Error generating logo:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to generate logo.' });
+  }
+};
 
 export const generateLegalDocs = async (req: Request, res: Response) => {
   try {

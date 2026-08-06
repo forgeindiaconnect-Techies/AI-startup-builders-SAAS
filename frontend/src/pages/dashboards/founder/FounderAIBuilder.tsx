@@ -10,7 +10,7 @@ import FounderReports from './FounderReports';
 import FounderAIChat from './FounderAIChat';
 import FounderLegalDocs from './FounderLegalDocs';
 import PlanGate, { usePlanAccess } from '../../../components/shared/PlanGate';
-import { getStartups, getStartupById, updateStartup, generateStartupOutput, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument, detectStartupCategory, generateCategoryDocuments, sanitizeStartupId } from '../../../utils/localStorageHelper';
+import { getStartups, getStartupById, updateStartup, generateStartupFromBackend, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument, detectStartupCategory, generateCategoryDocuments, sanitizeStartupId } from '../../../utils/localStorageHelper';
 
 const tabs = [
   { id: 'idea',     label: 'AI Idea Generator',    icon: Lightbulb,    component: FounderIdeaGenerator },
@@ -72,11 +72,9 @@ const FounderAIBuilder: React.FC = () => {
     setGenerating(true);
     setError('');
 
-    // Simulate API delay for realism
-    setTimeout(async () => {
-      try {
-        const aiOutput = generateStartupOutput(startupData);
-        const { roadmap, tasks } = generateRoadmapAndTasks(startupData);
+    try {
+      const aiOutput = await generateStartupFromBackend(startupData);
+      const { roadmap, tasks } = generateRoadmapAndTasks(startupData);
         
         const updatedStartup = await updateStartup(startupId, {
           status: 'generated',
@@ -125,13 +123,14 @@ const FounderAIBuilder: React.FC = () => {
           actionUrl: `/dashboard/admin/startups`,
           createdAt: new Date().toISOString()
         });
-      } catch (err) {
-        setError('AI generation failed. Please try again.');
-        setStartupData(prev => prev ? { ...prev, status: 'failed' } : null);
-      } finally {
-        setGenerating(false);
-      }
-    }, 2000);
+    } catch (err) {
+      setError(err instanceof Error && err.message !== 'AI generation failed'
+        ? err.message
+        : 'AI generation failed. Please try again.');
+      setStartupData(prev => prev ? { ...prev, status: 'failed' } : null);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const handleExport = (fileType: string) => {

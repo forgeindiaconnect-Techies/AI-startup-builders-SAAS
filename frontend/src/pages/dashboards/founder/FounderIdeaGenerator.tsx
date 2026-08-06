@@ -6,49 +6,47 @@ interface Props {
   setStartupData?: (data: any) => void;
 }
 
-import { generateStartupOutput, generateRoadmapAndTasks, updateStartup, addNotification } from '../../../utils/localStorageHelper';
+import { generateStartupFromBackend, generateRoadmapAndTasks, updateStartup, addNotification } from '../../../utils/localStorageHelper';
 
 const FounderIdeaGenerator: React.FC<Props> = ({ startupData = {}, setStartupData = () => {} }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const regenerate = () => {
+  const regenerate = async () => {
     if (!startupData) return;
     
     setLoading(true);
     setError('');
     
-    setTimeout(() => {
-      try {
-        const aiOutput = generateStartupOutput(startupData);
-        const { roadmap, tasks } = generateRoadmapAndTasks(startupData);
-        
-        const updatedStartup = updateStartup(startupData.id || startupData.startupId, {
-          aiGenerated: aiOutput,
-          roadmap,
-          tasks
+    try {
+      const aiOutput = await generateStartupFromBackend(startupData);
+      const { roadmap, tasks } = generateRoadmapAndTasks(startupData);
+      
+      const updatedStartup = await updateStartup(startupData.id || startupData.startupId, {
+        aiGenerated: aiOutput,
+        roadmap,
+        tasks
+      });
+      
+      if (updatedStartup) {
+        setStartupData(updatedStartup);
+        addNotification({
+          id: `notification_${Date.now()}`,
+          userId: 'admin',
+          title: 'Startup Idea Regenerated',
+          message: `${startupData.startupName}: ${startupData.startupIdea}`,
+          type: 'ai_builder',
+          isRead: false,
+          actionUrl: `/dashboard/admin/startups`,
+          createdAt: new Date().toISOString()
         });
-        
-        if (updatedStartup) {
-          setStartupData(updatedStartup);
-          addNotification({
-            id: `notification_${Date.now()}`,
-            userId: 'admin',
-            title: 'Startup Idea Regenerated',
-            message: `${startupData.startupName}: ${startupData.startupIdea}`,
-            type: 'ai_builder',
-            isRead: false,
-            actionUrl: `/dashboard/admin/startups`,
-            createdAt: new Date().toISOString()
-          });
-          window.alert('Success: Startup regenerated successfully');
-        }
-      } catch (err) {
-        setError('Failed to regenerate startup');
-      } finally {
-        setLoading(false);
+        window.alert('Success: Startup regenerated successfully');
       }
-    }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to regenerate startup');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (startupData) {
