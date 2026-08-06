@@ -24,6 +24,10 @@ export interface Subscription {
   started: string;
   nextBilling: string;
   status: 'Active' | 'Cancelled' | 'Past Due' | 'Trial';
+  paymentMethod?: string;
+  transactionId?: string;
+  mobile?: string;
+  company?: string;
 }
 
 export interface PaymentRequest {
@@ -62,6 +66,8 @@ interface BillingContextType {
   getUserTransactions: (userId: string) => Transaction[];
   getUserPaymentRequests: (userId: string) => PaymentRequest[];
   cancelSubscription: (subscriptionId: string) => void;
+  updateSubscriptionStatus: (subscriptionId: string, status: 'Active' | 'Cancelled' | 'Past Due' | 'Trial') => void;
+  updateSubscriptionPlan: (subscriptionId: string, planName: string, amount: string) => void;
   assignFreePlan: (userId: string, userName: string, email: string) => Subscription;
   activatePlan: (userId: string, planName: string, amount: string, billingCycle: string) => void;
 }
@@ -76,8 +82,99 @@ const getTodayDate = () => {
   return new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-// Initial mock data
-const initialSubscriptions: Subscription[] = [];
+// Initial mock data with full subscriber details
+const initialSubscriptions: Subscription[] = [
+  {
+    id: 'SB-2458',
+    userId: 'user-rahul-1',
+    userName: 'Rahul Sharma',
+    email: 'founder@test.com',
+    plan: 'Pro',
+    amount: '₹2,499/mo',
+    started: 'Jul 14, 2026',
+    nextBilling: 'Aug 14, 2026',
+    status: 'Active',
+    paymentMethod: 'UPI (GPay)',
+    transactionId: 'UPI421987654321',
+    mobile: '+91 98765 43210',
+    company: 'TechFlow AI Labs'
+  },
+  {
+    id: 'SB-7568',
+    userId: 'user-sarah-1',
+    userName: 'Sarah Jenkins',
+    email: 'founder@startupbuilder.ai',
+    plan: 'Enterprise',
+    amount: '₹9,999/yr',
+    started: 'Jul 14, 2026',
+    nextBilling: 'Aug 14, 2027',
+    status: 'Active',
+    paymentMethod: 'Card (Visa ending in 4242)',
+    transactionId: 'TXN-9821435210',
+    mobile: '+1 555 019 2834',
+    company: 'NextGen Solutions'
+  },
+  {
+    id: 'SB-1042',
+    userId: 'user-sarah-2',
+    userName: 'Sarah Jenkins',
+    email: 'founder@startupbuilder.ai',
+    plan: 'Starter',
+    amount: 'Free',
+    started: 'Jul 14, 2026',
+    nextBilling: 'Aug 14, 2026',
+    status: 'Trial',
+    paymentMethod: 'System Trial',
+    transactionId: 'TRIAL-FREE-01',
+    mobile: '+1 555 019 2834',
+    company: 'NextGen Solutions'
+  },
+  {
+    id: 'SB-1041',
+    userId: 'user-tom-1',
+    userName: 'Tom Chen',
+    email: 'tom@startup.ai',
+    plan: 'Scale',
+    amount: '₹4,999/mo',
+    started: 'Mar 10, 2026',
+    nextBilling: 'Aug 10, 2026',
+    status: 'Active',
+    paymentMethod: 'UPI (PhonePe)',
+    transactionId: 'UPI908172635441',
+    mobile: '+1 415 892 1042',
+    company: 'ScaleX Digital'
+  },
+  {
+    id: 'SB-1039',
+    userId: 'user-anna-1',
+    userName: 'Anna Kim',
+    email: 'anna@startup.ai',
+    plan: 'Growth',
+    amount: '₹3,499/mo',
+    started: 'Apr 1, 2026',
+    nextBilling: 'Cancelled',
+    status: 'Cancelled',
+    paymentMethod: 'UPI (Paytm)',
+    transactionId: 'UPI112233445566',
+    mobile: '+1 212 901 3321',
+    company: 'BioHealth Tech'
+  },
+  {
+    id: 'SB-1038',
+    userId: 'user-peter-1',
+    userName: 'Peter Zhao',
+    email: 'peter@startup.ai',
+    plan: 'Scale',
+    amount: '₹4,999/mo',
+    started: 'Jun 1, 2026',
+    nextBilling: 'Aug 1, 2026',
+    status: 'Past Due',
+    paymentMethod: 'Net Banking (Axis)',
+    transactionId: 'NB-7788990011',
+    mobile: '+1 650 332 9901',
+    company: 'HyperGrowth Ventures'
+  }
+];
 
 const initialTransactions: Transaction[] = [];
 
@@ -87,7 +184,11 @@ export const BillingProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [subscriptions, setSubscriptions] = useState<Subscription[]>(() => {
     try {
       const saved = localStorage.getItem('ai_startup_builder_subs_v2');
-      return saved ? JSON.parse(saved) : initialSubscriptions;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed && parsed.length > 0 ? parsed : initialSubscriptions;
+      }
+      return initialSubscriptions;
     } catch {
       return initialSubscriptions;
     }
@@ -279,6 +380,14 @@ export const BillingProvider: React.FC<{ children: ReactNode }> = ({ children })
     setSubscriptions(prev => prev.filter(s => s.id !== subscriptionId));
   };
 
+  const updateSubscriptionStatus = (subscriptionId: string, status: 'Active' | 'Cancelled' | 'Past Due' | 'Trial') => {
+    setSubscriptions(prev => prev.map(s => s.id === subscriptionId ? { ...s, status } : s));
+  };
+
+  const updateSubscriptionPlan = (subscriptionId: string, planName: string, amount: string) => {
+    setSubscriptions(prev => prev.map(s => s.id === subscriptionId ? { ...s, plan: planName, amount } : s));
+  };
+
   const assignFreePlan = (userId: string, userName: string, email: string) => {
     const existing = subscriptions.find(s => s.userId === userId);
     if (existing) return existing;
@@ -359,6 +468,8 @@ export const BillingProvider: React.FC<{ children: ReactNode }> = ({ children })
       getUserTransactions,
       getUserPaymentRequests,
       cancelSubscription,
+      updateSubscriptionStatus,
+      updateSubscriptionPlan,
       assignFreePlan,
       activatePlan
     }}>
