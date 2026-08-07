@@ -32,6 +32,36 @@ export const getMentorProfile = async (id: string): Promise<any> => {
   return data.data;
 };
 
+// PUT /api/mentors/admin/:id  (admin edits mentor profile + session fee)
+export const updateMentorProfileAdmin = async (
+  id: string,
+  payload: {
+    fullName?: string;
+    title?: string;
+    expertise?: string;
+    industry?: string;
+    categories?: string;
+    bio?: string;
+    experienceYears?: number;
+    linkedin?: string;
+    photoUrl?: string;
+    location?: string;
+    sessionDuration?: number;
+    sessionFee?: number;
+    isActive?: boolean;
+    status?: string;
+    approvalStatus?: string;
+  }
+): Promise<any> => {
+  const res = await fetch(`${API_URL}/mentors/admin/${id}`, {
+    method: 'PUT',
+    headers: authHeaders(true),
+    body: JSON.stringify(payload),
+  });
+  const data = await handleResponse(res);
+  return data.data;
+};
+
 // GET /api/mentors/:id/availability
 export const getMentorAvailability = async (id: string): Promise<{ availability: any[]; booked: Record<string, string[]> }> => {
   const res = await fetch(`${API_URL}/mentors/${id}/availability`, { headers: authHeaders(false) });

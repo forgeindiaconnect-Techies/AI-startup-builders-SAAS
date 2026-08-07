@@ -304,8 +304,11 @@ export const getAvailableMentors = async (req: AuthRequest, res: Response) => {
     await seedDemoMentors();
     const mentors = await User.find({ role: 'mentor', status: 'active', approvalStatus: 'approved' });
     const profiles = await MentorProfile.find({ mentorId: { $in: mentors.map((m) => m._id) } });
+    const inactiveIds = new Set(profiles.filter((p) => p.isActive === false).map((p) => p.mentorId.toString()));
     const profileMap = new Map(profiles.map((p) => [p.mentorId.toString(), p]));
-    const list = mentors.map((m) => buildMentorView(m, profileMap.get(m._id.toString()) ?? null));
+    const list = mentors
+      .filter((m) => !inactiveIds.has(m._id.toString()))
+      .map((m) => buildMentorView(m, profileMap.get(m._id.toString()) ?? null));
     res.json({ success: true, data: list });
   } catch (error) {
     console.error('Error fetching mentors:', error);
@@ -325,6 +328,61 @@ export const getMentorProfile = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Error fetching mentor profile:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch mentor profile' });
+  }
+};
+
+// PUT /api/mentors/admin/:id  (admin edits a mentor's profile + session fee)
+export const updateMentorProfileAdmin = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!isValidId(id)) return res.status(400).json({ success: false, message: 'Invalid mentor id' });
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ success: false, message: 'Mentor not found' });
+    if (user.role !== 'mentor') return res.status(400).json({ success: false, message: 'User is not a mentor' });
+
+    const {
+      fullName, title, expertise, industry, categories, bio,
+      experienceYears, linkedin, photoUrl, location,
+      sessionDuration, sessionFee, isActive, status, approvalStatus,
+    } = req.body;
+
+    // Update User fields so the admin list / signup data stay in sync
+    if (typeof fullName === 'string' && fullName.trim()) user.fullName = fullName.trim();
+    if (typeof expertise === 'string') user.expertise = expertise;
+    if (typeof bio === 'string') user.bio = bio.trim();
+    if (typeof linkedin === 'string') user.linkedin = linkedin.trim();
+    if (typeof location === 'string') user.location = location.trim();
+    if (typeof experienceYears !== 'undefined') user.experienceYears = String(experienceYears);
+    if (status && ['active', 'inactive', 'suspended'].includes(status)) user.status = status;
+    if (approvalStatus && ['pending', 'approved', 'rejected'].includes(approvalStatus)) user.approvalStatus = approvalStatus;
+    await user.save();
+
+    // Upsert MentorProfile (drives the founder-facing dashboard + booking fee)
+    let profile = await MentorProfile.findOne({ mentorId: id });
+    if (!profile) profile = new MentorProfile({ mentorId: id });
+    if (typeof title === 'string') profile.title = title;
+    if (Array.isArray(expertise)) profile.expertise = expertise;
+    if (typeof industry === 'string') profile.industry = industry;
+    if (Array.isArray(categories)) profile.categories = categories;
+    if (typeof bio === 'string') profile.bio = bio;
+    if (typeof experienceYears === 'number') profile.experienceYears = experienceYears;
+    if (typeof linkedin === 'string') profile.linkedin = linkedin;
+    if (typeof photoUrl === 'string') profile.photoUrl = photoUrl;
+    if (typeof location === 'string') profile.location = location;
+    if (typeof sessionDuration === 'number') profile.sessionDuration = sessionDuration;
+    if (typeof sessionFee === 'number') profile.sessionFee = sessionFee;
+    if (typeof isActive === 'boolean') profile.isActive = isActive;
+    await profile.save();
+
+    res.json({
+      success: true,
+      message: 'Mentor profile updated successfully',
+      data: buildMentorView(user, profile),
+    });
+  } catch (error) {
+    console.error('Error updating mentor profile (admin):', error);
+    res.status(500).json({ success: false, message: 'Failed to update mentor profile' });
   }
 };
 

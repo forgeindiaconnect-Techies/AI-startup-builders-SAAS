@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Trash2, Download, X, AlertCircle, CheckCircle, ChevronDown, ExternalLink } from 'lucide-react';
+import { Search, Eye, Trash2, Download, X, AlertCircle, CheckCircle, ChevronDown, ExternalLink, Pencil, Loader2 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { getMentorProfile, updateMentorProfileAdmin } from '../../../utils/mentorApi';
 
 const roleColors: Record<string, string> = {
   founder: 'bg-yellow-100 text-yellow-700 border border-yellow-200',
@@ -40,6 +41,26 @@ const AdminUsers: React.FC = () => {
   const [usersList, setUsersList] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  // Edit Mentor Profile modal state
+  const [editingMentor, setEditingMentor] = useState<any | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [mentorForm, setMentorForm] = useState({
+    fullName: '',
+    title: '',
+    expertise: '',
+    industry: '',
+    categories: '',
+    bio: '',
+    experienceYears: '8',
+    linkedin: '',
+    photoUrl: '',
+    location: '',
+    sessionDuration: '45',
+    sessionFee: '0',
+    isActive: true,
+  });
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
@@ -111,6 +132,99 @@ const AdminUsers: React.FC = () => {
     }
     if (selectedUser?.id === userId) {
       setSelectedUser({ ...selectedUser, approvalStatus: newApproval });
+    }
+  };
+
+  const openEditMentor = async (u: any) => {
+    setEditingMentor(u);
+    setEditLoading(true);
+    setMentorForm({
+      fullName: u.fullName || u.name || '',
+      title: u.title || 'Startup Mentor',
+      expertise: Array.isArray(u.expertise) ? u.expertise.join(', ') : (u.expertise || ''),
+      industry: u.industry || '',
+      categories: Array.isArray(u.categories) ? u.categories.join(', ') : (u.categories || ''),
+      bio: u.bio || '',
+      experienceYears: u.experienceYears ? String(u.experienceYears).replace(/[^0-9]/g, '') : '8',
+      linkedin: u.linkedin || '',
+      photoUrl: u.photoUrl || '',
+      location: u.location || '',
+      sessionDuration: String(u.sessionDuration || 45),
+      sessionFee: String(u.sessionFee ?? 0),
+      isActive: u.isActive !== false,
+    });
+    try {
+      const full = await getMentorProfile(u.id);
+      setMentorForm({
+        fullName: full.name || u.fullName || '',
+        title: full.title || 'Startup Mentor',
+        expertise: (full.expertise || []).join(', '),
+        industry: full.industry || '',
+        categories: (full.categories || []).join(', '),
+        bio: full.bio || '',
+        experienceYears: full.experienceYears ? String(full.experienceYears) : '8',
+        linkedin: full.linkedin || '',
+        photoUrl: full.photoUrl || '',
+        location: full.location || '',
+        sessionDuration: String(full.sessionDuration || 45),
+        sessionFee: String(full.sessionFee ?? 0),
+        isActive: full.isActive !== false,
+      });
+    } catch {
+      // fall back to the admin list data
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const updateForm = (key: keyof typeof mentorForm, value: string | boolean) => {
+    setMentorForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSaveMentor = async () => {
+    if (!editingMentor) return;
+    if (!mentorForm.fullName.trim()) {
+      showToast('Full name is required.', 'error');
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const expertiseStr = mentorForm.expertise.split(',').map(s => s.trim()).filter(Boolean).join(', ');
+      const categoriesStr = mentorForm.categories.split(',').map(s => s.trim()).filter(Boolean).join(', ');
+      await updateMentorProfileAdmin(editingMentor.id, {
+        fullName: mentorForm.fullName.trim(),
+        title: mentorForm.title.trim(),
+        expertise: expertiseStr,
+        industry: mentorForm.industry.trim(),
+        categories: categoriesStr,
+        bio: mentorForm.bio.trim(),
+        experienceYears: Number(mentorForm.experienceYears) || 0,
+        linkedin: mentorForm.linkedin.trim(),
+        photoUrl: mentorForm.photoUrl.trim(),
+        location: mentorForm.location.trim(),
+        sessionDuration: Number(mentorForm.sessionDuration) || 45,
+        sessionFee: Number(mentorForm.sessionFee) || 0,
+        isActive: mentorForm.isActive,
+      });
+      // Reflect the changes immediately and lock background polling for 10s
+      lockUntilRef.current = Date.now() + 10000;
+      setUsersList(prev => prev.map(u => u.id === editingMentor.id ? {
+        ...u,
+        fullName: mentorForm.fullName.trim(),
+        name: mentorForm.fullName.trim(),
+        expertise: expertiseStr,
+        experienceYears: `${mentorForm.experienceYears || '8'}+`,
+        linkedin: mentorForm.linkedin.trim(),
+        bio: mentorForm.bio.trim(),
+        location: mentorForm.location.trim(),
+      } : u));
+      refreshUsers();
+      setEditingMentor(null);
+      showToast(`Mentor "${mentorForm.fullName.trim()}" profile updated successfully.`);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update mentor profile.', 'error');
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -315,6 +429,15 @@ const AdminUsers: React.FC = () => {
                       >
                         <Eye size={14} /> View
                       </button>
+                      {u.role === 'mentor' && (
+                        <button
+                          onClick={() => openEditMentor(u)}
+                          className="px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] font-bold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
+                          title="Edit Mentor Profile"
+                        >
+                          <Pencil size={14} /> Edit
+                        </button>
+                      )}
                       {!isSelf(u) && (
                         <button
                           onClick={() => handleDeleteUser(u.id, u.name || u.fullName)}
@@ -647,6 +770,190 @@ const AdminUsers: React.FC = () => {
                 className="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs rounded-xl transition-colors"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Mentor Profile Modal */}
+      {editingMentor && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 pb-6 px-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-2xl flex flex-col my-auto">
+            {/* Header */}
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-base font-black shadow flex-shrink-0">
+                  {(mentorForm.fullName || 'M').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-lg">Edit Mentor Profile</h3>
+                  <p className="text-xs text-gray-500">{editingMentor.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingMentor(null)}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition-colors shrink-0"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="p-6 overflow-y-auto">
+              {editLoading ? (
+                <div className="flex justify-center py-16">
+                  <Loader2 size={28} className="animate-spin text-[#5B21B6]" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Full Name *</label>
+                    <input
+                      value={mentorForm.fullName}
+                      onChange={(e) => updateForm('fullName', e.target.value)}
+                      placeholder="Mentor full name"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Title / Professional Title</label>
+                    <input
+                      value={mentorForm.title}
+                      onChange={(e) => updateForm('title', e.target.value)}
+                      placeholder="e.g. Finance & Fundraising Mentor"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Experience (Years)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={mentorForm.experienceYears}
+                      onChange={(e) => updateForm('experienceYears', e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Location</label>
+                    <input
+                      value={mentorForm.location}
+                      onChange={(e) => updateForm('location', e.target.value)}
+                      placeholder="e.g. Bengaluru, India"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Industry</label>
+                    <input
+                      value={mentorForm.industry}
+                      onChange={(e) => updateForm('industry', e.target.value)}
+                      placeholder="e.g. SaaS / FinTech"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Session Duration (min)</label>
+                    <input
+                      type="number"
+                      min={15}
+                      step={5}
+                      value={mentorForm.sessionDuration}
+                      onChange={(e) => updateForm('sessionDuration', e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Session Fee (₹) per session</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={mentorForm.sessionFee}
+                      onChange={(e) => updateForm('sessionFee', e.target.value)}
+                      placeholder="0 for free sessions"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
+                    />
+                    <p className="text-[11px] text-gray-400 mt-1">Shown to founders on the Mentors dashboard and used for booking.</p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Expertise (comma separated)</label>
+                    <input
+                      value={mentorForm.expertise}
+                      onChange={(e) => updateForm('expertise', e.target.value)}
+                      placeholder="e.g. Financial Planning, Fundraising, Valuation"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Categories (comma separated)</label>
+                    <input
+                      value={mentorForm.categories}
+                      onChange={(e) => updateForm('categories', e.target.value)}
+                      placeholder="e.g. Finance, Fundraising"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Bio</label>
+                    <textarea
+                      value={mentorForm.bio}
+                      onChange={(e) => updateForm('bio', e.target.value)}
+                      rows={3}
+                      placeholder="Short professional biography"
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all resize-none"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">LinkedIn URL</label>
+                    <input
+                      value={mentorForm.linkedin}
+                      onChange={(e) => updateForm('linkedin', e.target.value)}
+                      placeholder="https://linkedin.com/in/..."
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Photo URL</label>
+                    <input
+                      value={mentorForm.photoUrl}
+                      onChange={(e) => updateForm('photoUrl', e.target.value)}
+                      placeholder="https://..."
+                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
+                    />
+                  </div>
+                  <div className="sm:col-span-2 flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl">
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">Active on Mentors Dashboard</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Only approved &amp; active mentors appear for founders to book.</p>
+                    </div>
+                    <button
+                      onClick={() => updateForm('isActive', !mentorForm.isActive)}
+                      className={`relative w-12 h-6.5 rounded-full transition-colors ${mentorForm.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                      title={mentorForm.isActive ? 'Active' : 'Inactive'}
+                    >
+                      <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all ${mentorForm.isActive ? 'left-6' : 'left-0.5'}`} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer actions */}
+            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3 shrink-0 bg-gray-50/60 rounded-b-3xl">
+              <button
+                onClick={() => setEditingMentor(null)}
+                className="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveMentor}
+                disabled={editLoading || editSaving}
+                className="px-6 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl transition-colors shadow inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {editSaving && <Loader2 size={14} className="animate-spin" />}
+                <CheckCircle size={14} /> Save Changes
               </button>
             </div>
           </div>

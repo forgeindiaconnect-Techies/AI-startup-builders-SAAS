@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getAvailableMentors,
   getMentorProfile,
+  updateMentorProfileAdmin,
   getMentorAvailability,
   createBooking,
   getMyBookings,
@@ -12,7 +13,7 @@ import {
   submitFeedback,
   getBookingFeedback,
 } from '../controllers/mentorController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { protect, adminOnly } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
@@ -23,6 +24,8 @@ router.get('/', getAvailableMentors);
 router.get('/bookings', getMyBookings);
 router.get('/mentor/bookings', getMentorBookings);
 router.post('/book', createBooking);
+
+router.put('/admin/:id', adminOnly, updateMentorProfileAdmin);
 
 router.get('/bookings/:id/feedback', getBookingFeedback);
 router.post('/bookings/:id/cancel', cancelBooking);
