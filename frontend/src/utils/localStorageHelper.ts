@@ -54,29 +54,29 @@ export const seedDemoStartups = () => {
           goToMarketStrategy: 'Travel influencer sponsorships, destination-based SEO content, and local hostel partnerships.',
           operationsPlan: 'Customer support teams handling safety and dispute resolution, alongside automated host verification checklists.',
           teamRequirement: ['Co-founder & CTO', 'Operations Lead', 'Guide Acquisition Manager', 'Marketing Designer'],
-          financialProjection: 'First year target of $240,000 gross merchandise value (GMV) with 30% month-over-month guide acquisition growth.',
-          fundingAsk: '$100,000 for guide onboarding operations, marketing launch, and regional scaling.'
+          financialProjection: 'First year target of ₹240,000 gross merchandise value (GMV) with 30% month-over-month guide acquisition growth.',
+          fundingAsk: '₹100,000 for guide onboarding operations, marketing launch, and regional scaling.'
         },
         pitchDeck: [
           { slide: 1, title: 'Tourists', content: 'Authentic Local Tourism Marketplace' },
           { slide: 2, title: 'The Problem', content: 'Commercial tour packages are generic, overcrowded, and isolate travelers from authentic culture.' },
           { slide: 3, title: 'The Solution', content: 'A peer-to-peer marketplace matching travelers with vetted local experts for custom experiences.' },
-          { slide: 4, title: 'Market Size', content: '$800B+ global experiential and adventure travel market.' },
+          { slide: 4, title: 'Market Size', content: '₹800B+ global experiential and adventure travel market.' },
           { slide: 5, title: 'Product Overview', content: 'Custom itinerary builder, interactive mapping, safety tracking, video profiles.' },
           { slide: 6, title: 'Business Model', content: '15% booking commission on all transactions.' },
           { slide: 7, title: 'Competitor Landscape', content: 'More localized and flexible than Airbnb Experiences, more affordable than traditional agencies.' },
           { slide: 8, title: 'Go-To-Market', content: 'Travel vlogger partnerships, localized SEO guides, digital ads.' },
           { slide: 9, title: 'Our Team', content: 'Ex-Booking.com product managers and local travel organizers.' },
-          { slide: 10, title: 'The Ask', content: '$100k for engineering, host acquisition, and pilot marketing.' }
+          { slide: 10, title: 'The Ask', content: '₹100k for engineering, host acquisition, and pilot marketing.' }
         ],
         marketResearch: {
-          tam: 'â‚¹50,00,00,000', sam: 'â‚¹12,00,00,000', som: 'â‚¹2,50,00,000',
+          tam: '₹50,00,00,000', sam: '₹12,00,00,000', som: '₹2,50,00,000',
           customerSegments: ['Solo backpackers', 'Cultural explorers', 'Experiential group travelers'],
           competitorAnalysis: 'Airbnb Experiences has high overhead; TripAdvisor is outdated. Tourists offers direct customization.',
           marketTrends: ['Experiential travel growth', 'Local guide demand', 'Eco-friendly/sustainable tourism'],
           opportunities: ['Partnerships with state tourism departments', 'Corporate team-building tours'],
           risks: ['Safety compliance verification', 'Seasonal travel fluctuations'],
-          pricingSuggestions: 'Average guide tour: â‚¹1500-4000 per day. Platform commission: 15%.',
+          pricingSuggestions: 'Average guide tour: ₹1500-4000 per day. Platform commission: 15%.',
           locationSuggestions: 'Launch pilots in major historical/adventure hubs like Rajasthan, Kerala, and Himachal.'
         },
         aiReport: {
@@ -133,29 +133,29 @@ export const seedDemoStartups = () => {
           goToMarketStrategy: 'Free tasting boxes to local housing societies, grand opening discount, and Google Maps local SEO.',
           operationsPlan: 'Kitchen opens at 4 AM for morning baking, retail operational from 8 AM to 9 PM, managed by a head pastry chef.',
           teamRequirement: ['Head Baker / Pastry Chef', 'Kitchen Assistant', 'Counter Sales Representative', 'Delivery Executive'],
-          financialProjection: 'First year sales target of $150,000 with steady monthly margins of 25% from recurring customers.',
-          fundingAsk: '$50,000 for commercial baking equipment, shop renovation, and initial raw ingredients.'
+          financialProjection: 'First year sales target of ₹150,000 with steady monthly margins of 25% from recurring customers.',
+          fundingAsk: '₹50,000 for commercial baking equipment, shop renovation, and initial raw ingredients.'
         },
         pitchDeck: [
           { slide: 1, title: 'Bakery', content: 'Fresh Neighborhood Bakery & Curated Snacks' },
           { slide: 2, title: 'The Problem', content: 'Mass-manufactured baked goods lack taste, contain preservatives, and local shops lack hygiene.' },
           { slide: 3, title: 'The Solution', content: 'A transparent, hygienic live bakery offering fresh artisan items alongside high-quality sweets and chips.' },
-          { slide: 4, title: 'Market Size', content: '$8B rising domestic bakery and snack food market.' },
+          { slide: 4, title: 'Market Size', content: '₹8B rising domestic bakery and snack food market.' },
           { slide: 5, title: 'Product Line', content: 'Breads, celebration cakes, traditional sweets, packaged premium chips, healthy cookies.' },
           { slide: 6, title: 'Business Model', content: 'DTC Retail, custom event orders, subscription packages.' },
           { slide: 7, title: 'Traction', content: 'Pre-launch social media interest, partnerships with 3 local event planners.' },
           { slide: 8, title: 'Go-To-Market', content: 'Neighborhood tastings, active local SEO, geo-targeted social media.' },
           { slide: 9, title: 'Our Team', content: 'Experienced baker with 10 years of hotel pastry experience.' },
-          { slide: 10, title: 'The Ask', content: '$50k for machinery, interior setup, and initial marketing.' }
+          { slide: 10, title: 'The Ask', content: '₹50k for machinery, interior setup, and initial marketing.' }
         ],
         marketResearch: {
-          tam: 'â‚¹12,00,00,000', sam: 'â‚¹3,00,00,000', som: 'â‚¹45,00,000',
+          tam: '₹12,00,00,000', sam: '₹3,00,00,000', som: '₹45,00,000',
           customerSegments: ['Families', 'Event managers', 'Local tea-time snackers'],
           competitorAnalysis: 'Chain bakeries are factory-produced; local sweet shops lack baked assortments. We win on variety and fresh kitchen.',
           marketTrends: ['Clean label products', 'Gourmet tea-time snacks', 'Custom celebration orders'],
           opportunities: ['Monthly subscription breakfast baskets', 'B2B supply to local cafes'],
           risks: ['High perishability of fresh products', 'Ingredient price inflation (butter/sugar)'],
-          pricingSuggestions: 'Breads: â‚¹60-120, Cakes: â‚¹600-1200/kg, Snacks: â‚¹80-180/box.',
+          pricingSuggestions: 'Breads: ₹60-120, Cakes: ₹600-1200/kg, Snacks: ₹80-180/box.',
           locationSuggestions: 'High-density residential complexes, neighborhood high street with parking.'
         },
         aiReport: {
@@ -212,29 +212,29 @@ export const seedDemoStartups = () => {
           goToMarketStrategy: 'Pre-launch tasting event, local food blogger reviews, social media launch offers.',
           operationsPlan: 'Open 11 AM to 11 PM daily. High kitchen hygiene standards with automated temperature-control storages.',
           teamRequirement: ['Head Chef', 'Sous Chef', 'F&B Manager', 'Waitstaff (4x)', 'Cleaning Assistant'],
-          financialProjection: 'First year target sales of $320,000 with a projected net profit margin of 18% in Year 1.',
-          fundingAsk: '$120,000 for space lease deposit, interior buildout, commercial kitchen prep systems, and launch marketing.'
+          financialProjection: 'First year target sales of ₹320,000 with a projected net profit margin of 18% in Year 1.',
+          fundingAsk: '₹120,000 for space lease deposit, interior buildout, commercial kitchen prep systems, and launch marketing.'
         },
         pitchDeck: [
           { slide: 1, title: 'RESTURANT', content: 'Modern Dine-in Experience & Fine Flavors' },
           { slide: 2, title: 'The Problem', content: 'Lack of premium, high-hygiene multi-cuisine dining options with family-friendly ambiance.' },
           { slide: 3, title: 'The Solution', content: 'A beautifully designed dine-in space with curated chef specialties and interactive digital order flows.' },
-          { slide: 4, title: 'Market Size', content: '$30B+ rapidly growing urban dining and restaurant industry.' },
+          { slide: 4, title: 'Market Size', content: '₹30B+ rapidly growing urban dining and restaurant industry.' },
           { slide: 5, title: 'Our Menu', content: 'Appetizers, chef specials, artisanal beverages, curated desserts.' },
           { slide: 6, title: 'Business Model', content: 'Dine-in revenue (75%) + online deliveries & catering (25%).' },
           { slide: 7, title: 'Competitor Analysis', content: 'We win on ingredient sourcing transparency, premium dining service, and unique menu items.' },
           { slide: 8, title: 'Go-To-Market', content: 'Blogger reviews, grand launch night, corporate discount tie-ups.' },
           { slide: 9, title: 'Our Team', content: 'Led by an executive chef with 15 years of fine dining kitchen management.' },
-          { slide: 10, title: 'The Ask', content: '$120k for space setup, equipment lease, and 3 months runway.' }
+          { slide: 10, title: 'The Ask', content: '₹120k for space setup, equipment lease, and 3 months runway.' }
         ],
         marketResearch: {
-          tam: 'â‚¹35,00,00,000', sam: 'â‚¹9,00,00,000', som: 'â‚¹1,20,00,000',
+          tam: '₹35,00,00,000', sam: '₹9,00,00,000', som: '₹1,20,00,000',
           customerSegments: ['Corporate teams', 'Families', 'Food bloggers & young couples'],
           competitorAnalysis: 'Chain diners lack personalized service; local eateries lack branding. RESTURANT bridges the gap.',
           marketTrends: ['Experiential casual dining', 'QR-code order adoption', 'Chef-driven menu specialization'],
           opportunities: ['Hosting private anniversary/corporate parties', 'Premium weekend buffet events'],
           risks: ['High initial location lease rates', 'Staff attrition in the kitchen'],
-          pricingSuggestions: 'Average customer order value: â‚¹600-1200. Dine-in target.',
+          pricingSuggestions: 'Average customer order value: ₹600-1200. Dine-in target.',
           locationSuggestions: 'Commercial malls, popular office park food arenas, or upscale residential avenues.'
         },
         aiReport: {
@@ -291,8 +291,8 @@ export const seedDemoStartups = () => {
           goToMarketStrategy: 'Free tea/coffee cards for nearby office HR departments, social media ads.',
           operationsPlan: 'Open 8 AM to 7 PM. Fully automated brewers to ensure consistency and speed.',
           teamRequirement: ['Kiosk Manager', 'Lead Barista', 'Junior Server'],
-          financialProjection: 'First year sales target of $95,000 per kiosk, with cash flow positive state by Month 3.',
-          fundingAsk: '$35,000 for kiosk construction, espresso machines, and launch marketing.'
+          financialProjection: 'First year sales target of ₹95,000 per kiosk, with cash flow positive state by Month 3.',
+          fundingAsk: '₹35,000 for kiosk construction, espresso machines, and launch marketing.'
         },
         pitchDeck: [
           { slide: 1, title: 'Breaktime', content: 'Premium Tea, Coffee, and Snacks Kiosks' },
@@ -304,16 +304,16 @@ export const seedDemoStartups = () => {
           { slide: 7, title: 'Competitor Analysis', content: 'Faster than premium dine-in cafes; significantly higher quality than typical office tea stalls.' },
           { slide: 8, title: 'Go-To-Market', content: 'Corporate vouchers, office HR partnerships, local SEO.' },
           { slide: 9, title: 'Our Team', content: 'Experienced QSR operators and food supply coordinators.' },
-          { slide: 10, title: 'The Ask', content: '$35k for the prototype kiosk construction and equipment.' }
+          { slide: 10, title: 'The Ask', content: '₹35k for the prototype kiosk construction and equipment.' }
         ],
         marketResearch: {
-          tam: 'â‚¹8,00,00,000', sam: 'â‚¹2,00,00,000', som: 'â‚¹35,00,000',
+          tam: '₹8,00,00,000', sam: '₹2,00,00,000', som: '₹35,00,000',
           customerSegments: ['Corporate employees', 'Shoppers', 'Daily transit travelers'],
           competitorAnalysis: 'Local chai wallahs lack hygiene; Starbucks is too expensive and slow. Breaktime wins on speed and quality.',
           marketTrends: ['Rise of gourmet coffee habits', 'Preference for quick grab-and-go QSRs'],
           opportunities: ['In-office catering carts', 'Corporate monthly drink plans'],
           risks: ['High rentals in top commercial parks', 'Employee turnover'],
-          pricingSuggestions: 'Teas: â‚¹60-120, Coffees: â‚¹120-220, Snacks: â‚¹50-150.',
+          pricingSuggestions: 'Teas: ₹60-120, Coffees: ₹120-220, Snacks: ₹50-150.',
           locationSuggestions: 'Corporate tech park lobbies, transit terminal gates, mall entrances.'
         },
         aiReport: {

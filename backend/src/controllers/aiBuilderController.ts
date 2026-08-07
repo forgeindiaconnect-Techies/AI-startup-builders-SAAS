@@ -78,6 +78,12 @@ Market research should be realistic and explain that numbers are estimated.
 Pitch deck should be investor-ready but simple and understandable.
 AI Report score should be based on idea clarity, market demand, competition, scalability, and execution risk.
 
+CURRENCY RULE (MANDATORY):
+- All monetary values in the output MUST be in Indian Rupees (₹), never dollars.
+- Do not use $, USD, US$, or the word "dollars".
+- Use the Indian number format (e.g. ₹50,00,000 for fifty lakh, ₹1,00,00,000 for one crore).
+- Apply this to financial projections, funding asks, pricing suggestions, market size, TAM/SAM/SOM, and pitch deck content.
+
 AI JSON output structure:
 
 {
