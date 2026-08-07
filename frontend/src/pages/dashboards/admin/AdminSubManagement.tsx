@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { Search, CreditCard, XCircle, X, Shield, Calendar, Mail, User, Phone, Building2, CheckCircle2, Eye, Edit3, ArrowUpRight, Sparkles } from 'lucide-react';
-import { useBilling } from '../../../context/BillingContext';
-import type { Subscription } from '../../../context/BillingContext';
+import React, { useState, useEffect } from 'react';
+import { Search, CreditCard, XCircle, X, Shield, Calendar, Mail, User, Phone, Building2, CheckCircle2, Eye, Edit3, Sparkles } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
 
 const statusStyle: Record<string, string> = {
   Active: 'bg-emerald-50 text-emerald-600 border border-emerald-200 font-bold',
@@ -19,26 +18,118 @@ const PLAN_FEATURES: Record<string, string[]> = {
   Enterprise: ['Custom White-Label Solutions', 'Unlimited Investor Entitlements', 'Dedicated Deal Flow Access', 'Custom AI Agent Tuning']
 };
 
+const PLAN_PRICES: Record<string, string> = {
+  Free: '₹0',
+  Starter: 'Free',
+  Pro: '₹2,499/mo',
+  Growth: '₹4,999/mo',
+  Scale: '₹9,999/yr',
+  Enterprise: '₹14,999/yr'
+};
+
+const PLAN_DB_TO_DISPLAY: Record<string, string> = {
+  free_trial: 'Free',
+  none: 'Free',
+  starter: 'Starter',
+  pro: 'Pro',
+  growth: 'Growth',
+  scale: 'Scale',
+  enterprise: 'Enterprise',
+  premium_startup_builder: 'Enterprise',
+};
+
+const PLAN_DISPLAY_TO_DB: Record<string, string> = {
+  Free: 'none',
+  Starter: 'starter',
+  Pro: 'pro',
+  Growth: 'growth',
+  Scale: 'scale',
+  Enterprise: 'enterprise',
+};
+
+const STATUS_DB_TO_DISPLAY: Record<string, string> = {
+  active: 'Active',
+  expired: 'Past Due',
+  cancelled: 'Cancelled',
+  pending_verification: 'Past Due',
+  none: 'Trial',
+};
+
+const STATUS_DISPLAY_TO_DB: Record<string, string> = {
+  Active: 'active',
+  Trial: 'active',
+  'Past Due': 'expired',
+  Cancelled: 'cancelled',
+};
+
+interface SubRow {
+  id: string;
+  userId: string;
+  userName: string;
+  email: string;
+  plan: string;
+  amount: string;
+  started: string;
+  nextBilling: string;
+  status: string;
+  paymentMethod?: string;
+  transactionId?: string;
+  mobile?: string;
+  company?: string;
+}
+
+const formatDate = (val?: string | null) => {
+  if (!val) return '—';
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
 const AdminSubManagement: React.FC = () => {
-  const { subscriptions, cancelSubscription, updateSubscriptionStatus, updateSubscriptionPlan } = useBilling();
-  
+  const { getAllUsers, refreshUsers, updateUserSubscription } = useAuth();
+
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('All Plans');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
-  const [detailsModal, setDetailsModal] = useState<Subscription | null>(null);
+  const [detailsModal, setDetailsModal] = useState<SubRow | null>(null);
   const [editingStatus, setEditingStatus] = useState<string>('');
   const [editingPlan, setEditingPlan] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    refreshUsers();
+    const interval = setInterval(() => refreshUsers(), 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
   };
-  
+
+  const subscriptions: SubRow[] = getAllUsers().map(u => {
+    const plan = PLAN_DB_TO_DISPLAY[u.plan] || 'Free';
+    const status = STATUS_DB_TO_DISPLAY[u.subscriptionStatus] || 'Trial';
+    return {
+      id: `SUB-${String(u.id).slice(-6).toUpperCase()}`,
+      userId: u.id,
+      userName: u.fullName || u.name || 'Unknown',
+      email: u.email || '',
+      plan,
+      amount: PLAN_PRICES[plan] || '₹0',
+      started: formatDate(u.subscriptionStartDate || u.signupDate),
+      nextBilling: formatDate(u.subscriptionEndDate),
+      status,
+      paymentMethod: u.paymentStatus === 'approved' ? 'UPI / Card' : undefined,
+      transactionId: u.transactionId || undefined,
+      mobile: u.mobile || '',
+      company: u.startupName || '',
+    };
+  });
+
   const filtered = subscriptions.filter(s => {
-    const matchesSearch = s.userName.toLowerCase().includes(search.toLowerCase()) || 
-                          s.email.toLowerCase().includes(search.toLowerCase()) ||
-                          s.id.toLowerCase().includes(search.toLowerCase()) ||
+    const matchesSearch = (s.userName || '').toLowerCase().includes(search.toLowerCase()) ||
+                          (s.email || '').toLowerCase().includes(search.toLowerCase()) ||
+                          (s.id || '').toLowerCase().includes(search.toLowerCase()) ||
                           (s.company && s.company.toLowerCase().includes(search.toLowerCase()));
     const matchesPlan = planFilter === 'All Plans' || s.plan.toLowerCase().includes(planFilter.toLowerCase());
     const matchesStatus = statusFilter === 'All Statuses' || s.status === statusFilter;
@@ -49,36 +140,28 @@ const AdminSubManagement: React.FC = () => {
   const pastDueCount = subscriptions.filter(s => s.status === 'Past Due').length;
   const totalSubscribers = subscriptions.length;
 
-  const handleOpenModal = (sub: Subscription) => {
+  const handleOpenModal = (sub: SubRow) => {
     setDetailsModal(sub);
     setEditingStatus(sub.status);
     setEditingPlan(sub.plan);
   };
 
-  const handleSaveSubDetails = () => {
+  const handleSaveSubDetails = async () => {
     if (!detailsModal) return;
-    if (editingStatus !== detailsModal.status) {
-      updateSubscriptionStatus(detailsModal.id, editingStatus as Subscription['status']);
-    }
-    if (editingPlan !== detailsModal.plan) {
-      const planPrices: Record<string, string> = {
-        Free: '₹0',
-        Starter: 'Free',
-        Pro: '₹2,499/mo',
-        Growth: '₹4,999/mo',
-        Scale: '₹9,999/yr',
-        Enterprise: '₹14,999/yr'
-      };
-      updateSubscriptionPlan(detailsModal.id, editingPlan, planPrices[editingPlan] || detailsModal.amount);
-    }
+    await updateUserSubscription(detailsModal.userId, {
+      status: STATUS_DISPLAY_TO_DB[editingStatus] || 'active',
+      plan: PLAN_DISPLAY_TO_DB[editingPlan] || 'none',
+    });
+    refreshUsers();
     showToast(`Updated subscription details for ${detailsModal.userName}`);
     setDetailsModal(null);
   };
 
-  const handleCancelClick = (sub: Subscription, e?: React.MouseEvent) => {
+  const handleCancelClick = async (sub: SubRow, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (window.confirm(`Are you sure you want to cancel subscription ${sub.id} for ${sub.userName}?`)) {
-      cancelSubscription(sub.id);
+      await updateUserSubscription(sub.userId, { status: 'cancelled' });
+      refreshUsers();
       showToast(`Subscription ${sub.id} has been cancelled.`);
       if (detailsModal?.id === sub.id) setDetailsModal(null);
     }
@@ -111,17 +194,17 @@ const AdminSubManagement: React.FC = () => {
         <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row gap-3 justify-between items-center bg-gray-50/50">
           <div className="relative flex-1 w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input 
-              value={search} 
-              onChange={e => setSearch(e.target.value)} 
-              type="text" 
-              placeholder="Search by subscriber, email, company or Sub ID..." 
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm bg-white" 
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              type="text"
+              placeholder="Search by subscriber, email, company or Sub ID..."
+              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm bg-white"
             />
           </div>
-          
+
           <div className="flex gap-2 w-full sm:w-auto">
-            <select 
+            <select
               value={planFilter}
               onChange={e => setPlanFilter(e.target.value)}
               className="px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
@@ -135,7 +218,7 @@ const AdminSubManagement: React.FC = () => {
               <option>Enterprise</option>
             </select>
 
-            <select 
+            <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
               className="px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
@@ -161,9 +244,9 @@ const AdminSubManagement: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map(s => (
-                <tr 
-                  key={s.id} 
-                  onClick={() => handleOpenModal(s)} 
+                <tr
+                  key={s.id}
+                  onClick={() => handleOpenModal(s)}
                   className="hover:bg-purple-50/40 cursor-pointer transition-colors group"
                 >
                   <td className="px-6 py-4 text-xs font-mono font-extrabold text-purple-700 group-hover:underline flex items-center gap-1.5">
@@ -198,16 +281,16 @@ const AdminSubManagement: React.FC = () => {
                   </td>
                   <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-1.5">
-                      <button 
+                      <button
                         onClick={() => handleOpenModal(s)}
-                        title="View Full Subscriber Details" 
+                        title="View Full Subscriber Details"
                         className="px-2.5 py-1.5 text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors flex items-center gap-1"
                       >
                         <Eye size={14} /> View Details
                       </button>
-                      <button 
+                      <button
                         onClick={(e) => handleCancelClick(s, e)}
-                        title="Cancel Subscription" 
+                        title="Cancel Subscription"
                         className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <XCircle size={16} />
@@ -244,14 +327,14 @@ const AdminSubManagement: React.FC = () => {
                   <p className="text-xs text-purple-200 font-mono">Subscriber ID: {detailsModal.id}</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setDetailsModal(null)} 
+              <button
+                onClick={() => setDetailsModal(null)}
                 className="text-purple-200 hover:text-white p-1.5 rounded-xl hover:bg-white/10 transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
-            
+
             {/* Modal Content Scrollable */}
             <div className="p-6 overflow-y-auto space-y-6">
               {/* Plan Banner */}
@@ -279,7 +362,7 @@ const AdminSubManagement: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Status</label>
-                    <select 
+                    <select
                       value={editingStatus}
                       onChange={e => setEditingStatus(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs font-bold text-gray-800 bg-white focus:ring-2 focus:ring-purple-600 focus:outline-none"
@@ -292,7 +375,7 @@ const AdminSubManagement: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-1">Plan Tier</label>
-                    <select 
+                    <select
                       value={editingPlan}
                       onChange={e => setEditingPlan(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs font-bold text-gray-800 bg-white focus:ring-2 focus:ring-purple-600 focus:outline-none"
@@ -330,14 +413,14 @@ const AdminSubManagement: React.FC = () => {
                     <Phone size={18} className="text-purple-600 shrink-0" />
                     <div>
                       <p className="text-[11px] text-gray-400 font-semibold">Contact Phone</p>
-                      <p className="text-xs font-bold text-gray-900">{detailsModal.mobile || '+91 98765 00000'}</p>
+                      <p className="text-xs font-bold text-gray-900">{detailsModal.mobile || 'Not provided'}</p>
                     </div>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-3">
                     <Building2 size={18} className="text-purple-600 shrink-0" />
                     <div>
                       <p className="text-[11px] text-gray-400 font-semibold">Company / Startup</p>
-                      <p className="text-xs font-bold text-gray-900">{detailsModal.company || 'AI Startup Hub'}</p>
+                      <p className="text-xs font-bold text-gray-900">{detailsModal.company || 'Not provided'}</p>
                     </div>
                   </div>
                 </div>
@@ -361,7 +444,7 @@ const AdminSubManagement: React.FC = () => {
                   </div>
                   <div className="flex justify-between py-1.5 text-xs">
                     <span className="text-gray-500 font-semibold flex items-center gap-1.5"><Shield size={14} /> UTR / Transaction Ref</span>
-                    <span className="font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded">{detailsModal.transactionId || 'UPI421987654321'}</span>
+                    <span className="font-mono font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded">{detailsModal.transactionId || '—'}</span>
                   </div>
                 </div>
               </div>
@@ -384,20 +467,20 @@ const AdminSubManagement: React.FC = () => {
 
             {/* Modal Actions Footer */}
             <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-3 shrink-0">
-              <button 
+              <button
                 onClick={() => handleCancelClick(detailsModal)}
                 className="px-4 py-2 rounded-xl font-bold text-xs text-red-600 hover:bg-red-50 border border-red-200 transition-colors"
               >
                 Cancel Subscription
               </button>
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={() => setDetailsModal(null)}
                   className="px-4 py-2.5 rounded-xl font-bold text-xs bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
                 >
                   Close
                 </button>
-                <button 
+                <button
                   onClick={handleSaveSubDetails}
                   className="px-5 py-2.5 rounded-xl font-bold text-xs bg-purple-700 hover:bg-purple-800 text-white shadow-md transition-all flex items-center gap-1.5"
                 >
@@ -413,4 +496,3 @@ const AdminSubManagement: React.FC = () => {
 };
 
 export default AdminSubManagement;
-

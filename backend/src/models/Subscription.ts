@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 export interface ISubscription extends mongoose.Document {
   userId: mongoose.Types.ObjectId;
-  planName: 'free_trial' | 'pro' | 'premium_startup_builder' | 'none';
+  planName: 'free_trial' | 'pro' | 'premium_startup_builder' | 'starter' | 'growth' | 'scale' | 'enterprise' | 'none';
   price: number;
   billingCycle: 'trial' | 'monthly';
   status: 'active' | 'expired' | 'pending_verification' | 'cancelled' | 'none';
@@ -16,7 +16,7 @@ export interface ISubscription extends mongoose.Document {
 
 const subscriptionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-  planName: { type: String, enum: ['free_trial', 'pro', 'premium_startup_builder', 'none'], default: 'none' },
+  planName: { type: String, enum: ['free_trial', 'pro', 'premium_startup_builder', 'starter', 'growth', 'scale', 'enterprise', 'none'], default: 'none' },
   price: { type: Number, default: 0 },
   billingCycle: { type: String, enum: ['trial', 'monthly'], default: 'trial' },
   status: { type: String, enum: ['active', 'expired', 'pending_verification', 'cancelled', 'none'], default: 'none' },

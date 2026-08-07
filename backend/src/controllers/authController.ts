@@ -357,6 +357,41 @@ export const getAllUsersAdmin = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// Admin: Update a user's subscription (plan / status / payment status)
+export const updateUserSubscription = async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId, plan, status, paymentStatus } = req.body;
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'userId is required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+    let subscription = await Subscription.findOne({ userId });
+    if (!subscription) {
+      subscription = new Subscription({ userId });
+    }
+
+    if (plan) subscription.planName = plan;
+    if (status) subscription.status = status;
+    if (paymentStatus) subscription.paymentStatus = paymentStatus;
+    if (status === 'active' && plan && plan !== 'none') {
+      subscription.billingCycle = 'monthly';
+    }
+    if (status === 'cancelled') {
+      subscription.status = 'cancelled';
+      subscription.paymentStatus = subscription.paymentStatus === 'approved' ? 'approved' : 'rejected';
+    }
+    await subscription.save();
+
+    res.json({ success: true, message: 'Subscription updated successfully', subscription });
+  } catch (error) {
+    console.error('Error in updateUserSubscription:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
 // 4. Get Current User Profile (with Subscription data)
 export const getMe = async (req: AuthRequest, res: Response) => {
   try {

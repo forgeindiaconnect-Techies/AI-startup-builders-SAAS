@@ -41,6 +41,7 @@ interface AuthContextType {
   deleteUser: (userId: string) => void;
   resetUserPassword: (userId: string) => void;
   refreshUsers: () => void;
+  updateUserSubscription: (userId: string, data: { plan?: string; status?: string; paymentStatus?: string }) => Promise<void>;
 }
 
 const TOKEN_KEY = 'ai_startup_builder_jwt';
@@ -79,8 +80,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           loginCount: u.loginCount || 0,
           plan: u.plan || 'none',
           subscriptionStatus: u.subscriptionStatus || 'none',
+          paymentStatus: u.paymentStatus || '',
           trialEndDate: u.trialEndDate || null,
+          subscriptionStartDate: u.subscriptionStartDate || null,
           subscriptionEndDate: u.subscriptionEndDate || null,
+          mobile: u.mobile || '',
+          startupName: u.startupName || u.companyName || '',
         }));
         setAllUsers(mapped);
       }
@@ -249,7 +254,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } catch {}
       },
       resetUserPassword: (_userId: string) => {},
-      refreshUsers: () => { fetchAllUsers(); }
+      refreshUsers: () => { fetchAllUsers(); },
+      updateUserSubscription: async (userId: string, data: { plan?: string; status?: string; paymentStatus?: string }) => {
+        const token = getToken();
+        if (!token) return;
+        try {
+          await fetch(`${API_URL}/auth/admin/users/subscription`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ userId, ...data })
+          });
+          fetchAllUsers();
+        } catch {}
+      }
     }}>
       {children}
     </AuthContext.Provider>
