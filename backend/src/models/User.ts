@@ -24,6 +24,13 @@ export interface IUser extends mongoose.Document {
   experienceYears?: string;
   linkedin?: string;
   bio?: string;
+  aadharNumber?: string;
+  aadharDocUrl?: string;
+  panNumber?: string;
+  panDocUrl?: string;
+  otherDocType?: string;
+  otherDocNumber?: string;
+  otherDocUrl?: string;
 
   // Investor fields
   companyName?: string;
@@ -60,6 +67,13 @@ const userSchema = new mongoose.Schema({
   experienceYears: { type: String },
   linkedin: { type: String },
   bio: { type: String },
+  aadharNumber: { type: String },
+  aadharDocUrl: { type: String },
+  panNumber: { type: String },
+  panDocUrl: { type: String },
+  otherDocType: { type: String },
+  otherDocNumber: { type: String },
+  otherDocUrl: { type: String },
 
   // Investor fields
   companyName: { type: String },

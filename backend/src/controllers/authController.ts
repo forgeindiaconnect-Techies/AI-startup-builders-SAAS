@@ -83,6 +83,7 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
       email, otp, password, role, fullName,
       mobile, currentRole, startupName, startupStage, industry, agreedToTerms,
       expertise, experienceYears, linkedin, bio,
+      aadharNumber, aadharDocUrl, panNumber, panDocUrl, otherDocType, otherDocNumber, otherDocUrl,
       companyName, investorType, preferredIndustry, minInvestment, maxInvestment,
       ...otherData
     } = req.body;
@@ -131,7 +132,10 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
     if (role === 'founder') {
       Object.assign(roleFields, { mobile, currentRole, startupName, startupStage, industry, agreedToTerms });
     } else if (role === 'mentor') {
-      Object.assign(roleFields, { mobile, expertise, experienceYears, linkedin, bio });
+      Object.assign(roleFields, {
+        mobile, expertise, experienceYears, linkedin, bio,
+        aadharNumber, aadharDocUrl, panNumber, panDocUrl, otherDocType, otherDocNumber, otherDocUrl
+      });
     } else if (role === 'investor') {
       Object.assign(roleFields, { mobile, companyName, investorType, preferredIndustry, minInvestment, maxInvestment });
     }

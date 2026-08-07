@@ -4,7 +4,8 @@ import {
   Rocket, Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft,
   Loader2, Mail, User, Phone, Lock, Check, Gift, Zap,
   Briefcase, TrendingUp, Building2, ChevronRight, Link2, ShieldAlert,
-  MapPin, GraduationCap, PenLine,
+  MapPin, GraduationCap, PenLine, FileText, UploadCloud, ShieldCheck,
+  CreditCard, FileCheck, Trash2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config/api';
@@ -12,7 +13,7 @@ import { validateInvite, markInviteUsed, getInviteByToken } from '../../utils/in
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type UserRole = 'founder' | 'mentor' | 'investor';
-type Step = 'role' | 'basic' | 'professional' | 'form' | 'otp' | 'welcome';
+type Step = 'role' | 'basic' | 'professional' | 'proof' | 'form' | 'otp' | 'welcome';
 
 interface FormData {
   fullName: string;
@@ -26,6 +27,17 @@ interface FormData {
   experienceYears: string;
   linkedin: string;
   bio: string;
+  // Mentor proof fields
+  aadharNumber: string;
+  aadharDocName: string;
+  aadharDocUrl: string;
+  panNumber: string;
+  panDocName: string;
+  panDocUrl: string;
+  otherDocType: string;
+  otherDocNumber: string;
+  otherDocName: string;
+  otherDocUrl: string;
   // Investor fields
   companyName: string;
   investorType: string;
@@ -37,6 +49,9 @@ interface FormData {
 const emptyForm: FormData = {
   fullName: '', email: '', mobile: '', location: '', password: '', confirmPassword: '',
   expertise: '', experienceYears: '', linkedin: '', bio: '',
+  aadharNumber: '', aadharDocName: '', aadharDocUrl: '',
+  panNumber: '', panDocName: '', panDocUrl: '',
+  otherDocType: '', otherDocNumber: '', otherDocName: '', otherDocUrl: '',
   companyName: '', investorType: '', preferredIndustry: '', minInvestment: '', maxInvestment: '',
 };
 
@@ -318,6 +333,101 @@ const PasswordField: React.FC<{
   );
 };
 
+// ── Document Uploader Component ──────────────────────────────────────────────
+const DocumentUploader: React.FC<{
+  label: string;
+  docName: string;
+  docUrl: string;
+  onUpload: (name: string, url: string) => void;
+  onRemove: () => void;
+  error?: string;
+  accept?: string;
+}> = ({ label, docName, docUrl, onUpload, onRemove, error, accept = 'image/*,.pdf' }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size exceeds 5MB limit. Please upload a smaller file.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      onUpload(file.name, reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-gray-900 mb-1.5">{label}</label>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept={accept}
+        className="hidden"
+      />
+      {docUrl ? (
+        <div className="flex items-center justify-between p-3 bg-emerald-50 border-2 border-emerald-200 rounded-xl transition-all">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <FileCheck size={18} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-emerald-900 truncate">{docName || 'Document Uploaded'}</p>
+              <p className="text-[10px] text-emerald-600 font-medium flex items-center gap-1">
+                <CheckCircle2 size={10} /> Document attached
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-white transition-colors shrink-0"
+            title="Remove document"
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className={`w-full flex flex-col items-center justify-center p-3.5 border-2 border-dashed ${
+            error ? 'border-red-300 bg-red-50/30' : 'border-gray-200 hover:border-[#6C4CF1] bg-gray-50/50 hover:bg-[#6C4CF1]/[0.02]'
+          } rounded-xl transition-all cursor-pointer group`}
+        >
+          <UploadCloud size={22} className="text-gray-400 group-hover:text-[#6C4CF1] transition-colors mb-1" />
+          <p className="text-xs font-bold text-gray-700 group-hover:text-[#6C4CF1] transition-colors">
+            Click to upload file
+          </p>
+          <p className="text-[10px] text-gray-400 mt-0.5">
+            PNG, JPG or PDF (Max 5MB)
+          </p>
+        </button>
+      )}
+      {error && <p className="text-red-500 text-xs mt-1 font-medium">{error}</p>}
+    </div>
+  );
+};
+
+const formatAadhaar = (val: string) => {
+  const digits = val.replace(/\D/g, '').slice(0, 12);
+  const parts = [];
+  for (let i = 0; i < digits.length; i += 4) {
+    parts.push(digits.slice(i, i + 4));
+  }
+  return parts.join(' ');
+};
+
+const formatPan = (val: string) => {
+  return val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 10);
+};
+
 // ── Section Heading ───────────────────────────────────────────────────────────
 const SectionHeading: React.FC<{ title: string; subtitle: string }> = ({ title, subtitle }) => (
   <div className="mb-6">
@@ -482,6 +592,39 @@ const Signup: React.FC = () => {
     return Object.keys(e).length === 0;
   };
 
+  // ── Step 3 Validation (Mentor Proof Docs) ─────────────────────────────
+  const validateProof = (): boolean => {
+    const e: Record<string, string> = {};
+    const cleanAadhar = form.aadharNumber.replace(/\s+/g, '');
+    if (!cleanAadhar) {
+      e.aadharNumber = 'Aadhaar number is required';
+    } else if (!/^\d{12}$/.test(cleanAadhar)) {
+      e.aadharNumber = 'Aadhaar number must be exactly 12 digits';
+    }
+
+    if (!form.aadharDocUrl) {
+      e.aadharDocUrl = 'Aadhaar document upload is required';
+    }
+
+    const cleanPan = form.panNumber.trim().toUpperCase();
+    if (!cleanPan) {
+      e.panNumber = 'PAN number is required';
+    } else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPan)) {
+      e.panNumber = 'Enter a valid 10-character PAN (e.g. ABCDE1234F)';
+    }
+
+    if (!form.panDocUrl) {
+      e.panDocUrl = 'PAN document upload is required';
+    }
+
+    if (form.otherDocType && !form.otherDocUrl) {
+      e.otherDocUrl = 'Please upload a file for the selected additional document';
+    }
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   // ── Non-Mentor Form Validation ──────────────────────────────────────────
   const validateForm = (): boolean => {
     const e: Record<string, string> = {};
@@ -508,7 +651,7 @@ const Signup: React.FC = () => {
 
   // ── Send Email OTP ──────────────────────────────────────────────────────
   const handleSendEmailOtp = async () => {
-    const valid = selectedRole === 'mentor' ? validateProfessional() : validateForm();
+    const valid = selectedRole === 'mentor' ? validateProof() : validateForm();
     if (!valid) return;
     setIsSubmitting(true);
     setApiError('');
@@ -586,6 +729,13 @@ const Signup: React.FC = () => {
         body.experienceYears = form.experienceYears;
         body.linkedin = form.linkedin.trim();
         body.bio = form.bio.trim();
+        body.aadharNumber = form.aadharNumber.replace(/\s+/g, '');
+        body.aadharDocUrl = form.aadharDocUrl;
+        body.panNumber = form.panNumber.trim().toUpperCase();
+        body.panDocUrl = form.panDocUrl;
+        body.otherDocType = form.otherDocType;
+        body.otherDocNumber = form.otherDocNumber;
+        body.otherDocUrl = form.otherDocUrl;
       } else if (selectedRole === 'investor') {
         body.companyName = form.companyName;
         body.investorType = form.investorType;
@@ -643,13 +793,15 @@ const Signup: React.FC = () => {
         ? [
             { num: 1, label: 'Basic Information' },
             { num: 2, label: 'Professional Info' },
-            { num: 3, label: 'Verify Email' },
+            { num: 3, label: 'Proof Docs' },
+            { num: 4, label: 'Verify Email' },
           ]
         : [
             { num: 1, label: 'Choose Role' },
             { num: 2, label: 'Basic Information' },
             { num: 3, label: 'Professional Info' },
-            { num: 4, label: 'Verify Email' },
+            { num: 4, label: 'Proof Docs' },
+            { num: 5, label: 'Verify Email' },
           ];
     }
     if (selectedRole === 'founder' || selectedRole === 'investor') {
@@ -667,7 +819,8 @@ const Signup: React.FC = () => {
     if (selectedRole === 'mentor') {
       if (step === 'basic') return isInviteFlow ? 0 : 1;
       if (step === 'professional') return isInviteFlow ? 1 : 2;
-      if (step === 'otp') return isInviteFlow ? 2 : 3;
+      if (step === 'proof') return isInviteFlow ? 2 : 3;
+      if (step === 'otp') return isInviteFlow ? 3 : 4;
     }
     if (step === 'form') return 1;
     if (step === 'otp') return 2;
@@ -962,6 +1115,158 @@ const Signup: React.FC = () => {
                       Back
                     </button>
                     <button
+                      onClick={() => { setApiError(''); if (validateProfessional()) { setErrors({}); setStep('proof'); } }}
+                      className="flex-1 h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all flex items-center justify-center gap-2"
+                    >
+                      Continue to Proof Documentation <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── STEP 3: PROOF DOCUMENTATION (Mentor) ── */}
+            {step === 'proof' && (
+              <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                <button
+                  onClick={() => { setErrors({}); setStep('professional'); }}
+                  className="mb-4 inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors text-sm"
+                >
+                  <ArrowLeft size={14} /> Back
+                </button>
+                <SectionHeading
+                  title="Proof Documentation"
+                  subtitle="Upload official identification documents (Aadhaar & PAN) to verify your mentor credentials."
+                />
+
+                {apiError && (
+                  <div className="mb-5 p-3.5 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm flex items-start gap-2.5">
+                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                    <span className="font-medium">{apiError}</span>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  {/* Aadhaar Section */}
+                  <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-100 space-y-3">
+                    <div className="flex items-center gap-2 text-[#6C4CF1] font-bold text-sm">
+                      <ShieldCheck size={18} />
+                      <span>Aadhaar Card Details *</span>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <Field
+                        label="Aadhaar Number *"
+                        icon={<FileText size={16} />}
+                        placeholder="1234 5678 9012"
+                        value={form.aadharNumber}
+                        onChange={v => update('aadharNumber', formatAadhaar(v))}
+                        error={errors.aadharNumber}
+                        maxLength={14}
+                        inputMode="numeric"
+                      />
+                      <DocumentUploader
+                        label="Upload Aadhaar Document *"
+                        docName={form.aadharDocName}
+                        docUrl={form.aadharDocUrl}
+                        onUpload={(name, url) => {
+                          update('aadharDocName', name);
+                          update('aadharDocUrl', url);
+                        }}
+                        onRemove={() => {
+                          update('aadharDocName', '');
+                          update('aadharDocUrl', '');
+                        }}
+                        error={errors.aadharDocUrl}
+                      />
+                    </div>
+                  </div>
+
+                  {/* PAN Section */}
+                  <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-100 space-y-3">
+                    <div className="flex items-center gap-2 text-[#6C4CF1] font-bold text-sm">
+                      <CreditCard size={18} />
+                      <span>PAN Card Details *</span>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <Field
+                        label="PAN Number *"
+                        icon={<FileText size={16} />}
+                        placeholder="ABCDE1234F"
+                        value={form.panNumber}
+                        onChange={v => update('panNumber', formatPan(v))}
+                        error={errors.panNumber}
+                        maxLength={10}
+                      />
+                      <DocumentUploader
+                        label="Upload PAN Document *"
+                        docName={form.panDocName}
+                        docUrl={form.panDocUrl}
+                        onUpload={(name, url) => {
+                          update('panDocName', name);
+                          update('panDocUrl', url);
+                        }}
+                        onRemove={() => {
+                          update('panDocName', '');
+                          update('panDocUrl', '');
+                        }}
+                        error={errors.panDocUrl}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Additional Proof Section */}
+                  <div className="p-4 bg-gray-50/70 rounded-2xl border border-gray-100 space-y-3">
+                    <div className="flex items-center gap-2 text-gray-700 font-bold text-sm">
+                      <FileText size={18} />
+                      <span>Additional Proof / Document (Optional)</span>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-900 mb-1.5">Document Type</label>
+                        <select
+                          value={form.otherDocType}
+                          onChange={e => update('otherDocType', e.target.value)}
+                          className="block w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
+                        >
+                          <option value="">Select type</option>
+                          <option value="Passport">Passport</option>
+                          <option value="Driving License">Driving License</option>
+                          <option value="Degree / Educational Certificate">Degree / Educational Certificate</option>
+                          <option value="Experience Letter">Experience Letter</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <Field
+                        label="Document / Reference Number"
+                        placeholder="e.g. Passport or Certificate ID"
+                        value={form.otherDocNumber}
+                        onChange={v => update('otherDocNumber', v)}
+                      />
+                    </div>
+                    <DocumentUploader
+                      label="Upload Additional Document"
+                      docName={form.otherDocName}
+                      docUrl={form.otherDocUrl}
+                      onUpload={(name, url) => {
+                        update('otherDocName', name);
+                        update('otherDocUrl', url);
+                      }}
+                      onRemove={() => {
+                        update('otherDocName', '');
+                        update('otherDocUrl', '');
+                      }}
+                      error={errors.otherDocUrl}
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={() => { setErrors({}); setStep('professional'); }}
+                      className="px-6 h-12 text-sm font-bold rounded-xl border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-all"
+                    >
+                      Back
+                    </button>
+                    <button
                       onClick={handleSendEmailOtp}
                       disabled={isSubmitting}
                       className="flex-1 h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] disabled:opacity-70 transition-all flex items-center justify-center gap-2"
@@ -1081,7 +1386,7 @@ const Signup: React.FC = () => {
             {step === 'otp' && (
               <div className="flex flex-col items-center text-center animate-in fade-in slide-in-from-right-4 duration-500">
                 <button
-                  onClick={() => { setErrors({}); setOtp(['', '', '', '', '', '']); setStep(selectedRole === 'mentor' ? 'professional' : 'form'); }}
+                  onClick={() => { setErrors({}); setOtp(['', '', '', '', '', '']); setStep(selectedRole === 'mentor' ? 'proof' : 'form'); }}
                   className="self-start mb-4 inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors text-sm"
                 >
                   <ArrowLeft size={14} /> Back
