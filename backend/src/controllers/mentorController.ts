@@ -63,6 +63,23 @@ function defaultAvailability(days = 14): Array<{ date: string; slots: string[] }
   return availability;
 }
 
+// Build rolling availability for the next `daysCount` days from selected weekday numbers
+// (0 = Sunday ... 6 = Saturday) and time slots.
+function buildAvailabilityFromDaysSlots(
+  days: number[],
+  slots: string[],
+  daysCount = 14
+): Array<{ date: string; slots: string[] }> {
+  const availability: Array<{ date: string; slots: string[] }> = [];
+  const today = new Date();
+  for (let i = 1; i <= daysCount; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+    if (!days.includes(d.getDay())) continue;
+    availability.push({ date: formatDate(d), slots: [...slots] });
+  }
+  return availability;
+}
+
 function guessCategories(expertise: string[]): string[] {
   const text = expertise.join(' ').toLowerCase();
   const map: Array<[string, string[]]> = [
@@ -345,6 +362,7 @@ export const updateMentorProfileAdmin = async (req: AuthRequest, res: Response) 
       fullName, title, expertise, industry, categories, bio,
       experienceYears, linkedin, photoUrl, location,
       sessionDuration, sessionFee, isActive, status, approvalStatus,
+      availableDays, availableSlots,
     } = req.body;
 
     // Update User fields so the admin list / signup data stay in sync
@@ -373,6 +391,17 @@ export const updateMentorProfileAdmin = async (req: AuthRequest, res: Response) 
     if (typeof sessionDuration === 'number') profile.sessionDuration = sessionDuration;
     if (typeof sessionFee === 'number') profile.sessionFee = sessionFee;
     if (typeof isActive === 'boolean') profile.isActive = isActive;
+
+    // Regenerate rolling availability from admin-selected days + time slots
+    if (Array.isArray(availableSlots)) {
+      const days = Array.isArray(availableDays)
+        ? availableDays.map(Number).filter((n) => n >= 0 && n <= 6)
+        : [1, 2, 3, 4, 5];
+      const slots = availableSlots.map((s) => String(s).trim()).filter(Boolean);
+      profile.availability = days.length && slots.length
+        ? buildAvailabilityFromDaysSlots(days, slots)
+        : [];
+    }
     await profile.save();
 
     res.json({

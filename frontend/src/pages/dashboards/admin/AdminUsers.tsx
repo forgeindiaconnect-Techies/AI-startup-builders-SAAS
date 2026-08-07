@@ -3,6 +3,19 @@ import { Search, Eye, Trash2, Download, X, AlertCircle, CheckCircle, ChevronDown
 import { useAuth } from '../../../context/AuthContext';
 import { getMentorProfile, updateMentorProfileAdmin } from '../../../utils/mentorApi';
 
+const WEEKDAYS: { label: string; value: number }[] = [
+  { label: 'Sun', value: 0 },
+  { label: 'Mon', value: 1 },
+  { label: 'Tue', value: 2 },
+  { label: 'Wed', value: 3 },
+  { label: 'Thu', value: 4 },
+  { label: 'Fri', value: 5 },
+  { label: 'Sat', value: 6 },
+];
+
+const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+const DEFAULT_AVAIL_SLOTS = ['10:00', '11:00', '12:00', '14:00', '15:00', '16:00'];
+
 const roleColors: Record<string, string> = {
   founder: 'bg-yellow-100 text-yellow-700 border border-yellow-200',
   mentor: 'bg-blue-100 text-blue-700 border border-blue-200',
@@ -60,6 +73,8 @@ const AdminUsers: React.FC = () => {
     sessionDuration: '45',
     sessionFee: '0',
     isActive: true,
+    availableDays: [1, 2, 3, 4, 5],
+    availableSlots: DEFAULT_AVAIL_SLOTS,
   });
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
@@ -152,9 +167,20 @@ const AdminUsers: React.FC = () => {
       sessionDuration: String(u.sessionDuration || 45),
       sessionFee: String(u.sessionFee ?? 0),
       isActive: u.isActive !== false,
+      availableDays: [1, 2, 3, 4, 5],
+      availableSlots: DEFAULT_AVAIL_SLOTS,
     });
     try {
       const full = await getMentorProfile(u.id);
+
+      const daySet = new Set<number>();
+      const slotSet = new Set<string>();
+      (full.availability || []).forEach((a: any) => {
+        const d = new Date(`${a.date}T00:00:00`);
+        if (!isNaN(d.getTime())) daySet.add(d.getDay());
+        (a.slots || []).forEach((s: string) => slotSet.add(s));
+      });
+
       setMentorForm({
         fullName: full.name || u.fullName || '',
         title: full.title || 'Startup Mentor',
@@ -169,6 +195,8 @@ const AdminUsers: React.FC = () => {
         sessionDuration: String(full.sessionDuration || 45),
         sessionFee: String(full.sessionFee ?? 0),
         isActive: full.isActive !== false,
+        availableDays: daySet.size ? [...daySet].sort() : [1, 2, 3, 4, 5],
+        availableSlots: slotSet.size ? TIME_SLOTS.filter((s) => slotSet.has(s)) : DEFAULT_AVAIL_SLOTS,
       });
     } catch {
       // fall back to the admin list data
@@ -179,6 +207,24 @@ const AdminUsers: React.FC = () => {
 
   const updateForm = (key: keyof typeof mentorForm, value: string | boolean) => {
     setMentorForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const toggleDay = (day: number) => {
+    setMentorForm((prev) => ({
+      ...prev,
+      availableDays: prev.availableDays.includes(day)
+        ? prev.availableDays.filter((d) => d !== day)
+        : [...prev.availableDays, day],
+    }));
+  };
+
+  const toggleSlot = (slot: string) => {
+    setMentorForm((prev) => ({
+      ...prev,
+      availableSlots: prev.availableSlots.includes(slot)
+        ? prev.availableSlots.filter((s) => s !== slot)
+        : [...prev.availableSlots, slot],
+    }));
   };
 
   const handleSaveMentor = async () => {
@@ -205,6 +251,8 @@ const AdminUsers: React.FC = () => {
         sessionDuration: Number(mentorForm.sessionDuration) || 45,
         sessionFee: Number(mentorForm.sessionFee) || 0,
         isActive: mentorForm.isActive,
+        availableDays: mentorForm.availableDays,
+        availableSlots: mentorForm.availableSlots,
       });
       // Reflect the changes immediately and lock background polling for 10s
       lockUntilRef.current = Date.now() + 10000;
@@ -921,6 +969,52 @@ const AdminUsers: React.FC = () => {
                       placeholder="https://..."
                       className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
                     />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Available Days</label>
+                    <div className="flex flex-wrap gap-2">
+                      {WEEKDAYS.map((day) => {
+                        const active = mentorForm.availableDays.includes(day.value);
+                        return (
+                          <button
+                            key={day.value}
+                            type="button"
+                            onClick={() => toggleDay(day.value)}
+                            className={`px-4 py-2 rounded-xl border text-xs font-bold transition-all ${
+                              active
+                                ? 'bg-[#5B21B6] text-white border-[#5B21B6] shadow'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-purple-300'
+                            }`}
+                          >
+                            {day.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1">Select which weekdays this mentor is available for sessions.</p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Available Time Slots</label>
+                    <div className="flex flex-wrap gap-2">
+                      {TIME_SLOTS.map((slot) => {
+                        const active = mentorForm.availableSlots.includes(slot);
+                        return (
+                          <button
+                            key={slot}
+                            type="button"
+                            onClick={() => toggleSlot(slot)}
+                            className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all ${
+                              active
+                                ? 'bg-[#5B21B6] text-white border-[#5B21B6] shadow'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-purple-300'
+                            }`}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-1">Available times are shown to founders when booking a session.</p>
                   </div>
                   <div className="sm:col-span-2 flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-xl">
                     <div>
