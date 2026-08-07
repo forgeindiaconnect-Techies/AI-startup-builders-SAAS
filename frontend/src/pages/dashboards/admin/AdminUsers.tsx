@@ -4,7 +4,6 @@ import { useAuth } from '../../../context/AuthContext';
 import { getMentorProfile, updateMentorProfileAdmin } from '../../../utils/mentorApi';
 
 const WEEKDAYS: { label: string; value: number }[] = [
-  { label: 'Sun', value: 0 },
   { label: 'Mon', value: 1 },
   { label: 'Tue', value: 2 },
   { label: 'Wed', value: 3 },
@@ -13,7 +12,18 @@ const WEEKDAYS: { label: string; value: number }[] = [
   { label: 'Sat', value: 6 },
 ];
 
-const TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+const TIME_SLOTS: { label: string; value: string }[] = [
+  { label: '9:00', value: '09:00' },
+  { label: '10:00', value: '10:00' },
+  { label: '11:00', value: '11:00' },
+  { label: '12:00', value: '12:00' },
+  { label: '1:00', value: '13:00' },
+  { label: '2:00', value: '14:00' },
+  { label: '3:00', value: '15:00' },
+  { label: '4:00', value: '16:00' },
+  { label: '5:00', value: '17:00' },
+  { label: '6:00', value: '18:00' },
+];
 const DEFAULT_AVAIL_SLOTS = ['10:00', '11:00', '12:00', '14:00', '15:00', '16:00'];
 
 const roleColors: Record<string, string> = {
@@ -73,7 +83,7 @@ const AdminUsers: React.FC = () => {
     sessionDuration: '45',
     sessionFee: '0',
     isActive: true,
-    availableDays: [1, 2, 3, 4, 5],
+    availableDays: [1, 2, 3, 4, 5, 6],
     availableSlots: DEFAULT_AVAIL_SLOTS,
   });
 
@@ -167,7 +177,7 @@ const AdminUsers: React.FC = () => {
       sessionDuration: String(u.sessionDuration || 45),
       sessionFee: String(u.sessionFee ?? 0),
       isActive: u.isActive !== false,
-      availableDays: [1, 2, 3, 4, 5],
+      availableDays: [1, 2, 3, 4, 5, 6],
       availableSlots: DEFAULT_AVAIL_SLOTS,
     });
     try {
@@ -195,8 +205,8 @@ const AdminUsers: React.FC = () => {
         sessionDuration: String(full.sessionDuration || 45),
         sessionFee: String(full.sessionFee ?? 0),
         isActive: full.isActive !== false,
-        availableDays: daySet.size ? [...daySet].sort() : [1, 2, 3, 4, 5],
-        availableSlots: slotSet.size ? TIME_SLOTS.filter((s) => slotSet.has(s)) : DEFAULT_AVAIL_SLOTS,
+        availableDays: daySet.size ? [...daySet].sort() : [1, 2, 3, 4, 5, 6],
+        availableSlots: slotSet.size ? TIME_SLOTS.filter((t) => slotSet.has(t.value)).map((t) => t.value) : DEFAULT_AVAIL_SLOTS,
       });
     } catch {
       // fall back to the admin list data
@@ -934,15 +944,6 @@ const AdminUsers: React.FC = () => {
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Categories (comma separated)</label>
-                    <input
-                      value={mentorForm.categories}
-                      onChange={(e) => updateForm('categories', e.target.value)}
-                      placeholder="e.g. Finance, Fundraising"
-                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Bio</label>
                     <textarea
                       value={mentorForm.bio}
@@ -958,15 +959,6 @@ const AdminUsers: React.FC = () => {
                       value={mentorForm.linkedin}
                       onChange={(e) => updateForm('linkedin', e.target.value)}
                       placeholder="https://linkedin.com/in/..."
-                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Photo URL</label>
-                    <input
-                      value={mentorForm.photoUrl}
-                      onChange={(e) => updateForm('photoUrl', e.target.value)}
-                      placeholder="https://..."
                       className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
                     />
                   </div>
@@ -996,20 +988,20 @@ const AdminUsers: React.FC = () => {
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Available Time Slots</label>
                     <div className="flex flex-wrap gap-2">
-                      {TIME_SLOTS.map((slot) => {
-                        const active = mentorForm.availableSlots.includes(slot);
+                      {TIME_SLOTS.map((t) => {
+                        const active = mentorForm.availableSlots.includes(t.value);
                         return (
                           <button
-                            key={slot}
+                            key={t.value}
                             type="button"
-                            onClick={() => toggleSlot(slot)}
+                            onClick={() => toggleSlot(t.value)}
                             className={`px-3 py-2 rounded-xl border text-xs font-bold transition-all ${
                               active
                                 ? 'bg-[#5B21B6] text-white border-[#5B21B6] shadow'
                                 : 'bg-white text-gray-600 border-gray-200 hover:border-purple-300'
                             }`}
                           >
-                            {slot}
+                            {t.label}
                           </button>
                         );
                       })}
