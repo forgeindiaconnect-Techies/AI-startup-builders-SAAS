@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { FileText, IndianRupee, Star, CheckCircle, Mail, Calendar, LogIn, ShieldCheck } from 'lucide-react';
 import { getStartups } from '../../utils/localStorageHelper';
+import { getMentorBookings } from '../../utils/mentorApi';
 
 const MentorDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -18,9 +19,24 @@ const MentorDashboard: React.FC = () => {
 
   React.useEffect(() => {
     const fetchData = async () => {
-      const locals = await getStartups();
-      locals.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setStartups(locals);
+      const [bks, allStartups] = await Promise.all([
+        getMentorBookings().catch(() => []),
+        getStartups(),
+      ]);
+      const founderNames = new Map<string, string>();
+      const startupIds = new Set<string>();
+      (Array.isArray(bks) ? bks : []).forEach((b) => {
+        if (b.status === 'cancelled') return;
+        if (b.userId?._id) founderNames.set(b.userId._id.toString(), b.userId.fullName || 'Founder');
+        const sp = b.startupId;
+        if (sp) startupIds.add((sp._id || sp).toString());
+      });
+      const visible = allStartups.filter((s: any) => startupIds.has(String(s.startupId || s._id))).map((s: any) => {
+        const founderId = typeof s.founderId === 'string' ? s.founderId : s.founderId?._id?.toString();
+        return { ...s, founderName: founderNames.get(founderId || '') || 'Founder' };
+      });
+      visible.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setStartups(visible);
     };
     fetchData();
   }, []);
@@ -104,6 +120,7 @@ const MentorDashboard: React.FC = () => {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Startup Name</th>
+                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Founder</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Industry</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">AI Score</th>
                 <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Created Date</th>
@@ -113,8 +130,8 @@ const MentorDashboard: React.FC = () => {
             <tbody className="divide-y divide-gray-100">
               {startups.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-500">
-                    No startups to review yet.
+                  <td colSpan={6} className="p-8 text-center text-gray-500">
+                    No startups to review yet. Founders who book you as their mentor will appear here.
                   </td>
                 </tr>
               ) : (
@@ -124,6 +141,7 @@ const MentorDashboard: React.FC = () => {
                       <div className="font-bold text-gray-900">{startup.startupName}</div>
                       <div className="text-xs text-gray-500 line-clamp-1">{startup.startupIdea}</div>
                     </td>
+                    <td className="p-4 text-sm text-gray-700">{startup.founderName}</td>
                     <td className="p-4 text-sm text-gray-700">{startup.aiGenerated?.ideaAnalysis?.businessModel || 'Tech'}</td>
                     <td className="p-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${startup.status === 'generated' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>

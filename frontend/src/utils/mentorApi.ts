@@ -65,6 +65,14 @@ export const getMyBookings = async (status?: string): Promise<any[]> => {
   return data.data || [];
 };
 
+// GET /api/mentors/mentor/bookings  (bookings for the logged-in mentor)
+export const getMentorBookings = async (status?: string): Promise<any[]> => {
+  const query = status ? `?status=${encodeURIComponent(status)}` : '';
+  const res = await fetch(`${API_URL}/mentors/mentor/bookings${query}`, { headers: authHeaders(false) });
+  const data = await handleResponse(res);
+  return data.data || [];
+};
+
 // POST /api/mentors/bookings/:id/cancel
 export const cancelBooking = async (id: string): Promise<any> => {
   const res = await fetch(`${API_URL}/mentors/bookings/${id}/cancel`, {

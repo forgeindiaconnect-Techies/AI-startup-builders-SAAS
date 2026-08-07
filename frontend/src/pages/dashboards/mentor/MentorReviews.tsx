@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Clock, X, MessageSquare, Send, ArrowLeft, CheckCircle, Reply } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, Clock, X, MessageSquare, Send, ArrowLeft, CheckCircle, ChevronRight, Users, UserRound, Star } from 'lucide-react';
 import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDetailsTabs';
 import { getDocuments, addNotification, getStartups, updateStartup } from '../../../utils/localStorageHelper';
+import { getMentorBookings } from '../../../utils/mentorApi';
 import { useAuth } from '../../../context/AuthContext';
 
 const MentorReviews: React.FC = () => {
-  const { user } = useAuth();
+  const { user, getAllUsers } = useAuth();
   const [search, setSearch] = useState('');
-  const [startups, setStartups] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [allStartups, setAllStartups] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [selectedFounder, setSelectedFounder] = useState<any>(null);
   const [selectedStartup, setSelectedStartup] = useState<any>(null);
   const [modalMode, setModalMode] = useState<'review' | 'report' | null>(null);
   const [feedback, setFeedback] = useState('');
@@ -16,11 +19,61 @@ const MentorReviews: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      setStartups(await getStartups());
-      setDocuments(await getDocuments());
+      const [bks, starts, docs] = await Promise.all([
+        getMentorBookings().catch(() => []),
+        getStartups(),
+        getDocuments(),
+      ]);
+      setBookings(Array.isArray(bks) ? bks : []);
+      setAllStartups(starts);
+      setDocuments(docs);
     };
     fetchData();
   }, []);
+
+  const allUsers = getAllUsers();
+
+  // Only founders who selected/booked this mentor appear here.
+  const founders = useMemo(() => {
+    const map = new Map<string, any>();
+    (bookings || []).forEach((b) => {
+      if (b.status === 'cancelled') return;
+      const f = b.userId;
+      const sp = b.startupId;
+      if (!f || !f._id || !sp) return;
+      const fid = f._id.toString();
+      const sid = (sp._id || sp).toString();
+      if (!map.has(fid)) {
+        const userRec = allUsers.find((u: any) => u.id === fid || u._id === fid);
+        map.set(fid, {
+          id: fid,
+          fullName: f.fullName || userRec?.fullName || 'Founder',
+          email: userRec?.email || f.email || '',
+          startupsById: new Map(),
+        });
+      }
+      const entry = map.get(fid);
+      if (entry.startupsById.has(sid)) return;
+      const full = allStartups.find((s: any) => String(s.startupId || s._id) === sid);
+      entry.startupsById.set(sid, full || { ...sp, startupId: sid, id: sid });
+    });
+    return Array.from(map.values()).map((entry) => ({
+      ...entry,
+      startups: Array.from(entry.startupsById.values()),
+    }));
+  }, [bookings, allStartups, allUsers]);
+
+  const filteredFounders = founders.filter(f => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return f.fullName?.toLowerCase().includes(q) || (f.email || '').toLowerCase().includes(q);
+  });
+
+  const visibleStartups = selectedFounder ? selectedFounder.startups.filter(s => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (s.startupName || '').toLowerCase().includes(q) || (s.startupIdea || '').toLowerCase().includes(q);
+  }) : [];
 
   const handleReviewSubmit = () => {
     if (!selectedStartup || !rating) return;
@@ -45,7 +98,7 @@ const MentorReviews: React.FC = () => {
     
     // Call async update via API wrapper
     updateStartup(updated.startupId || updated._id, updated).then(() => {
-      setStartups(prev => prev.map(s => (s.startupId || s._id) === (updated.startupId || updated._id) ? updated : s));
+      setAllStartups(prev => prev.map(s => (s.startupId || s._id) === (updated.startupId || updated._id) ? updated : s));
     });
     
     addNotification({
@@ -64,11 +117,81 @@ const MentorReviews: React.FC = () => {
     window.alert('Feedback submitted successfully!');
   };
 
+  const renderStartupCard = (startup: any, idx: number) => (
+    <div key={`${startup.startupId || startup._id || idx}`} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-1 h-full bg-yellow-400"></div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="flex-1 w-full">
+          <div className="flex items-center gap-3 mb-2">
+            <h3 className="text-xl font-bold text-gray-900">{startup.startupName}</h3>
+            {startup.status !== 'reviewed' && <span className="px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">Action Required</span>}
+            {startup.mentorReview?.rating && (
+              <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                startup.mentorReview.rating === 'Good' ? 'bg-green-100 text-green-700 border-green-200' :
+                startup.mentorReview.rating === 'Average' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                'bg-red-100 text-red-700 border-red-200'
+              }`}>{startup.mentorReview.rating}</span>
+            )}
+          </div>
+          <p className="text-sm text-gray-500 mb-4">{startup.startupIdea}</p>
+          
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <div className="flex items-center text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+              <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+              <span className="font-medium">{startup.aiGenerated?.ideaAnalysis?.businessModel || 'Startup'}</span>
+            </div>
+            {startup.status === 'generated' && (
+              <div className="flex items-center text-gray-700 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100">
+                <span className="font-bold mr-1 text-purple-700">AI Score:</span> 
+                <span className="font-bold">{startup.aiGenerated?.aiReport?.investmentReadinessScore || '85'}/100</span>
+              </div>
+            )}
+            <div className="flex items-center text-orange-600 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100 font-medium">
+              <Clock size={14} className="mr-1.5" />
+              Due in 2 days
+            </div>
+          </div>
+
+          {/* Show Founder Reply if exists */}
+          {startup.mentorReview?.founderReply && (
+            <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle size={14} className="text-green-600" />
+                <span className="text-xs font-bold text-green-700 uppercase tracking-wider">Founder's Reply</span>
+              </div>
+              <p className="text-sm text-green-800 leading-relaxed">{startup.mentorReview.founderReply}</p>
+              {startup.mentorReview.founderReplyAt && (
+                <p className="text-xs text-green-600 mt-1">
+                  {new Date(startup.mentorReview.founderReplyAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <div className="w-full md:w-auto flex flex-col gap-2 shrink-0 md:pl-4">
+          <button 
+            onClick={() => { setSelectedStartup(startup); setModalMode('review'); }}
+            className="w-full md:w-40 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-lg font-bold text-sm transition-colors shadow-sm"
+          >
+            {startup.mentorReview?.feedback ? 'Update Review' : 'Review Startup'}
+          </button>
+          <button 
+            onClick={() => { setSelectedStartup(startup); setModalMode('report'); }}
+            className="w-full md:w-40 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-bold text-sm transition-colors shadow-sm"
+          >
+            View AI Report
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="animate-fade-in-up">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Startups to Review</h1>
-        <p className="text-gray-500 mt-1">Evaluate AI-generated reports and provide expert feedback to founders.</p>
+        <p className="text-gray-500 mt-1">Only founders who selected you as their mentor appear here. Select a founder to review their startup output.</p>
       </div>
 
       {/* Toolbar */}
@@ -82,94 +205,95 @@ const MentorReviews: React.FC = () => {
               type="text" 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search startups..." 
+              placeholder={selectedFounder ? "Search startups..." : "Search founders..."} 
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm"
             />
           </div>
         </div>
       </div>
 
-      {/* Startups List */}
-      <div className="space-y-4">
-        {startups.length === 0 ? (
-          <div className="text-center p-8 bg-white rounded-xl border border-gray-200 text-gray-500">
-            No startups available for review.
+      {/* Founders List (selected mentor's founders) */}
+      {!selectedFounder ? (
+        founders.length === 0 ? (
+          <div className="text-center p-12 bg-white rounded-xl border border-gray-200 text-gray-500">
+            <Users size={32} className="mx-auto mb-3 text-gray-300" />
+            <p className="font-bold text-gray-700 mb-1">No founders selected you yet</p>
+            <p className="text-sm">When a founder books you as their mentor, their startup will appear here for review.</p>
           </div>
         ) : (
-          startups.filter(s => {
-            if (search && !s.startupName.toLowerCase().includes(search.toLowerCase()) && !s.startupIdea.toLowerCase().includes(search.toLowerCase())) return false;
-            return true;
-          }).map((startup, idx) => (
-            <div key={idx} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-yellow-400"></div>
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div className="flex-1 w-full">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-bold text-gray-900">{startup.startupName}</h3>
-                    {startup.status !== 'reviewed' && <span className="px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">Action Required</span>}
-                    {startup.mentorReview?.rating && (
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
-                        startup.mentorReview.rating === 'Good' ? 'bg-green-100 text-green-700 border-green-200' :
-                        startup.mentorReview.rating === 'Average' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                        'bg-red-100 text-red-700 border-red-200'
-                      }`}>{startup.mentorReview.rating}</span>
-                    )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredFounders.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => { setSelectedFounder(f); setSearch(''); }}
+                className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md hover:border-[#5B21B6]/30 transition-all text-left group flex flex-col h-full"
+              >
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center font-black text-lg shadow-sm">
+                    {(f.fullName || 'F').charAt(0).toUpperCase()}
                   </div>
-                  <p className="text-sm text-gray-500 mb-4">{startup.startupIdea}</p>
-                  
-                  <div className="flex flex-wrap items-center gap-3 text-sm">
-                    <div className="flex items-center text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                      <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-                      <span className="font-medium">{startup.aiGenerated?.ideaAnalysis?.businessModel || 'Startup'}</span>
-                    </div>
-                    {startup.status === 'generated' && (
-                      <div className="flex items-center text-gray-700 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100">
-                        <span className="font-bold mr-1 text-purple-700">AI Score:</span> 
-                        <span className="font-bold">{startup.aiGenerated?.aiReport?.investmentReadinessScore || '85'}/100</span>
-                      </div>
-                    )}
-                    <div className="flex items-center text-orange-600 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100 font-medium">
-                      <Clock size={14} className="mr-1.5" />
-                      Due in 2 days
-                    </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-gray-900 truncate">{f.fullName}</h3>
+                    <p className="text-xs text-gray-500 truncate">{f.email || 'Founder'}</p>
                   </div>
-
-                  {/* Show Founder Reply if exists */}
-                  {startup.mentorReview?.founderReply && (
-                    <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle size={14} className="text-green-600" />
-                        <span className="text-xs font-bold text-green-700 uppercase tracking-wider">Founder's Reply</span>
-                      </div>
-                      <p className="text-sm text-green-800 leading-relaxed">{startup.mentorReview.founderReply}</p>
-                      {startup.mentorReview.founderReplyAt && (
-                        <p className="text-xs text-green-600 mt-1">
-                          {new Date(startup.mentorReview.founderReplyAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
-                
-                <div className="w-full md:w-auto flex flex-col gap-2 shrink-0 md:pl-4">
-                  <button 
-                    onClick={() => { setSelectedStartup(startup); setModalMode('review'); }}
-                    className="w-full md:w-40 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-lg font-bold text-sm transition-colors shadow-sm"
-                  >
-                    {startup.mentorReview?.feedback ? 'Update Review' : 'Review Startup'}
-                  </button>
-                  <button 
-                    onClick={() => { setSelectedStartup(startup); setModalMode('report'); }}
-                    className="w-full md:w-40 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-bold text-sm transition-colors shadow-sm"
-                  >
-                    View AI Report
-                  </button>
+                <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Star size={14} className="text-[#5B21B6]" />
+                    <span className="font-bold text-gray-900">{f.startups.length}</span>
+                    <span>{f.startups.length === 1 ? 'startup' : 'startups'} to review</span>
+                  </div>
+                  <span className="flex items-center gap-1 text-sm font-bold text-[#5B21B6] group-hover:gap-2 transition-all">
+                    View <ChevronRight size={16} />
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )
+      ) : (
+        <>
+          {/* Selected Founder Header */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => { setSelectedFounder(null); setSearch(''); }}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors shrink-0"
+                  title="Back to founders"
+                >
+                  <ArrowLeft size={20} className="text-gray-600" />
+                </button>
+                <div className="w-12 h-12 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center font-black text-lg shadow-sm">
+                  {(selectedFounder.fullName || 'F').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <UserRound size={18} className="text-[#5B21B6]" /> {selectedFounder.fullName}
+                  </h2>
+                  <p className="text-sm text-gray-500">{selectedFounder.email || 'Founder'}</p>
                 </div>
               </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                <span className="font-bold text-gray-900">{selectedFounder.startups.length}</span>
+                {selectedFounder.startups.length === 1 ? 'startup' : 'startups'} to review
+              </div>
             </div>
-          ))
-        )}
-      </div>
+          </div>
+
+          {/* Selected Founder's Startups */}
+          {visibleStartups.length === 0 ? (
+            <div className="text-center p-8 bg-white rounded-xl border border-gray-200 text-gray-500">
+              No startups match your search.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {visibleStartups.map((startup, idx) => renderStartupCard(startup, idx))}
+            </div>
+          )}
+        </>
+      )}
+
       {/* Modal Overlay */}
       {modalMode && selectedStartup && (
         <div className="fixed inset-0 z-50 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
