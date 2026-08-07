@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { GoogleGenAI } from '@google/genai';
+import { v2 as cloudinary } from 'cloudinary';
 import Startup from '../models/Startup.js';
 
 let aiClient: GoogleGenAI | null = null;
@@ -11,6 +12,15 @@ try {
   }
 } catch (e) {
   console.error("Failed to initialize Google Generative AI", e);
+}
+
+// ─── Cloudinary setup ────────────────────────────────────────────────────────
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME.trim(),
+    api_key: process.env.CLOUDINARY_API_KEY.trim(),
+    api_secret: process.env.CLOUDINARY_API_SECRET.trim(),
+  });
 }
 
 const SYSTEM_PROMPT = `You are an expert startup strategist, business analyst, market researcher, pitch deck consultant, and investor advisor.
@@ -540,7 +550,7 @@ async function callLegalAI(startupName: string, startupIdea: string, location: s
 
 export const generateLogo = async (req: Request, res: Response) => {
   try {
-    const { startupName, startupIdea, prompt, style } = req.body;
+    const { startupName, startupIdea, prompt, style, startupId } = req.body;
     const stabilityKey = process.env.STABILITY_AI;
 
     if (!stabilityKey) {
@@ -554,21 +564,22 @@ export const generateLogo = async (req: Request, res: Response) => {
     const styleSuffix = style || 'Minimal, modern, vector logo on a plain white background. No watermark, no 3D, no mockup, no extra text.';
     const fullPrompt = `${basePrompt}. ${styleSuffix}`;
 
-    const response = await fetch('https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image', {
+    console.log(`🎨 Generating logo for "${startupName || 'startup'}" via Stability AI...`);
+
+    // Stability AI — v2beta core (current API, replaces the retired v1 SDXL endpoint)
+    const form = new FormData();
+    form.append('prompt', fullPrompt);
+    form.append('output_format', 'png');
+    form.append('aspect_ratio', '1:1');
+    form.append('negative_prompt', 'watermark, text, 3d render, photorealistic, mockup, frame');
+
+    const response = await fetch('https://api.stability.ai/v2beta/stable-image/generate/core', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${stabilityKey}`,
-        'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({
-        text_prompts: [{ text: fullPrompt, weight: 1 }],
-        cfg_scale: 7,
-        height: 1024,
-        width: 1024,
-        samples: 1,
-        steps: 30,
-      }),
+      body: form,
     });
 
     const data = await response.json();
@@ -578,19 +589,70 @@ export const generateLogo = async (req: Request, res: Response) => {
       return res.status(response.status).json({ success: false, message: data?.message || 'Stability AI generation failed.' });
     }
 
-    const artifact = data?.artifacts?.[0];
-    if (!artifact?.base64) {
+    const imageBase64 = data?.image;
+    if (!imageBase64) {
       return res.status(502).json({ success: false, message: 'Stability AI returned no image.' });
     }
 
-    const imageBase64 = artifact.base64;
+    // Upload to Cloudinary
+    let imageUrl = `data:image/png;base64,${imageBase64}`;
+    let cloudinaryPublicId = '';
+    if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+      try {
+        const safeName = (startupName || 'logo').replace(/[^a-zA-Z0-9-_]/g, '_').toLowerCase().slice(0, 40);
+        const uploadResult = await new Promise<any>((resolve, reject) => {
+          cloudinary.uploader.upload(
+            `data:image/png;base64,${imageBase64}`,
+            {
+              resource_type: 'image',
+              folder: `startup_logos/${startupId && startupId.match(/^[0-9a-fA-F]{24}$/) ? startupId : 'general'}`,
+              public_id: `${safeName}_${Date.now()}`,
+            },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+        });
+        imageUrl = uploadResult?.secure_url || uploadResult?.url || imageUrl;
+        cloudinaryPublicId = uploadResult?.public_id || '';
+        console.log(`☁️ Cloudinary logo upload success: ${imageUrl}`);
+      } catch (cloudErr: any) {
+        console.warn('⚠️ Cloudinary logo upload failed:', cloudErr?.message || cloudErr);
+      }
+    }
+
+    // Persist logo to the Startup record so it survives reloads
+    if (startupId && startupId.match(/^[0-9a-fA-F]{24}$/)) {
+      try {
+        const startup = await Startup.findById(startupId);
+        if (startup) {
+          startup.aiGenerated = {
+            ...(startup.aiGenerated || {}),
+            logo: {
+              imageUrl,
+              base64: imageBase64,
+              publicId: cloudinaryPublicId,
+              prompt: fullPrompt,
+              createdAt: new Date().toISOString(),
+            },
+          };
+          await startup.save();
+          console.log(`✅ Logo persisted to startup record ${startupId}`);
+        }
+      } catch (saveErr: any) {
+        console.warn('⚠️ Could not persist logo to startup:', saveErr?.message || saveErr);
+      }
+    }
 
     res.status(200).json({
       success: true,
       message: 'Logo generated successfully',
       data: {
         base64: imageBase64,
-        imageUrl: `data:image/png;base64,${imageBase64}`,
+        imageUrl,
+        cloudinaryUrl: imageUrl.startsWith('http') ? imageUrl : '',
+        cloudinaryPublicId,
         mimeType: 'image/png',
       },
     });

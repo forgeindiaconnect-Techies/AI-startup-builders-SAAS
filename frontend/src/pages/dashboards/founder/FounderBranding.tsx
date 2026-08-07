@@ -145,6 +145,23 @@ const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
       if (existing.length > 0) {
         setSavedLogo(existing[0]);
         setShowDemoCards(false);
+        return;
+      }
+      const persistedLogo = startupData?.aiGenerated?.logo;
+      if (persistedLogo?.imageUrl) {
+        const br = startupData.aiGenerated?.branding || {};
+        setSavedLogo({
+          id: `logo_${Date.now()}`,
+          startupId: startupData.startupId,
+          startupName: startupData.startupName,
+          logoImage: persistedLogo.imageUrl,
+          logoMode: 'ai_generated',
+          tagline: br.taglineSuggestions?.[0] || 'Startup Tagline',
+          colors: (br.brandColorPalette || []).map((c: string) => parseColor(c)),
+          createdAt: persistedLogo.createdAt || new Date().toISOString(),
+          selected: true,
+        });
+        setShowDemoCards(false);
       }
     }
   }, [startupData?.startupId]);
@@ -193,7 +210,10 @@ const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
         id: `logo_${Date.now()}`,
         startupId: startupData?.startupId,
         startupName: startupData?.startupName,
+        startupIdea: startupData?.startupIdea,
+        logoPrompt: branding.logoPrompt,
         logoImage: data.imageUrl || (data.base64 ? `data:image/png;base64,${data.base64}` : ''),
+        cloudinaryUrl: data.cloudinaryUrl || '',
         logoMode: 'ai_generated',
         tagline,
         colors: colors.map((c: string) => parseColor(c)),
@@ -256,6 +276,15 @@ const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
         a.href = savedLogo.logoImage;
         a.download = `${startupData?.startupName || 'logo'}_logo.png`;
         a.click();
+      } else if (savedLogo.logoImage && /^https?:\/\//.test(savedLogo.logoImage)) {
+        const res = await fetch(savedLogo.logoImage);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${startupData?.startupName || 'logo'}_logo.png`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
       } else if (selectedCard) {
         const ref = cardRefs[selectedCard - 1];
         if (ref.current) {
@@ -511,6 +540,9 @@ const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
               <p className="font-bold text-gray-900">{savedLogo.startupName}</p>
               <p className="text-sm text-gray-500 italic">"{savedLogo.tagline}"</p>
               <p className="text-xs text-gray-400">Mode: <span className="font-semibold text-gray-600">{savedLogo.logoMode === 'demo' ? 'Demo CSS Logo' : 'AI Generated'}</span></p>
+              {savedLogo.logoImage && /^https?:\/\//.test(savedLogo.logoImage) && (
+                <p className="text-[11px] text-sky-600 bg-sky-50 px-2 py-1 rounded-full w-fit font-semibold">☁️ Stored on Cloudinary</p>
+              )}
               <div className="flex flex-wrap gap-2 pt-3">
                 <button
                   onClick={handleDownload}
