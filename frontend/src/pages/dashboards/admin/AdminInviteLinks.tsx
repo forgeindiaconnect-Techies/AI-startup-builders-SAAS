@@ -405,14 +405,6 @@ const AdminInviteLinks: React.FC = () => {
                       </p>
                     )}
                   </div>
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Invite Link</label>
-                    <div className="flex items-center gap-2">
-                      <code className="text-sm text-[#6C4CF1] font-mono flex-1 break-all bg-white px-3 py-2 rounded-lg border border-gray-100">
-                        {window.location.origin}{generatedLink.inviteUrl}
-                      </code>
-                    </div>
-                  </div>
                   <div className="grid grid-cols-2 gap-3 text-left">
                     <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
                       <span className="text-xs font-bold text-gray-400 uppercase block mb-1">Status</span>
@@ -425,16 +417,10 @@ const AdminInviteLinks: React.FC = () => {
                       <span className="text-sm font-bold text-gray-900">{formatDate(generatedLink.expiryDate)}</span>
                     </div>
                   </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => copyToClipboard(generatedLink.inviteUrl, 'generated')}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white font-bold text-sm rounded-xl shadow-md hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all"
-                    >
-                      {copiedId === 'generated' ? <><CheckCircle size={16} /> Copied!</> : <><Copy size={16} /> Copy Link</>}
-                    </button>
+                  <div>
                     <button
                       onClick={() => { setShowCreateModal(false); setGeneratedLink(null); }}
-                      className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-xl transition-colors"
+                      className="w-full py-3 bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white font-bold text-sm rounded-xl shadow-md hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all"
                     >
                       Done
                     </button>
