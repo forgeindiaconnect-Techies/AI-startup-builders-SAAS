@@ -7,7 +7,7 @@ import {
   File, Lightbulb, CalendarClock, Handshake, ClipboardList,
   Briefcase, Building2, UserCog, Inbox, CreditCard,
   BarChart2, Settings, CheckSquare, ShieldCheck,
-  Map, IndianRupee, Film, Link2, Bell, MessageSquare,
+  IndianRupee, Film, Link2, Bell,
 } from 'lucide-react';
 import NotificationDropdown from '../components/shared/NotificationDropdown';
 
@@ -23,9 +23,6 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Overview',         icon: LayoutDashboard, path: '/dashboard/founder' },
         { name: 'My Startups',      icon: Rocket,          path: '/dashboard/founder/startups' },
         { name: 'AI Builder',       icon: Lightbulb,       path: '/dashboard/founder/ai-builder' },
-        { name: 'Roadmap & Tasks',  icon: Map,             path: '/dashboard/founder/roadmap-tasks', plans: ['pro', 'premium_startup_builder'] },
-        { name: 'Mentors',          icon: Users,           path: '/dashboard/founder/mentors', plans: ['pro', 'premium_startup_builder'] },
-        { name: 'Mentor Reviews',   icon: MessageSquare,   path: '/dashboard/founder/mentor-reviews' },
         { name: 'Funding',          icon: Wallet,          path: '/dashboard/founder/funding', plans: ['premium_startup_builder'] },
         { name: 'Subscription',     icon: CreditCard,      path: '/dashboard/founder/billing' },
         { name: 'Documents',        icon: File,            path: '/dashboard/founder/documents' },
