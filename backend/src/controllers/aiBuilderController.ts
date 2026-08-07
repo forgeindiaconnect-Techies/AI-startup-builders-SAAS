@@ -305,10 +305,18 @@ export const createDraft = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Startup name and idea are required.' });
     }
 
+    const isObjectId = (value: any) => typeof value === 'string' && value.match(/^[0-9a-fA-F]{24}$/);
+    const founderId = isObjectId((req as any).user?.id)
+      ? (req as any).user.id
+      : isObjectId(req.body.founderId)
+        ? req.body.founderId
+        : undefined;
+
     const newStartup = new Startup({
       startupName,
       startupIdea,
       status: 'pending_analysis',
+      ...(founderId ? { founderId } : {}),
     });
 
     await newStartup.save();

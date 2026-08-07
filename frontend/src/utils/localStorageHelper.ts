@@ -374,12 +374,12 @@ export const getStartupById = async (startupId: string) => {
   return null;
 };
 
-export const createStartupDraft = async (startupName: string, startupIdea: string) => {
+export const createStartupDraft = async (startupName: string, startupIdea: string, founderId?: string) => {
   try {
     const res = await fetch(`${API_URL}/startups/create-draft`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ startupName, startupIdea })
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ startupName, startupIdea, founderId: founderId || undefined })
     });
     const data = await res.json();
     if (data.success) {

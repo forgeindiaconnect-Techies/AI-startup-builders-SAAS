@@ -3,7 +3,8 @@ import { Search, MoreVertical, Building2, X, ArrowLeft, FileText, Eye, Trash2, I
 import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDetailsTabs';
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer } from '../../../context/FundingContext';
-import { getDocuments } from '../../../utils/localStorageHelper';
+import { getDocuments, getStartups } from '../../../utils/localStorageHelper';
+import { useAuth } from '../../../context/AuthContext';
 import jsPDF from 'jspdf';
 import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx';
 import JSZip from 'jszip';
@@ -18,7 +19,22 @@ const AdminStartups: React.FC = () => {
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
 
   const { getStartupOffers, markAsFunded, updateOfferAdminNote, verifyOffer } = useFunding();
+  const { getAllUsers } = useAuth();
   const startupOffers = selectedStartup ? getStartupOffers(selectedStartup.startupId, selectedStartup.startupName) : [];
+
+  const allUsers = getAllUsers();
+
+  const founderLabel = (s: any): string => {
+    const founderId = s.founderId;
+    if (founderId && typeof founderId === 'object') {
+      return founderId.fullName || founderId.name || founderId.email || '';
+    }
+    if (founderId) {
+      const match = allUsers.find((u: any) => u.id === founderId || u._id === founderId);
+      if (match) return match.fullName || match.name || match.email || '';
+    }
+    return founderId || '';
+  };
 
   
   // Details Modal State
@@ -74,7 +90,7 @@ const AdminStartups: React.FC = () => {
     const rows = startups.map(s => [
       s.startupId || s.id,
       s.startupName,
-      s.founderId || '',
+      founderLabel(s),
       s.aiGenerated?.ideaAnalysis?.businessModel || 'Tech',
       s.status,
       new Date(s.createdAt || Date.now()).toLocaleDateString()
@@ -717,6 +733,26 @@ const AdminStartups: React.FC = () => {
       localStorage.setItem('ai_startup_builder_funding_offers', JSON.stringify(mockOffers));
       window.dispatchEvent(new Event('storage'));
     }
+
+    (async () => {
+      const backend = await getStartups();
+      if (Array.isArray(backend) && backend.length > 0) {
+        const seen = new Set(locals.map(l => l.startupId || l.id));
+        const merged = [...locals];
+        backend.forEach((b: any) => {
+          const bid = b.startupId || b.id;
+          const idx = merged.findIndex(m => (m.startupId || m.id) === bid);
+          if (idx >= 0) {
+            merged[idx] = b;
+          } else if (bid && !seen.has(bid)) {
+            merged.push(b);
+            seen.add(bid);
+          }
+        });
+        merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setStartups(merged);
+      }
+    })();
   }, []);
 
   const filtered = startups.filter(s => {
@@ -782,7 +818,7 @@ const AdminStartups: React.FC = () => {
                   <td className="px-6 py-4 font-bold text-gray-900 flex items-center gap-2">
                     <Building2 size={16} className="text-gray-400" /> {s.startupName}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{s.founderId || ''}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{founderLabel(s)}</td>
                   <td className="px-6 py-4 text-sm text-gray-600 line-clamp-1">{s.aiGenerated?.ideaAnalysis?.businessModel || 'Tech'}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${s.status === 'generated' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>

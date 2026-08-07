@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, LayoutGrid, List, X, Rocket, Sparkles, RefreshCw, Trash2 } from 'lucide-react';
 import { createStartupDraft, getStartups, addNotification } from '../../../utils/localStorageHelper';
+import { useAuth } from '../../../context/AuthContext';
 
 type Startup = {
   id: string;
@@ -40,6 +41,7 @@ const FounderStartups: React.FC = () => {
   const [error, setError] = useState('');
   
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const filteredStartups = startups.filter(s => 
     s.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -75,7 +77,7 @@ const FounderStartups: React.FC = () => {
     setError('');
 
     try {
-      const newStartupData = await createStartupDraft(newStartupName, newStartupDesc);
+      const newStartupData = await createStartupDraft(newStartupName, newStartupDesc, user?.id);
       
       if (!newStartupData) {
         throw new Error('Failed to create startup');
