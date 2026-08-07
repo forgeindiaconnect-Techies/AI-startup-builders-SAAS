@@ -10,41 +10,28 @@ const statusStyle: Record<string, string> = {
 };
 
 const PLAN_FEATURES: Record<string, string[]> = {
-  Free: ['Basic AI Founder Tools', 'Community Forum Access', '1 Startup Idea Generator/mo'],
-  Starter: ['Standard AI Business Plan Generator', 'Basic Financial Model', 'Email Support'],
-  Pro: ['Full AI Startup Builder Access', 'Dynamic UPI Payment Gateway', 'Unlimited Pitch Decks', 'Investor Matchmaker (5/mo)'],
-  Growth: ['Advanced AI Financial Modeling', 'Unlimited Investor Pitch Decks', 'Priority Mentor Matchmaking', '24/7 Dedicated Support'],
-  Scale: ['Complete Platform Suite', 'Direct Investor Intro Network', 'Custom Pitch Deck Export (PDF/Docx)', 'Dedicated Account Manager'],
-  Enterprise: ['Custom White-Label Solutions', 'Unlimited Investor Entitlements', 'Dedicated Deal Flow Access', 'Custom AI Agent Tuning']
+  'Free Trial': ['Basic AI Founder Tools', 'Community Forum Access', '1 Startup Idea Generator/mo'],
+  'Pro Plan': ['Full AI Startup Builder Access', 'Dynamic UPI Payment Gateway', 'Unlimited Pitch Decks', 'Investor Matchmaker (5/mo)'],
+  'Premium Startup Builder': ['Custom White-Label Solutions', 'Unlimited Investor Entitlements', 'Dedicated Deal Flow Access', 'Custom AI Agent Tuning']
 };
 
 const PLAN_PRICES: Record<string, string> = {
-  Free: '₹0',
-  Starter: 'Free',
-  Pro: '₹2,499/mo',
-  Growth: '₹4,999/mo',
-  Scale: '₹9,999/yr',
-  Enterprise: '₹14,999/yr'
+  'Free Trial': '₹0',
+  'Pro Plan': '₹2,499/mo',
+  'Premium Startup Builder': '₹14,999/yr'
 };
 
 const PLAN_DB_TO_DISPLAY: Record<string, string> = {
-  free_trial: 'Free',
-  none: 'Free',
-  starter: 'Starter',
-  pro: 'Pro',
-  growth: 'Growth',
-  scale: 'Scale',
-  enterprise: 'Enterprise',
-  premium_startup_builder: 'Enterprise',
+  free_trial: 'Free Trial',
+  none: 'Free Trial',
+  pro: 'Pro Plan',
+  premium_startup_builder: 'Premium Startup Builder',
 };
 
 const PLAN_DISPLAY_TO_DB: Record<string, string> = {
-  Free: 'none',
-  Starter: 'starter',
-  Pro: 'pro',
-  Growth: 'growth',
-  Scale: 'scale',
-  Enterprise: 'enterprise',
+  'Free Trial': 'free_trial',
+  'Pro Plan': 'pro',
+  'Premium Startup Builder': 'premium_startup_builder',
 };
 
 const STATUS_DB_TO_DISPLAY: Record<string, string> = {
@@ -107,7 +94,7 @@ const AdminSubManagement: React.FC = () => {
   };
 
   const subscriptions: SubRow[] = getAllUsers().map(u => {
-    const plan = PLAN_DB_TO_DISPLAY[u.plan] || 'Free';
+    const plan = PLAN_DB_TO_DISPLAY[u.plan] || 'Free Trial';
     const status = STATUS_DB_TO_DISPLAY[u.subscriptionStatus] || 'Trial';
     return {
       id: `SUB-${String(u.id).slice(-6).toUpperCase()}`,
@@ -210,12 +197,9 @@ const AdminSubManagement: React.FC = () => {
               className="px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
             >
               <option>All Plans</option>
-              <option>Free</option>
-              <option>Starter</option>
-              <option>Pro</option>
-              <option>Growth</option>
-              <option>Scale</option>
-              <option>Enterprise</option>
+              <option>Free Trial</option>
+              <option>Pro Plan</option>
+              <option>Premium Startup Builder</option>
             </select>
 
             <select
@@ -380,12 +364,9 @@ const AdminSubManagement: React.FC = () => {
                       onChange={e => setEditingPlan(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs font-bold text-gray-800 bg-white focus:ring-2 focus:ring-purple-600 focus:outline-none"
                     >
-                      <option value="Free">Free Plan (₹0)</option>
-                      <option value="Starter">Starter Plan (Free)</option>
-                      <option value="Pro">Pro Plan (₹2,499/mo)</option>
-                      <option value="Growth">Growth Plan (₹4,999/mo)</option>
-                      <option value="Scale">Scale Plan (₹9,999/yr)</option>
-                      <option value="Enterprise">Enterprise Plan (₹14,999/yr)</option>
+                      <option value="Free Trial">Free Trial Plan (₹0)</option>
+                      <option value="Pro Plan">Pro Plan (₹2,499/mo)</option>
+                      <option value="Premium Startup Builder">Premium Startup Builder (₹14,999/yr)</option>
                     </select>
                   </div>
                 </div>
@@ -454,7 +435,7 @@ const AdminSubManagement: React.FC = () => {
                 <h4 className="text-xs font-black text-gray-500 uppercase tracking-wider mb-3">Features Unlocked in {detailsModal.plan} Plan</h4>
                 <div className="bg-purple-50/60 border border-purple-100 rounded-2xl p-4">
                   <ul className="space-y-2">
-                    {(PLAN_FEATURES[detailsModal.plan] || PLAN_FEATURES['Pro']).map((feat, idx) => (
+                    {(PLAN_FEATURES[detailsModal.plan] || PLAN_FEATURES['Pro Plan']).map((feat, idx) => (
                       <li key={idx} className="flex items-center gap-2 text-xs font-bold text-gray-800">
                         <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
                         {feat}
