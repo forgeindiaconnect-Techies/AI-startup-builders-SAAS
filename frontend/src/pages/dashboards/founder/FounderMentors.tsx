@@ -167,12 +167,6 @@ const MentorProfileModal: React.FC<{
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Industry Specialization</h4>
             <p className="text-sm font-semibold text-gray-800">{mentor.industry || 'Startups'}</p>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mt-4 mb-1.5">Categories</h4>
-            <div className="flex flex-wrap gap-1.5">
-              {(mentor.categories || []).map((c: string) => (
-                <span key={c} className="px-2.5 py-1 bg-purple-50 text-[#5B21B6] border border-purple-100 rounded-lg text-xs font-semibold">{c}</span>
-              ))}
-            </div>
           </div>
         </div>
 
