@@ -124,6 +124,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           lastLoginAt: data.user.lastLoginAt,
           loginCount: data.user.loginCount || 0,
           signupDate: data.user.createdAt,
+          // Contact details (shared across roles)
+          mobile: data.user.mobile,
+          location: data.user.location,
+          // Mentor profile fields (from mentor signup)
+          expertise: data.user.expertise,
+          experienceYears: data.user.experienceYears,
+          linkedin: data.user.linkedin,
+          bio: data.user.bio,
           // Subscription fields flattened from API
           plan: data.user.plan,
           subscriptionStatus: data.user.subscriptionStatus,

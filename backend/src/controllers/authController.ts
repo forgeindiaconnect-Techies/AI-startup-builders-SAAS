@@ -397,8 +397,7 @@ export const updateUserSubscription = async (req: AuthRequest, res: Response) =>
 };
 
 // 4. Get Current User Profile (with Subscription data)
-export const getMe = async (req: AuthRequest, res: Response) => {
-  try {
+export const getMe = async (req: AuthRequest, res: Response) => {  try {
     const user = await User.findById(req.user?.id).select('-passwordHash');
     if (!user) {
       return res.status(404).json({ success: false, error: 'User not found' });
@@ -433,6 +432,36 @@ export const getMe = async (req: AuthRequest, res: Response) => {
     });
   } catch (error) {
     console.error('Error in getMe:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
+// 5. Update Current User Profile (persists signup/profile edits to the DB)
+export const updateMe = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await User.findById(req.user?.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const { fullName, mobile, location, expertise, experienceYears, linkedin, bio } = req.body;
+
+    if (typeof fullName === 'string' && fullName.trim().length >= 2) user.fullName = fullName.trim();
+    if (typeof mobile === 'string') user.mobile = mobile.trim();
+    if (typeof location === 'string') user.location = location.trim();
+
+    if (user.role === 'mentor') {
+      if (typeof expertise === 'string') user.expertise = expertise;
+      if (typeof experienceYears === 'string') user.experienceYears = experienceYears;
+      if (typeof linkedin === 'string') user.linkedin = linkedin.trim();
+      if (typeof bio === 'string') user.bio = bio.trim();
+    }
+
+    await user.save();
+
+    res.json({ success: true, message: 'Profile updated successfully.' });
+  } catch (error) {
+    console.error('Error in updateMe:', error);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 };

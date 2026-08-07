@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Save, CheckCircle2, Clock, ShieldAlert, Lock, Globe, Briefcase, MapPin, Star } from 'lucide-react';
+import { Camera, Save, CheckCircle2, Clock, ShieldAlert, Lock, Globe, Briefcase, MapPin, Star, Loader2 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { API_URL } from '../../../config/api';
 
 export interface MentorProfileData {
   id: string;
@@ -60,32 +61,86 @@ const availabilityOptions: MentorProfileData['availability'][] = [
   'Not Available'
 ];
 
+// Map the signup "expertise" selection to the closest profile category.
+const mapCategory = (expertise?: string): MentorProfileData['category'] => {
+  const map: Record<string, MentorProfileData['category']> = {
+    'AI/ML': 'AI/ML',
+    'Business Strategy': 'Strategy',
+    'Strategy': 'Strategy',
+    'Marketing': 'Marketing',
+    'Sales': 'Sales',
+    'Product Development': 'Product',
+    'Product': 'Product',
+    'Legal': 'Legal',
+    'Finance': 'Fintech',
+    'Technology': 'SaaS',
+    'HR': 'Strategy',
+    'Operations': 'Strategy',
+    'Other': 'SaaS',
+  };
+  const match = (expertise || '').trim();
+  if (map[match]) return map[match];
+  const lower = match.toLowerCase();
+  if (lower.includes('ai') || lower.includes('ml')) return 'AI/ML';
+  if (lower.includes('market')) return 'Marketing';
+  if (lower.includes('sales')) return 'Sales';
+  if (lower.includes('product')) return 'Product';
+  if (lower.includes('legal') || lower.includes('law')) return 'Legal';
+  if (lower.includes('finance') || lower.includes('financ')) return 'Fintech';
+  if (lower.includes('tech') || lower.includes('saas') || lower.includes('software')) return 'SaaS';
+  return 'SaaS';
+};
+
+// Turn the signup experience range (e.g. "3-5") into a display label.
+const formatExperience = (exp?: string): string => {
+  const map: Record<string, string> = {
+    '1-3': '1 - 3 Years',
+    '3-5': '3 - 5 Years',
+    '5-10': '5 - 10 Years',
+    '10+': '10+ Years',
+  };
+  const raw = (exp || '').trim();
+  return map[raw] || raw;
+};
+
 const MentorProfile: React.FC = () => {
-  const { user } = useAuth();
+  const { user, getToken, checkAuth } = useAuth();
   const [form, setForm] = useState<MentorProfileData>(defaultMentorProfile);
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const myId = user?.id || '';
+    // Prefer the signup/profile data stored on the backend User record
+    // so whatever the mentor filled during signup shows up here.
+    const fromUser: Partial<MentorProfileData> = {
+      id: myId,
+      name: user?.fullName || '',
+      email: user?.email || '',
+      phone: user?.mobile || '',
+      location: user?.location || '',
+      expertise: user?.expertise || '',
+      experienceYears: formatExperience(user?.experienceYears),
+      linkedin: user?.linkedin || '',
+      bio: user?.bio || '',
+      category: mapCategory(user?.expertise),
+    };
+
     try {
       const stored = localStorage.getItem('ai_startup_builder_mentor_profiles');
       let profiles: MentorProfileData[] = [];
       if (stored) {
         profiles = JSON.parse(stored);
       }
-      const myId = user?.id || '';
-      const found = profiles.find(p => p.id === myId || p.name === user?.fullName);
-      if (found) {
-        setForm(found);
-      } else {
-        const initial = { ...defaultMentorProfile, id: myId };
-        if (user?.fullName) initial.name = user.fullName;
-        if (user?.email) initial.email = user.email;
-        profiles.push(initial);
+      const found = profiles.find(p => p.id === myId || (p.name && p.name === user?.fullName));
+      setForm({ ...defaultMentorProfile, ...(found || {}), ...fromUser });
+
+      if (!found) {
+        profiles.push({ ...defaultMentorProfile, ...fromUser });
         localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(profiles));
-        setForm(initial);
       }
-    } catch (e) {
-      setForm(defaultMentorProfile);
+    } catch {
+      setForm({ ...defaultMentorProfile, ...fromUser });
     }
   }, [user]);
 
@@ -93,20 +148,50 @@ const MentorProfile: React.FC = () => {
     setForm(prev => ({ ...prev, [key]: val }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setSaving(true);
+    const myId = user?.id || form.id || '';
+    const updatedEntry = {
+      ...form,
+      id: myId,
+      updatedAt: 'Just now',
+      lastUpdated: new Date().toISOString()
+    };
+
+    // Persist to backend so the profile survives logins and reaches the
+    // founder-facing mentor directory + admin approval dashboard.
+    try {
+      const token = getToken();
+      if (token) {
+        const res = await fetch(`${API_URL}/auth/me`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            fullName: form.name,
+            mobile: form.phone,
+            location: form.location,
+            expertise: form.expertise,
+            experienceYears: form.experienceYears,
+            linkedin: form.linkedin,
+            bio: form.bio,
+          }),
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Failed to save profile');
+        await checkAuth();
+      }
+    } catch (err) {
+      setSaving(false);
+      window.alert(err instanceof Error ? err.message : 'Failed to save profile.');
+      return;
+    }
+
     try {
       const stored = localStorage.getItem('ai_startup_builder_mentor_profiles');
       let profiles: any[] = [];
       if (stored) {
         profiles = JSON.parse(stored);
       }
-      const myId = user?.id || form.id || '';
-      const updatedEntry = { 
-        ...form, 
-        id: myId, 
-        updatedAt: 'Just now',
-        lastUpdated: new Date().toISOString()
-      };
 
       const existingIndex = profiles.findIndex(p => p.id === myId || p.name === form.name || p.id === form.id);
       if (existingIndex >= 0) {
@@ -118,8 +203,10 @@ const MentorProfile: React.FC = () => {
       localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(profiles));
       window.dispatchEvent(new Event('storage'));
       window.dispatchEvent(new Event('mentor_profile_updated'));
-      window.alert("✅ Profile settings saved successfully! Your profile details are now visible to the Admin Dashboard in Mentor Approval.");
-    } catch (e) {
+      setSaving(false);
+      window.alert("✅ Profile settings saved successfully! Your profile details are now visible to the Admin Dashboard.");
+    } catch {
+      setSaving(false);
       window.alert("Error saving profile settings.");
     }
   };
@@ -393,9 +480,10 @@ const MentorProfile: React.FC = () => {
           <div className="flex justify-end pt-2">
             <button 
               onClick={handleSave}
-              className="flex items-center justify-center px-8 py-3.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm transition-all transform hover:-translate-y-0.5"
+              disabled={saving}
+              className="flex items-center justify-center px-8 py-3.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm transition-all transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Save size={18} className="mr-2" /> Save Changes
+              {saving ? <Loader2 size={18} className="mr-2 animate-spin" /> : <Save size={18} className="mr-2" />} {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>
