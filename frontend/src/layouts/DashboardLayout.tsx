@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   Rocket, LogOut, Menu, X, ChevronLeft, ChevronRight,
@@ -10,6 +10,94 @@ import {
   IndianRupee, Film, Link2, Bell, GraduationCap,
 } from 'lucide-react';
 import NotificationDropdown from '../components/shared/NotificationDropdown';
+import PlanGate from '../components/shared/PlanGate';
+
+// ─── Dashboard page registry (rendered in-place when a sidebar item is clicked) ───
+import FounderDashboard from '../pages/dashboards/FounderDashboard';
+import FounderStartups from '../pages/dashboards/founder/FounderStartups';
+import FounderAIBuilder from '../pages/dashboards/founder/FounderAIBuilder';
+import FounderMentors from '../pages/dashboards/founder/FounderMentors';
+import FounderFunding from '../pages/dashboards/founder/FounderFunding';
+import FounderBilling from '../pages/dashboards/founder/FounderBilling';
+import FounderDocuments from '../pages/dashboards/founder/FounderDocuments';
+import FounderLearningVideos from '../pages/dashboards/founder/FounderLearningVideos';
+import FounderProfileBilling from '../pages/dashboards/founder/FounderProfileBilling';
+import SharedNotifications from '../pages/dashboards/founder/FounderNotifications';
+import SharedInbox from '../pages/dashboards/founder/SharedInbox';
+import MentorDashboard from '../pages/dashboards/MentorDashboard';
+import MentorReviews from '../pages/dashboards/mentor/MentorReviews';
+import MentorSessions from '../pages/dashboards/mentor/MentorSessions';
+import MentorFeedbackHub from '../pages/dashboards/mentor/MentorFeedbackHub';
+import MentorEarnings from '../pages/dashboards/mentor/MentorEarnings';
+import MentorProfile from '../pages/dashboards/mentor/MentorProfile';
+import InvestorDashboard from '../pages/dashboards/InvestorDashboard';
+import InvestorMarketplace from '../pages/dashboards/investor/InvestorMarketplace';
+import InvestorPortfolioHub from '../pages/dashboards/investor/InvestorPortfolioHub';
+import InvestorRequests from '../pages/dashboards/investor/InvestorRequests';
+import InvestorDueDiligence from '../pages/dashboards/investor/InvestorDueDiligence';
+import InvestorMeetings from '../pages/dashboards/investor/InvestorMeetings';
+import InvestorTransactions from '../pages/dashboards/investor/InvestorTransactions';
+import InvestorLearningCenter from '../pages/dashboards/investor/InvestorLearningCenter';
+import InvestorProfileKYC from '../pages/dashboards/investor/InvestorProfileKYC';
+import AdminDashboard from '../pages/dashboards/AdminDashboard';
+import AdminUsers from '../pages/dashboards/admin/AdminUsers';
+import AdminInviteLinks from '../pages/dashboards/admin/AdminInviteLinks';
+import AdminStartups from '../pages/dashboards/admin/AdminStartups';
+import AdminApprovalsHub from '../pages/dashboards/admin/AdminApprovalsHub';
+import AdminDocumentVerification from '../pages/dashboards/admin/AdminDocumentVerification';
+import AdminSubPayments from '../pages/dashboards/admin/AdminSubPayments';
+import AdminAnalytics from '../pages/dashboards/admin/AdminAnalytics';
+import AdminPlatformSettings from '../pages/dashboards/admin/AdminPlatformSettings';
+
+const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
+  founder: {
+    '/dashboard/founder': FounderDashboard,
+    '/dashboard/founder/startups': FounderStartups,
+    '/dashboard/founder/ai-builder': FounderAIBuilder,
+    '/dashboard/founder/mentors': FounderMentors,
+    '/dashboard/founder/funding': () => (
+      <PlanGate requiredPlans={['premium_startup_builder']}><FounderFunding /></PlanGate>
+    ),
+    '/dashboard/founder/billing': FounderBilling,
+    '/dashboard/founder/documents': FounderDocuments,
+    '/dashboard/founder/learning-videos': FounderLearningVideos,
+    '/dashboard/founder/notifications': SharedNotifications,
+    '/dashboard/founder/profile-billing': FounderProfileBilling,
+  },
+  mentor: {
+    '/dashboard/mentor': MentorDashboard,
+    '/dashboard/mentor/reviews': MentorReviews,
+    '/dashboard/mentor/sessions': MentorSessions,
+    '/dashboard/mentor/feedback-hub': MentorFeedbackHub,
+    '/dashboard/mentor/earnings': MentorEarnings,
+    '/dashboard/mentor/inbox': SharedInbox,
+    '/dashboard/mentor/profile': MentorProfile,
+  },
+  investor: {
+    '/dashboard/investor': InvestorDashboard,
+    '/dashboard/investor/marketplace': InvestorMarketplace,
+    '/dashboard/investor/portfolio-hub': InvestorPortfolioHub,
+    '/dashboard/investor/requests': InvestorRequests,
+    '/dashboard/investor/due-diligence': InvestorDueDiligence,
+    '/dashboard/investor/meetings': InvestorMeetings,
+    '/dashboard/investor/transactions': InvestorTransactions,
+    '/dashboard/investor/learning-center': InvestorLearningCenter,
+    '/dashboard/investor/inbox': SharedInbox,
+    '/dashboard/investor/profile-kyc': InvestorProfileKYC,
+  },
+  admin: {
+    '/dashboard/admin': AdminDashboard,
+    '/dashboard/admin/users': AdminUsers,
+    '/dashboard/admin/invite-links': AdminInviteLinks,
+    '/dashboard/admin/startups': AdminStartups,
+    '/dashboard/admin/approvals-hub': AdminApprovalsHub,
+    '/dashboard/admin/document-verification': AdminDocumentVerification,
+    '/dashboard/admin/sub-payments': AdminSubPayments,
+    '/dashboard/admin/analytics': AdminAnalytics,
+    '/dashboard/admin/platform-settings': AdminPlatformSettings,
+    '/dashboard/admin/notifications': SharedNotifications,
+  },
+};
 
 // ─── Types ──────────────────────────────────────────────────────
 type NavItem = { name: string; icon: React.ElementType; path: string; plans?: string[] };
@@ -87,12 +175,13 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
 const SidebarInner: React.FC<{
   isCollapsed: boolean;
   onLinkClick: () => void;
+  onNavigate: (path: string) => void;
   onLogout: () => void;
   userName: string;
   userRole: string;
   userPlan: string;
-}> = ({ isCollapsed, onLinkClick, onLogout, userName, userRole, userPlan }) => {
-  const location = useLocation();
+  activePath: string;
+}> = ({ isCollapsed, onLinkClick, onNavigate, onLogout, userName, userRole, userPlan, activePath }) => {
   const sections = SIDEBAR_CONFIG[userRole] ?? [];
   const navigate = useNavigate();
 
@@ -143,17 +232,15 @@ const SidebarInner: React.FC<{
               .filter((item) => !item.plans || item.plans.includes(userPlan))
               .map((item) => {
                 const isActive = item.path === `/dashboard/${userRole}`
-                  ? location.pathname === item.path
-                  : location.pathname.startsWith(item.path);
+                  ? activePath === item.path
+                  : activePath.startsWith(item.path);
 
                 return (
-                  <NavLink
+                  <button
                     key={item.path}
-                    to={item.path}
-                    end={item.path === `/dashboard/${userRole}`}
-                    onClick={onLinkClick}
+                    onClick={() => { onNavigate(item.path); onLinkClick(); }}
                     title={isCollapsed ? item.name : undefined}
-                    className={`relative group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                    className={`relative group flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                       isActive
                         ? 'bg-gradient-to-r from-[#4C1D95] to-[#6D28D9] text-white shadow-lg shadow-purple-900/30'
                         : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
@@ -170,7 +257,7 @@ const SidebarInner: React.FC<{
                         {item.name}
                       </span>
                     )}
-                  </NavLink>
+                  </button>
                 );
               })}
           </div>
@@ -202,8 +289,30 @@ const SidebarInner: React.FC<{
 const DashboardLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [activePath, setActivePath] = useState('');
+
+  const role = user?.role ?? '';
+
+  // Preserve the founder subscription gate that ProtectedRoute applies on route change
+  const resolveAllowed = (path: string): string => {
+    if (role === 'founder' && user?.subscriptionStatus !== 'active') {
+      const isAllowed =
+        ['/billing', '/profile', '/ai-builder', '/startups', '/documents', '/roadmap', '/notifications', '/funding', '/mentors']
+          .some((s) => path.includes(s)) || path.endsWith('/founder');
+      if (!isAllowed) return '/dashboard/founder/billing';
+    }
+    return path;
+  };
+
+  // Sync the in-place view when the URL changes (e.g. header profile link, logo, notifications)
+  useEffect(() => {
+    const reg = PAGE_REGISTRY[role] ?? {};
+    setActivePath(reg[location.pathname] ? resolveAllowed(location.pathname) : '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, role, user?.subscriptionStatus]);
 
   const handleLogout = () => { logout(); navigate('/login', { replace: true }); };
   const closeMobile = () => setIsMobileOpen(false);
@@ -211,11 +320,15 @@ const DashboardLayout: React.FC = () => {
   const sidebarProps = {
     isCollapsed,
     onLinkClick: closeMobile,
+    onNavigate: (path: string) => setActivePath(resolveAllowed(path)),
     onLogout: handleLogout,
     userName: user?.fullName ?? '',
-    userRole: user?.role ?? '',
+    userRole: role,
     userPlan: user?.plan ?? 'none',
+    activePath,
   };
+
+  const ActivePage = (PAGE_REGISTRY[role] ?? {})[activePath] as React.ElementType | undefined;
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50">
@@ -279,7 +392,7 @@ const DashboardLayout: React.FC = () => {
         {/* Page content */}
         <main className="flex-1 overflow-y-auto focus:outline-none">
           <div className="p-5 sm:p-7 lg:p-8">
-            <Outlet />
+            {ActivePage ? <ActivePage /> : <Outlet />}
           </div>
         </main>
       </div>
