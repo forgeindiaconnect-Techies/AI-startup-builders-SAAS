@@ -9,6 +9,7 @@ import authRoutes from './authRoutes.js';
 import paymentRoutes from './paymentRoutes.js';
 import inviteRoutes from './inviteRoutes.js';
 import ragRoutes from './ragRoutes.js';
+import mentorRoutes from './mentorRoutes.js';
 
 const router = Router();
 
@@ -21,6 +22,7 @@ router.use('/notifications', notificationRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/invites', inviteRoutes);
 router.use('/rag', ragRoutes);
+router.use('/mentors', mentorRoutes);
 
 // Health check endpoint
 router.get('/health', (_req: Request, res: Response) => {
@@ -33,10 +35,6 @@ router.get('/health', (_req: Request, res: Response) => {
 });
 
 // Placeholder routes for future implementation
-router.get('/mentors', (_req: Request, res: Response) => {
-  res.json({ message: 'Mentors endpoint - Coming soon' });
-});
-
 router.get('/investors', (_req: Request, res: Response) => {
   res.json({ message: 'Investors endpoint - Coming soon' });
 });
