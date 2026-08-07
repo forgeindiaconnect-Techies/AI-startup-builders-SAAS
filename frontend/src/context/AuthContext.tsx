@@ -84,8 +84,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           trialEndDate: u.trialEndDate || null,
           subscriptionStartDate: u.subscriptionStartDate || null,
           subscriptionEndDate: u.subscriptionEndDate || null,
+          // Common contact details (from signup)
           mobile: u.mobile || '',
-          startupName: u.startupName || u.companyName || '',
+          location: u.location || '',
+          // Founder fields
+          startupName: u.startupName || '',
+          currentRole: u.currentRole || '',
+          startupStage: u.startupStage || '',
+          industry: u.industry || '',
+          // Mentor fields (from signup)
+          expertise: u.expertise || '',
+          experienceYears: u.experienceYears || '',
+          linkedin: u.linkedin || '',
+          bio: u.bio || '',
+          aadharNumber: u.aadharNumber || '',
+          aadharDocUrl: u.aadharDocUrl || '',
+          panNumber: u.panNumber || '',
+          panDocUrl: u.panDocUrl || '',
+          otherDocType: u.otherDocType || '',
+          otherDocNumber: u.otherDocNumber || '',
+          otherDocUrl: u.otherDocUrl || '',
+          // Investor fields
+          companyName: u.companyName || '',
+          investorType: u.investorType || '',
+          preferredIndustry: u.preferredIndustry || '',
+          minInvestment: u.minInvestment || '',
+          maxInvestment: u.maxInvestment || '',
         }));
         setAllUsers(mapped);
       }
@@ -132,6 +156,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           experienceYears: data.user.experienceYears,
           linkedin: data.user.linkedin,
           bio: data.user.bio,
+          // Mentor KYC / proof documents
+          aadharNumber: data.user.aadharNumber,
+          aadharDocUrl: data.user.aadharDocUrl,
+          panNumber: data.user.panNumber,
+          panDocUrl: data.user.panDocUrl,
+          otherDocType: data.user.otherDocType,
+          otherDocNumber: data.user.otherDocNumber,
+          otherDocUrl: data.user.otherDocUrl,
+          // Founder profile fields
+          currentRole: data.user.currentRole,
+          startupName: data.user.startupName,
+          startupStage: data.user.startupStage,
+          industry: data.user.industry,
+          // Investor profile fields
+          companyName: data.user.companyName,
+          investorType: data.user.investorType,
+          preferredIndustry: data.user.preferredIndustry,
+          minInvestment: data.user.minInvestment,
+          maxInvestment: data.user.maxInvestment,
           // Subscription fields flattened from API
           plan: data.user.plan,
           subscriptionStatus: data.user.subscriptionStatus,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Trash2, Download, X, AlertCircle, CheckCircle, ChevronDown } from 'lucide-react';
+import { Search, Eye, Trash2, Download, X, AlertCircle, CheckCircle, ChevronDown, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
 const roleColors: Record<string, string> = {
@@ -386,6 +386,14 @@ const AdminUsers: React.FC = () => {
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Login Count</span>
                     <span className="font-bold text-gray-900 text-base">{selectedUser.loginCount || 0}</span>
                   </div>
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile Number</span>
+                    <span className="font-bold text-gray-900">{selectedUser.mobile || '—'}</span>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
+                    <span className="font-bold text-gray-900">{selectedUser.location || '—'}</span>
+                  </div>
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Signup Date</span>
                     <span className="font-bold text-gray-900">{formatDate(selectedUser.signupDate)}</span>
@@ -422,13 +430,59 @@ const AdminUsers: React.FC = () => {
                         )}
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile</span>
+                        <span className="font-bold text-gray-900">{selectedUser.mobile || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
                         <span className="font-bold text-gray-900">{selectedUser.location || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Verification Status</span>
+                        <span className="font-bold text-gray-900 capitalize">{selectedUser.approvalStatus || 'pending'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Bio</span>
                         <p className="text-sm text-gray-800">{selectedUser.bio || '—'}</p>
                       </div>
+                    </div>
+                  </div>
+                  <div className="my-4 border-t border-gray-100" />
+
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <span className="w-1 h-4 rounded-full bg-amber-500"></span> KYC / Proof Documents
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Aadhaar Number</span>
+                        <span className="font-bold text-gray-900">{selectedUser.aadharNumber || '—'}</span>
+                        {selectedUser.aadharDocUrl && (
+                          <a href={selectedUser.aadharDocUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-[#5B21B6] hover:underline mt-1.5">
+                            <ExternalLink size={12} /> View Aadhaar Document
+                          </a>
+                        )}
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">PAN Number</span>
+                        <span className="font-bold text-gray-900">{selectedUser.panNumber || '—'}</span>
+                        {selectedUser.panDocUrl && (
+                          <a href={selectedUser.panDocUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-[#5B21B6] hover:underline mt-1.5">
+                            <ExternalLink size={12} /> View PAN Document
+                          </a>
+                        )}
+                      </div>
+                      {selectedUser.otherDocType && (
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Additional Document ({selectedUser.otherDocType})</span>
+                          <span className="font-bold text-gray-900">{selectedUser.otherDocNumber || '—'}</span>
+                          {selectedUser.otherDocUrl && (
+                            <a href={selectedUser.otherDocUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-[#5B21B6] hover:underline mt-1.5">
+                              <ExternalLink size={12} /> View Additional Document
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="my-4 border-t border-gray-100" />
