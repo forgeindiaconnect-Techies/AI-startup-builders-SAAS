@@ -76,8 +76,8 @@ export const createMentorBooking = async (payload: {
   mentorId: string;
   startupId: string;
   topic: string;
-  date: string;
-  time: string;
+  date?: string;
+  time?: string;
   duration?: number;
 }): Promise<any> => {
   const res = await fetch(`${API_URL}/mentors/book`, {
@@ -131,6 +131,30 @@ export const completeSession = async (id: string): Promise<any> => {
     headers: authHeaders(true),
   });
   return handleResponse(res);
+};
+
+// POST /api/mentors/bookings/:id/schedule  (mentor fixes time, slot and days)
+export const scheduleMentorSession = async (
+  id: string,
+  payload: { date: string; time: string; duration?: number; meetingLink?: string }
+): Promise<any> => {
+  const res = await fetch(`${API_URL}/mentors/bookings/${id}/schedule`, {
+    method: 'POST',
+    headers: authHeaders(true),
+    body: JSON.stringify(payload),
+  });
+  const data = await handleResponse(res);
+  return data.data;
+};
+
+// POST /api/mentors/bookings/:id/accept  (founder accepts the scheduled session)
+export const acceptMentorSession = async (id: string): Promise<any> => {
+  const res = await fetch(`${API_URL}/mentors/bookings/${id}/accept`, {
+    method: 'POST',
+    headers: authHeaders(true),
+  });
+  const data = await handleResponse(res);
+  return data.data;
 };
 
 // POST /api/mentors/bookings/:id/feedback

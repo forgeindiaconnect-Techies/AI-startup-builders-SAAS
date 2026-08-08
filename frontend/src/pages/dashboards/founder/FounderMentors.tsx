@@ -7,7 +7,7 @@ import {
 import { getStartups } from '../../../utils/localStorageHelper';
 import {
   getMentors, getMentorProfile, getMentorAvailability, createMentorBooking,
-  getMyBookings, cancelBooking, rescheduleBooking, getBookingFeedback,
+  getMyBookings, cancelBooking, rescheduleBooking, getBookingFeedback, acceptMentorSession,
 } from '../../../utils/mentorApi';
 
 // ─── Constants ────────────────────────────────────────────────────
@@ -24,7 +24,8 @@ const BOOKING_TOPICS = [
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   pending: { label: 'Pending', className: 'bg-amber-50 text-amber-700 border-amber-200' },
-  confirmed: { label: 'Confirmed', className: 'bg-blue-50 text-blue-700 border-blue-200' },
+  confirmed: { label: 'Scheduled', className: 'bg-blue-50 text-blue-700 border-blue-200' },
+  accepted: { label: 'Accepted', className: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
   completed: { label: 'Completed', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   cancelled: { label: 'Cancelled', className: 'bg-red-50 text-red-700 border-red-200' },
   rescheduled: { label: 'Rescheduled', className: 'bg-purple-50 text-[#5B21B6] border-purple-200' },
@@ -32,7 +33,7 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
 
 // ─── Types ────────────────────────────────────────────────────────
 type TabId = 'mentors' | 'bookings' | 'completed';
-type BookingStep = 'startup' | 'topic' | 'date' | 'time' | 'confirm' | 'success';
+type BookingStep = 'startup' | 'topic' | 'confirm' | 'success';
 
 // ─── Helpers ──────────────────────────────────────────────────────
 const mentorNameOf = (b: any) => {
@@ -50,6 +51,7 @@ const initials = (name: string) =>
   (name || 'M').split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 
 const formatDateDisplay = (dateStr: string) => {
+  if (!dateStr) return '';
   try {
     const [y, m, d] = dateStr.split('-');
     return new Date(Number(y), Number(m) - 1, Number(d)).toLocaleDateString('en-US', {
@@ -61,6 +63,7 @@ const formatDateDisplay = (dateStr: string) => {
 };
 
 const formatTimeDisplay = (time: string) => {
+  if (!time) return '';
   try {
     const [h, min] = time.split(':').map(Number);
     const ampm = h >= 12 ? 'PM' : 'AM';
@@ -226,57 +229,27 @@ const BookingModal: React.FC<{
   onToast: (type: 'success' | 'error', message: string) => void;
 }> = ({ mentor, startups, onClose, onBooked, onToast }) => {
   const [step, setStep] = useState<BookingStep>('startup');
-  const [loadingAvailability, setLoadingAvailability] = useState(true);
-  const [bookedSlots, setBookedSlots] = useState<Record<string, string[]>>({});
-  const [availability, setAvailability] = useState<any[]>(mentor?.availability || []);
   const [submitting, setSubmitting] = useState(false);
 
   const [selectedStartup, setSelectedStartup] = useState<any>(null);
   const [selectedTopic, setSelectedTopic] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
 
-  useEffect(() => {
-    let active = true;
-    setLoadingAvailability(true);
-    getMentorAvailability(mentor.id)
-      .then((data) => {
-        if (!active) return;
-        setAvailability(data.availability?.length ? data.availability : mentor?.availability || []);
-        setBookedSlots(data.booked || {});
-      })
-      .catch(() => {
-        if (!active) return;
-        setAvailability(mentor?.availability || []);
-        setBookedSlots({});
-      })
-      .finally(() => active && setLoadingAvailability(false));
-    return () => { active = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mentor.id]);
-
-  const stepIndex: Record<BookingStep, number> = { startup: 0, topic: 1, date: 2, time: 3, confirm: 4, success: 5 };
-  const steps = ['Startup', 'Topic', 'Date', 'Time', 'Confirm'];
+  const stepIndex: Record<BookingStep, number> = { startup: 0, topic: 1, confirm: 2, success: 3 };
+  const steps = ['Startup', 'Topic', 'Confirm'];
 
   const canContinue =
     (step === 'startup' && !!selectedStartup) ||
-    (step === 'topic' && !!selectedTopic) ||
-    (step === 'date' && !!selectedDate) ||
-    (step === 'time' && !!selectedTime);
+    (step === 'topic' && !!selectedTopic);
 
   const goNext = () => {
     if (!canContinue) return;
     if (step === 'startup') setStep('topic');
-    else if (step === 'topic') setStep('date');
-    else if (step === 'date') setStep('time');
-    else if (step === 'time') setStep('confirm');
+    else if (step === 'topic') setStep('confirm');
   };
 
   const goBack = () => {
     if (step === 'topic') setStep('startup');
-    else if (step === 'date') setStep('topic');
-    else if (step === 'time') setStep('date');
-    else if (step === 'confirm') setStep('time');
+    else if (step === 'confirm') setStep('topic');
   };
 
   const handleConfirm = async () => {
@@ -286,8 +259,6 @@ const BookingModal: React.FC<{
         mentorId: mentor.id,
         startupId: selectedStartup,
         topic: selectedTopic,
-        date: selectedDate,
-        time: selectedTime,
         duration: mentor.sessionDuration || 45,
       });
       setStep('success');
@@ -298,8 +269,6 @@ const BookingModal: React.FC<{
       setSubmitting(false);
     }
   };
-
-  const dateSlots = availability.find((a) => a.date === selectedDate)?.slots || [];
 
   return (
     <Modal onClose={onClose} maxWidth="max-w-xl">
@@ -387,70 +356,6 @@ const BookingModal: React.FC<{
           </div>
         )}
 
-        {step === 'date' && (
-          <div>
-            <h3 className="text-base font-bold text-gray-900 mb-1">Select Available Date</h3>
-            <p className="text-xs text-gray-500 mb-4">Pick a date that works for you.</p>
-            {loadingAvailability ? (
-              <div className="flex justify-center py-10"><Loader2 size={26} className="animate-spin text-[#5B21B6]" /></div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-72 overflow-y-auto pr-1">
-                {availability.map((a) => {
-                  const allBooked = (a.slots || []).every((s: string) => (bookedSlots[a.date] || []).includes(s));
-                  const disabled = allBooked;
-                  return (
-                    <button
-                      key={a.date}
-                      disabled={disabled}
-                      onClick={() => { setSelectedDate(a.date); setSelectedTime(''); }}
-                      className={`p-3 rounded-xl border text-sm font-semibold transition-all ${
-                        selectedDate === a.date
-                          ? 'border-[#5B21B6] bg-purple-50 text-[#5B21B6]'
-                          : disabled
-                            ? 'border-gray-100 text-gray-300 cursor-not-allowed bg-gray-50'
-                            : 'border-gray-200 text-gray-700 hover:border-purple-200'
-                      }`}
-                    >
-                      {formatDateDisplay(a.date)}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {step === 'time' && (
-          <div>
-            <h3 className="text-base font-bold text-gray-900 mb-1">Select Time Slot</h3>
-            <p className="text-xs text-gray-500 mb-4">Available times for {formatDateDisplay(selectedDate)}.</p>
-            <div className="grid grid-cols-3 gap-2.5">
-              {dateSlots.map((t: string) => {
-                const booked = (bookedSlots[selectedDate] || []).includes(t);
-                return (
-                  <button
-                    key={t}
-                    disabled={booked}
-                    onClick={() => setSelectedTime(t)}
-                    className={`p-3 rounded-xl border text-sm font-semibold transition-all ${
-                      selectedTime === t
-                        ? 'border-[#5B21B6] bg-purple-50 text-[#5B21B6]'
-                        : booked
-                          ? 'border-gray-100 text-gray-300 cursor-not-allowed bg-gray-50 line-through'
-                          : 'border-gray-200 text-gray-700 hover:border-purple-200'
-                    }`}
-                  >
-                    {formatTimeDisplay(t)}
-                  </button>
-                );
-              })}
-            </div>
-            {dateSlots.length === 0 && (
-              <p className="text-sm text-gray-500 text-center py-6">No time slots available for this date.</p>
-            )}
-          </div>
-        )}
-
         {step === 'confirm' && (
           <div>
             <h3 className="text-base font-bold text-gray-900 mb-4">Confirm Booking</h3>
@@ -459,8 +364,6 @@ const BookingModal: React.FC<{
                 { label: 'Startup', value: startups.find((s) => (s.startupId || s._id) === selectedStartup)?.startupName || '—' },
                 { label: 'Mentor', value: mentor.name },
                 { label: 'Topic', value: selectedTopic },
-                { label: 'Date', value: formatDateDisplay(selectedDate) },
-                { label: 'Time', value: formatTimeDisplay(selectedTime) },
                 { label: 'Duration', value: `${mentor.sessionDuration || 45} minutes` },
                 { label: 'Session Fee', value: mentor.sessionFee > 0 ? `₹${mentor.sessionFee}` : 'Free' },
               ].map((row) => (
@@ -471,7 +374,7 @@ const BookingModal: React.FC<{
               ))}
             </div>
             <p className="text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-xl p-3.5 leading-relaxed">
-              Your session is linked to your startup idea so the mentor can review your AI-generated startup plan before the session.
+              Your request is linked to your startup idea so the mentor can review your AI-generated startup plan before the session. Once submitted, the mentor will set the date and time slot.
             </p>
           </div>
         )}
@@ -481,14 +384,12 @@ const BookingModal: React.FC<{
             <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 size={32} className="text-emerald-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-1">Session Booked!</h3>
-            <p className="text-sm text-gray-500 mb-6">Your mentoring session has been confirmed and added to My Bookings.</p>
+            <h3 className="text-xl font-bold text-gray-900 mb-1">Session Request Sent!</h3>
+            <p className="text-sm text-gray-500 mb-6">Your mentoring session request has been added to My Bookings. The mentor will set the date and time slot.</p>
             <div className="bg-gray-50 border border-gray-100 rounded-xl p-5 text-left text-sm space-y-2.5 mb-6">
               <p><span className="text-gray-500">Startup:</span> <strong className="text-gray-900">{startups.find((s) => (s.startupId || s._id) === selectedStartup)?.startupName || '—'}</strong></p>
               <p><span className="text-gray-500">Mentor:</span> <strong className="text-gray-900">{mentor.name}</strong></p>
               <p><span className="text-gray-500">Topic:</span> <strong className="text-gray-900">{selectedTopic}</strong></p>
-              <p><span className="text-gray-500">Date:</span> <strong className="text-gray-900">{formatDateDisplay(selectedDate)}</strong></p>
-              <p><span className="text-gray-500">Time:</span> <strong className="text-gray-900">{formatTimeDisplay(selectedTime)}</strong></p>
             </div>
             <button onClick={onClose} className="px-8 py-3 bg-[#5B21B6] text-white font-bold rounded-xl hover:bg-[#4C1D95] transition-colors shadow">
               Done
@@ -661,13 +562,17 @@ const BookingRow: React.FC<{
   booking: any;
   onCancel: (b: any) => void;
   onReschedule: (b: any) => void;
-}> = ({ booking, onCancel, onReschedule }) => {
+  onAccept: (b: any) => void;
+  accepting?: boolean;
+}> = ({ booking, onCancel, onReschedule, onAccept, accepting }) => {
   const [feedback, setFeedback] = useState<any>(null);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [showFeedbackSection, setShowFeedbackSection] = useState(false);
 
   const status = STATUS_STYLES[booking.status] || STATUS_STYLES.pending;
-  const canModify = ['pending', 'confirmed', 'rescheduled'].includes(booking.status);
+  const canModify = ['pending', 'confirmed', 'accepted', 'rescheduled'].includes(booking.status);
+  const hasSchedule = !!(booking.date && booking.time);
+  const awaitingSchedule = booking.status === 'pending' && !hasSchedule;
 
   const loadFeedback = async () => {
     setShowFeedbackSection((prev) => !prev);
@@ -702,8 +607,16 @@ const BookingRow: React.FC<{
             <p className="text-sm text-gray-600 mt-0.5"><span className="font-semibold text-gray-800">Startup:</span> {startupNameOf(booking)}</p>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs font-semibold text-gray-500">
               <span className="flex items-center gap-1"><BookOpen size={13} className="text-gray-400" /> {booking.topic}</span>
-              <span className="flex items-center gap-1"><Calendar size={13} className="text-gray-400" /> {formatDateDisplay(booking.date)}</span>
-              <span className="flex items-center gap-1"><Clock size={13} className="text-gray-400" /> {formatTimeDisplay(booking.time)} · {booking.duration} min</span>
+              {awaitingSchedule ? (
+                <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                  <Clock size={12} /> Awaiting mentor schedule
+                </span>
+              ) : (
+                <>
+                  <span className="flex items-center gap-1"><Calendar size={13} className="text-gray-400" /> {formatDateDisplay(booking.date)}</span>
+                  <span className="flex items-center gap-1"><Clock size={13} className="text-gray-400" /> {formatTimeDisplay(booking.time)} · {booking.duration} min</span>
+                </>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs">
               <span className="flex items-center gap-1 text-gray-500">
@@ -723,12 +636,20 @@ const BookingRow: React.FC<{
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {booking.status === 'confirmed' && (
+            <button onClick={() => onAccept(booking)} disabled={accepting}
+              className="px-3.5 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors flex items-center gap-1.5 shadow-sm disabled:opacity-60">
+              {accepting ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} Accept Session
+            </button>
+          )}
           {canModify && (
             <>
-              <button onClick={() => onReschedule(booking)}
-                className="px-3.5 py-2 text-sm font-bold text-[#5B21B6] bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors flex items-center gap-1.5">
-                <RotateCcw size={14} /> Reschedule
-              </button>
+              {hasSchedule && (
+                <button onClick={() => onReschedule(booking)}
+                  className="px-3.5 py-2 text-sm font-bold text-[#5B21B6] bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors flex items-center gap-1.5">
+                  <RotateCcw size={14} /> Reschedule
+                </button>
+              )}
               <button onClick={() => onCancel(booking)}
                 className="px-3.5 py-2 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors flex items-center gap-1.5">
                 <CalendarX size={14} /> Cancel
@@ -802,6 +723,7 @@ const FounderMentors: React.FC = () => {
 
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [refreshingTab, setRefreshingTab] = useState(false);
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   const showToast = useCallback((type: 'success' | 'error', message: string) => {
     setToast({ type, message });
@@ -880,6 +802,20 @@ const FounderMentors: React.FC = () => {
       loadBookings();
     } catch (err: any) {
       showToast('error', err.message || 'Failed to cancel booking');
+    }
+  };
+
+  const handleAcceptBooking = async (b: any) => {
+    if (!window.confirm('Accept the scheduled session? The mentor will be notified once you confirm.')) return;
+    setAcceptingId(b._id);
+    try {
+      await acceptMentorSession(b._id);
+      showToast('success', 'Session accepted — the mentor has been notified.');
+      loadBookings();
+    } catch (err: any) {
+      showToast('error', err.message || 'Failed to accept the session');
+    } finally {
+      setAcceptingId(null);
     }
   };
 
@@ -1041,6 +977,8 @@ const FounderMentors: React.FC = () => {
                       booking={b}
                       onCancel={handleCancelBooking}
                       onReschedule={(book) => setRescheduleBookingData(book)}
+                      onAccept={handleAcceptBooking}
+                      accepting={acceptingId === b._id}
                     />
                   ))}
                   {cancelledBookings.length > 0 && (
@@ -1053,6 +991,8 @@ const FounderMentors: React.FC = () => {
                             booking={b}
                             onCancel={handleCancelBooking}
                             onReschedule={(book) => setRescheduleBookingData(book)}
+                            onAccept={handleAcceptBooking}
+                            accepting={acceptingId === b._id}
                           />
                         ))}
                       </div>
@@ -1082,6 +1022,8 @@ const FounderMentors: React.FC = () => {
                       booking={b}
                       onCancel={handleCancelBooking}
                       onReschedule={(book) => setRescheduleBookingData(book)}
+                      onAccept={handleAcceptBooking}
+                      accepting={acceptingId === b._id}
                     />
                   ))}
                 </div>
@@ -1116,7 +1058,12 @@ const FounderMentors: React.FC = () => {
       {rescheduleBookingData && (
         <RescheduleModal
           booking={rescheduleBookingData}
-          mentor={rescheduleBookingData.mentorId}
+          mentor={{
+            id: typeof rescheduleBookingData.mentorId === 'string'
+              ? rescheduleBookingData.mentorId
+              : rescheduleBookingData.mentorId?._id,
+            availability: rescheduleBookingData.mentorId?.availability,
+          }}
           onClose={() => setRescheduleBookingData(null)}
           onRescheduled={loadBookings}
           onToast={showToast}

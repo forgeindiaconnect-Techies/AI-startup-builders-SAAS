@@ -38,7 +38,9 @@ export const SESSION_TOPICS = [
   'Team Building',
 ];
 
-const BOOKABLE_STATUSES = ['pending', 'confirmed', 'rescheduled'] as const;
+const BOOKABLE_STATUSES = ['pending', 'confirmed', 'accepted', 'rescheduled'] as const;
+
+const ADMIN_NOTIFICATION_USER = 'admin';
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
@@ -447,8 +449,8 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
     const { mentorId, startupId, topic, date, time, duration } = req.body;
 
-    if (!mentorId || !startupId || !topic || !date || !time) {
-      return res.status(400).json({ success: false, message: 'Mentor, startup, topic, date and time are required' });
+    if (!mentorId || !startupId || !topic) {
+      return res.status(400).json({ success: false, message: 'Mentor, startup and topic are required' });
     }
     if (!isValidId(mentorId) || !isValidId(startupId)) {
       return res.status(400).json({ success: false, message: 'Invalid mentor or startup id' });
@@ -461,17 +463,20 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
     if (!startup) return res.status(404).json({ success: false, message: 'Startup not found' });
 
     // Prevent double booking of the same mentor + date + time slot
-    const existing = await MentorBooking.findOne({
-      mentorId,
-      date,
-      time,
-      status: { $in: BOOKABLE_STATUSES },
-    });
-    if (existing) {
-      return res.status(409).json({
-        success: false,
-        message: 'This time slot is no longer available. Please select another slot.',
+    // (only relevant once the mentor has scheduled the session)
+    if (date && time) {
+      const existing = await MentorBooking.findOne({
+        mentorId,
+        date,
+        time,
+        status: { $in: BOOKABLE_STATUSES },
       });
+      if (existing) {
+        return res.status(409).json({
+          success: false,
+          message: 'This time slot is no longer available. Please select another slot.',
+        });
+      }
     }
 
     const profile = await MentorProfile.findOne({ mentorId });
@@ -483,8 +488,8 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       mentorId,
       startupId,
       topic,
-      date,
-      time,
+      date: date || '',
+      time: time || '',
       duration: sessionDuration,
       status: 'pending',
       meetingLink: `https://meet.jit.si/ai-startup-builder-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
@@ -494,15 +499,30 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
     // Notify the mentor about the new session request
     try {
       const founder = await User.findById(userId);
+      const scheduleText = date && time ? ` for ${date} at ${time}` : ' (schedule pending)';
       await NotificationModel.create({
         userId: mentorId.toString(),
         title: 'New Mentoring Session Request',
-        message: `${founder?.fullName || 'A founder'} requested a session on ${date} at ${time} for "${startup.startupName}".`,
+        message: `${founder?.fullName || 'A founder'} requested a session${scheduleText} for "${startup.startupName}". Please set a date and time slot.`,
         type: 'mentor_booking',
         actionUrl: '/dashboard/mentor/sessions',
       });
     } catch (notifErr) {
       console.warn('Could not create booking notification:', (notifErr as Error).message);
+    }
+
+    // Notify admin dashboard notification page about the new booking
+    try {
+      const founder = await User.findById(userId);
+      await NotificationModel.create({
+        userId: ADMIN_NOTIFICATION_USER,
+        title: 'New Mentoring Session Request',
+        message: `${founder?.fullName || 'A founder'} booked a mentoring session with ${mentor.fullName} for "${startup.startupName}" (topic: ${topic}).`,
+        type: 'mentor_booking',
+        actionUrl: '/dashboard/admin/notifications',
+      });
+    } catch (notifErr) {
+      console.warn('Could not create admin booking notification:', (notifErr as Error).message);
     }
 
     const populated = await MentorBooking.findById(booking._id)
@@ -610,6 +630,108 @@ export const rescheduleBooking = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// POST /api/mentors/bookings/:id/schedule  (mentor fixes the time, slot and days)
+export const scheduleSession = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { date, time, duration, meetingLink } = req.body;
+    if (!isValidId(id)) return res.status(400).json({ success: false, message: 'Invalid booking id' });
+    if (!date || !time) return res.status(400).json({ success: false, message: 'Date and time are required to schedule the session' });
+
+    const booking = await MentorBooking.findById(id);
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+    if (booking.mentorId.toString() !== req.user!.id) {
+      return res.status(403).json({ success: false, message: 'Only the assigned mentor can schedule this session' });
+    }
+    if (booking.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Only unscheduled (pending) requests can be scheduled' });
+    }
+
+    // Prevent scheduling the same mentor + date + time slot twice
+    const conflicting = await MentorBooking.findOne({
+      mentorId: booking.mentorId,
+      _id: { $ne: booking._id },
+      date,
+      time,
+      status: { $in: BOOKABLE_STATUSES },
+    });
+    if (conflicting) {
+      return res.status(409).json({ success: false, message: 'This time slot is no longer available. Please select another slot.' });
+    }
+
+    booking.date = date;
+    booking.time = time;
+    booking.status = 'confirmed';
+    if (Number(duration) > 0) booking.duration = Number(duration);
+    if (typeof meetingLink === 'string' && meetingLink.trim()) booking.meetingLink = meetingLink.trim();
+    await booking.save();
+
+    // Notify the founder that their session has been scheduled
+    try {
+      const mentor = await User.findById(booking.mentorId);
+      const startup = await Startup.findById(booking.startupId);
+      await NotificationModel.create({
+        userId: booking.userId.toString(),
+        title: 'Mentoring Session Scheduled',
+        message: `${mentor?.fullName || 'Your mentor'} scheduled your session on ${date} at ${time} for "${startup?.startupName || 'your startup'}". Please review and accept it in My Bookings.`,
+        type: 'mentor_booking',
+        actionUrl: '/dashboard/founder/mentors',
+      });
+    } catch (notifErr) {
+      console.warn('Could not create schedule notification:', (notifErr as Error).message);
+    }
+
+    const populated = await MentorBooking.findById(booking._id)
+      .populate('userId', 'fullName')
+      .populate('startupId', 'startupName startupIdea aiGenerated')
+      .populate('mentorId', 'fullName');
+
+    res.json({ success: true, message: 'Session scheduled', data: populated });
+  } catch (error) {
+    console.error('Error scheduling session:', error);
+    res.status(500).json({ success: false, message: 'Failed to schedule session' });
+  }
+};
+
+// POST /api/mentors/bookings/:id/accept  (founder accepts the scheduled session)
+export const acceptSession = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!isValidId(id)) return res.status(400).json({ success: false, message: 'Invalid booking id' });
+    const booking = await MentorBooking.findById(id);
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+    if (booking.userId.toString() !== req.user!.id) {
+      return res.status(403).json({ success: false, message: 'Only the founder who booked this session can accept it' });
+    }
+    if (booking.status !== 'confirmed') {
+      return res.status(400).json({ success: false, message: 'Only a scheduled session can be accepted' });
+    }
+
+    booking.status = 'accepted';
+    await booking.save();
+
+    // Notify the mentor that the founder accepted the session
+    try {
+      const founder = await User.findById(booking.userId);
+      const startup = await Startup.findById(booking.startupId);
+      await NotificationModel.create({
+        userId: booking.mentorId.toString(),
+        title: 'Session Accepted by Founder',
+        message: `${founder?.fullName || 'The founder'} accepted your scheduled session on ${booking.date} at ${booking.time} for "${startup?.startupName || 'their startup'}".`,
+        type: 'mentor_booking',
+        actionUrl: '/dashboard/mentor/sessions',
+      });
+    } catch (notifErr) {
+      console.warn('Could not create accept notification:', (notifErr as Error).message);
+    }
+
+    res.json({ success: true, message: 'Session accepted', data: booking });
+  } catch (error) {
+    console.error('Error accepting session:', error);
+    res.status(500).json({ success: false, message: 'Failed to accept session' });
+  }
+};
+
 // POST /api/mentors/bookings/:id/complete
 export const completeSession = async (req: AuthRequest, res: Response) => {
   try {
@@ -625,6 +747,9 @@ export const completeSession = async (req: AuthRequest, res: Response) => {
     }
     if (booking.status === 'cancelled') {
       return res.status(400).json({ success: false, message: 'Cannot complete a cancelled booking' });
+    }
+    if (booking.status === 'completed') {
+      return res.status(400).json({ success: false, message: 'Session is already completed' });
     }
     booking.status = 'completed';
     await booking.save();

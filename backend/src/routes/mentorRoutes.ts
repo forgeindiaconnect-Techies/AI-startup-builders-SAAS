@@ -9,6 +9,8 @@ import {
   getMentorBookings,
   cancelBooking,
   rescheduleBooking,
+  scheduleSession,
+  acceptSession,
   completeSession,
   submitFeedback,
   getBookingFeedback,
@@ -30,6 +32,8 @@ router.put('/admin/:id', adminOnly, updateMentorProfileAdmin);
 router.get('/bookings/:id/feedback', getBookingFeedback);
 router.post('/bookings/:id/cancel', cancelBooking);
 router.post('/bookings/:id/reschedule', rescheduleBooking);
+router.post('/bookings/:id/schedule', scheduleSession);
+router.post('/bookings/:id/accept', acceptSession);
 router.post('/bookings/:id/complete', completeSession);
 router.post('/bookings/:id/feedback', submitFeedback);
 

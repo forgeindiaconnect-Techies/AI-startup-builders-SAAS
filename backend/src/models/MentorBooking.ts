@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export type MentorBookingStatus =
   | 'pending'
   | 'confirmed'
+  | 'accepted'
   | 'completed'
   | 'cancelled'
   | 'rescheduled';
@@ -44,12 +45,12 @@ const MentorBookingSchema: Schema = new Schema(
       index: true,
     },
     topic: { type: String, required: true },
-    date: { type: String, required: true },
-    time: { type: String, required: true },
+    date: { type: String, required: false, default: '' },
+    time: { type: String, required: false, default: '' },
     duration: { type: Number, default: 45 },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'completed', 'cancelled', 'rescheduled'],
+      enum: ['pending', 'confirmed', 'accepted', 'completed', 'cancelled', 'rescheduled'],
       default: 'pending',
     },
     meetingLink: { type: String, default: '' },
