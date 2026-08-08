@@ -1082,14 +1082,8 @@ const FounderMentors: React.FC = () => {
 
                       <div className="mt-4 flex gap-2">
                         <button
-                          onClick={() => setChatMentor(m)}
-                          className="flex-1 py-2.5 bg-white border border-purple-200 hover:bg-purple-50 text-[#5B21B6] font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-1.5"
-                        >
-                          <MessageSquare size={15} /> Message
-                        </button>
-                        <button
                           onClick={() => openProfile(m)}
-                          className="flex-1 py-2.5 bg-indigo-50 hover:bg-purple-50 text-[#5B21B6] font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-1.5"
+                          className="w-full py-2.5 bg-indigo-50 hover:bg-purple-50 text-[#5B21B6] font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-1.5"
                         >
                           View Profile <ArrowRight size={15} />
                         </button>
