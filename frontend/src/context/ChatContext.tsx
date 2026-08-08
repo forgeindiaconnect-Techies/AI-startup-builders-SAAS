@@ -126,7 +126,15 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const getOrCreateConversation = (participants: ChatUser[]) => {
     const ids = participants.map(p => p.id).sort().join('|');
-    const existing = conversations.find(c => c.participants.map(p => p.id).sort().join('|') === ids);
+    const names = participants.map(p => (p.name || '').toLowerCase()).sort().join('|');
+
+    const existing = conversations.find(c => {
+      const cIds = c.participants.map(p => p.id).sort().join('|');
+      if (cIds === ids) return true;
+      const cNames = c.participants.map(p => (p.name || '').toLowerCase()).sort().join('|');
+      return cNames === names && cNames.length > 0;
+    });
+
     if (existing) return existing;
     const conv: Conversation = {
       id: `conv_${Date.now()}`,

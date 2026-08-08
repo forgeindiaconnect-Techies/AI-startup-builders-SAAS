@@ -129,8 +129,8 @@ const MentorChatWidget: React.FC<{
   const [conversationId, setConversationId] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const mentorId = String(mentor.id || mentor._id || '');
-  const mentorName = mentor.name || 'Mentor';
+  const mentorId = String(mentor.id || mentor._id || mentor.mentorId || '');
+  const mentorName = mentor.name || mentor.fullName || 'Mentor';
 
   useEffect(() => {
     if (!user) return;
@@ -140,10 +140,25 @@ const MentorChatWidget: React.FC<{
     ]);
     setConversationId(conv.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, mentorId]);
+  }, [user?.id, mentorId, mentorName]);
 
-  const msgs = conversationId ? (messages[conversationId] || []) : [];
-  const visible = msgs.filter((m) => m.type === 'user_message');
+  let msgs: any[] = conversationId ? (messages[conversationId] || []) : [];
+
+  if (msgs.length === 0) {
+    const allMsgs = Object.values(messages).flat();
+    const matched = allMsgs.filter((m: any) => {
+      const isMentor = (m.senderName?.toLowerCase() === mentorName.toLowerCase() || m.senderId === mentorId) ||
+                       (m.receiverName?.toLowerCase() === mentorName.toLowerCase() || m.receiverId === mentorId);
+      const isUser = (m.senderId === user?.id || (user?.fullName && m.senderName?.toLowerCase() === user.fullName.toLowerCase())) ||
+                     (m.receiverId === user?.id || (user?.fullName && m.receiverName?.toLowerCase() === user.fullName.toLowerCase()));
+      return isMentor && (isUser || !user?.id);
+    });
+    if (matched.length > 0) {
+      msgs = matched;
+    }
+  }
+
+  const visible = msgs.filter((m) => m.type === 'user_message' || m.type === 'mentor_message' || !m.type);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -185,8 +200,8 @@ const MentorChatWidget: React.FC<{
             </div>
           ) : (
             visible.map((m, i) => {
-              const isMine = user?.id === m.senderId;
-              const isMentorMsg = m.senderRole === 'Mentor';
+              const isMine = user?.id === m.senderId || (user?.fullName && m.senderName?.toLowerCase() === user.fullName.toLowerCase());
+              const isMentorMsg = m.senderRole === 'Mentor' || m.senderName?.toLowerCase() === mentorName.toLowerCase();
               return (
                 <div key={m.id || i} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                   <span className={`text-[11px] font-bold text-gray-500 mb-1 ${isMine ? 'mr-1' : 'ml-1'}`}>{m.senderName}</span>
