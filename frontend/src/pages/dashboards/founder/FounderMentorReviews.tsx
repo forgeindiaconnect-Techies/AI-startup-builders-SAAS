@@ -18,7 +18,6 @@ const FounderMentorReviews: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState<Record<string, boolean>>({});
-  const [submitted, setSubmitted] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,7 +53,6 @@ const FounderMentorReviews: React.FC = () => {
       setStartups(prev =>
         prev.map(s => (s.startupId || s._id) === id ? { ...s, mentorReview: updatedReview } : s)
       );
-      setSubmitted(prev => ({ ...prev, [id]: true }));
       setReplyText(prev => ({ ...prev, [id]: '' }));
 
       // Also send the reply through the chat so the mentor sees it in the
@@ -197,32 +195,29 @@ const FounderMentorReviews: React.FC = () => {
                       <div>
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Your Reply</p>
                         <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <CheckCircle size={15} className="text-green-600" />
+                            <span className="text-xs font-bold text-green-700">Reply Sent</span>
+                          </div>
                           <p className="text-sm text-green-800 leading-relaxed">{review.founderReply}</p>
                           {review.founderReplyAt && (
                             <p className="text-xs text-green-600 mt-2 font-medium">
-                              Replied on {new Date(review.founderReplyAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              Sent on {new Date(review.founderReplyAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </p>
                           )}
                         </div>
-                        {/* Allow editing reply */}
-                        <button
-                          onClick={() => setSubmitted(prev => ({ ...prev, [id]: false }))}
-                          className="mt-2 text-xs font-medium text-[#5B21B6] hover:underline"
-                        >
-                          Edit Reply
-                        </button>
                       </div>
                     )}
 
-                    {/* Reply Box */}
-                    {(!hasReplied || submitted[id] === false) && (
+                    {/* Reply Box — shown only when founder has NOT yet replied */}
+                    {!hasReplied && (
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
                           <MessageSquare size={13} className="text-[#5B21B6]" />
-                          {hasReplied ? 'Update Your Reply' : 'Reply to Mentor'}
+                          Reply to Mentor
                         </label>
                         <textarea
-                          value={replyText[id] || (hasReplied ? review.founderReply : '')}
+                          value={replyText[id] || ''}
                           onChange={e => setReplyText(prev => ({ ...prev, [id]: e.target.value }))}
                           rows={4}
                           placeholder="Write your response to the mentor's feedback..."
@@ -239,7 +234,7 @@ const FounderMentorReviews: React.FC = () => {
                             ) : (
                               <Send size={15} />
                             )}
-                            {hasReplied ? 'Update Reply' : 'Send Reply'}
+                            Send Reply
                           </button>
                         </div>
                       </div>
