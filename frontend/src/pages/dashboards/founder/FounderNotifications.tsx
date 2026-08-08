@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   Bell, CheckCheck, Star, Rocket, Info, X, Calendar, ShieldCheck,
-  Tag, ChevronRight, CheckCircle2, Mail, LogIn, User, Megaphone, IndianRupee
+  Tag, ChevronRight, CheckCircle2, Mail, LogIn, User, Megaphone, IndianRupee, MessageSquare
 } from 'lucide-react';
 import { getNotifications } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
@@ -28,6 +28,7 @@ const getTypeStyles = (type?: string) => {
     case 'ai_builder':    return { icon: Rocket, color: 'text-purple-600', bg: 'bg-purple-50' };
     case 'funding':       return { icon: IndianRupee, color: 'text-green-600', bg: 'bg-green-50' };
     case 'user_approval': return { icon: User, color: 'text-blue-600', bg: 'bg-blue-50' };
+    case 'mentor_message': return { icon: MessageSquare, color: 'text-indigo-600', bg: 'bg-indigo-50' };
     case 'platform':      return { icon: Megaphone, color: 'text-orange-500', bg: 'bg-orange-50' };
     default:              return { icon: Info, color: 'text-blue-500', bg: 'bg-blue-50' };
   }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Info, Star, Rocket } from 'lucide-react';
+import { Bell, Info, Star, Rocket, MessageSquare } from 'lucide-react';
 import { getNotifications } from '../../utils/localStorageHelper';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -8,6 +8,7 @@ const getTypeStyles = (type?: string) => {
   switch (type) {
     case 'mentor_review': return { icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-50' };
     case 'ai_builder': return { icon: Rocket, color: 'text-purple-600', bg: 'bg-purple-50' };
+    case 'mentor_message': return { icon: MessageSquare, color: 'text-indigo-600', bg: 'bg-indigo-50' };
     default: return { icon: Info, color: 'text-blue-500', bg: 'bg-blue-50' };
   }
 };

@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   GraduationCap, Search, Star, MapPin, Briefcase, Clock, IndianRupee, ExternalLink,
   X, ArrowRight, ArrowLeft, Check, CheckCircle2, Calendar, Loader2, Link2,
   Video, RotateCcw, CalendarX, BadgeCheck, Award, BookOpen, FileText,
+  MessageSquare, Send, Bot,
 } from 'lucide-react';
 import { getStartups } from '../../../utils/localStorageHelper';
+import { useAuth } from '../../../context/AuthContext';
+import { useChat } from '../../../context/ChatContext';
 import {
   getMentors, getMentorProfile, getMentorAvailability, createMentorBooking,
   getMyBookings, cancelBooking, rescheduleBooking, getBookingFeedback, acceptMentorSession,
@@ -106,6 +109,125 @@ const Spinner: React.FC = () => (
     <Loader2 size={32} className="animate-spin text-[#5B21B6]" />
   </div>
 );
+
+const chatFormatTime = (isoString: string) => {
+  try {
+    return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return isoString;
+  }
+};
+
+// ─── Mentor Chat Widget ───────────────────────────────────────────
+const MentorChatWidget: React.FC<{
+  mentor: any;
+  onClose: () => void;
+}> = ({ mentor, onClose }) => {
+  const { user } = useAuth();
+  const { messages, getOrCreateConversation, sendMessage } = useChat();
+  const [input, setInput] = useState('');
+  const [conversationId, setConversationId] = useState('');
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  const mentorId = String(mentor.id || mentor._id || '');
+  const mentorName = mentor.name || 'Mentor';
+
+  useEffect(() => {
+    if (!user) return;
+    const conv = getOrCreateConversation([
+      { id: user.id, name: user.fullName, role: 'founder', avatar: (user.fullName || 'F').charAt(0).toUpperCase() },
+      { id: mentorId, name: mentorName, role: 'mentor', avatar: (mentorName || 'M').charAt(0).toUpperCase() },
+    ]);
+    setConversationId(conv.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, mentorId]);
+
+  const msgs = conversationId ? (messages[conversationId] || []) : [];
+  const visible = msgs.filter((m) => m.type === 'user_message');
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [visible.length]);
+
+  const handleSend = () => {
+    const text = input.trim();
+    if (!text || !user || !conversationId) return;
+    sendMessage(conversationId, user.id, user.fullName, 'Founder', mentorId, mentorName, 'Mentor', text);
+    setInput('');
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col h-[80vh] max-h-[640px]">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex-shrink-0">
+          {mentorAvatar(mentor) ? (
+            <img src={mentorAvatar(mentor)} alt={mentorName} className="w-10 h-10 rounded-full object-cover border-2 border-purple-100 flex-shrink-0" />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white font-black text-sm flex-shrink-0">
+              {initials(mentorName)}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-gray-900 text-[15px] leading-tight">{mentorName}</p>
+            <p className="text-xs text-gray-500 flex items-center gap-1"><Bot size={12} className="text-[#5B21B6]" /> Mentor · replies appear here</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 flex-shrink-0"><X size={20} /></button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-5 py-6 space-y-4 bg-[#FAFAFA]">
+          {visible.length === 0 ? (
+            <div className="text-center text-sm text-gray-400 py-10">
+              <MessageSquare size={32} className="mx-auto text-gray-300 mb-3" />
+              <p>No messages yet.</p>
+              <p className="text-xs mt-1">Say hello and start a conversation with {mentorName}.</p>
+            </div>
+          ) : (
+            visible.map((m, i) => {
+              const isMine = user?.id === m.senderId;
+              const isMentorMsg = m.senderRole === 'Mentor';
+              return (
+                <div key={m.id || i} className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                  <span className={`text-[11px] font-bold text-gray-500 mb-1 ${isMine ? 'mr-1' : 'ml-1'}`}>{m.senderName}</span>
+                  <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-[14px] leading-relaxed shadow-sm ${
+                    isMine
+                      ? 'bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] text-white rounded-br-sm shadow-md shadow-purple-900/10'
+                      : isMentorMsg
+                        ? 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm shadow-sm'
+                        : 'bg-gray-100 border border-gray-200 text-gray-800 rounded-bl-sm'
+                  }`}>
+                    {m.message}
+                  </div>
+                  <span className={`text-[10px] text-gray-400 mt-1 font-medium ${isMine ? 'mr-1' : 'ml-1'}`}>{chatFormatTime(m.createdAt)}</span>
+                </div>
+              );
+            })
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Input */}
+        <div className="px-5 py-4 border-t border-gray-100 bg-white flex gap-3 items-center flex-shrink-0">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            placeholder={`Message ${mentorName}...`}
+            className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-[14px] bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#5B21B6] transition-all"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!input.trim()}
+            className="px-4 py-3 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-xl transition-colors shadow flex items-center gap-2 font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ─── Mentor Profile Modal ─────────────────────────────────────────
 const MentorProfileModal: React.FC<{
@@ -718,6 +840,7 @@ const FounderMentors: React.FC = () => {
 
   const [profileMentor, setProfileMentor] = useState<any>(null);
   const [bookingMentor, setBookingMentor] = useState<any>(null);
+  const [chatMentor, setChatMentor] = useState<any>(null);
   const [rescheduleBookingData, setRescheduleBookingData] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(false);
 
@@ -942,12 +1065,20 @@ const FounderMentors: React.FC = () => {
                         </span>
                       </div>
 
-                      <button
-                        onClick={() => openProfile(m)}
-                        className="mt-4 w-full py-2.5 bg-indigo-50 hover:bg-purple-50 text-[#5B21B6] font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-1.5"
-                      >
-                        View Profile <ArrowRight size={15} />
-                      </button>
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          onClick={() => setChatMentor(m)}
+                          className="flex-1 py-2.5 bg-white border border-purple-200 hover:bg-purple-50 text-[#5B21B6] font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <MessageSquare size={15} /> Message
+                        </button>
+                        <button
+                          onClick={() => openProfile(m)}
+                          className="flex-1 py-2.5 bg-indigo-50 hover:bg-purple-50 text-[#5B21B6] font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          View Profile <ArrowRight size={15} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1067,6 +1198,14 @@ const FounderMentors: React.FC = () => {
           onClose={() => setRescheduleBookingData(null)}
           onRescheduled={loadBookings}
           onToast={showToast}
+        />
+      )}
+
+      {/* Mentor Chat Widget */}
+      {chatMentor && (
+        <MentorChatWidget
+          mentor={chatMentor}
+          onClose={() => setChatMentor(null)}
         />
       )}
     </div>

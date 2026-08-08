@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import type { UserRole } from './AuthContext';
+import { addNotification } from '../utils/localStorageHelper';
 
 export interface ChatUser {
   id: string;
@@ -45,6 +46,7 @@ interface ChatContextType {
   conversations: Conversation[];
   messages: Record<string, Message[]>;
   notifications: Notification[];
+  getOrCreateConversation: (participants: ChatUser[]) => Conversation;
   sendMessage: (conversationId: string, senderId: string, senderName: string, senderRole: string, receiverId: string, receiverName: string, receiverRole: string, text: string) => void;
   sendAdminMessage: (conversationId: string, senderId: string, senderName: string, text: string, receiverId: string, receiverName: string, receiverRole: string) => void;
   markNotificationsRead: (userId: string) => void;
@@ -114,6 +116,27 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
+  const CONV_GRADIENTS = [
+    'from-purple-500 to-indigo-600',
+    'from-amber-400 to-orange-500',
+    'from-emerald-500 to-teal-600',
+    'from-rose-500 to-pink-600',
+    'from-blue-500 to-cyan-500',
+  ];
+
+  const getOrCreateConversation = (participants: ChatUser[]) => {
+    const ids = participants.map(p => p.id).sort().join('|');
+    const existing = conversations.find(c => c.participants.map(p => p.id).sort().join('|') === ids);
+    if (existing) return existing;
+    const conv: Conversation = {
+      id: `conv_${Date.now()}`,
+      participants,
+      gradient: CONV_GRADIENTS[Math.floor(Math.random() * CONV_GRADIENTS.length)],
+    };
+    setConversations(prev => [...prev, conv]);
+    return conv;
+  };
+
   const sendMessage = (
     conversationId: string, 
     senderId: string, 
@@ -143,6 +166,29 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ...prev,
       [conversationId]: [...(prev[conversationId] || []), newMessage]
     }));
+
+    // When a mentor messages a founder, surface it on the founder's Mentors
+    // page and on the admin dashboard notifications page.
+    if (senderRole === 'Mentor') {
+      addNotification({
+        userId: receiverId,
+        title: 'New Message from Mentor',
+        message: `${senderName} sent you a message: "${text}"`,
+        type: 'mentor_message',
+        actionUrl: '/dashboard/founder/mentors',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
+      addNotification({
+        userId: 'admin',
+        title: 'New Mentor Message',
+        message: `${senderName} (Mentor) sent a message to ${receiverName}.`,
+        type: 'mentor_message',
+        actionUrl: '/dashboard/admin/notifications',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
+    }
   };
 
   const sendAdminMessage = (
@@ -194,7 +240,7 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <ChatContext.Provider value={{ conversations, messages, notifications, sendMessage, sendAdminMessage, markNotificationsRead }}>
+    <ChatContext.Provider value={{ conversations, messages, notifications, getOrCreateConversation, sendMessage, sendAdminMessage, markNotificationsRead }}>
       {children}
     </ChatContext.Provider>
   );
