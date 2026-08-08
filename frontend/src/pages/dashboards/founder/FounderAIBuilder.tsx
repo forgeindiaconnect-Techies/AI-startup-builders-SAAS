@@ -292,53 +292,54 @@ const FounderAIBuilder: React.FC = () => {
                 }}
                 className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-sm transition-colors flex items-center border border-blue-100"
               >
-              <FileIcon size={16} className="mr-2" />
-              Save to My Startups
-            </button>
-
-            <div className="relative">
-              <button 
-                onClick={() => setShowExportMenu(!showExportMenu)}
-                disabled={exporting}
-                className="flex items-center px-4 py-2 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow text-sm transition-colors disabled:opacity-50"
-              >
-                {exporting ? <RefreshCw size={16} className="animate-spin mr-2" /> : <Download size={16} className="mr-2" />}
-                {exporting ? 'Exporting...' : 'Export'}
-                <ChevronDown size={16} className="ml-2" />
+                <FileIcon size={16} className="mr-2" />
+                Save to My Startups
               </button>
-              
-              {showExportMenu && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-fade-in-up">
-                  <button 
-                    onClick={() => handleExport('PDF')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center text-sm font-bold text-gray-700"
-                  >
-                    <FileText size={16} className="mr-3 text-red-500" /> Export PDF
-                  </button>
-                  <button 
-                    onClick={() => handleExport('WORD')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center text-sm font-bold text-gray-700"
-                  >
-                    <FileIcon size={16} className="mr-3 text-blue-500" /> Export Word
-                  </button>
-                  <button 
-                    onClick={() => handleExport('PPT')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center text-sm font-bold text-gray-700"
-                  >
-                    <BarChart3 size={16} className="mr-3 text-orange-500" /> Export Pitch Deck
-                  </button>
-                  <div className="border-t border-gray-100 my-1"></div>
-                  <button 
-                    onClick={() => handleExport('ZIP')}
-                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center text-sm font-bold text-gray-700"
-                  >
-                    <Download size={16} className="mr-3 text-purple-500" /> Download All as ZIP
-                  </button>
-                </div>
-              )}
-            </div>
-          </>
-        )}
+
+              <div className="relative">
+                <button 
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  disabled={exporting}
+                  className="flex items-center px-4 py-2 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow text-sm transition-colors disabled:opacity-50"
+                >
+                  {exporting ? <RefreshCw size={16} className="animate-spin mr-2" /> : <Download size={16} className="mr-2" />}
+                  {exporting ? 'Exporting...' : 'Export'}
+                  <ChevronDown size={16} className="ml-2" />
+                </button>
+                
+                {showExportMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-fade-in-up">
+                    <button 
+                      onClick={() => handleExport('PDF')}
+                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center text-sm font-bold text-gray-700"
+                    >
+                      <FileText size={16} className="mr-3 text-red-500" /> Export PDF
+                    </button>
+                    <button 
+                      onClick={() => handleExport('WORD')}
+                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center text-sm font-bold text-gray-700"
+                    >
+                      <FileIcon size={16} className="mr-3 text-blue-500" /> Export Word
+                    </button>
+                    <button 
+                      onClick={() => handleExport('PPT')}
+                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center text-sm font-bold text-gray-700"
+                    >
+                      <BarChart3 size={16} className="mr-3 text-orange-500" /> Export Pitch Deck
+                    </button>
+                    <div className="border-t border-gray-100 my-1"></div>
+                    <button 
+                      onClick={() => handleExport('ZIP')}
+                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center text-sm font-bold text-gray-700"
+                    >
+                      <Download size={16} className="mr-3 text-purple-500" /> Download All as ZIP
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
       
       {error && <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-xl font-bold text-sm">{error}</div>}
