@@ -111,7 +111,12 @@ export const checkPlagiarism = async (req: Request, res: Response) => {
 
     // 2. Check External Plagiarism / Search Service API configuration
     const isExternalServiceConfigured = Boolean(
-      process.env.PLAGIARISM_API_KEY || process.env.COPYLEAKS_API_KEY || process.env.SERP_API_KEY
+      process.env.PLAGIARISM_API_KEY ||
+      process.env.COPYLEAKS_API_KEY ||
+      process.env.SERP_API_KEY ||
+      process.env.GEMINI_API_KEY ||
+      process.env.GROQ_API_KEY ||
+      process.env.GROQ_API_kEY
     );
 
     let webContentSim = 0;
