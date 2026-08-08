@@ -254,55 +254,44 @@ const FounderAIBuilder: React.FC = () => {
     );
   }
 
-  if (startupData?.status === 'pending_analysis' || startupData?.status === 'failed') {
-    return (
-      <div className="animate-fade-in-up pb-10 max-w-3xl mx-auto mt-10">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
-          <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lightbulb size={32} className="text-[#5B21B6]" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{startupData.startupName}</h1>
-          <p className="text-gray-600 text-lg mb-8">{startupData.startupIdea}</p>
-
-          {error && <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl font-bold text-sm">{error}</div>}
-
-          <div className="bg-purple-50 rounded-xl p-6 mb-8 border border-purple-100">
-            <h3 className="font-bold text-purple-900 mb-2">Your startup idea is ready for AI analysis.</h3>
-            <p className="text-purple-700 text-sm">
-              Our AI will generate a complete business plan, pitch deck, market research, and readiness report based on your idea.
-            </p>
-          </div>
-
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="inline-flex items-center px-8 py-3.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl transition-all shadow-md shadow-purple-900/20 active:scale-95 text-lg"
-          >
-            <Play size={20} className="mr-3 fill-current" />
-            Analyze & Generate with AI
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="animate-fade-in-up">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">AI Builder</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900">{startupData?.startupName || 'AI Builder'}</h1>
+            {startupData?.status && (
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                startupData.status === 'generated' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}>
+                {startupData.status === 'generated' ? 'AI Generated' : startupData.status === 'pending_analysis' ? 'Draft' : startupData.status}
+              </span>
+            )}
+          </div>
           <p className="text-gray-500 mt-1">All your AI-powered startup tools in one place.</p>
         </div>
         
-        {startupData && startupData.status === 'generated' && (
-          <div className="flex flex-wrap items-center gap-3">
-            <button 
-              onClick={() => {
-                alert('Saved to My Startups!');
-                window.location.href = '/dashboard/founder/startups';
-              }}
-              className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-sm transition-colors flex items-center border border-blue-100"
+        <div className="flex flex-wrap items-center gap-3">
+          {startupData && startupData.status !== 'generated' && (
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="px-5 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl text-sm transition-all shadow flex items-center gap-2 disabled:opacity-50"
             >
+              {generating ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
+              {generating ? 'Analyzing & Generating...' : 'Generate with AI'}
+            </button>
+          )}
+
+          {startupData && startupData.status === 'generated' && (
+            <>
+              <button 
+                onClick={() => {
+                  alert('Saved to My Startups!');
+                  window.location.href = '/dashboard/founder/startups';
+                }}
+                className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-sm transition-colors flex items-center border border-blue-100"
+              >
               <FileIcon size={16} className="mr-2" />
               Save to My Startups
             </button>
@@ -348,7 +337,7 @@ const FounderAIBuilder: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
+          </>
         )}
       </div>
       
