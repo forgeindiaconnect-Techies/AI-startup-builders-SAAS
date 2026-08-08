@@ -7,7 +7,7 @@ import {
   File, Lightbulb, CalendarClock, Handshake, ClipboardList,
   Briefcase, Building2, UserCog, Inbox, CreditCard,
   BarChart2, Settings, CheckSquare, ShieldCheck,
-  IndianRupee, Film, Link2, Bell, GraduationCap,
+  IndianRupee, Film, Link2, Bell, GraduationCap, Star,
 } from 'lucide-react';
 import NotificationDropdown from '../components/shared/NotificationDropdown';
 import PlanGate from '../components/shared/PlanGate';
@@ -17,6 +17,7 @@ import FounderDashboard from '../pages/dashboards/FounderDashboard';
 import FounderStartups from '../pages/dashboards/founder/FounderStartups';
 import FounderAIBuilder from '../pages/dashboards/founder/FounderAIBuilder';
 import FounderMentors from '../pages/dashboards/founder/FounderMentors';
+import FounderMentorReviews from '../pages/dashboards/founder/FounderMentorReviews';
 import FounderFunding from '../pages/dashboards/founder/FounderFunding';
 import FounderBilling from '../pages/dashboards/founder/FounderBilling';
 import FounderDocuments from '../pages/dashboards/founder/FounderDocuments';
@@ -55,6 +56,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/founder/startups': FounderStartups,
     '/dashboard/founder/ai-builder': FounderAIBuilder,
     '/dashboard/founder/mentors': FounderMentors,
+    '/dashboard/founder/mentor-reviews': FounderMentorReviews,
     '/dashboard/founder/funding': () => (
       <PlanGate requiredPlans={['premium_startup_builder']}><FounderFunding /></PlanGate>
     ),
@@ -112,6 +114,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'My Startups',      icon: Rocket,          path: '/dashboard/founder/startups' },
         { name: 'AI Builder',       icon: Lightbulb,       path: '/dashboard/founder/ai-builder' },
         { name: 'Mentors',          icon: GraduationCap,   path: '/dashboard/founder/mentors' },
+        { name: 'Mentor Reviews',   icon: Star,            path: '/dashboard/founder/mentor-reviews' },
         { name: 'Funding',          icon: Wallet,          path: '/dashboard/founder/funding', plans: ['premium_startup_builder'] },
         { name: 'Subscription',     icon: CreditCard,      path: '/dashboard/founder/billing' },
         { name: 'Documents',        icon: File,            path: '/dashboard/founder/documents' },

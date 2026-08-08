@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell, CheckCheck, Star, Rocket, Info, X, Calendar, ShieldCheck,
-  Tag, ChevronRight, CheckCircle2, Mail, LogIn, User, Megaphone, IndianRupee, MessageSquare
+  Tag, ChevronRight, CheckCircle2, Mail, LogIn, User, Megaphone, IndianRupee, MessageSquare, ExternalLink
 } from 'lucide-react';
 import { getNotifications } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
@@ -18,6 +18,7 @@ type Notif = {
   fullTime: string;
   read: boolean;
   type?: string;
+  actionUrl?: string;
 };
 
 const initialNotifs: Notif[] = [];
@@ -64,6 +65,7 @@ const formatFullDate = (dateStr: string) => {
 const FounderNotifications: React.FC = () => {
   const { user: authUser } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [selectedNotif, setSelectedNotif] = useState<Notif | null>(null);
 
@@ -94,6 +96,7 @@ const FounderNotifications: React.FC = () => {
           fullTime: n.createdAt ? formatFullDate(n.createdAt) : (n.time || 'Just now'),
           read: n.isRead !== undefined ? n.isRead : !n.unread,
           type: n.type,
+          actionUrl: n.actionUrl,
           ...getTypeStyles(n.type)
         }));
 
@@ -345,6 +348,19 @@ const FounderNotifications: React.FC = () => {
 
             {/* Modal Footer */}
             <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row gap-3 justify-between items-center">
+              {selectedNotif.actionUrl && (
+                <button
+                  onClick={() => {
+                    setSelectedNotif(null);
+                    navigate(selectedNotif.actionUrl || '/');
+                  }}
+                  className="w-full sm:w-auto px-4 py-2 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold text-xs rounded-xl transition-colors shadow-sm"
+                >
+                  <ExternalLink size={13} className="inline mr-1.5 -mt-0.5" />
+                  Go to Page
+                </button>
+              )}
+              <div className={`flex ${selectedNotif.actionUrl ? '' : 'w-full'} flex-col sm:flex-row gap-3 items-center sm:justify-end`}>
               <button
                 onClick={() => {
                   const newRead = !selectedNotif.read;
@@ -357,10 +373,11 @@ const FounderNotifications: React.FC = () => {
               </button>
               <button
                 onClick={() => setSelectedNotif(null)}
-                className="w-full sm:w-auto px-6 py-2 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold text-xs rounded-xl transition-colors"
+                className="w-full sm:w-auto px-6 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl transition-colors shadow-sm"
               >
                 Close
               </button>
+              </div>
             </div>
           </div>
         </div>

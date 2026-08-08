@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Star, MessageSquare, Send, CheckCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { getStartups, updateStartup, addNotification } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
+import { useChat } from '../../../context/ChatContext';
 
 const RATING_COLORS: Record<string, string> = {
   Good: 'bg-green-100 text-green-700 border border-green-200',
@@ -11,6 +12,7 @@ const RATING_COLORS: Record<string, string> = {
 
 const FounderMentorReviews: React.FC = () => {
   const { user } = useAuth();
+  const { getOrCreateConversation, sendMessage } = useChat();
   const [startups, setStartups] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -54,6 +56,27 @@ const FounderMentorReviews: React.FC = () => {
       );
       setSubmitted(prev => ({ ...prev, [id]: true }));
       setReplyText(prev => ({ ...prev, [id]: '' }));
+
+      // Also send the reply through the chat so the mentor sees it in the
+      // founder ↔ mentor conversation on the Mentors page.
+      const mentorId = startup.mentorReview.mentorId;
+      const mentorName = startup.mentorReview.mentorName || 'Mentor';
+      if (user?.id && mentorId) {
+        const conv = getOrCreateConversation([
+          { id: user.id, name: user.fullName || 'Founder', role: 'founder', avatar: (user.fullName || 'F').charAt(0).toUpperCase() },
+          { id: mentorId, name: mentorName, role: 'mentor', avatar: (mentorName || 'M').charAt(0).toUpperCase() },
+        ]);
+        sendMessage(
+          conv.id,
+          user.id,
+          user.fullName || 'Founder',
+          'Founder',
+          mentorId,
+          mentorName,
+          'Mentor',
+          `[Reply to your review on ${startup.startupName}] ${reply}`
+        );
+      }
 
       addNotification({
         id: `notif_reply_${Date.now()}`,

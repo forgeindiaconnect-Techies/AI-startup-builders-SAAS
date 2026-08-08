@@ -4,9 +4,11 @@ import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDe
 import { getDocuments, addNotification, getStartups, updateStartup } from '../../../utils/localStorageHelper';
 import { getMentorBookings } from '../../../utils/mentorApi';
 import { useAuth } from '../../../context/AuthContext';
+import { useChat } from '../../../context/ChatContext';
 
 const MentorReviews: React.FC = () => {
   const { user, getAllUsers } = useAuth();
+  const { getOrCreateConversation, sendMessage } = useChat();
   const [search, setSearch] = useState('');
   const [bookings, setBookings] = useState<any[]>([]);
   const [allStartups, setAllStartups] = useState<any[]>([]);
@@ -100,14 +102,42 @@ const MentorReviews: React.FC = () => {
     updateStartup(updated.startupId || updated._id, updated).then(() => {
       setAllStartups(prev => prev.map(s => (s.startupId || s._id) === (updated.startupId || updated._id) ? updated : s));
     });
+
+    // Send the feedback to the founder as a chat message so it shows up
+    // in the founder's Mentors page chat widget.
+    const founderId = typeof selectedStartup.founderId === 'string'
+      ? selectedStartup.founderId
+      : selectedStartup.founderId?._id;
+    const founderName = selectedStartup.founderName || 'Founder';
+    if (founderId && user) {
+      const conv = getOrCreateConversation([
+        { id: user.id, name: user.fullName || 'Mentor', role: 'mentor', avatar: (user.fullName || 'M').charAt(0).toUpperCase() },
+        { id: founderId, name: founderName, role: 'founder', avatar: (founderName || 'F').charAt(0).toUpperCase() },
+      ]);
+      const reviewText = feedback.trim()
+        ? feedback.trim()
+        : `Rating: ${rating}`;
+      sendMessage(
+        conv.id,
+        user.id,
+        user.fullName || 'Mentor',
+        'Mentor',
+        founderId,
+        founderName,
+        'Founder',
+        `[Review for ${selectedStartup.startupName}] ${reviewText}`
+      );
+    }
     
     addNotification({
-      id: Date.now(),
+      id: `notif_review_${Date.now()}`,
+      userId: founderId || 'all',
       title: 'New Mentor Review',
-      message: `${user?.fullName || ''} provided a review for "${updated.startupName}": "${feedback}"`,
+      message: `${user?.fullName || ''} provided a review for "${updated.startupName}": "${feedback || `Rating: ${rating}`}"`,
       type: 'mentor_review',
-      time: 'Just now',
-      unread: true
+      actionUrl: '/dashboard/founder/mentor-reviews',
+      isRead: false,
+      createdAt: new Date().toISOString(),
     });
 
     setSelectedStartup(null);
