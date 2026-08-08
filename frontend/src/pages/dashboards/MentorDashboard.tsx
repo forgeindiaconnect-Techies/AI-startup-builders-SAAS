@@ -42,10 +42,10 @@ const MentorDashboard: React.FC = () => {
   }, []);
 
   const stats = [
-    { title: 'Pending Reviews', value: '4', icon: FileText, color: 'text-orange-500', bg: 'bg-orange-100' },
-    { title: 'Completed Reviews', value: '128', icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-100' },
-    { title: 'Average Rating', value: '4.9', icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-100' },
-    { title: 'Total Earnings', value: '₹3,84,000', icon: IndianRupee, color: 'text-purple-500', bg: 'bg-purple-100' },
+    { title: 'Pending Reviews', value: '4', icon: FileText, color: 'text-orange-500', bg: 'bg-orange-100', path: '/dashboard/mentor/reviews' },
+    { title: 'Completed Reviews', value: '128', icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-100', path: '/dashboard/mentor/reviews' },
+    { title: 'Average Rating', value: '4.9', icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-100', path: '/dashboard/mentor/feedback-hub' },
+    { title: 'Total Earnings', value: '₹3,84,000', icon: IndianRupee, color: 'text-purple-500', bg: 'bg-purple-100', path: '/dashboard/mentor/earnings' },
   ];
 
   return (
@@ -96,7 +96,11 @@ const MentorDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <button
+            key={i}
+            onClick={() => navigate(stat.path)}
+            className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-purple-200 hover:shadow-md transition-all cursor-pointer text-left group"
+          >
             <div className="flex items-center">
               <div className={`p-3 rounded-xl ${stat.bg} ${stat.color} mr-4`}>
                 <stat.icon size={24} />
@@ -106,7 +110,7 @@ const MentorDashboard: React.FC = () => {
                 <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 

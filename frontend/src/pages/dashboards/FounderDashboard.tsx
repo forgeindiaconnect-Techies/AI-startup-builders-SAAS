@@ -42,10 +42,10 @@ const FounderDashboard: React.FC = () => {
   const recentStartups = startups.slice(0, 5); // already sorted by createdAt desc
 
   const stats = [
-    { title: 'Total Startups', value: totalStartups.toString(), icon: Lightbulb, color: 'text-blue-500', bg: 'bg-blue-100' },
-    { title: 'AI Reports Generated', value: aiReportsGenerated.toString(), icon: TrendingUp, color: 'text-purple-500', bg: 'bg-purple-100' },
-    { title: 'Active Ideas', value: activeStartups.length.toString(), icon: IndianRupee, color: 'text-green-500', bg: 'bg-green-100' },
-    { title: 'Pending Analysis', value: startups.filter(s => s.status === 'pending_analysis').length.toString(), icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-100' },
+    { title: 'Total Startups', value: totalStartups.toString(), icon: Lightbulb, color: 'text-blue-500', bg: 'bg-blue-100', path: '/dashboard/founder/startups' },
+    { title: 'AI Reports Generated', value: aiReportsGenerated.toString(), icon: TrendingUp, color: 'text-purple-500', bg: 'bg-purple-100', path: '/dashboard/founder/startups' },
+    { title: 'Active Ideas', value: activeStartups.length.toString(), icon: IndianRupee, color: 'text-green-500', bg: 'bg-green-100', path: '/dashboard/founder/startups' },
+    { title: 'Pending Analysis', value: startups.filter(s => s.status === 'pending_analysis').length.toString(), icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-100', path: '/dashboard/founder/ai-builder' },
   ];
 
   return (
@@ -90,7 +90,11 @@ const FounderDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <button
+            key={i}
+            onClick={() => navigate(stat.path)}
+            className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:border-purple-200 hover:shadow-md transition-all cursor-pointer text-left group"
+          >
             <div className="flex items-center">
               <div className={`p-3 rounded-xl ${stat.bg} ${stat.color} mr-4`}>
                 <stat.icon size={24} />
@@ -99,8 +103,9 @@ const FounderDashboard: React.FC = () => {
                 <p className="text-sm font-medium text-gray-500">{stat.title}</p>
                 <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
               </div>
+              <ArrowRight size={16} className="ml-auto text-gray-300 group-hover:text-purple-500 transition-colors" />
             </div>
-          </div>
+          </button>
         ))}
       </div>
 

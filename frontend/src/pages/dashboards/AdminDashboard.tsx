@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Rocket, IndianRupee, Check, X, Users, Cpu, ShoppingBag, ShieldCheck, Building2, Trash2 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [pendingMentors, setPendingMentors] = useState<any[]>([]);
   const [pendingStartups, setPendingStartups] = useState<any[]>([]);
 
@@ -183,6 +185,7 @@ const AdminDashboard: React.FC = () => {
             iconBg: 'bg-violet-50',
             iconColor: 'text-[#5B21B6]',
             badgeColor: 'text-emerald-600 bg-emerald-50',
+            path: '/dashboard/admin/users',
           },
           {
             label: 'Total AI Outputs',
@@ -192,6 +195,7 @@ const AdminDashboard: React.FC = () => {
             iconBg: 'bg-purple-50',
             iconColor: 'text-purple-600',
             badgeColor: 'text-purple-700 bg-purple-50',
+            path: '/dashboard/admin/analytics',
           },
           {
             label: 'Founders',
@@ -201,6 +205,7 @@ const AdminDashboard: React.FC = () => {
             iconBg: 'bg-blue-50',
             iconColor: 'text-blue-600',
             badgeColor: 'text-emerald-600 bg-emerald-50',
+            path: '/dashboard/admin/users',
           },
           {
             label: 'Customers',
@@ -210,6 +215,7 @@ const AdminDashboard: React.FC = () => {
             iconBg: 'bg-amber-50',
             iconColor: 'text-amber-600',
             badgeColor: 'text-emerald-600 bg-emerald-50',
+            path: '/dashboard/admin/users',
           },
           {
             label: 'Admins',
@@ -219,9 +225,14 @@ const AdminDashboard: React.FC = () => {
             iconBg: 'bg-emerald-50',
             iconColor: 'text-emerald-600',
             badgeColor: 'text-gray-500 bg-gray-50',
+            path: '/dashboard/admin/users',
           },
         ].map((stat, idx) => (
-          <div key={idx} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all p-5 flex flex-col gap-3">
+          <button
+            key={idx}
+            onClick={() => navigate(stat.path)}
+            className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all p-5 flex flex-col gap-3 cursor-pointer text-left"
+          >
             <div className="flex items-center justify-between">
               <div className={`w-10 h-10 rounded-xl ${stat.iconBg} flex items-center justify-center`}>
                 <stat.icon size={19} className={stat.iconColor} />
@@ -234,7 +245,7 @@ const AdminDashboard: React.FC = () => {
               <p className="text-xs font-semibold text-gray-500 mb-0.5">{stat.label}</p>
               <h3 className="text-2xl font-black text-gray-900 tracking-tight">{stat.value}</h3>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -315,7 +326,7 @@ const AdminDashboard: React.FC = () => {
           </div>
 
           <button 
-            onClick={() => window.alert("Generating comprehensive PDF & CSV Monthly Report...")}
+            onClick={() => navigate('/dashboard/admin/reports')}
             className="w-full mt-6 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all shadow hover:shadow-lg flex items-center justify-center gap-2"
           >
             Export Monthly Report (PDF / CSV)
@@ -370,7 +381,7 @@ const AdminDashboard: React.FC = () => {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-bold text-gray-900">Recent Subscription Upgrades</h2>
             <button 
-              onClick={() => window.alert('Navigating to Subscriptions & Payments...')}
+              onClick={() => navigate('/dashboard/admin/sub-payments')}
               className="text-sm font-medium text-[#5B21B6] hover:underline"
             >
               View all
