@@ -63,6 +63,7 @@ const viewStartupOutput = (b: any, navigate: (to: string) => void) => {
   const params = new URLSearchParams();
   if (fid) params.set('founderId', String(fid));
   if (sid) params.set('startupId', String(sid));
+  if (b?.startupName) params.set('startupName', String(b.startupName));
   navigate(`/dashboard/mentor/reviews?${params.toString()}`);
 };
 

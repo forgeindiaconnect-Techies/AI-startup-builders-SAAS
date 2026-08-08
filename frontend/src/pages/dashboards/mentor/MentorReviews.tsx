@@ -23,6 +23,7 @@ const MentorReviews: React.FC = () => {
 
   const initialFounderId = searchParams.get('founderId');
   const initialStartupId = searchParams.get('startupId');
+  const initialStartupName = searchParams.get('startupName');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,11 +49,11 @@ const MentorReviews: React.FC = () => {
       const f = b.userId;
       const sp = b.startupId;
       if (!f && !sp) return;
-      const fid = (typeof f === 'object' ? (f._id || f.id) : (b.founderId || f))?.toString();
+      const fid = (typeof f === 'object' ? (f._id || f.id) : (b.founderId || f))?.toString() || (b.founderName ? `founder_${b.founderName}` : null);
       if (!fid) return;
-      const sid = (typeof sp === 'object' ? (sp._id || sp.startupId || sp.id) : (sp || b.startupId))?.toString();
+      const sid = (typeof sp === 'object' ? (sp._id || sp.startupId || sp.id) : (sp || b.startupId))?.toString() || (b.startupName ? `startup_${b.startupName}` : null);
       if (!map.has(fid)) {
-        const userRec = allUsers.find((u: any) => u.id === fid || u._id === fid);
+        const userRec = allUsers.find((u: any) => u.id === fid || u._id === fid || u.fullName === b.founderName);
         map.set(fid, {
           id: fid,
           fullName: (typeof f === 'object' && f.fullName) || b.founderName || userRec?.fullName || 'Founder',
@@ -62,7 +63,7 @@ const MentorReviews: React.FC = () => {
       }
       const entry = map.get(fid);
       if (sid && !entry.startupsById.has(sid)) {
-        const full = allStartups.find((s: any) => String(s.startupId || s._id || s.id) === sid);
+        const full = allStartups.find((s: any) => String(s.startupId || s._id || s.id) === sid || s.startupName === b.startupName);
         entry.startupsById.set(sid, full || (typeof sp === 'object' ? { ...sp, startupId: sid, id: sid } : { startupId: sid, id: sid, startupName: b.startupName || 'Startup', startupIdea: b.topic || '' }));
       }
     });
@@ -86,20 +87,24 @@ const MentorReviews: React.FC = () => {
 
   // Deep-link support: when arriving with ?founderId&startupId (e.g. from the
   // "View Startup Output" button on the Sessions page or the Mentor dashboard),
-  // auto-select the founder and open the startup's output report.
+  // auto-select the founder and startup card on the page without automatically opening the modal dialog.
   useEffect(() => {
-    if (!initialFounderId && !initialStartupId) return;
+    if (!initialFounderId && !initialStartupId && !initialStartupName) return;
 
     const sid = initialStartupId ? String(initialStartupId) : '';
-    const matchId = (s: any) => String(s.startupId || s._id || s.id) === sid;
+    const sname = initialStartupName ? String(initialStartupName) : '';
 
-    let f = sid ? founders.find(fd => fd.startups.some(matchId)) : undefined;
+    const matchId = (s: any) => 
+      (sid && String(s.startupId || s._id || s.id) === sid) ||
+      (sname && (s.startupName === sname || s.name === sname));
+
+    let f = (sid || sname) ? founders.find(fd => fd.startups.some(matchId)) : undefined;
     if (!f && initialFounderId) f = founders.find(fd => fd.id === String(initialFounderId));
 
     let st: any = undefined;
     if (f) {
-      st = sid ? f.startups.find(matchId) : f.startups[0];
-    } else if (sid) {
+      st = (sid || sname) ? f.startups.find(matchId) : f.startups[0];
+    } else if (sid || sname) {
       st = allStartups.find(matchId);
       if (st) {
         const fid = String(st.userId || st.founderId || initialFounderId || 'founder');
@@ -113,15 +118,14 @@ const MentorReviews: React.FC = () => {
       }
     }
 
-    if (f && st) {
+    if (f) {
       setSelectedFounder(f);
-      setSelectedStartup(st);
-      setModalMode('report');
-    } else if (f) {
-      setSelectedFounder(f);
+      if (st) {
+        setSelectedStartup(st);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [founders, allStartups, initialFounderId, initialStartupId, allUsers]);
+  }, [founders, allStartups, initialFounderId, initialStartupId, initialStartupName, allUsers]);
 
   const filteredFounders = founders.filter(f => {
     if (!search.trim()) return true;
