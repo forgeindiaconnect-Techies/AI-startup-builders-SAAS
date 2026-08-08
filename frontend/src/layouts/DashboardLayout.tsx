@@ -296,7 +296,6 @@ const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activePath, setActivePath] = useState('');
 
   const role = user?.role ?? '';
 
@@ -311,15 +310,19 @@ const DashboardLayout: React.FC = () => {
     return path;
   };
 
-  // Sync the in-place view when the URL changes (e.g. header profile link, logo, notifications)
-  useEffect(() => {
-    const reg = PAGE_REGISTRY[role] ?? {};
-    const path = location.pathname;
-    const normPath = path.includes('/ai_builder') ? path.replace('/ai_builder', '/ai-builder') : path;
-    const matchedPath = reg[path] ? path : (reg[normPath] ? normPath : '');
-    setActivePath(matchedPath ? resolveAllowed(matchedPath) : '');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname, role, user?.subscriptionStatus]);
+  // Derive active path and active component directly from React Router's location.pathname
+  const currentPath = location.pathname;
+  const normPath = currentPath.includes('/ai_builder') ? currentPath.replace('/ai_builder', '/ai-builder') : currentPath;
+  const matchedPath = (PAGE_REGISTRY[role] ?? {})[currentPath]
+    ? currentPath
+    : ((PAGE_REGISTRY[role] ?? {})[normPath] ? normPath : '');
+
+  const activePath = matchedPath ? resolveAllowed(matchedPath) : resolveAllowed(currentPath);
+
+  const handleNavigate = (targetPath: string) => {
+    const allowed = resolveAllowed(targetPath);
+    navigate(allowed);
+  };
 
   const handleLogout = () => { logout(); navigate('/login', { replace: true }); };
   const closeMobile = () => setIsMobileOpen(false);
@@ -327,7 +330,7 @@ const DashboardLayout: React.FC = () => {
   const sidebarProps = {
     isCollapsed,
     onLinkClick: closeMobile,
-    onNavigate: (path: string) => setActivePath(resolveAllowed(path)),
+    onNavigate: handleNavigate,
     onLogout: handleLogout,
     userName: user?.fullName ?? '',
     userRole: role,
