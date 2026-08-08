@@ -12,18 +12,48 @@ interface FounderPlagiarismProps {
   onBackToBuilder?: () => void;
 }
 
-const CONTENT_OPTIONS = [
-  { id: 'full_startup', label: 'Full Startup' },
-  { id: 'startup_idea', label: 'Startup Idea' },
-  { id: 'problem_solution', label: 'Problem & Solution' },
+const ALL_CONTENT_OPTIONS = [
+  { id: 'full_startup', label: 'Full Startup Overview' },
+  { id: 'startup_idea', label: 'Startup Idea & Concept' },
+  { id: 'problem_solution', label: 'Problem & Solution Fit' },
   { id: 'business_plan', label: 'Business Plan' },
-  { id: 'market_research', label: 'Market Research' },
+  { id: 'market_research', label: 'Market Research & Industry Trends' },
   { id: 'competitor_analysis', label: 'Competitor Analysis' },
   { id: 'swot_analysis', label: 'SWOT Analysis' },
   { id: 'marketing_strategy', label: 'Marketing Strategy' },
-  { id: 'pitch_deck', label: 'Pitch Deck' },
-  { id: 'ai_reports', label: 'AI Reports' },
+  { id: 'pitch_deck', label: 'Pitch Deck Slides' },
+  { id: 'ai_reports', label: 'AI Readiness & Risk Reports' },
 ];
+
+const formatHumanReadableText = (obj: any): string => {
+  if (!obj) return '';
+  if (typeof obj === 'string') return obj;
+  if (Array.isArray(obj)) {
+    return obj
+      .map((item, i) => {
+        if (typeof item === 'string') return `• ${item}`;
+        if (item && typeof item === 'object') {
+          const slideTitle = item.title || item.slide || item.name || `Item ${i + 1}`;
+          const slideContent = item.content || item.description || (Array.isArray(item.bullets) ? item.bullets.join('\n') : '') || JSON.stringify(item, null, 2);
+          return `--- ${slideTitle} ---\n${slideContent}`;
+        }
+        return String(item);
+      })
+      .join('\n\n');
+  }
+  if (typeof obj === 'object') {
+    return Object.entries(obj)
+      .map(([k, v]) => {
+        const keyLabel = k.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
+        if (typeof v === 'object' && v !== null) {
+          return `[ ${keyLabel} ]\n${formatHumanReadableText(v)}`;
+        }
+        return `${keyLabel}:\n${v}`;
+      })
+      .join('\n\n');
+  }
+  return String(obj);
+};
 
 const FounderPlagiarism: React.FC<FounderPlagiarismProps> = ({ startupData, onBackToBuilder }) => {
   const [selectedContentType, setSelectedContentType] = useState('full_startup');
@@ -38,6 +68,26 @@ const FounderPlagiarism: React.FC<FounderPlagiarismProps> = ({ startupData, onBa
   const startupId = startupData?.startupId || startupData?.id || startupData?._id;
   const startupName = startupData?.startupName || 'Your Startup';
 
+  // Compute available options based on generated content
+  const availableOptions = React.useMemo(() => {
+    if (!startupData) return ALL_CONTENT_OPTIONS;
+    const ai = startupData.aiGenerated || {};
+    const list = [
+      { id: 'full_startup', label: 'Full Startup Overview', hasContent: Boolean(startupData.startupIdea || ai.businessPlan || ai.ideaAnalysis) },
+      { id: 'startup_idea', label: 'Startup Idea & Concept', hasContent: Boolean(startupData.startupIdea || startupData.description) },
+      { id: 'problem_solution', label: 'Problem & Solution Fit', hasContent: Boolean(ai.ideaAnalysis?.problem || ai.businessPlan?.problemStatement || ai.ideaAnalysis?.solution) },
+      { id: 'business_plan', label: 'Business Plan', hasContent: Boolean(ai.businessPlan) },
+      { id: 'market_research', label: 'Market Research & Industry Trends', hasContent: Boolean(ai.marketResearch) },
+      { id: 'competitor_analysis', label: 'Competitor Analysis', hasContent: Boolean(ai.marketResearch?.competitors || ai.ideaAnalysis?.competitors) },
+      { id: 'swot_analysis', label: 'SWOT Analysis', hasContent: Boolean(ai.ideaAnalysis?.swot || ai.marketResearch?.swot) },
+      { id: 'marketing_strategy', label: 'Marketing Strategy', hasContent: Boolean(ai.businessPlan?.marketingStrategy || ai.marketResearch?.marketingChannels) },
+      { id: 'pitch_deck', label: 'Pitch Deck Slides', hasContent: Boolean(ai.pitchDeck && ai.pitchDeck.length > 0) },
+      { id: 'ai_reports', label: 'AI Readiness & Risk Reports', hasContent: Boolean(ai.aiReport || ai.ideaAnalysis) },
+    ];
+    const filtered = list.filter((item) => item.hasContent);
+    return filtered.length > 0 ? filtered : ALL_CONTENT_OPTIONS;
+  }, [startupData]);
+
   // Extract content based on selected type
   const extractContentForType = (type: string, data: any): string => {
     if (!data) return '';
@@ -49,49 +99,33 @@ const FounderPlagiarism: React.FC<FounderPlagiarismProps> = ({ startupData, onBa
       case 'problem_solution':
         const problem = ai.ideaAnalysis?.problem || ai.businessPlan?.problemStatement || '';
         const solution = ai.ideaAnalysis?.solution || ai.businessPlan?.solutionOverview || '';
-        return `PROBLEM:\n${problem}\n\nSOLUTION:\n${solution}`.trim();
+        return `[ PROBLEM STATEMENT ]\n${formatHumanReadableText(problem)}\n\n[ SOLUTION OVERVIEW ]\n${formatHumanReadableText(solution)}`.trim();
       case 'business_plan':
-        if (typeof ai.businessPlan === 'string') return ai.businessPlan;
-        if (ai.businessPlan) {
-          return Object.entries(ai.businessPlan)
-            .map(([k, v]) => `${k.toUpperCase()}:\n${typeof v === 'object' ? JSON.stringify(v, null, 2) : v}`)
-            .join('\n\n');
-        }
-        return '';
+        return formatHumanReadableText(ai.businessPlan);
       case 'market_research':
-        if (typeof ai.marketResearch === 'string') return ai.marketResearch;
-        if (ai.marketResearch) {
-          return Object.entries(ai.marketResearch)
-            .map(([k, v]) => `${k.toUpperCase()}:\n${typeof v === 'object' ? JSON.stringify(v, null, 2) : v}`)
-            .join('\n\n');
-        }
-        return '';
+        return formatHumanReadableText(ai.marketResearch);
       case 'competitor_analysis':
         const comp = ai.marketResearch?.competitors || ai.ideaAnalysis?.competitors;
-        return typeof comp === 'object' ? JSON.stringify(comp, null, 2) : (comp || '');
+        return formatHumanReadableText(comp);
       case 'swot_analysis':
         const swot = ai.ideaAnalysis?.swot || ai.marketResearch?.swot;
-        return typeof swot === 'object' ? JSON.stringify(swot, null, 2) : (swot || '');
+        return formatHumanReadableText(swot);
       case 'marketing_strategy':
         const mkt = ai.businessPlan?.marketingStrategy || ai.marketResearch?.marketingChannels;
-        return typeof mkt === 'object' ? JSON.stringify(mkt, null, 2) : (mkt || '');
+        return formatHumanReadableText(mkt);
       case 'pitch_deck':
-        if (Array.isArray(ai.pitchDeck)) {
-          return ai.pitchDeck.map((slide: any, i: number) => `SLIDE ${i + 1}: ${slide.title || ''}\n${slide.content || slide.bulletPoints?.join('\n') || ''}`).join('\n\n');
-        }
-        return typeof ai.pitchDeck === 'object' ? JSON.stringify(ai.pitchDeck, null, 2) : (ai.pitchDeck || '');
+        return formatHumanReadableText(ai.pitchDeck);
       case 'ai_reports':
-        if (ai.aiReport) return typeof ai.aiReport === 'object' ? JSON.stringify(ai.aiReport, null, 2) : ai.aiReport;
-        return '';
+        return formatHumanReadableText(ai.aiReport || ai.ideaAnalysis);
       case 'full_startup':
       default:
         const parts = [
-          `STARTUP NAME: ${data.startupName || ''}`,
-          `STARTUP IDEA: ${data.startupIdea || ''}`,
-          ai.businessPlan ? `BUSINESS PLAN:\n${typeof ai.businessPlan === 'object' ? JSON.stringify(ai.businessPlan) : ai.businessPlan}` : '',
-          ai.marketResearch ? `MARKET RESEARCH:\n${typeof ai.marketResearch === 'object' ? JSON.stringify(ai.marketResearch) : ai.marketResearch}` : '',
+          `STARTUP NAME:\n${data.startupName || ''}`,
+          `STARTUP IDEA:\n${data.startupIdea || ''}`,
+          ai.businessPlan ? `BUSINESS PLAN:\n${formatHumanReadableText(ai.businessPlan)}` : '',
+          ai.marketResearch ? `MARKET RESEARCH:\n${formatHumanReadableText(ai.marketResearch)}` : '',
         ].filter(Boolean);
-        return parts.join('\n\n');
+        return parts.join('\n\n========================================\n\n');
     }
   };
 
@@ -169,7 +203,7 @@ const FounderPlagiarism: React.FC<FounderPlagiarismProps> = ({ startupData, onBa
 PLAGIARISM & ORIGINALITY REPORT
 ==================================================
 Startup: ${startupName}
-Content Checked: ${CONTENT_OPTIONS.find((c) => c.id === (report.contentType || selectedContentType))?.label || selectedContentType}
+Content Checked: ${ALL_CONTENT_OPTIONS.find((c) => c.id === (report.contentType || selectedContentType))?.label || selectedContentType}
 Checked At: ${new Date(report.checkedAt || Date.now()).toLocaleString()}
 
 SUMMARY METRICS:
@@ -296,7 +330,7 @@ Important: This report identifies textual and conceptual similarity based on the
               onChange={(e) => setSelectedContentType(e.target.value)}
               className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:outline-none focus:border-[#5B21B6] transition-colors"
             >
-              {CONTENT_OPTIONS.map((opt) => (
+              {availableOptions.map((opt) => (
                 <option key={opt.id} value={opt.id}>
                   {opt.label}
                 </option>
@@ -373,7 +407,7 @@ Important: This report identifies textual and conceptual similarity based on the
                 </span>
                 <h2 className="text-2xl font-black text-gray-900 mt-2">{startupName}</h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Content Checked: <strong className="text-gray-800">{CONTENT_OPTIONS.find((c) => c.id === report.contentType)?.label || report.contentType}</strong> · Checked At: {new Date(report.checkedAt || Date.now()).toLocaleString()}
+                  Content Checked: <strong className="text-gray-800">{ALL_CONTENT_OPTIONS.find((c) => c.id === report.contentType)?.label || report.contentType}</strong> · Checked At: {new Date(report.checkedAt || Date.now()).toLocaleString()}
                 </p>
               </div>
 
