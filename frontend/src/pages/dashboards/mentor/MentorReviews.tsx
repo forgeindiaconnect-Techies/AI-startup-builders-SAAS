@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, Clock, X, MessageSquare, Send, ArrowLeft, CheckCircle, ChevronRight, Users, UserRound, Star } from 'lucide-react';
 import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDetailsTabs';
 import { getDocuments, addNotification, getStartups, updateStartup } from '../../../utils/localStorageHelper';
@@ -9,6 +10,7 @@ import { useChat } from '../../../context/ChatContext';
 const MentorReviews: React.FC = () => {
   const { user, getAllUsers } = useAuth();
   const { getOrCreateConversation, sendMessage } = useChat();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [bookings, setBookings] = useState<any[]>([]);
   const [allStartups, setAllStartups] = useState<any[]>([]);
@@ -18,6 +20,9 @@ const MentorReviews: React.FC = () => {
   const [modalMode, setModalMode] = useState<'review' | 'report' | null>(null);
   const [feedback, setFeedback] = useState('');
   const [rating, setRating] = useState<'Good' | 'Average' | 'Bad' | null>(null);
+
+  const initialFounderId = searchParams.get('founderId');
+  const initialStartupId = searchParams.get('startupId');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -64,6 +69,26 @@ const MentorReviews: React.FC = () => {
       startups: Array.from(entry.startupsById.values()),
     }));
   }, [bookings, allStartups, allUsers]);
+
+  // Deep-link support: when arriving with ?founderId&startupId (e.g. from the
+  // "View Startup Output" button on the Sessions page or the Mentor dashboard),
+  // auto-select the founder and open the startup's output report.
+  useEffect(() => {
+    if (!initialFounderId && !initialStartupId) return;
+    if (founders.length === 0) return;
+    const sid = initialStartupId ? String(initialStartupId) : '';
+    const matchId = (s: any) => String(s.startupId || s._id || s.id) === sid;
+    let f = sid ? founders.find(fd => fd.startups.some(matchId)) : undefined;
+    if (!f && initialFounderId) f = founders.find(fd => fd.id === String(initialFounderId));
+    if (!f) return;
+    setSelectedFounder(f);
+    const st = sid ? f.startups.find(matchId) : undefined;
+    if (st) {
+      setSelectedStartup(st);
+      setModalMode('report');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [founders, initialFounderId, initialStartupId]);
 
   const filteredFounders = founders.filter(f => {
     if (!search.trim()) return true;

@@ -55,6 +55,17 @@ const founderNameOf = (b: any) => {
   return u && typeof u === 'object' && u.fullName ? u.fullName : b?.founderName || 'Founder';
 };
 
+const viewStartupOutput = (b: any, navigate: (to: string) => void) => {
+  const sp = b?.startupId;
+  const sid = sp && typeof sp === 'object' ? (sp._id || sp.startupId) : sp;
+  const f = b?.userId;
+  const fid = f && typeof f === 'object' ? f._id : b?.founderId;
+  const params = new URLSearchParams();
+  if (fid) params.set('founderId', String(fid));
+  if (sid) params.set('startupId', String(sid));
+  navigate(`/dashboard/mentor/reviews?${params.toString()}`);
+};
+
 // ─── Schedule Modal ──────────────────────────────────────────────
 const ScheduleModal: React.FC<{
   booking: any;
@@ -334,7 +345,7 @@ const MentorSessions: React.FC = () => {
                       </div>
                       <div className="flex flex-wrap items-center gap-2 shrink-0">
                         <button
-                          onClick={() => navigate('/dashboard/mentor/reviews')}
+                          onClick={() => viewStartupOutput(b, navigate)}
                           className="px-3.5 py-2 text-sm font-bold text-[#5B21B6] bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors flex items-center gap-1.5"
                         >
                           <FileText size={14} /> View Startup Output
@@ -401,7 +412,7 @@ const MentorSessions: React.FC = () => {
                         </div>
                         <div className="flex flex-wrap items-center gap-2 shrink-0">
                           <button
-                            onClick={() => navigate('/dashboard/mentor/reviews')}
+                            onClick={() => viewStartupOutput(b, navigate)}
                             className="px-3.5 py-2 text-sm font-bold text-[#5B21B6] bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors flex items-center gap-1.5"
                           >
                             <FileText size={14} /> View Startup Output
@@ -459,7 +470,7 @@ const MentorSessions: React.FC = () => {
                         </div>
                         <div className="ml-auto shrink-0">
                           <button
-                            onClick={() => navigate('/dashboard/mentor/reviews')}
+                            onClick={() => viewStartupOutput(b, navigate)}
                             className="px-3.5 py-2 text-sm font-bold text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-colors flex items-center gap-1.5"
                           >
                             Review Startup <ArrowRight size={14} />
