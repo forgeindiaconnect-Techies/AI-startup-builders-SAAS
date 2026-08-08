@@ -207,7 +207,7 @@ const FounderStartups: React.FC = () => {
 
                   <div className="flex items-center gap-2 mt-auto">
                     <button 
-                      onClick={() => navigate(`/dashboard/founder/ai-builder?startupId=${startup.id}`)}
+                      onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/founder/ai-builder?startupId=${startup.id}`); }}
                       className="flex-1 py-2.5 bg-gray-50 group-hover:bg-[#5B21B6] text-gray-700 group-hover:text-white rounded-lg font-bold text-sm transition-all duration-200 border border-gray-200 group-hover:border-[#5B21B6] shadow-sm group-hover:shadow"
                     >
                       AI Builder
@@ -261,7 +261,7 @@ const FounderStartups: React.FC = () => {
                       <td className="px-4 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button 
-                            onClick={() => navigate(`/dashboard/founder/ai-builder?startupId=${startup.id}`)}
+                            onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/founder/ai-builder?startupId=${startup.id}`); }}
                             className="px-4 py-1.5 bg-white border border-gray-200 group-hover:border-[#5B21B6] group-hover:text-[#5B21B6] rounded-lg font-bold text-xs transition-colors shadow-sm text-gray-700"
                           >
                             AI Builder

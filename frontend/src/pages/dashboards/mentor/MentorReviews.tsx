@@ -47,23 +47,37 @@ const MentorReviews: React.FC = () => {
       if (b.status === 'cancelled') return;
       const f = b.userId;
       const sp = b.startupId;
-      if (!f || !f._id || !sp) return;
-      const fid = f._id.toString();
-      const sid = (sp._id || sp).toString();
+      if (!f && !sp) return;
+      const fid = (typeof f === 'object' ? (f._id || f.id) : (b.founderId || f))?.toString();
+      if (!fid) return;
+      const sid = (typeof sp === 'object' ? (sp._id || sp.startupId || sp.id) : (sp || b.startupId))?.toString();
       if (!map.has(fid)) {
         const userRec = allUsers.find((u: any) => u.id === fid || u._id === fid);
         map.set(fid, {
           id: fid,
-          fullName: f.fullName || userRec?.fullName || 'Founder',
-          email: userRec?.email || f.email || '',
+          fullName: (typeof f === 'object' && f.fullName) || b.founderName || userRec?.fullName || 'Founder',
+          email: userRec?.email || (typeof f === 'object' && f.email) || '',
           startupsById: new Map(),
         });
       }
       const entry = map.get(fid);
-      if (entry.startupsById.has(sid)) return;
-      const full = allStartups.find((s: any) => String(s.startupId || s._id) === sid);
-      entry.startupsById.set(sid, full || { ...sp, startupId: sid, id: sid });
+      if (sid && !entry.startupsById.has(sid)) {
+        const full = allStartups.find((s: any) => String(s.startupId || s._id || s.id) === sid);
+        entry.startupsById.set(sid, full || (typeof sp === 'object' ? { ...sp, startupId: sid, id: sid } : { startupId: sid, id: sid, startupName: b.startupName || 'Startup', startupIdea: b.topic || '' }));
+      }
     });
+
+    allStartups.forEach((s: any) => {
+      const sid = String(s.startupId || s._id || s.id);
+      const fid = String(s.userId || s.founderId || '');
+      if (fid && map.has(fid)) {
+        const entry = map.get(fid);
+        if (!entry.startupsById.has(sid)) {
+          entry.startupsById.set(sid, s);
+        }
+      }
+    });
+
     return Array.from(map.values()).map((entry) => ({
       ...entry,
       startups: Array.from(entry.startupsById.values()),
@@ -75,20 +89,39 @@ const MentorReviews: React.FC = () => {
   // auto-select the founder and open the startup's output report.
   useEffect(() => {
     if (!initialFounderId && !initialStartupId) return;
-    if (founders.length === 0) return;
+
     const sid = initialStartupId ? String(initialStartupId) : '';
     const matchId = (s: any) => String(s.startupId || s._id || s.id) === sid;
+
     let f = sid ? founders.find(fd => fd.startups.some(matchId)) : undefined;
     if (!f && initialFounderId) f = founders.find(fd => fd.id === String(initialFounderId));
-    if (!f) return;
-    setSelectedFounder(f);
-    const st = sid ? f.startups.find(matchId) : undefined;
-    if (st) {
+
+    let st: any = undefined;
+    if (f) {
+      st = sid ? f.startups.find(matchId) : f.startups[0];
+    } else if (sid) {
+      st = allStartups.find(matchId);
+      if (st) {
+        const fid = String(st.userId || st.founderId || initialFounderId || 'founder');
+        const userRec = allUsers.find((u: any) => u.id === fid || u._id === fid);
+        f = {
+          id: fid,
+          fullName: userRec?.fullName || st.founderName || 'Founder',
+          email: userRec?.email || '',
+          startups: [st]
+        };
+      }
+    }
+
+    if (f && st) {
+      setSelectedFounder(f);
       setSelectedStartup(st);
       setModalMode('report');
+    } else if (f) {
+      setSelectedFounder(f);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [founders, initialFounderId, initialStartupId]);
+  }, [founders, allStartups, initialFounderId, initialStartupId, allUsers]);
 
   const filteredFounders = founders.filter(f => {
     if (!search.trim()) return true;

@@ -57,9 +57,9 @@ const founderNameOf = (b: any) => {
 
 const viewStartupOutput = (b: any, navigate: (to: string) => void) => {
   const sp = b?.startupId;
-  const sid = sp && typeof sp === 'object' ? (sp._id || sp.startupId) : sp;
+  const sid = sp && typeof sp === 'object' ? (sp._id || sp.startupId || sp.id) : (sp || b?.id);
   const f = b?.userId;
-  const fid = f && typeof f === 'object' ? f._id : b?.founderId;
+  const fid = f && typeof f === 'object' ? (f._id || f.id) : (b?.founderId || b?.userId);
   const params = new URLSearchParams();
   if (fid) params.set('founderId', String(fid));
   if (sid) params.set('startupId', String(sid));

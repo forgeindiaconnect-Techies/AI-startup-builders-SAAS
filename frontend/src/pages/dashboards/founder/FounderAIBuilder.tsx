@@ -42,20 +42,31 @@ const FounderAIBuilder: React.FC = () => {
   useEffect(() => {
     const fetchStartup = async () => {
       if (!startupId) {
-        // Load all startups if no specific ID is provided
         const locals = await getStartups();
         setAllStartups(locals);
+        if (locals.length > 0 && !startupData) {
+          setStartupData(locals[0]);
+        }
         return;
       }
       
       setLoading(true);
       setError('');
       try {
-        const savedData = await getStartupById(startupId);
+        let savedData = await getStartupById(startupId);
+        if (!savedData) {
+          const locals = await getStartups();
+          savedData = locals.find((s: any) => String(s.startupId || s._id || s.id) === String(startupId)) || null;
+        }
         if (savedData) {
           setStartupData(savedData);
         } else {
-          setError('Could not load startup data. It may not exist.');
+          const locals = await getStartups();
+          if (locals.length > 0) {
+            setStartupData(locals[0]);
+          } else {
+            setError('Could not load startup data. It may not exist.');
+          }
         }
       } catch (err) {
         setError('Failed to load from database.');
@@ -206,7 +217,7 @@ const FounderAIBuilder: React.FC = () => {
                 
                 <div className="flex gap-2 mt-auto pt-4 border-t border-gray-100">
                   <button 
-                    onClick={() => setSearchParams({ startupId: startup.startupId })}
+                    onClick={() => setSearchParams({ startupId: startup.startupId || startup.id || startup._id })}
                     className="flex-1 py-2 bg-purple-50 hover:bg-[#5B21B6] text-[#5B21B6] hover:text-white rounded-lg font-bold text-sm transition-colors border border-purple-100 hover:border-[#5B21B6]"
                   >
                     View Details
@@ -364,7 +375,7 @@ const FounderAIBuilder: React.FC = () => {
         })}
       </div>
 
-      {startupData && startupData.status === 'generated' && (
+      {startupData && (
         activeTab.plans ? (
           <PlanGate requiredPlans={activeTab.plans}>
             <ActiveComponent startupData={startupData} setStartupData={setStartupData} />
