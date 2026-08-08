@@ -2,12 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Link2, Plus, Copy, CheckCircle2, AlertCircle, Trash2, X, RefreshCw,
   Send, Ban, Users, Clock, CheckCircle, XCircle, Mail,
-  Calendar, MessageSquare,
+  Calendar, MessageSquare, Pencil, Save, Star,
 } from 'lucide-react';
 import { API_URL } from '../../../config/api';
 import {
   getInvites, createInvite, deleteInvite, disableInvite, storeInvite,
-  getInviteByToken,
+  getInviteByToken, updateInvite,
   type MentorInvite,
 } from '../../../utils/inviteLinks';
 
@@ -26,6 +26,12 @@ const AdminInviteLinks: React.FC = () => {
   const [emailSentStatus, setEmailSentStatus] = useState<boolean>(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+
+  // Edit modal state
+  const [editingInvite, setEditingInvite] = useState<MentorInvite | null>(null);
+  const [editForm, setEditForm] = useState({ mentorName: '', mentorEmail: '', expertise: '', expiryDate: '', message: '', status: '' });
+  const [editFormErrors, setEditFormErrors] = useState<Record<string, string>>({});
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const loadInvites = useCallback(async () => {
     const local = getInvites();
@@ -164,11 +170,91 @@ const AdminInviteLinks: React.FC = () => {
     }
   };
 
-  const handleDelete = (token: string) => {
+  const handleDelete = async (token: string) => {
     if (!window.confirm('Are you sure you want to delete this invite? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`${API_URL}/invites/${token}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (!json.success && res.status !== 404) {
+        throw new Error(json.error || 'Failed to delete invite on server');
+      }
+    } catch (err) {
+      // Server unreachable — continue with local-only delete
+      console.warn('Server delete failed, removing locally:', err);
+    }
     deleteInvite(token);
     loadInvites();
     showToast('Invite deleted.', 'success');
+  };
+
+  const openEdit = (inv: MentorInvite) => {
+    setEditingInvite(inv);
+    setEditForm({
+      mentorName: inv.mentorName || '',
+      mentorEmail: inv.mentorEmail || '',
+      expertise: inv.expertise || '',
+      expiryDate: inv.expiryDate ? new Date(inv.expiryDate).toISOString().split('T')[0] : '',
+      message: inv.message || '',
+      status: inv.status || 'active',
+    });
+    setEditFormErrors({});
+  };
+
+  const handleEditSave = async () => {
+    if (!editingInvite) return;
+    const errs: Record<string, string> = {};
+    if (!editForm.mentorName.trim()) errs.mentorName = 'Mentor name is required';
+    if (!editForm.mentorEmail.trim()) errs.mentorEmail = 'Email is required';
+    else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(editForm.mentorEmail)) errs.mentorEmail = 'Invalid email';
+    if (!editForm.expiryDate) errs.expiryDate = 'Expiry date is required';
+    setEditFormErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`${API_URL}/invites/${editingInvite.inviteToken}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mentorName: editForm.mentorName.trim(),
+          mentorEmail: editForm.mentorEmail.trim(),
+          expertise: editForm.expertise.trim(),
+          expiryDate: editForm.expiryDate,
+          message: editForm.message.trim(),
+          status: editForm.status,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.error || 'Failed to update invite on server');
+      }
+      updateInvite(editingInvite.inviteToken, {
+        mentorName: editForm.mentorName.trim(),
+        mentorEmail: editForm.mentorEmail.trim(),
+        expertise: editForm.expertise.trim(),
+        expiryDate: new Date(editForm.expiryDate).toISOString(),
+        message: editForm.message.trim(),
+        status: editForm.status as MentorInvite['status'],
+      });
+      setEditingInvite(null);
+      loadInvites();
+      showToast('Invite updated successfully!', 'success');
+    } catch (err: any) {
+      // Server offline — update local-only
+      updateInvite(editingInvite.inviteToken, {
+        mentorName: editForm.mentorName.trim(),
+        mentorEmail: editForm.mentorEmail.trim(),
+        expertise: editForm.expertise.trim(),
+        expiryDate: new Date(editForm.expiryDate).toISOString(),
+        message: editForm.message.trim(),
+        status: editForm.status as MentorInvite['status'],
+      });
+      setEditingInvite(null);
+      loadInvites();
+      showToast(err.message || 'Invite updated locally (server offline)', 'success');
+    } finally {
+      setSavingEdit(false);
+    }
   };
 
   const handleDisable = (token: string) => {
@@ -362,6 +448,13 @@ const AdminInviteLinks: React.FC = () => {
                       <td className="px-5 py-3.5 text-sm text-gray-500">{formatDate(inv.expiryDate)}</td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openEdit(inv)}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-[#6C4CF1] transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil size={14} />
+                          </button>
                           {effectiveStatus === 'active' && (
                             <>
                               <button
@@ -552,6 +645,134 @@ const AdminInviteLinks: React.FC = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* Edit Modal */}
+      {editingInvite && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <Pencil size={16} className="text-[#5B21B6]" />
+                Edit Mentor Invite
+              </h3>
+              <button onClick={() => setEditingInvite(null)} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-5 overflow-y-auto flex-1 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Mentor Name *</label>
+                <div className="relative">
+                  <Users size={16} className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    className={`block w-full pl-9 px-4 py-3 border-2 ${editFormErrors.mentorName ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium`}
+                    placeholder="John Smith"
+                    value={editForm.mentorName}
+                    onChange={(e) => { setEditForm({ ...editForm, mentorName: e.target.value }); if (editFormErrors.mentorName) setEditFormErrors({ ...editFormErrors, mentorName: '' }); }}
+                  />
+                </div>
+                {editFormErrors.mentorName && <p className="text-red-500 text-xs mt-1 font-medium">{editFormErrors.mentorName}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Mentor Email *</label>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                  <input
+                    type="email"
+                    className={`block w-full pl-9 px-4 py-3 border-2 ${editFormErrors.mentorEmail ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium`}
+                    placeholder="mentor@example.com"
+                    value={editForm.mentorEmail}
+                    onChange={(e) => { setEditForm({ ...editForm, mentorEmail: e.target.value }); if (editFormErrors.mentorEmail) setEditFormErrors({ ...editFormErrors, mentorEmail: '' }); }}
+                  />
+                </div>
+                {editFormErrors.mentorEmail && <p className="text-red-500 text-xs mt-1 font-medium">{editFormErrors.mentorEmail}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Expertise</label>
+                <div className="relative">
+                  <Star size={16} className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    className="block w-full pl-9 px-4 py-3 border-2 border-gray-100 rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
+                    placeholder="AI/ML, SaaS, Fundraising"
+                    value={editForm.expertise}
+                    onChange={(e) => setEditForm({ ...editForm, expertise: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Link Expiry Date *</label>
+                <div className="relative">
+                  <Calendar size={16} className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                  <input
+                    type="date"
+                    className={`block w-full pl-9 px-4 py-3 border-2 ${editFormErrors.expiryDate ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium`}
+                    value={editForm.expiryDate}
+                    onChange={(e) => { setEditForm({ ...editForm, expiryDate: e.target.value }); if (editFormErrors.expiryDate) setEditFormErrors({ ...editFormErrors, expiryDate: '' }); }}
+                  />
+                </div>
+                {editFormErrors.expiryDate && <p className="text-red-500 text-xs mt-1 font-medium">{editFormErrors.expiryDate}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Status</label>
+                <select
+                  className="block w-full px-4 py-3 border-2 border-gray-100 rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
+                  value={editForm.status}
+                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                >
+                  <option value="active">Active</option>
+                  <option value="disabled">Disabled</option>
+                  <option value="expired">Expired</option>
+                  <option value="used">Used</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Message</label>
+                <div className="relative">
+                  <MessageSquare size={16} className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                  <textarea
+                    className="block w-full pl-9 px-4 py-3 border-2 border-gray-100 rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium resize-none"
+                    placeholder="Welcome to AI Startup Builder! We'd love to have you as a mentor..."
+                    value={editForm.message}
+                    onChange={(e) => setEditForm({ ...editForm, message: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setEditingInvite(null)}
+                className="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-sm rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEditSave}
+                disabled={savingEdit}
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white font-bold text-sm rounded-xl shadow-md hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {savingEdit ? (
+                  <>
+                    <RefreshCw size={15} className="animate-spin" /> Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save size={15} /> Save Changes
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

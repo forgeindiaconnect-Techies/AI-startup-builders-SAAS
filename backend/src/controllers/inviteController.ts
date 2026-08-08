@@ -178,6 +178,51 @@ export const markInviteUsed = async (req: Request, res: Response) => {
   }
 };
 
+export const updateInvite = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    const { mentorName, mentorEmail, expertise, message, expiryDate, status } = req.body;
+
+    const invite = await MentorInvite.findOne({ inviteToken: token });
+
+    if (!invite) {
+      return res.status(404).json({ success: false, error: 'not_found' });
+    }
+
+    if (mentorName !== undefined) invite.mentorName = mentorName;
+    if (mentorEmail !== undefined) invite.mentorEmail = mentorEmail;
+    if (expertise !== undefined) invite.expertise = expertise;
+    if (message !== undefined) invite.message = message;
+    if (expiryDate !== undefined) invite.expiresAt = new Date(expiryDate);
+    if (status !== undefined && ['active', 'used', 'expired', 'disabled'].includes(status)) {
+      invite.status = status;
+    }
+
+    await invite.save();
+
+    return res.json({ success: true, invite: toInviteJson(invite) });
+  } catch (error: any) {
+    console.error('Update mentor invite failed:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Failed to update mentor invite' });
+  }
+};
+
+export const deleteInvite = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    const invite = await MentorInvite.findOneAndDelete({ inviteToken: token });
+
+    if (!invite) {
+      return res.status(404).json({ success: false, error: 'not_found' });
+    }
+
+    return res.json({ success: true, message: 'Invite deleted' });
+  } catch (error: any) {
+    console.error('Delete mentor invite failed:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Failed to delete mentor invite' });
+  }
+};
+
 export const listInvites = async (_req: Request, res: Response) => {
   try {
     const invites = await MentorInvite.find().sort({ createdAt: -1 });
