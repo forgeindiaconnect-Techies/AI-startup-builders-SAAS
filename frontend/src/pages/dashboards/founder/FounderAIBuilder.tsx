@@ -14,15 +14,15 @@ import PlanGate, { usePlanAccess } from '../../../components/shared/PlanGate';
 import { getStartups, getStartupById, updateStartup, generateStartupFromBackend, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument, detectStartupCategory, generateCategoryDocuments, sanitizeStartupId } from '../../../utils/localStorageHelper';
 
 const tabs = [
-  { id: 'idea',       label: 'AI Idea Generator',       icon: Lightbulb,     component: FounderIdeaGenerator },
-  { id: 'branding',   label: 'Logo & Branding',         icon: Sparkles,      component: FounderBranding, plans: ['pro', 'premium_startup_builder'] },
-  { id: 'plan',       label: 'Business Plan',            icon: FileText,      component: FounderBusinessPlan },
-  { id: 'pitch',      label: 'Pitch Deck',                icon: BarChart3,     component: FounderPitchDeck },
-  { id: 'market',     label: 'Market Research',           icon: Search,        component: FounderMarketResearch },
-  { id: 'legal',      label: 'Legal & Documents',         icon: Scale,         component: FounderLegalDocs },
-  { id: 'reports',    label: 'AI Reports',                icon: ClipboardList, component: FounderReports },
-  { id: 'plagiarism', label: 'Plagiarism & Originality',icon: ShieldCheck,   component: FounderPlagiarism },
-  { id: 'chat',       label: 'AI Chat',                   icon: MessageSquare, component: FounderAIChat, plans: ['pro', 'premium_startup_builder'] },
+  { id: 'idea',       label: 'AI Idea Generator', icon: Lightbulb,     component: FounderIdeaGenerator },
+  { id: 'branding',   label: 'Logo & Branding',   icon: Sparkles,      component: FounderBranding, plans: ['pro', 'premium_startup_builder'] },
+  { id: 'plan',       label: 'Business Plan',     icon: FileText,      component: FounderBusinessPlan },
+  { id: 'pitch',      label: 'Pitch Deck',        icon: BarChart3,     component: FounderPitchDeck },
+  { id: 'market',     label: 'Market Research',   icon: Search,        component: FounderMarketResearch },
+  { id: 'legal',      label: 'Legal & Documents', icon: Scale,         component: FounderLegalDocs },
+  { id: 'reports',    label: 'AI Reports',        icon: ClipboardList, component: FounderReports },
+  { id: 'chat',       label: 'AI Chat',           icon: MessageSquare, component: FounderAIChat, plans: ['pro', 'premium_startup_builder'] },
+  { id: 'plagiarism', label: 'Plagiarism Check',  icon: ShieldCheck,   component: FounderPlagiarism },
 ];
 
 const FounderAIBuilder: React.FC = () => {
@@ -367,15 +367,16 @@ const FounderAIBuilder: React.FC = () => {
         })}
       </div>
 
-      {startupData && (
-        activeTab.plans ? (
+      {startupData && (() => {
+        const Comp = ActiveComponent as any;
+        return activeTab.plans ? (
           <PlanGate requiredPlans={activeTab.plans}>
-            <ActiveComponent startupData={startupData} setStartupData={setStartupData} />
+            <Comp startupData={startupData} setStartupData={setStartupData} onBackToBuilder={() => setActive('idea')} />
           </PlanGate>
         ) : (
-          <ActiveComponent startupData={startupData} setStartupData={setStartupData} />
-        )
-      )}
+          <Comp startupData={startupData} setStartupData={setStartupData} onBackToBuilder={() => setActive('idea')} />
+        );
+      })()}
     </div>
   );
 };

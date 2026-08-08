@@ -10,6 +10,7 @@ import paymentRoutes from './paymentRoutes.js';
 import inviteRoutes from './inviteRoutes.js';
 import ragRoutes from './ragRoutes.js';
 import mentorRoutes from './mentorRoutes.js';
+import plagiarismRoutes from './plagiarismRoutes.js';
 
 const router = Router();
 
@@ -23,6 +24,7 @@ router.use('/payments', paymentRoutes);
 router.use('/invites', inviteRoutes);
 router.use('/rag', ragRoutes);
 router.use('/mentors', mentorRoutes);
+router.use('/plagiarism', plagiarismRoutes);
 
 // Health check endpoint
 router.get('/health', (_req: Request, res: Response) => {
