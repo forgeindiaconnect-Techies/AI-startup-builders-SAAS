@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Lightbulb, FileText, BarChart3, Search, ClipboardList, MessageSquare, RefreshCw, Play, ChevronDown, Download, File as FileIcon, Sparkles, Scale, Lock } from 'lucide-react';
+import { Lightbulb, FileText, BarChart3, Search, ClipboardList, MessageSquare, RefreshCw, Play, ChevronDown, Download, File as FileIcon, Sparkles, Scale, Lock, ShieldCheck } from 'lucide-react';
 import FounderIdeaGenerator from './FounderIdeaGenerator';
 import FounderBranding from './FounderBranding';
 import FounderBusinessPlan from './FounderBusinessPlan';
@@ -9,18 +9,20 @@ import FounderMarketResearch from './FounderMarketResearch';
 import FounderReports from './FounderReports';
 import FounderAIChat from './FounderAIChat';
 import FounderLegalDocs from './FounderLegalDocs';
+import FounderPlagiarism from './FounderPlagiarism';
 import PlanGate, { usePlanAccess } from '../../../components/shared/PlanGate';
 import { getStartups, getStartupById, updateStartup, generateStartupFromBackend, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument, detectStartupCategory, generateCategoryDocuments, sanitizeStartupId } from '../../../utils/localStorageHelper';
 
 const tabs = [
-  { id: 'idea',     label: 'AI Idea Generator',    icon: Lightbulb,    component: FounderIdeaGenerator },
-  { id: 'branding', label: 'Logo & Branding',      icon: Sparkles,     component: FounderBranding, plans: ['pro', 'premium_startup_builder'] },
-  { id: 'plan',     label: 'Business Plan',         icon: FileText,     component: FounderBusinessPlan },
-  { id: 'pitch',    label: 'Pitch Deck',             icon: BarChart3,    component: FounderPitchDeck },
-  { id: 'market',   label: 'Market Research',        icon: Search,       component: FounderMarketResearch },
-  { id: 'legal',    label: 'Legal & Documents',      icon: Scale,        component: FounderLegalDocs },
-  { id: 'reports',  label: 'AI Reports',             icon: ClipboardList,component: FounderReports },
-  { id: 'chat',     label: 'AI Chat',                icon: MessageSquare,component: FounderAIChat, plans: ['pro', 'premium_startup_builder'] },
+  { id: 'idea',       label: 'AI Idea Generator',       icon: Lightbulb,     component: FounderIdeaGenerator },
+  { id: 'branding',   label: 'Logo & Branding',         icon: Sparkles,      component: FounderBranding, plans: ['pro', 'premium_startup_builder'] },
+  { id: 'plan',       label: 'Business Plan',            icon: FileText,      component: FounderBusinessPlan },
+  { id: 'pitch',      label: 'Pitch Deck',                icon: BarChart3,     component: FounderPitchDeck },
+  { id: 'market',     label: 'Market Research',           icon: Search,        component: FounderMarketResearch },
+  { id: 'legal',      label: 'Legal & Documents',         icon: Scale,         component: FounderLegalDocs },
+  { id: 'reports',    label: 'AI Reports',                icon: ClipboardList, component: FounderReports },
+  { id: 'plagiarism', label: 'Plagiarism & Originality',icon: ShieldCheck,   component: FounderPlagiarism },
+  { id: 'chat',       label: 'AI Chat',                   icon: MessageSquare, component: FounderAIChat, plans: ['pro', 'premium_startup_builder'] },
 ];
 
 const FounderAIBuilder: React.FC = () => {
