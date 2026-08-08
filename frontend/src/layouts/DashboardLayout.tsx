@@ -55,6 +55,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/founder': FounderDashboard,
     '/dashboard/founder/startups': FounderStartups,
     '/dashboard/founder/ai-builder': FounderAIBuilder,
+    '/dashboard/founder/ai_builder': FounderAIBuilder,
     '/dashboard/founder/mentors': FounderMentors,
     '/dashboard/founder/mentor-reviews': FounderMentorReviews,
     '/dashboard/founder/funding': () => (
@@ -303,7 +304,7 @@ const DashboardLayout: React.FC = () => {
   const resolveAllowed = (path: string): string => {
     if (role === 'founder' && user?.subscriptionStatus !== 'active') {
       const isAllowed =
-        ['/billing', '/profile', '/ai-builder', '/startups', '/documents', '/roadmap', '/notifications', '/funding', '/mentors']
+        ['/billing', '/profile', '/ai-builder', '/ai_builder', '/startups', '/documents', '/roadmap', '/notifications', '/funding', '/mentors']
           .some((s) => path.includes(s)) || path.endsWith('/founder');
       if (!isAllowed) return '/dashboard/founder/billing';
     }
@@ -313,7 +314,10 @@ const DashboardLayout: React.FC = () => {
   // Sync the in-place view when the URL changes (e.g. header profile link, logo, notifications)
   useEffect(() => {
     const reg = PAGE_REGISTRY[role] ?? {};
-    setActivePath(reg[location.pathname] ? resolveAllowed(location.pathname) : '');
+    const path = location.pathname;
+    const normPath = path.includes('/ai_builder') ? path.replace('/ai_builder', '/ai-builder') : path;
+    const matchedPath = reg[path] ? path : (reg[normPath] ? normPath : '');
+    setActivePath(matchedPath ? resolveAllowed(matchedPath) : '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, role, user?.subscriptionStatus]);
 

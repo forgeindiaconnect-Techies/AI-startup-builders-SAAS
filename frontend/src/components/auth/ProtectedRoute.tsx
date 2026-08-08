@@ -26,7 +26,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
   }
 
   if (user.role === 'founder' && user.subscriptionStatus !== 'active') {
-    const isAllowedPath = location.pathname.includes('/billing') || location.pathname.includes('/profile') || location.pathname.includes('/ai-builder') || location.pathname.includes('/startups') || location.pathname.includes('/documents') || location.pathname.includes('/roadmap') || location.pathname.includes('/notifications') || location.pathname.includes('/funding') || location.pathname.includes('/mentors');
+    const isAllowedPath = location.pathname.includes('/billing') || location.pathname.includes('/profile') || location.pathname.includes('/ai-builder') || location.pathname.includes('/ai_builder') || location.pathname.includes('/startups') || location.pathname.includes('/documents') || location.pathname.includes('/roadmap') || location.pathname.includes('/notifications') || location.pathname.includes('/funding') || location.pathname.includes('/mentors');
     if (!isAllowedPath && !location.pathname.endsWith('/founder')) {
       return <Navigate to="/dashboard/founder/billing" replace state={{ expired: true }} />;
     }

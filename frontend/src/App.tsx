@@ -133,6 +133,7 @@ function App() {
                     <Route index                  element={<FounderDashboard />} />
                     <Route path="startups"        element={<FounderStartups />} />
                     <Route path="ai-builder"      element={<FounderAIBuilder />} />
+                    <Route path="ai_builder"      element={<FounderAIBuilder />} />
                     <Route path="mentors"         element={<FounderMentors />} />
                     <Route path="mentor-reviews"  element={<FounderMentorReviews />} />
                     <Route path="funding"         element={<PlanGate requiredPlans={['premium_startup_builder']}><FounderFunding /></PlanGate>} />
