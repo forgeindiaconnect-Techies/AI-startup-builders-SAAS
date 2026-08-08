@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Clock, X, MessageSquare, Send, ArrowLeft, CheckCircle, ChevronRight, Users, UserRound, Star } from 'lucide-react';
 import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDetailsTabs';
@@ -9,7 +9,7 @@ import { useChat } from '../../../context/ChatContext';
 
 const MentorReviews: React.FC = () => {
   const { user, getAllUsers } = useAuth();
-  const { getOrCreateConversation, sendMessage } = useChat();
+  const { conversations, messages, getOrCreateConversation, sendMessage } = useChat();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const [bookings, setBookings] = useState<any[]>([]);
@@ -20,6 +20,9 @@ const MentorReviews: React.FC = () => {
   const [modalMode, setModalMode] = useState<'review' | 'report' | null>(null);
   const [feedback, setFeedback] = useState('');
   const [rating, setRating] = useState<'Good' | 'Average' | 'Bad' | null>(null);
+  const [mentorReplyText, setMentorReplyText] = useState<Record<string, string>>({});
+  const [mentorReplying, setMentorReplying] = useState<Record<string, boolean>>({});
+  const chatEndRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   const initialFounderId = searchParams.get('founderId');
   const initialStartupId = searchParams.get('startupId');
@@ -209,75 +212,217 @@ const MentorReviews: React.FC = () => {
     window.alert('Feedback submitted successfully!');
   };
 
-  const renderStartupCard = (startup: any, idx: number) => (
-    <div key={`${startup.startupId || startup._id || idx}`} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-1 h-full bg-yellow-400"></div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="flex-1 w-full">
-          <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-xl font-bold text-gray-900">{startup.startupName}</h3>
-            {startup.status !== 'reviewed' && <span className="px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">Action Required</span>}
-            {startup.mentorReview?.rating && (
-              <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
-                startup.mentorReview.rating === 'Good' ? 'bg-green-100 text-green-700 border-green-200' :
-                startup.mentorReview.rating === 'Average' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
-                'bg-red-100 text-red-700 border-red-200'
-              }`}>{startup.mentorReview.rating}</span>
-            )}
-          </div>
-          <p className="text-sm text-gray-500 mb-4">{startup.startupIdea}</p>
-          
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <div className="flex items-center text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-              <span className="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-              <span className="font-medium">{startup.aiGenerated?.ideaAnalysis?.businessModel || 'Startup'}</span>
-            </div>
-            {startup.status === 'generated' && (
-              <div className="flex items-center text-gray-700 bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100">
-                <span className="font-bold mr-1 text-purple-700">AI Score:</span> 
-                <span className="font-bold">{startup.aiGenerated?.aiReport?.investmentReadinessScore || '85'}/100</span>
-              </div>
-            )}
-            <div className="flex items-center text-orange-600 bg-orange-50 px-3 py-1.5 rounded-lg border border-orange-100 font-medium">
-              <Clock size={14} className="mr-1.5" />
-              Due in 2 days
-            </div>
-          </div>
+  // Get conversation messages for a specific founder ↔ mentor startup conversation
+  const getConvMessages = (founderId: string, founderName: string, startupName: string) => {
+    if (!user || !founderId) return [];
+    const conv = conversations.find(c => {
+      const ids = c.participants.map(p => p.id).sort().join('|');
+      const expected = [user.id, founderId].sort().join('|');
+      if (ids === expected) return true;
+      const names = c.participants.map(p => (p.name || '').toLowerCase().trim()).sort().join('|');
+      const expNames = [user.fullName || '', founderName || ''].map(n => n.toLowerCase().trim()).sort().join('|');
+      return names === expNames && names.length > 2;
+    });
+    if (!conv) return [];
+    return (messages[conv.id] || []).filter(m =>
+      m.message.includes(startupName) ||
+      m.message.toLowerCase().includes('review') ||
+      m.message.toLowerCase().includes('feedback') ||
+      m.message.toLowerCase().includes('reply') ||
+      m.message.toLowerCase().includes('re:')
+    );
+  };
 
-          {/* Show Founder Reply if exists */}
-          {startup.mentorReview?.founderReply && (
-            <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle size={14} className="text-green-600" />
-                <span className="text-xs font-bold text-green-700 uppercase tracking-wider">Founder's Reply</span>
-              </div>
-              <p className="text-sm text-green-800 leading-relaxed">{startup.mentorReview.founderReply}</p>
-              {startup.mentorReview.founderReplyAt && (
-                <p className="text-xs text-green-600 mt-1">
-                  {new Date(startup.mentorReview.founderReplyAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </p>
+  const handleMentorReply = async (startup: any, founder: any) => {
+    const sid = startup.startupId || startup._id;
+    const reply = (mentorReplyText[sid] || '').trim();
+    if (!reply || !user) return;
+    setMentorReplying(prev => ({ ...prev, [sid]: true }));
+    const founderId = founder?.id || startup.founderId || startup.userId;
+    const founderName = founder?.fullName || startup.founderName || 'Founder';
+    const conv = getOrCreateConversation([
+      { id: user.id, name: user.fullName || 'Mentor', role: 'mentor', avatar: (user.fullName || 'M').charAt(0).toUpperCase() },
+      { id: founderId || `founder_${founderName}`, name: founderName, role: 'founder', avatar: (founderName || 'F').charAt(0).toUpperCase() },
+    ]);
+    sendMessage(
+      conv.id,
+      user.id,
+      user.fullName || 'Mentor',
+      'Mentor',
+      founderId || `founder_${founderName}`,
+      founderName,
+      'Founder',
+      `[Re: ${startup.startupName}] ${reply}`
+    );
+    addNotification({
+      id: `notif_mreply_${Date.now()}`,
+      userId: founderId || 'founder',
+      title: 'New Message from Mentor',
+      message: `${user.fullName || 'Mentor'} replied on "${startup.startupName}": "${reply}"`,
+      type: 'mentor_message',
+      isRead: false,
+      actionUrl: '/dashboard/founder/mentor-reviews',
+      createdAt: new Date().toISOString(),
+    });
+    setMentorReplyText(prev => ({ ...prev, [sid]: '' }));
+    setMentorReplying(prev => ({ ...prev, [sid]: false }));
+    setTimeout(() => { chatEndRefs.current[sid]?.scrollIntoView({ behavior: 'smooth' }); }, 100);
+  };
+
+  const renderStartupCard = (startup: any, idx: number) => {
+    const sid = startup.startupId || startup._id;
+    const founderId = selectedFounder?.id || startup.founderId || startup.userId;
+    const founderName = selectedFounder?.fullName || startup.founderName || 'Founder';
+    const convMessages = getConvMessages(founderId, founderName, startup.startupName);
+    const formatTime = (iso: string) => { try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
+
+    return (
+    <div key={`${sid || idx}`} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+      <div className="p-6 relative">
+        <div className="absolute top-0 left-0 w-1 h-full bg-yellow-400" />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="flex-1 w-full">
+            <div className="flex items-center gap-3 mb-2">
+              <h3 className="text-xl font-bold text-gray-900">{startup.startupName}</h3>
+              {startup.status !== 'reviewed' && <span className="px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">Action Required</span>}
+              {startup.mentorReview?.rating && (
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
+                  startup.mentorReview.rating === 'Good' ? 'bg-green-100 text-green-700 border-green-200' :
+                  startup.mentorReview.rating === 'Average' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                  'bg-red-100 text-red-700 border-red-200'
+                }`}>{startup.mentorReview.rating}</span>
+              )}
+              {convMessages.length > 0 && (
+                <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+                  {convMessages.length} msg{convMessages.length > 1 ? 's' : ''}
+                </span>
               )}
             </div>
-          )}
+            <p className="text-sm text-gray-500 mb-4">{startup.startupIdea}</p>
+          </div>
+
+          <div className="w-full md:w-auto flex flex-col gap-2 shrink-0 md:pl-4">
+            <button
+              onClick={() => { setSelectedStartup(startup); setModalMode('review'); }}
+              className="w-full md:w-40 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-lg font-bold text-sm transition-colors shadow-sm"
+            >
+              {startup.mentorReview?.feedback ? 'Update Review' : 'Review Startup'}
+            </button>
+            <button
+              onClick={() => { setSelectedStartup(startup); setModalMode('report'); }}
+              className="w-full md:w-40 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-bold text-sm transition-colors shadow-sm"
+            >
+              View AI Report
+            </button>
+          </div>
         </div>
-        
-        <div className="w-full md:w-auto flex flex-col gap-2 shrink-0 md:pl-4">
-          <button 
-            onClick={() => { setSelectedStartup(startup); setModalMode('review'); }}
-            className="w-full md:w-40 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-lg font-bold text-sm transition-colors shadow-sm"
+      </div>
+
+      {/* Conversation thread */}
+      <div className="border-t border-gray-100 bg-[#FAFAFA]">
+        <div className="px-5 py-3 flex items-center gap-2 border-b border-gray-100">
+          <MessageSquare size={14} className="text-[#5B21B6]" />
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Conversation with {founderName}</span>
+        </div>
+
+        {/* Messages */}
+        <div className="px-5 py-4 space-y-3 max-h-60 overflow-y-auto">
+          {/* Initial review as seed message */}
+          {startup.mentorReview?.feedback && (
+            <div className="flex items-start gap-3 justify-end">
+              <div className="flex-1 flex flex-col items-end">
+                <div className="flex items-center gap-2 mb-1 flex-row-reverse">
+                  <span className="text-xs font-bold text-gray-700">{user?.fullName || 'You'}</span>
+                  <span className="text-[10px] font-bold text-purple-500 uppercase tracking-wider">You (Mentor)</span>
+                  {startup.mentorReview.createdAt && <span className="text-[10px] text-gray-400">{formatTime(startup.mentorReview.createdAt)}</span>}
+                </div>
+                <div className="bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-white shadow-md max-w-[80%]">
+                  {startup.mentorReview.feedback}
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#5B21B6] to-[#FBBF24] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                {(user?.fullName || 'M').charAt(0).toUpperCase()}
+              </div>
+            </div>
+          )}
+
+          {/* Legacy founder one-time reply */}
+          {startup.mentorReview?.founderReply && !convMessages.some((m: any) => m.receiverId === user?.id || m.senderName?.toLowerCase() !== (user?.fullName || '').toLowerCase()) && (
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                {(founderName || 'F').charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold text-gray-700">{founderName}</span>
+                  <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Founder</span>
+                  {startup.mentorReview.founderReplyAt && <span className="text-[10px] text-gray-400">{formatTime(startup.mentorReview.founderReplyAt)}</span>}
+                </div>
+                <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm text-gray-700 shadow-sm">
+                  {startup.mentorReview.founderReply}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Live chat messages */}
+          {convMessages.map((m: any, i: number) => {
+            const isMentor = m.senderId === user?.id || (user?.fullName && m.senderName?.toLowerCase() === user.fullName.toLowerCase());
+            return (
+              <div key={i} className={`flex items-start gap-3 ${isMentor ? 'justify-end' : ''}`}>
+                {!isMentor && (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    {(m.senderName || 'F').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className={`flex-1 flex flex-col ${isMentor ? 'items-end' : 'items-start'}`}>
+                  <div className={`flex items-center gap-2 mb-1 ${isMentor ? 'flex-row-reverse' : ''}`}>
+                    <span className="text-xs font-bold text-gray-700">{isMentor ? (user?.fullName || 'You') : m.senderName}</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${isMentor ? 'text-purple-500' : 'text-amber-500'}`}>{isMentor ? 'You' : 'Founder'}</span>
+                    <span className="text-[10px] text-gray-400">{formatTime(m.createdAt)}</span>
+                  </div>
+                  <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
+                    isMentor
+                      ? 'bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] text-white rounded-tr-sm'
+                      : 'bg-white border border-gray-200 text-gray-700 rounded-tl-sm'
+                  }`}>
+                    {m.message.replace(/^\[Re: [^\]]+\] /, '').replace(/^\[Review for [^\]]+\] /, '')}
+                  </div>
+                </div>
+                {isMentor && (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#5B21B6] to-[#FBBF24] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                    {(user?.fullName || 'M').charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <div ref={el => { chatEndRefs.current[sid] = el; }} />
+        </div>
+
+        {/* Reply input */}
+        <div className="border-t border-gray-200 px-5 py-3 bg-white flex gap-3 items-end">
+          <textarea
+            value={mentorReplyText[sid] || ''}
+            onChange={e => setMentorReplyText(prev => ({ ...prev, [sid]: e.target.value }))}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleMentorReply(startup, selectedFounder); } }}
+            rows={2}
+            placeholder={`Reply to ${founderName}... (Enter to send)`}
+            className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#5B21B6] bg-gray-50 focus:bg-white transition-all"
+          />
+          <button
+            onClick={() => handleMentorReply(startup, selectedFounder)}
+            disabled={mentorReplying[sid] || !(mentorReplyText[sid] || '').trim()}
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] disabled:opacity-50 text-white rounded-xl font-bold text-sm transition-all shadow-sm flex-shrink-0"
           >
-            {startup.mentorReview?.feedback ? 'Update Review' : 'Review Startup'}
-          </button>
-          <button 
-            onClick={() => { setSelectedStartup(startup); setModalMode('report'); }}
-            className="w-full md:w-40 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-bold text-sm transition-colors shadow-sm"
-          >
-            View AI Report
+            {mentorReplying[sid] ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={14} />}
+            Reply
           </button>
         </div>
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="animate-fade-in-up">
