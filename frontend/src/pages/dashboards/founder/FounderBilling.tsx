@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import QRCode from 'qrcode';
 import {
   Check, Zap, Crown, X, ArrowRight,
   Copy, CheckCircle2, UploadCloud, Loader2, Clock, AlertTriangle, Shield
@@ -150,6 +151,7 @@ const FounderBilling: React.FC = () => {
   const [submitError, setSubmitError] = useState('');
   const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
   const [expiredBanner, setExpiredBanner] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState('');
 
   // Check expiry redirect state
   useEffect(() => {
@@ -179,6 +181,18 @@ const FounderBilling: React.FC = () => {
     setSubmitError('');
     setIsModalOpen(true);
   };
+
+  // Generate the UPI QR code locally (no external service needed)
+  useEffect(() => {
+    if (!isModalOpen || !targetPlan) return;
+    let active = true;
+    const amount = billingPeriod === 'annual' ? targetPlan.annualPrice : targetPlan.price;
+    const upiUrl = `upi://pay?pa=aistartupbuilder@okaxis&pn=${encodeURIComponent('AI Startup Builders')}&am=${amount}&cu=INR&tn=${encodeURIComponent(targetPlan.name + ' Plan Upgrade')}`;
+    QRCode.toDataURL(upiUrl, { width: 240, margin: 2, color: { dark: '#4C1D95', light: '#FFFFFF' } })
+      .then((url) => { if (active) setQrDataUrl(url); })
+      .catch(() => { if (active) setQrDataUrl(''); });
+    return () => { active = false; };
+  }, [isModalOpen, targetPlan, billingPeriod]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -517,16 +531,19 @@ const FounderBilling: React.FC = () => {
                     {(() => {
                       const amount = billingPeriod === 'annual' ? targetPlan.annualPrice : targetPlan.price;
                       const upiUrl = `upi://pay?pa=aistartupbuilder@okaxis&pn=AI%20Startup%20Builders&am=${amount}&cu=INR&tn=${encodeURIComponent(targetPlan.name + ' Plan Upgrade')}`;
-                      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiUrl)}&margin=10`;
 
                       return (
                         <div className="flex flex-col items-center">
                           <div className="w-44 h-44 bg-white border-2 border-purple-200 rounded-2xl mx-auto flex items-center justify-center p-2.5 shadow-sm hover:shadow-md transition-shadow relative mb-3 group">
-                            <img
-                              src={qrCodeUrl}
-                              alt="UPI Payment QR Code"
-                              className="w-full h-full object-contain rounded-xl"
-                            />
+                            {qrDataUrl ? (
+                              <img
+                                src={qrDataUrl}
+                                alt="UPI Payment QR Code"
+                                className="w-full h-full object-contain rounded-xl"
+                              />
+                            ) : (
+                              <Loader2 size={24} className="animate-spin text-purple-600" />
+                            )}
                             <a
                               href={upiUrl}
                               className="absolute inset-0 bg-purple-950/85 rounded-xl opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity font-bold text-xs p-2 text-center"

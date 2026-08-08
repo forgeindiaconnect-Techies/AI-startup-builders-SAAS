@@ -19,6 +19,9 @@ export interface IMentorBooking extends Document {
   status: MentorBookingStatus;
   meetingLink: string;
   paymentStatus: 'not_required' | 'unpaid' | 'pending' | 'paid' | 'refunded';
+  sessionFee: number;
+  paymentMethod?: string;
+  paymentTransactionId?: string;
   feedbackGiven: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -54,6 +57,9 @@ const MentorBookingSchema: Schema = new Schema(
       default: 'pending',
     },
     meetingLink: { type: String, default: '' },
+    sessionFee: { type: Number, default: 0 },
+    paymentMethod: { type: String, default: '' },
+    paymentTransactionId: { type: String, default: '' },
     paymentStatus: {
       type: String,
       enum: ['not_required', 'unpaid', 'pending', 'paid', 'refunded'],

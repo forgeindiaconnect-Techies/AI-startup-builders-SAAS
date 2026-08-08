@@ -147,11 +147,15 @@ export const scheduleMentorSession = async (
   return data.data;
 };
 
-// POST /api/mentors/bookings/:id/accept  (founder accepts the scheduled session)
-export const acceptMentorSession = async (id: string): Promise<any> => {
+// POST /api/mentors/bookings/:id/accept  (founder accepts the scheduled session after UPI payment)
+export const acceptMentorSession = async (
+  id: string,
+  payment?: { paymentMethod?: string; transactionId?: string }
+): Promise<any> => {
   const res = await fetch(`${API_URL}/mentors/bookings/${id}/accept`, {
     method: 'POST',
     headers: authHeaders(true),
+    body: JSON.stringify(payment || {}),
   });
   const data = await handleResponse(res);
   return data.data;

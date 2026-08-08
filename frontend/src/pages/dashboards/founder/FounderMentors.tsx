@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import QRCode from 'qrcode';
 import {
   GraduationCap, Search, Star, MapPin, Briefcase, Clock, IndianRupee, ExternalLink,
   X, ArrowRight, ArrowLeft, Check, CheckCircle2, Calendar, Loader2, Link2,
   Video, RotateCcw, CalendarX, BadgeCheck, Award, BookOpen, FileText,
-  MessageSquare, Send, Bot,
+  MessageSquare, Send, Bot, Copy, QrCode, Smartphone,
 } from 'lucide-react';
 import { getStartups } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
@@ -842,6 +843,168 @@ const FeedbackBlock: React.FC<{ label: string; text: string }> = ({ label, text 
   </div>
 );
 
+// ─── Accept Session Payment Modal ─────────────────────────────────
+const UPI_ID = 'aistartupbuilder@okaxis';
+const UPI_NAME = 'AI Startup Builders';
+
+const PAYMENT_APPS = [
+  { id: 'Google Pay', label: 'Google Pay', emoji: '🔵', scheme: 'tez://upi/pay' },
+  { id: 'PhonePe', label: 'PhonePe', emoji: '🟣', scheme: 'phonepay://pay' },
+  { id: 'Paytm', label: 'Paytm', emoji: '🔷', scheme: 'paytmmp://pay' },
+];
+
+const PaymentModal: React.FC<{
+  booking: any;
+  onClose: () => void;
+  onConfirm: (payment: { paymentMethod: string; transactionId: string }) => void;
+  submitting: boolean;
+}> = ({ booking, onClose, onConfirm, submitting }) => {
+  const amount = Number(booking.sessionFee) || 0;
+  const mentorName = mentorNameOf(booking);
+  const startupName = startupNameOf(booking);
+  const [app, setApp] = useState('Google Pay');
+  const [transactionId, setTransactionId] = useState('');
+  const [qrDataUrl, setQrDataUrl] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    const note = `${mentorName} mentoring session`;
+    const upiUrl = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+    QRCode.toDataURL(upiUrl, { width: 240, margin: 2, color: { dark: '#4C1D95', light: '#FFFFFF' } })
+      .then((url) => { if (active) setQrDataUrl(url); })
+      .catch(() => { if (active) setQrDataUrl(''); });
+    return () => { active = false; };
+  }, [amount, mentorName]);
+
+  const buildUrl = (scheme: string) => {
+    const note = `${mentorName} mentoring session`;
+    return `${scheme}?pa=${UPI_ID}&pn=${encodeURIComponent(UPI_NAME)}&am=${amount}&cu=INR&tn=${encodeURIComponent(note)}`;
+  };
+
+  const copyUpi = () => {
+    navigator.clipboard.writeText(UPI_ID).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  };
+
+  const handleConfirm = () => {
+    if (amount > 0 && !transactionId.trim()) {
+      setError('Please enter the transaction ID / UTR number from your UPI app.');
+      return;
+    }
+    onConfirm({ paymentMethod: app, transactionId: transactionId.trim() });
+  };
+
+  return (
+    <Modal onClose={onClose} maxWidth="max-w-md">
+      <div className="max-h-[90vh] overflow-y-auto">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 sticky top-0">
+          <h3 className="font-bold text-gray-900 flex items-center gap-2">
+            <QrCode size={16} className="text-[#5B21B6]" /> Pay &amp; Accept Session
+          </h3>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-5">
+          <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-purple-600 uppercase tracking-wider mb-0.5">Session with</p>
+                <p className="font-extrabold text-gray-900 truncate">{mentorName}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{startupName} · {booking.topic}</p>
+                {booking.date && (
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {formatDateDisplay(booking.date)} · {formatTimeDisplay(booking.time)} · {booking.duration} min
+                  </p>
+                )}
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-[10px] font-bold text-purple-500 uppercase tracking-wider">Amount</p>
+                <p className="text-2xl font-black text-purple-700">₹{amount.toLocaleString('en-IN')}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm font-bold text-gray-900 mb-1">Scan &amp; Pay via UPI</p>
+            <p className="text-xs text-gray-500 mb-3">Scan with Paytm, PhonePe or Google Pay</p>
+            <div className="w-44 h-44 bg-white border-2 border-purple-200 rounded-2xl mx-auto p-2 flex items-center justify-center shadow-sm">
+              {qrDataUrl ? (
+                <img src={qrDataUrl} alt="UPI Payment QR Code" className="w-full h-full object-contain rounded-xl" />
+              ) : (
+                <Loader2 size={24} className="animate-spin text-[#5B21B6]" />
+              )}
+            </div>
+            <div className="flex items-center justify-center gap-2 mt-3">
+              <span className="text-sm font-semibold text-gray-600">UPI ID:</span>
+              <code className="text-sm font-bold text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-lg border border-purple-100 select-all">{UPI_ID}</code>
+              <button onClick={copyUpi} className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-500 transition-colors" title="Copy UPI ID">
+                {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Pay With</label>
+            <div className="grid grid-cols-3 gap-2">
+              {PAYMENT_APPS.map((a) => (
+                <a
+                  key={a.id}
+                  href={buildUrl(a.scheme)}
+                  onClick={() => setApp(a.id)}
+                  className={`py-2.5 px-2 rounded-xl border text-xs font-bold flex flex-col items-center gap-1 transition-all ${
+                    app === a.id
+                      ? 'border-purple-500 bg-purple-50 text-purple-700'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="text-lg leading-none">{a.emoji}</span> {a.label}
+                </a>
+              ))}
+            </div>
+            <p className="text-[10px] text-gray-400 mt-1.5 text-center">Opens your UPI app with the amount pre-filled. Pay and return to enter the transaction ID.</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+              Transaction ID / UTR Number {amount > 0 && <span className="text-red-500">*</span>}
+            </label>
+            <input
+              type="text"
+              value={transactionId}
+              onChange={(e) => { setTransactionId(e.target.value); if (error) setError(''); }}
+              placeholder="e.g. 421987654321"
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
+            />
+            {error && <p className="text-red-500 text-xs mt-1 font-medium">{error}</p>}
+          </div>
+
+          <button
+            onClick={handleConfirm}
+            disabled={submitting}
+            className="w-full py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white shadow-md flex items-center justify-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {submitting ? (
+              <><Loader2 size={16} className="animate-spin" /> Accepting...</>
+            ) : (
+              <><CheckCircle2 size={16} /> Payment Completed — Accept Session</>
+            )}
+          </button>
+          <p className="text-[11px] text-gray-400 text-center">
+            <Smartphone size={11} className="inline mr-1 -mt-0.5" />
+            Once you confirm, the session is accepted and your mentor is notified immediately.
+          </p>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 // ─── Main Page ────────────────────────────────────────────────────
 const FounderMentors: React.FC = () => {
   const [tab, setTab] = useState<TabId>('mentors');
@@ -862,6 +1025,8 @@ const FounderMentors: React.FC = () => {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [refreshingTab, setRefreshingTab] = useState(false);
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
+  const [paymentBooking, setPaymentBooking] = useState<any>(null);
+  const [accepting, setAccepting] = useState(false);
 
   const showToast = useCallback((type: 'success' | 'error', message: string) => {
     setToast({ type, message });
@@ -944,17 +1109,32 @@ const FounderMentors: React.FC = () => {
   };
 
   const handleAcceptBooking = async (b: any) => {
-    if (!window.confirm('Accept the scheduled session? The mentor will be notified once you confirm.')) return;
+    const fee = Number(b.sessionFee) || 0;
+    if (fee > 0) {
+      setPaymentBooking(b);
+      return;
+    }
+    await doAccept(b);
+  };
+
+  const doAccept = async (b: any, payment?: { paymentMethod: string; transactionId: string }) => {
     setAcceptingId(b._id);
+    setAccepting(true);
     try {
-      await acceptMentorSession(b._id);
-      showToast('success', 'Session accepted — the mentor has been notified.');
+      await acceptMentorSession(b._id, payment);
+      showToast('success', 'Payment recorded — session accepted. The mentor has been notified.');
+      setPaymentBooking(null);
       loadBookings();
     } catch (err: any) {
       showToast('error', err.message || 'Failed to accept the session');
     } finally {
       setAcceptingId(null);
+      setAccepting(false);
     }
+  };
+
+  const handlePaymentConfirm = (payment: { paymentMethod: string; transactionId: string }) => {
+    if (paymentBooking) doAccept(paymentBooking, payment);
   };
 
   const completedBookings = bookings.filter((b) => b.status === 'completed');
@@ -1207,6 +1387,16 @@ const FounderMentors: React.FC = () => {
           onClose={() => setRescheduleBookingData(null)}
           onRescheduled={loadBookings}
           onToast={showToast}
+        />
+      )}
+
+      {/* Accept Session Payment Modal */}
+      {paymentBooking && (
+        <PaymentModal
+          booking={paymentBooking}
+          submitting={accepting}
+          onClose={() => { if (!accepting) setPaymentBooking(null); }}
+          onConfirm={handlePaymentConfirm}
         />
       )}
 

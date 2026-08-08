@@ -493,6 +493,7 @@ export const createBooking = async (req: AuthRequest, res: Response) => {
       duration: sessionDuration,
       status: 'pending',
       meetingLink: `https://meet.jit.si/ai-startup-builder-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      sessionFee: sessionFee > 0 ? sessionFee : 0,
       paymentStatus: sessionFee > 0 ? 'unpaid' : 'not_required',
     });
 
@@ -703,11 +704,18 @@ export const acceptSession = async (req: AuthRequest, res: Response) => {
     if (booking.userId.toString() !== req.user!.id) {
       return res.status(403).json({ success: false, message: 'Only the founder who booked this session can accept it' });
     }
+    const { paymentMethod, transactionId } = req.body || {};
+
     if (booking.status !== 'confirmed') {
       return res.status(400).json({ success: false, message: 'Only a scheduled session can be accepted' });
     }
 
     booking.status = 'accepted';
+    if (booking.sessionFee > 0) {
+      booking.paymentStatus = 'paid';
+      if (paymentMethod) booking.paymentMethod = String(paymentMethod);
+      if (transactionId) booking.paymentTransactionId = String(transactionId);
+    }
     await booking.save();
 
     // Notify the mentor that the founder accepted the session
