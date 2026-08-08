@@ -27,11 +27,48 @@ const AdminInviteLinks: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
-  const loadInvites = useCallback(() => setInvites(getInvites()), []);
+  const loadInvites = useCallback(async () => {
+    const local = getInvites();
+    setInvites(local);
+
+    try {
+      const res = await fetch(`${API_URL}/invites`);
+      const json = await res.json();
+      if (json.success && Array.isArray(json.invites) && json.invites.length > 0) {
+        const serverInvites: MentorInvite[] = json.invites.map((inv: any) => ({
+          id: inv.id || inv._id,
+          mentorName: inv.mentorName,
+          mentorEmail: inv.mentorEmail,
+          expertise: inv.expertise || '',
+          inviteToken: inv.inviteToken,
+          inviteUrl: inv.inviteUrl || `/signup?role=mentor&inviteToken=${inv.inviteToken}`,
+          status: inv.status || 'active',
+          createdAt: inv.createdAt,
+          expiryDate: inv.expiryDate || inv.expiresAt,
+          message: inv.message || '',
+          usedAt: inv.usedAt,
+        }));
+
+        const combinedMap = new Map<string, MentorInvite>();
+        serverInvites.forEach((i) => combinedMap.set(i.inviteToken, i));
+        local.forEach((i) => {
+          if (!combinedMap.has(i.inviteToken)) {
+            combinedMap.set(i.inviteToken, i);
+          }
+        });
+
+        const merged = Array.from(combinedMap.values());
+        setInvites(merged);
+        localStorage.setItem('ai_startup_builder_mentor_invites', JSON.stringify(merged));
+      }
+    } catch {
+      // Use local invites if server unreachable
+    }
+  }, []);
 
   useEffect(() => {
     loadInvites();
-    const interval = setInterval(loadInvites, 2000);
+    const interval = setInterval(loadInvites, 5000);
     return () => clearInterval(interval);
   }, [loadInvites]);
 

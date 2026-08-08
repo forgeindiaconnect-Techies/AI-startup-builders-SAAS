@@ -14,12 +14,73 @@ export interface MentorInvite {
   usedAt?: string;
 }
 
+export const INITIAL_DEMO_INVITES: MentorInvite[] = [
+  {
+    id: 'inv_demo_1',
+    mentorName: 'Mano',
+    mentorEmail: 'mano@techstart.io',
+    expertise: 'Venture Capital, Scaling, SaaS',
+    inviteToken: 'd6a782b19e402c81729b40fa',
+    inviteUrl: '/signup?role=mentor&inviteToken=d6a782b19e402c81729b40fa',
+    status: 'active',
+    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    expiryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    message: 'Welcome to AI Startup Builder as an official Mentor!',
+  },
+  {
+    id: 'inv_demo_2',
+    mentorName: 'Dr. Aris Thorne',
+    mentorEmail: 'aris.thorne@deeptech.org',
+    expertise: 'AI/ML, Product Strategy',
+    inviteToken: 'f81029c781034ab812903fe',
+    inviteUrl: '/signup?role=mentor&inviteToken=f81029c781034ab812903fe',
+    status: 'used',
+    createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    expiryDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    usedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    message: 'Exclusive invitation to mentor our AI cohort.',
+  },
+  {
+    id: 'inv_demo_3',
+    mentorName: 'Sarah Chen',
+    mentorEmail: 'sarah.chen@growthvc.com',
+    expertise: 'Marketing & Growth, Fundraising',
+    inviteToken: 'c7193b281094056ac81290a',
+    inviteUrl: '/signup?role=mentor&inviteToken=c7193b281094056ac81290a',
+    status: 'active',
+    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    expiryDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+    message: 'Join our elite network of startup mentors.',
+  },
+  {
+    id: 'inv_demo_4',
+    mentorName: 'Rajesh Kumar',
+    mentorEmail: 'rajesh@scaleup.in',
+    expertise: 'Fintech, Compliance & Operations',
+    inviteToken: 'a12904b71938102958cd10b',
+    inviteUrl: '/signup?role=mentor&inviteToken=a12904b71938102958cd10b',
+    status: 'expired',
+    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+    expiryDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    message: 'Invitation to review seed-stage startups.',
+  },
+];
+
 export function getInvites(): MentorInvite[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DEMO_INVITES));
+      return INITIAL_DEMO_INVITES;
+    }
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length === 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DEMO_INVITES));
+      return INITIAL_DEMO_INVITES;
+    }
+    return parsed;
   } catch {
-    return [];
+    return INITIAL_DEMO_INVITES;
   }
 }
 
