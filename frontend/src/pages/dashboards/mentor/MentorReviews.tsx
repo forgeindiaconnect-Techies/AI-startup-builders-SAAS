@@ -212,25 +212,35 @@ const MentorReviews: React.FC = () => {
     window.alert('Feedback submitted successfully!');
   };
 
-  // Get conversation messages for a specific founder ↔ mentor startup conversation
-  const getConvMessages = (founderId: string, founderName: string, startupName: string) => {
-    if (!user || !founderId) return [];
-    const conv = conversations.find(c => {
-      const ids = c.participants.map(p => p.id).sort().join('|');
-      const expected = [user.id, founderId].sort().join('|');
-      if (ids === expected) return true;
-      const names = c.participants.map(p => (p.name || '').toLowerCase().trim()).sort().join('|');
-      const expNames = [user.fullName || '', founderName || ''].map(n => n.toLowerCase().trim()).sort().join('|');
-      return names === expNames && names.length > 2;
-    });
-    if (!conv) return [];
-    return (messages[conv.id] || []).filter(m =>
-      m.message.includes(startupName) ||
-      m.message.toLowerCase().includes('review') ||
-      m.message.toLowerCase().includes('feedback') ||
-      m.message.toLowerCase().includes('reply') ||
-      m.message.toLowerCase().includes('re:')
-    );
+  // Resolve startup conversation messages from the database-backed mentorReview field
+  const getStartupMessages = (startup: any) => {
+    const list = [...(startup.mentorReview?.messages || [])];
+    
+    // Seed initial feedback if not present in messages list
+    if (list.length === 0 && (startup.mentorReview?.feedback || startup.mentorFeedback)) {
+      list.push({
+        id: 'msg_initial',
+        senderId: startup.mentorReview?.mentorId || 'mentor',
+        senderName: startup.mentorReview?.mentorName || 'Mentor',
+        senderRole: 'Mentor',
+        message: startup.mentorReview?.feedback || startup.mentorFeedback,
+        createdAt: startup.mentorReview?.createdAt || startup.createdAt || new Date().toISOString()
+      });
+    }
+
+    // Seed founder's initial reply if not present in messages list
+    if (startup.mentorReview?.founderReply && !list.some(m => m.senderRole === 'Founder')) {
+      list.push({
+        id: 'msg_founder_reply',
+        senderId: startup.founderId || startup.userId || 'founder',
+        senderName: startup.founderName || 'Founder',
+        senderRole: 'Founder',
+        message: startup.mentorReview.founderReply,
+        createdAt: startup.mentorReview.founderReplyAt || startup.updatedAt || new Date().toISOString()
+      });
+    }
+
+    return list;
   };
 
   const handleMentorReply = async (startup: any, founder: any) => {
@@ -238,22 +248,45 @@ const MentorReviews: React.FC = () => {
     const reply = (mentorReplyText[sid] || '').trim();
     if (!reply || !user) return;
     setMentorReplying(prev => ({ ...prev, [sid]: true }));
+
+    const currentMessages = getStartupMessages(startup);
+
+    const newMessage = {
+      id: `msg_${Date.now()}`,
+      senderId: user.id,
+      senderName: user.fullName || 'Mentor',
+      senderRole: 'Mentor',
+      message: reply,
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedMessages = [...currentMessages, newMessage];
     const founderId = founder?.id || startup.founderId || startup.userId;
     const founderName = founder?.fullName || startup.founderName || 'Founder';
-    const conv = getOrCreateConversation([
-      { id: user.id, name: user.fullName || 'Mentor', role: 'mentor', avatar: (user.fullName || 'M').charAt(0).toUpperCase() },
-      { id: founderId || `founder_${founderName}`, name: founderName, role: 'founder', avatar: (founderName || 'F').charAt(0).toUpperCase() },
-    ]);
-    sendMessage(
-      conv.id,
-      user.id,
-      user.fullName || 'Mentor',
-      'Mentor',
-      founderId || `founder_${founderName}`,
-      founderName,
-      'Founder',
-      `[Re: ${startup.startupName}] ${reply}`
-    );
+
+    const updatedReview = {
+      ...startup.mentorReview,
+      messages: updatedMessages
+    };
+
+    const updated = await updateStartup(sid, {
+      ...startup,
+      mentorReview: updatedReview
+    });
+
+    if (updated) {
+      setAllStartups(prev => prev.map(s => (s.startupId || s._id) === sid ? { ...s, mentorReview: updatedReview } : s));
+      if (selectedFounder) {
+        setSelectedFounder(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            startups: prev.startups.map((s: any) => (s.startupId || s._id) === sid ? { ...s, mentorReview: updatedReview } : s)
+          };
+        });
+      }
+    }
+
     addNotification({
       id: `notif_mreply_${Date.now()}`,
       userId: founderId || 'founder',
@@ -264,6 +297,7 @@ const MentorReviews: React.FC = () => {
       actionUrl: '/dashboard/founder/mentor-reviews',
       createdAt: new Date().toISOString(),
     });
+
     setMentorReplyText(prev => ({ ...prev, [sid]: '' }));
     setMentorReplying(prev => ({ ...prev, [sid]: false }));
     setTimeout(() => { chatEndRefs.current[sid]?.scrollIntoView({ behavior: 'smooth' }); }, 100);
@@ -273,7 +307,7 @@ const MentorReviews: React.FC = () => {
     const sid = startup.startupId || startup._id;
     const founderId = selectedFounder?.id || startup.founderId || startup.userId;
     const founderName = selectedFounder?.fullName || startup.founderName || 'Founder';
-    const convMessages = getConvMessages(founderId, founderName, startup.startupName);
+    const convMessages = getStartupMessages(startup);
     const formatTime = (iso: string) => { try { return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
 
     return (
@@ -327,49 +361,10 @@ const MentorReviews: React.FC = () => {
 
         {/* Messages */}
         <div className="px-5 py-4 space-y-3 max-h-60 overflow-y-auto">
-          {/* Initial review as seed message */}
-          {startup.mentorReview?.feedback && (
-            <div className="flex items-start gap-3 justify-end">
-              <div className="flex-1 flex flex-col items-end">
-                <div className="flex items-center gap-2 mb-1 flex-row-reverse">
-                  <span className="text-xs font-bold text-gray-700">{user?.fullName || 'You'}</span>
-                  <span className="text-[10px] font-bold text-purple-500 uppercase tracking-wider">You (Mentor)</span>
-                  {startup.mentorReview.createdAt && <span className="text-[10px] text-gray-400">{formatTime(startup.mentorReview.createdAt)}</span>}
-                </div>
-                <div className="bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-white shadow-md max-w-[80%]">
-                  {startup.mentorReview.feedback}
-                </div>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#5B21B6] to-[#FBBF24] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                {(user?.fullName || 'M').charAt(0).toUpperCase()}
-              </div>
-            </div>
-          )}
-
-          {/* Legacy founder one-time reply */}
-          {startup.mentorReview?.founderReply && !convMessages.some((m: any) => m.receiverId === user?.id || m.senderName?.toLowerCase() !== (user?.fullName || '').toLowerCase()) && (
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                {(founderName || 'F').charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-gray-700">{founderName}</span>
-                  <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Founder</span>
-                  {startup.mentorReview.founderReplyAt && <span className="text-[10px] text-gray-400">{formatTime(startup.mentorReview.founderReplyAt)}</span>}
-                </div>
-                <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm text-gray-700 shadow-sm">
-                  {startup.mentorReview.founderReply}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Live chat messages */}
           {convMessages.map((m: any, i: number) => {
-            const isMentor = m.senderId === user?.id || (user?.fullName && m.senderName?.toLowerCase() === user.fullName.toLowerCase());
+            const isMentor = m.senderRole === 'Mentor';
             return (
-              <div key={i} className={`flex items-start gap-3 ${isMentor ? 'justify-end' : ''}`}>
+              <div key={m.id || i} className={`flex items-start gap-3 ${isMentor ? 'justify-end' : ''}`}>
                 {!isMentor && (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                     {(m.senderName || 'F').charAt(0).toUpperCase()}
@@ -377,8 +372,8 @@ const MentorReviews: React.FC = () => {
                 )}
                 <div className={`flex-1 flex flex-col ${isMentor ? 'items-end' : 'items-start'}`}>
                   <div className={`flex items-center gap-2 mb-1 ${isMentor ? 'flex-row-reverse' : ''}`}>
-                    <span className="text-xs font-bold text-gray-700">{isMentor ? (user?.fullName || 'You') : m.senderName}</span>
-                    <span className={`text-[10px] font-bold uppercase tracking-wider ${isMentor ? 'text-purple-500' : 'text-amber-500'}`}>{isMentor ? 'You' : 'Founder'}</span>
+                    <span className="text-xs font-bold text-gray-700">{isMentor ? 'You' : m.senderName}</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider ${isMentor ? 'text-purple-500' : 'text-amber-500'}`}>{isMentor ? 'Mentor' : 'Founder'}</span>
                     <span className="text-[10px] text-gray-400">{formatTime(m.createdAt)}</span>
                   </div>
                   <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm shadow-sm ${
