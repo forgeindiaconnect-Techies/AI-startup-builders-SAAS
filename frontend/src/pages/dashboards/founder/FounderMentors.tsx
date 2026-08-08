@@ -762,6 +762,9 @@ const BookingRow: React.FC<{
                 <span className={`font-bold ${booking.paymentStatus === 'paid' ? 'text-emerald-600' : booking.paymentStatus === 'unpaid' ? 'text-amber-600' : 'text-gray-600'}`}>
                   {booking.paymentStatus === 'not_required' ? 'Not required' : booking.paymentStatus === 'unpaid' ? 'Unpaid' : booking.paymentStatus === 'paid' ? 'Paid' : booking.paymentStatus}
                 </span>
+                {Number(booking.sessionFee) > 0 && (
+                  <span className="font-bold text-gray-700">· ₹{(Number(booking.sessionFee)).toLocaleString('en-IN')}</span>
+                )}
               </span>
               {booking.meetingLink && canModify && (
                 <a href={booking.meetingLink} target="_blank" rel="noreferrer"

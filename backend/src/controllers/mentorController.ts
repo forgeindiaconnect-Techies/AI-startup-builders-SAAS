@@ -547,6 +547,25 @@ export const getMyBookings = async (req: AuthRequest, res: Response) => {
       .populate('mentorId', 'fullName expertise title')
       .populate('startupId', 'startupName')
       .sort({ createdAt: -1 });
+
+    // Backfill the session fee for legacy bookings created before the fee field existed,
+    // so the amount + payment QR are shown even for already-existing bookings.
+    const missingFee = bookings.filter((b) => !b.sessionFee || b.sessionFee === 0);
+    if (missingFee.length > 0) {
+      const profiles = await MentorProfile.find({
+        mentorId: { $in: missingFee.map((b) => b.mentorId) },
+      });
+      const feeByMentor = new Map(profiles.map((p) => [p.mentorId.toString(), p.sessionFee || 0]));
+      for (const b of missingFee) {
+        const fee = feeByMentor.get(b.mentorId.toString()) || 0;
+        if (fee > 0) {
+          b.sessionFee = fee;
+          if (b.paymentStatus === 'not_required') b.paymentStatus = 'unpaid';
+          await b.save();
+        }
+      }
+    }
+
     res.json({ success: true, data: bookings });
   } catch (error) {
     console.error('Error fetching bookings:', error);
