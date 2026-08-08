@@ -15,11 +15,45 @@ const SharedMessages: React.FC = () => {
   const [adminTargetUserId, setAdminTargetUserId] = useState<string>('');
 
   // Filter conversations for the current user (admin sees all)
+  // Also include conversations where the user's role matches a participant's role
+  // AND at least one message is addressed to the user
   const myConversations = useMemo(() => {
     if (!user) return [];
     if (user.role === 'admin') return conversations;
-    return conversations.filter(c => c.participants.some(p => p.id === user.id || p.role === user.role));
-  }, [conversations, user]);
+
+    const allMsgs = Object.values(messages).flat();
+
+    return conversations.filter(c => {
+      // 1. Participant ID match
+      const hasIdMatch = c.participants.some(p => p.id === user.id);
+      if (hasIdMatch) return true;
+
+      // 2. Participant name match (case-insensitive)
+      const hasNameMatch = c.participants.some(
+        p => p.name && user.fullName && p.name.toLowerCase() === user.fullName.toLowerCase()
+      );
+      if (hasNameMatch) return true;
+
+      // 3. Role match (founder sees all founder conversations, mentor sees all mentor ones)
+      const hasRoleMatch = c.participants.some(p => p.role === user.role);
+      if (!hasRoleMatch) return false;
+
+      // 4. Messages in this conversation that were sent to or from this user
+      const convMsgs = allMsgs.filter(m => m.conversationId === c.id);
+      const hasRelevantMsg = convMsgs.some(m => {
+        // Message was sent TO user (by id or name or role)
+        if (m.receiverId === user.id) return true;
+        if (user.fullName && m.receiverName && m.receiverName.toLowerCase() === user.fullName.toLowerCase()) return true;
+        if (m.receiverRole?.toLowerCase() === user.role?.toLowerCase()) return true;
+        // Message was sent BY user (id or name)
+        if (m.senderId === user.id) return true;
+        if (user.fullName && m.senderName && m.senderName.toLowerCase() === user.fullName.toLowerCase()) return true;
+        return false;
+      });
+
+      return hasRelevantMsg;
+    });
+  }, [conversations, messages, user]);
 
   const [active, setActive] = useState<string>(myConversations[0]?.id || '');
 
@@ -59,10 +93,22 @@ const SharedMessages: React.FC = () => {
   const visibleMessages = useMemo(() => {
     if (!user) return [];
     return activeMessages.filter(m => {
-      // User messages visible to everyone
-      if (m.type === 'user_message') return true;
+      // User messages visible to sender and receiver
+      if (m.type === 'user_message') {
+        // Sender/receiver exact match
+        if (m.senderId === user.id || m.receiverId === user.id) return true;
+        // Name-based match (when IDs are not aligned across sessions)
+        if (user.fullName && (
+          (m.senderName && m.senderName.toLowerCase() === user.fullName.toLowerCase()) ||
+          (m.receiverName && m.receiverName.toLowerCase() === user.fullName.toLowerCase())
+        )) return true;
+        // Mentor messages: founder sees all messages addressed to "founder" role in their conversation
+        if (m.receiverRole?.toLowerCase() === user.role?.toLowerCase()) return true;
+        return false;
+      }
       // Admin messages visible only to Admin and the Receiver
-      return user.role === 'admin' || user.id === m.receiverId;
+      return user.role === 'admin' || user.id === m.receiverId || 
+        (user.fullName && m.receiverName && m.receiverName.toLowerCase() === user.fullName.toLowerCase());
     });
   }, [activeMessages, user]);
 

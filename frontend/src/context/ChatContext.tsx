@@ -126,22 +126,32 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const getOrCreateConversation = (participants: ChatUser[]) => {
     const ids = participants.map(p => p.id).sort().join('|');
-    const names = participants.map(p => (p.name || '').toLowerCase()).sort().join('|');
+    const names = participants.map(p => (p.name || '').toLowerCase().trim()).sort().join('|');
 
     const existing = conversations.find(c => {
+      // Match by sorted participant IDs
       const cIds = c.participants.map(p => p.id).sort().join('|');
       if (cIds === ids) return true;
-      const cNames = c.participants.map(p => (p.name || '').toLowerCase()).sort().join('|');
-      return cNames === names && cNames.length > 0;
+      // Match by sorted participant names (cross-session fallback)
+      const cNames = c.participants.map(p => (p.name || '').toLowerCase().trim()).sort().join('|');
+      return cNames.length > 0 && cNames === names;
     });
 
     if (existing) return existing;
+
     const conv: Conversation = {
       id: `conv_${Date.now()}`,
       participants,
       gradient: CONV_GRADIENTS[Math.floor(Math.random() * CONV_GRADIENTS.length)],
     };
-    setConversations(prev => [...prev, conv]);
+
+    // Persist immediately so cross-tab storage events fire and the other user's
+    // session (e.g. the founder) can pick up the conversation.
+    setConversations(prev => {
+      const updated = [...prev, conv];
+      localStorage.setItem('ai_startup_builder_conversations', JSON.stringify(updated));
+      return updated;
+    });
     return conv;
   };
 
@@ -170,10 +180,16 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       isRead: false
     };
 
-    setMessages(prev => ({
-      ...prev,
-      [conversationId]: [...(prev[conversationId] || []), newMessage]
-    }));
+    // Persist immediately so cross-tab storage events fire and the other session
+    // (e.g. the founder) can see the message without a page reload.
+    setMessages(prev => {
+      const updated = {
+        ...prev,
+        [conversationId]: [...(prev[conversationId] || []), newMessage],
+      };
+      localStorage.setItem('ai_startup_builder_messages', JSON.stringify(updated));
+      return updated;
+    });
 
     // When a mentor messages a founder, surface it on the founder's Mentors
     // page and on the admin dashboard notifications page.
