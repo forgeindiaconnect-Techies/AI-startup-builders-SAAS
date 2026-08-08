@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Video, Calendar, Clock, Loader2, X, CheckCircle2, CalendarClock,
-  FileText, ArrowRight, Link2, MessageSquare, GraduationCap, MapPin,
+  FileText, ArrowRight, Link2, MessageSquare, GraduationCap, MapPin, ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import {
@@ -67,6 +67,7 @@ const ScheduleModal: React.FC<{
   const [bookedSlots, setBookedSlots] = useState<Record<string, string[]>>({});
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [meetingLink, setMeetingLink] = useState(booking.meetingLink || '');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -88,7 +89,8 @@ const ScheduleModal: React.FC<{
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      await scheduleMentorSession(booking._id, { date: selectedDate, time: selectedTime });
+      const finalLink = (meetingLink.trim() || booking.meetingLink || '').trim();
+      await scheduleMentorSession(booking._id, { date: selectedDate, time: selectedTime, meetingLink: finalLink });
       onScheduled();
       onToast('success', 'Session scheduled — the founder has been notified.');
       onClose();
@@ -178,13 +180,39 @@ const ScheduleModal: React.FC<{
               )}
             </>
           )}
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wider">Meeting Link</label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Link2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={meetingLink}
+                  onChange={(e) => setMeetingLink(e.target.value)}
+                  placeholder="https://meet.jit.si/your-meeting-room"
+                  className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
+                />
+              </div>
+              {meetingLink.trim() && (
+                <a
+                  href={meetingLink.trim().match(/^https?:\/\//) ? meetingLink.trim() : `https://${meetingLink.trim()}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-shrink-0 px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  <ExternalLink size={14} /> Open
+                </a>
+              )}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1.5">A default meeting link is auto-generated. The founder can join it from their bookings.</p>
+          </div>
         </div>
 
         <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
           <button onClick={onClose} className="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors text-sm">Cancel</button>
           <button
             onClick={handleSubmit}
-            disabled={!selectedDate || !selectedTime || submitting}
+            disabled={!selectedDate || !selectedTime || !meetingLink.trim() || submitting}
             className="px-6 py-2.5 bg-[#5B21B6] text-white font-bold rounded-xl hover:bg-[#4C1D95] transition-colors text-sm shadow flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {submitting ? <Loader2 size={16} className="animate-spin" /> : <CalendarClock size={16} />} Confirm Schedule
