@@ -72,7 +72,7 @@ const formatDate = (val?: string | null) => {
 };
 
 const AdminSubManagement: React.FC = () => {
-  const { getAllUsers, refreshUsers, updateUserSubscription } = useAuth();
+  const { getAllUsers, refreshUsers, updateUserSubscription, getTokenRole } = useAuth();
 
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('All Plans');
@@ -84,6 +84,7 @@ const AdminSubManagement: React.FC = () => {
 
   useEffect(() => {
     refreshUsers();
+    if (getTokenRole() !== 'admin') return;
     const interval = setInterval(() => refreshUsers(), 10000);
     return () => clearInterval(interval);
   }, []);

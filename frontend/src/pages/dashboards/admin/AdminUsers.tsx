@@ -58,7 +58,7 @@ const approvalBgColors: Record<string, string> = {
 };
 
 const AdminUsers: React.FC = () => {
-  const { user: currentUser, getAllUsers, deleteUser, approveUser, rejectUser, updateUserStatus, refreshUsers } = useAuth();
+  const { user: currentUser, getAllUsers, deleteUser, approveUser, rejectUser, updateUserStatus, refreshUsers, getTokenRole } = useAuth();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [usersList, setUsersList] = useState<any[]>([]);
@@ -103,6 +103,7 @@ const AdminUsers: React.FC = () => {
 
   useEffect(() => {
     loadUsers(true);
+    if (getTokenRole() !== 'admin') return;
     const interval = setInterval(() => loadUsers(), 10000); // poll every 10s
     return () => clearInterval(interval);
   }, []);

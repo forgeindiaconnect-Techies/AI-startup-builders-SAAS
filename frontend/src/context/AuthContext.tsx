@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { API_URL } from '../config/api';
 
@@ -32,6 +32,7 @@ interface AuthContextType {
   logout: () => void;
   checkAuth: () => Promise<{ subscriptionStatus?: string; role?: string } | null>;
   getToken: () => string | null;
+  getTokenRole: () => string | null;
   getPendingApprovals: () => any[];
   approveUser: (userId: string) => void;
   rejectUser: (userId: string) => void;
@@ -53,18 +54,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [allUsers, setAllUsers] = useState<any[]>([]);
+  // Once the admin endpoint rejects the current token, stop all retries until re-login.
+  const usersFetchBlockedRef = useRef(false);
 
   const getToken = () => localStorage.getItem(TOKEN_KEY);
   const setToken = (token: string) => localStorage.setItem(TOKEN_KEY, token);
   const removeToken = () => localStorage.removeItem(TOKEN_KEY);
 
+  const getTokenRole = (): string | null => {
+    const token = getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return typeof payload.role === 'string' ? payload.role : null;
+    } catch {
+      return null;
+    }
+  };
+
   const fetchAllUsers = async () => {
     const token = getToken();
     if (!token) return;
+    if (getTokenRole() !== 'admin') return;
+    if (usersFetchBlockedRef.current) return;
     try {
       const res = await fetch(`${API_URL}/auth/admin/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (res.status === 403) {
+        // Token is not authorized for admin access — stop hammering the endpoint.
+        usersFetchBlockedRef.current = true;
+        setAllUsers([]);
+        return;
+      }
       const data = await res.json();
       if (data.success && data.users) {
         const mapped = data.users.map((u: any) => ({
@@ -223,6 +245,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (data.success && data.token) {
         setToken(data.token);
+        usersFetchBlockedRef.current = false;
         const authData = await checkAuth(); // Fetch full user & subscription data and update state
         return {
           success: true,
@@ -241,6 +264,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     removeToken();
     setUser(null);
     setSubscription(null);
+    usersFetchBlockedRef.current = false;
   };
 
   return (
@@ -253,6 +277,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       logout,
       checkAuth,
       getToken,
+      getTokenRole,
       getPendingApprovals: () => allUsers.filter((u: any) => u.approvalStatus === 'pending'),
       approveUser: async (userId: string) => {
         const token = getToken();
