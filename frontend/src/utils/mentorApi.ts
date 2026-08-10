@@ -187,3 +187,31 @@ export const getBookingFeedback = async (id: string): Promise<any> => {
   const data = await handleResponse(res);
   return data.data;
 };
+
+// POST /api/mentors/reviews  (founder reviews a completed mentoring session)
+export const submitSessionReview = async (
+  bookingId: string,
+  payload: { rating: number; reviewText?: string }
+): Promise<any> => {
+  const res = await fetch(`${API_URL}/mentors/reviews`, {
+    method: 'POST',
+    headers: authHeaders(true),
+    body: JSON.stringify({ bookingId, ...payload }),
+  });
+  const data = await handleResponse(res);
+  return data.data;
+};
+
+// GET /api/mentors/reviews/me  (reviews received by the logged-in mentor)
+export const getMentorSessionReviews = async (): Promise<any[]> => {
+  const res = await fetch(`${API_URL}/mentors/reviews/me`, { headers: authHeaders(false) });
+  const data = await handleResponse(res);
+  return data.data || [];
+};
+
+// GET /api/mentors/reviews/mine  (reviews submitted by the logged-in founder)
+export const getMySubmittedReviews = async (): Promise<any[]> => {
+  const res = await fetch(`${API_URL}/mentors/reviews/mine`, { headers: authHeaders(false) });
+  const data = await handleResponse(res);
+  return data.data || [];
+};

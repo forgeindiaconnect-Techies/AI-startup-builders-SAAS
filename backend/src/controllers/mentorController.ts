@@ -5,6 +5,7 @@ import { User } from '../models/User.js';
 import MentorProfile, { IMentorProfile } from '../models/MentorProfile.js';
 import MentorBooking from '../models/MentorBooking.js';
 import MentorFeedback from '../models/MentorFeedback.js';
+import MentorReview from '../models/MentorReview.js';
 import Startup from '../models/Startup.js';
 import NotificationModel from '../models/Notification.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
@@ -815,6 +816,113 @@ export const completeSession = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Error completing session:', error);
     res.status(500).json({ success: false, message: 'Failed to complete session' });
+  }
+};
+
+// POST /api/mentors/reviews  (founder reviews a completed mentoring session)
+export const submitSessionReview = async (req: AuthRequest, res: Response) => {
+  try {
+    const { bookingId, rating, reviewText } = req.body;
+    if (!bookingId) return res.status(400).json({ success: false, message: 'bookingId is required' });
+    if (!isValidId(bookingId)) return res.status(400).json({ success: false, message: 'Invalid booking id' });
+
+    const stars = Math.min(5, Math.max(1, Number(rating) || 5));
+
+    const booking = await MentorBooking.findById(bookingId);
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+    if (booking.userId.toString() !== req.user!.id) {
+      return res.status(403).json({ success: false, message: 'Only the founder who booked this session can review it' });
+    }
+    if (booking.status !== 'completed') {
+      return res.status(400).json({ success: false, message: 'Session must be completed before reviewing' });
+    }
+
+    const existing = await MentorReview.findOne({ bookingId });
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'You have already reviewed this session' });
+    }
+
+    // Denormalize names so the mentor dashboard renders without extra lookups
+    const startup = await Startup.findById(booking.startupId).catch(() => null);
+    const startupName = startup?.startupName || 'Startup';
+    const topic = booking.topic || 'Mentoring Session';
+    const date = booking.date || new Date().toISOString().split('T')[0];
+
+    const review = await MentorReview.create({
+      bookingId: booking._id,
+      mentorId: booking.mentorId,
+      founderId: req.user!.id,
+      startupId: booking.startupId,
+      startupName,
+      topic,
+      rating: stars,
+      reviewText: (reviewText || '').trim(),
+      date,
+    });
+
+    // Update the mentor's aggregate rating on their public profile
+    try {
+      const profile = await MentorProfile.findOne({ mentorId: booking.mentorId });
+      if (profile) {
+        const all = await MentorReview.find({ mentorId: booking.mentorId });
+        const sum = all.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+        profile.rating = all.length > 0 ? Math.round((sum / all.length) * 10) / 10 : 0;
+        profile.reviewsCount = all.length;
+        await profile.save();
+      }
+    } catch (profileErr) {
+      console.warn('Could not update mentor rating profile:', (profileErr as Error).message);
+    }
+
+    // Notify the mentor
+    try {
+      const founder = await User.findById(req.user!.id);
+      await NotificationModel.create({
+        userId: booking.mentorId.toString(),
+        title: 'New Session Review & Rating',
+        message: `${founder?.fullName || 'A founder'} rated the session on "${startupName}" ${stars}/5 stars: "${(reviewText || 'No text').trim()}"`,
+        type: 'mentor_review',
+        actionUrl: '/dashboard/mentor/reviews',
+      });
+    } catch (notifErr) {
+      console.warn('Could not create mentor notification:', (notifErr as Error).message);
+    }
+
+    res.status(201).json({ success: true, data: review });
+  } catch (error) {
+    console.error('Error submitting session review:', error);
+    res.status(500).json({ success: false, message: 'Failed to submit review' });
+  }
+};
+
+// GET /api/mentors/reviews/me  (reviews received by the logged-in mentor)
+export const getMentorSessionReviews = async (req: AuthRequest, res: Response) => {
+  try {
+    const reviews = await MentorReview.find({ mentorId: req.user!.id })
+      .populate('founderId', 'fullName email')
+      .sort({ createdAt: -1 });
+    const mapped = reviews.map((r) => {
+      const obj: any = r.toObject();
+      obj.founderName = (r.founderId as any)?.fullName || '';
+      obj.founderEmail = (r.founderId as any)?.email || '';
+      obj.founderId = (r.founderId as any)?._id?.toString() || obj.founderId?.toString();
+      return obj;
+    });
+    res.json({ success: true, data: mapped });
+  } catch (error) {
+    console.error('Error fetching mentor reviews:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch reviews' });
+  }
+};
+
+// GET /api/mentors/reviews/mine  (reviews submitted by the logged-in founder)
+export const getMySubmittedReviews = async (req: AuthRequest, res: Response) => {
+  try {
+    const reviews = await MentorReview.find({ founderId: req.user!.id }).sort({ createdAt: -1 });
+    res.json({ success: true, data: reviews });
+  } catch (error) {
+    console.error('Error fetching my reviews:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch reviews' });
   }
 };
 

@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Search, Clock, X, MessageSquare, Send, ArrowLeft, CheckCircle, ChevronRight, Users, UserRound, Star, Award, Calendar, CheckCircle2 } from 'lucide-react';
 import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDetailsTabs';
 import { getDocuments, addNotification, getStartups, updateStartup } from '../../../utils/localStorageHelper';
-import { getMentorBookings } from '../../../utils/mentorApi';
+import { getMentorBookings, getMentorSessionReviews } from '../../../utils/mentorApi';
 import { useAuth } from '../../../context/AuthContext';
 import { useChat } from '../../../context/ChatContext';
 
@@ -41,31 +41,10 @@ const MentorReviews: React.FC = () => {
       setAllStartups(starts);
       setDocuments(docs);
 
-      // Load founder session ratings & reviews
+      // Load founder session ratings & reviews from the server
       try {
-        const storedReviews = localStorage.getItem('ai_startup_builder_user_mentor_reviews');
-        if (storedReviews) {
-          const parsed = JSON.parse(storedReviews);
-          setFounderReviews(parsed);
-        } else {
-          // Demo fallback review
-          setFounderReviews([
-            {
-              id: 'demo_rev_1',
-              bookingId: 'b_demo_1',
-              mentorId: user?.id || 'mentor',
-              mentorName: user?.fullName || 'Mentor',
-              founderId: 'founder_renu',
-              founderName: 'Renu (Founder)',
-              startupName: 'Tourists Platform',
-              topic: 'Go-to-Market Strategy',
-              rating: 5,
-              reviewText: 'Extremely insightful session! Clear advice on early customer acquisition and channel strategy.',
-              date: new Date().toISOString().split('T')[0],
-              createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            }
-          ]);
-        }
+        const reviews = await getMentorSessionReviews().catch(() => []);
+        setFounderReviews(Array.isArray(reviews) ? reviews : []);
       } catch (e) {
         setFounderReviews([]);
       }
@@ -508,7 +487,7 @@ const MentorReviews: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {founderReviews.map((rev) => (
-                <div key={rev.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3 hover:shadow-md transition-shadow">
+                <div key={rev._id || rev.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3 hover:shadow-md transition-shadow">
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white font-bold text-sm">

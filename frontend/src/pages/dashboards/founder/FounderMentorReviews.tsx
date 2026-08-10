@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, CheckCircle, Clock, ChevronDown, ChevronUp, Star, Award, Calendar, CheckCircle2 } from 'lucide-react';
 import { getStartups, updateStartup, addNotification } from '../../../utils/localStorageHelper';
-import { getMyBookings } from '../../../utils/mentorApi';
+import { getMyBookings, getMySubmittedReviews, submitSessionReview } from '../../../utils/mentorApi';
 import { useAuth } from '../../../context/AuthContext';
 
 const RATING_COLORS: Record<string, string> = {
@@ -45,15 +45,16 @@ const FounderMentorReviews: React.FC = () => {
       const completed = (Array.isArray(myBookings) ? myBookings : []).filter((b: any) => b.status === 'completed');
       setCompletedBookings(completed);
 
-      // Load saved user reviews from localStorage
-      const savedReviewsRaw = localStorage.getItem('ai_startup_builder_user_mentor_reviews');
-      if (savedReviewsRaw) {
-        const parsed = JSON.parse(savedReviewsRaw);
+      // Load saved user reviews from the server so they sync across devices
+      try {
+        const submitted = await getMySubmittedReviews().catch(() => []);
         const map: Record<string, any> = {};
-        parsed.forEach((r: any) => {
+        (Array.isArray(submitted) ? submitted : []).forEach((r: any) => {
           if (r.bookingId) map[r.bookingId] = r;
         });
         setUserReviews(map);
+      } catch (e) {
+        console.error(e);
       }
     } catch (e) {
       console.error(e);
@@ -78,31 +79,33 @@ const FounderMentorReviews: React.FC = () => {
     const mentorName = typeof booking.mentorId === 'object' ? booking.mentorId?.fullName : (booking.mentorName || 'Mentor');
     const startupName = typeof booking.startupId === 'object' ? booking.startupId?.startupName : (booking.startupName || 'Startup');
 
+    // Save to the server so it shows up on the mentor's dashboard
+    let savedReview: any = null;
+    try {
+      savedReview = await submitSessionReview(bId, { rating: stars, reviewText: text });
+    } catch (e: any) {
+      console.error(e);
+      setSubmittingReview(prev => ({ ...prev, [bId]: false }));
+      window.alert('❌ Failed to submit review. Please try again.');
+      return;
+    }
+
     const reviewObj = {
-      id: `rev_${Date.now()}`,
-      bookingId: bId,
-      mentorId: mentorId || 'mentor',
+      id: savedReview?._id || `rev_${Date.now()}`,
+      bookingId: savedReview?.bookingId || bId,
+      mentorId: savedReview?.mentorId || mentorId || 'mentor',
       mentorName,
-      founderId: user.id,
+      founderId: savedReview?.founderId || user.id,
       founderName: user.fullName || 'Founder',
-      startupName,
-      topic: booking.topic || 'Mentoring Session',
-      rating: stars,
-      reviewText: text,
-      date: booking.date || new Date().toISOString().split('T')[0],
-      createdAt: new Date().toISOString(),
+      startupName: savedReview?.startupName || startupName,
+      topic: savedReview?.topic || booking.topic || 'Mentoring Session',
+      rating: savedReview?.rating || stars,
+      reviewText: savedReview?.reviewText || text,
+      date: savedReview?.date || booking.date || new Date().toISOString().split('T')[0],
+      createdAt: savedReview?.createdAt || new Date().toISOString(),
     };
 
-    // Save to localStorage array
-    try {
-      const existing = localStorage.getItem('ai_startup_builder_user_mentor_reviews');
-      const parsed = existing ? JSON.parse(existing) : [];
-      const updated = [reviewObj, ...parsed.filter((r: any) => r.bookingId !== bId)];
-      localStorage.setItem('ai_startup_builder_user_mentor_reviews', JSON.stringify(updated));
-      setUserReviews(prev => ({ ...prev, [bId]: reviewObj }));
-    } catch (e) {
-      console.error(e);
-    }
+    setUserReviews(prev => ({ ...prev, [bId]: reviewObj }));
 
     // 1. Dispatch Notification to Mentor
     await addNotification({

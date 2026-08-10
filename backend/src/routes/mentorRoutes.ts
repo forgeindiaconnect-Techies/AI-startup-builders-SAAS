@@ -12,6 +12,9 @@ import {
   scheduleSession,
   acceptSession,
   completeSession,
+  submitSessionReview,
+  getMentorSessionReviews,
+  getMySubmittedReviews,
   submitFeedback,
   getBookingFeedback,
 } from '../controllers/mentorController.js';
@@ -26,6 +29,9 @@ router.get('/', getAvailableMentors);
 router.get('/bookings', getMyBookings);
 router.get('/mentor/bookings', getMentorBookings);
 router.post('/book', createBooking);
+router.post('/reviews', submitSessionReview);
+router.get('/reviews/me', getMentorSessionReviews);
+router.get('/reviews/mine', getMySubmittedReviews);
 
 router.put('/admin/:id', adminOnly, updateMentorProfileAdmin);
 
