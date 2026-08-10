@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!token) return null;
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return typeof payload.role === 'string' ? payload.role : null;
+      return typeof payload.role === 'string' ? payload.role.toLowerCase() : null;
     } catch {
       return null;
     }
@@ -77,7 +77,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const fetchAllUsers = async () => {
     const token = getToken();
     if (!token) return;
-    if (getTokenRole() !== 'admin') return;
+    const role = (user?.role || getTokenRole() || '').toLowerCase();
+    if (role !== 'admin') return;
     if (usersFetchBlockedRef.current) return;
     try {
       const res = await fetch(`${API_URL}/auth/admin/users`, {

@@ -33,7 +33,7 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction) => 
 };
 
 export const adminOnly = (req: AuthRequest, res: Response, next: NextFunction) => {
-  if (req.user && req.user.role === 'admin') {
+  if (req.user && req.user.role && req.user.role.toLowerCase() === 'admin') {
     next();
   } else {
     res.status(403).json({ success: false, error: 'Admin access only' });
