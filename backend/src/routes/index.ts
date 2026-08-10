@@ -11,6 +11,7 @@ import inviteRoutes from './inviteRoutes.js';
 import ragRoutes from './ragRoutes.js';
 import mentorRoutes from './mentorRoutes.js';
 import plagiarismRoutes from './plagiarismRoutes.js';
+import analyticsRoutes from './analyticsRoutes.js';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use('/invites', inviteRoutes);
 router.use('/rag', ragRoutes);
 router.use('/mentors', mentorRoutes);
 router.use('/plagiarism', plagiarismRoutes);
+router.use('/analytics', analyticsRoutes);
 
 // Health check endpoint
 router.get('/health', (_req: Request, res: Response) => {
