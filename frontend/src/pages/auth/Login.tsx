@@ -116,7 +116,7 @@ const Login: React.FC = () => {
           {isAdminLogin ? 'Admin Portal' : 'Welcome back'}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-500 font-medium">
-          {isAdminLogin ? 'Sign in to the admin dashboard' : 'Sign in to your AI Startup Builder account'}
+          {isAdminLogin ? 'Log in to the admin dashboard' : 'Log in to your AI Startup Builder account'}
         </p>
       </div>
 
@@ -190,7 +190,7 @@ const Login: React.FC = () => {
             <button type="submit" disabled={isLoading}
               className="w-full flex justify-center py-4 px-4 rounded-2xl shadow-lg shadow-[#6C4CF1]/20 text-sm font-bold text-white bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] hover:from-[#5B21B6] hover:to-[#4C1D95] disabled:opacity-70 transition-all transform active:scale-[0.98]"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? 'Logging in...' : 'Log in'}
               {!isLoading && <ArrowRight className="ml-2 h-5 w-5" />}
             </button>
           </form>
