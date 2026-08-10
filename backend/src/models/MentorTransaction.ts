@@ -14,6 +14,7 @@ export interface IMentorTransaction extends Document {
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   payoutStatus: 'pending' | 'processing' | 'paid' | 'failed';
   // Denormalized for fast queries
+  mentorName?: string;
   founderName?: string;
   startupName?: string;
   topic?: string;
@@ -65,6 +66,7 @@ const MentorTransactionSchema: Schema = new Schema(
       default: 'pending',
     },
     // Denormalized display fields
+    mentorName: { type: String, default: '' },
     founderName: { type: String, default: '' },
     startupName: { type: String, default: '' },
     topic: { type: String, default: '' },

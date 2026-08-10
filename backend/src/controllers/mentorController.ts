@@ -790,6 +790,7 @@ export const acceptSession = async (req: AuthRequest, res: Response) => {
           const mentorEarnings = Math.round((booking.sessionFee * sharePercent) / 100 * 100) / 100;
           const platformCommission = Math.round((booking.sessionFee * commissionPercent) / 100 * 100) / 100;
 
+          const mentorUser = await User.findById(booking.mentorId);
           const founder = await User.findById(booking.userId);
           const startup = await Startup.findById(booking.startupId);
 
@@ -805,6 +806,7 @@ export const acceptSession = async (req: AuthRequest, res: Response) => {
             platformCommission,
             paymentStatus: 'paid',
             payoutStatus: 'pending',
+            mentorName: mentorUser?.fullName || '',
             founderName: founder?.fullName || '',
             startupName: startup?.startupName || '',
             topic: booking.topic || '',
@@ -870,6 +872,7 @@ export const completeSession = async (req: AuthRequest, res: Response) => {
         const fee = booking.sessionFee || 0;
         const mentorEarnings = Math.round((fee * sharePercent) / 100 * 100) / 100;
         const platformCommission = Math.round((fee * commissionPercent) / 100 * 100) / 100;
+        const mentorUser = await User.findById(booking.mentorId);
         const founder = await User.findById(booking.userId);
         const startup = await Startup.findById(booking.startupId);
         await MentorTransaction.create({
@@ -884,6 +887,7 @@ export const completeSession = async (req: AuthRequest, res: Response) => {
           platformCommission,
           paymentStatus: fee > 0 ? (booking.paymentStatus === 'paid' ? 'paid' : 'pending') : 'paid',
           payoutStatus: 'pending',
+          mentorName: mentorUser?.fullName || '',
           founderName: founder?.fullName || '',
           startupName: startup?.startupName || '',
           topic: booking.topic || '',
