@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Clock, X, MessageSquare, Send, ArrowLeft, CheckCircle, ChevronRight, Users, UserRound, Star, Award, Calendar, CheckCircle2 } from 'lucide-react';
+import { Search, Clock, X, MessageSquare, Send, ArrowLeft, CheckCircle, ChevronRight, Users, UserRound, Star } from 'lucide-react';
 import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDetailsTabs';
 import { getDocuments, addNotification, getStartups, updateStartup } from '../../../utils/localStorageHelper';
-import { getMentorBookings, getMentorSessionReviews } from '../../../utils/mentorApi';
+import { getMentorBookings } from '../../../utils/mentorApi';
 import { useAuth } from '../../../context/AuthContext';
 import { useChat } from '../../../context/ChatContext';
 
@@ -11,12 +11,10 @@ const MentorReviews: React.FC = () => {
   const { user, getAllUsers } = useAuth();
   const { conversations, messages, getOrCreateConversation, sendMessage } = useChat();
   const [searchParams] = useSearchParams();
-  const [mainTab, setMainTab] = useState<'reviews_ratings' | 'startups_review'>('reviews_ratings');
   const [search, setSearch] = useState('');
   const [bookings, setBookings] = useState<any[]>([]);
   const [allStartups, setAllStartups] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
-  const [founderReviews, setFounderReviews] = useState<any[]>([]);
   const [selectedFounder, setSelectedFounder] = useState<any>(null);
   const [selectedStartup, setSelectedStartup] = useState<any>(null);
   const [modalMode, setModalMode] = useState<'review' | 'report' | null>(null);
@@ -40,26 +38,11 @@ const MentorReviews: React.FC = () => {
       setBookings(Array.isArray(bks) ? bks : []);
       setAllStartups(starts);
       setDocuments(docs);
-
-      // Load founder session ratings & reviews from the server
-      try {
-        const reviews = await getMentorSessionReviews().catch(() => []);
-        setFounderReviews(Array.isArray(reviews) ? reviews : []);
-      } catch (e) {
-        setFounderReviews([]);
-      }
     };
     fetchData();
-  }, [user]);
+  }, []);
 
   const allUsers = getAllUsers();
-
-  // Average Rating calculation
-  const avgRating = useMemo(() => {
-    if (founderReviews.length === 0) return 5.0;
-    const sum = founderReviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
-    return (sum / founderReviews.length).toFixed(1);
-  }, [founderReviews]);
 
   // Only founders who selected/booked this mentor appear here.
   const founders = useMemo(() => {
@@ -423,329 +406,231 @@ const MentorReviews: React.FC = () => {
   return (
     <div className="animate-fade-in-up">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Reviews & Ratings</h1>
-        <p className="text-gray-500 mt-1">Manage founder ratings, session reviews, and startup output feedback.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Startups to Review</h1>
+        <p className="text-gray-500 mt-1">Only founders who selected you as their mentor appear here. Select a founder to review their startup output.</p>
       </div>
 
-      {/* Main Tab Switcher */}
-      <div className="flex gap-2 border-b border-gray-200 mb-8">
-        <button
-          onClick={() => setMainTab('reviews_ratings')}
-          className={`pb-3 px-4 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${
-            mainTab === 'reviews_ratings'
-              ? 'border-[#5B21B6] text-[#5B21B6]'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <Star size={16} /> Founder Session Ratings & Reviews ({founderReviews.length})
-        </button>
-        <button
-          onClick={() => setMainTab('startups_review')}
-          className={`pb-3 px-4 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${
-            mainTab === 'startups_review'
-              ? 'border-[#5B21B6] text-[#5B21B6]'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <MessageSquare size={16} /> Startups to Review ({founders.length})
-        </button>
-      </div>
-
-      {/* TAB 1: Founder Session Ratings & Reviews */}
-      {mainTab === 'reviews_ratings' && (
-        <div className="space-y-6">
-          {/* Average Rating Scorecard */}
-          <div className="bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] text-white p-6 rounded-2xl shadow-md flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-purple-200">Overall Mentor Rating</p>
-              <div className="flex items-center gap-3 mt-1">
-                <span className="text-4xl font-black">{avgRating}</span>
-                <div>
-                  <div className="flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} size={18} className={s <= Math.round(Number(avgRating)) ? 'fill-yellow-400 text-yellow-400' : 'text-purple-300'} />
-                    ))}
-                  </div>
-                  <p className="text-xs text-purple-100 font-medium mt-0.5">Based on {founderReviews.length} founder reviews</p>
-                </div>
-              </div>
-            </div>
-            <div className="hidden sm:flex w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-sm items-center justify-center border border-white/20">
-              <Award size={32} className="text-yellow-300" />
+      <div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="flex gap-2 w-full sm:w-auto"></div>
+          <div className="flex gap-3 w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <input 
+                type="text" 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={selectedFounder ? "Search startups..." : "Search founders..."} 
+                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm"
+              />
             </div>
           </div>
+        </div>
 
-          {/* List of Reviews */}
-          {founderReviews.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-              <Star size={40} className="mx-auto text-gray-300 mb-3" />
-              <h3 className="text-lg font-bold text-gray-900 mb-1">No Reviews Received Yet</h3>
-              <p className="text-gray-500 text-sm max-w-sm mx-auto">
-                When founders complete 1:1 sessions with you, their ratings and reviews will appear here.
-              </p>
+        {!selectedFounder ? (
+          founders.length === 0 ? (
+            <div className="text-center p-12 bg-white rounded-xl border border-gray-200 text-gray-500">
+              <Users size={32} className="mx-auto mb-3 text-gray-300" />
+              <p className="font-bold text-gray-700 mb-1">No founders selected you yet</p>
+              <p className="text-sm">When a founder books you as their mentor, their startup will appear here for review.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {founderReviews.map((rev) => (
-                <div key={rev._id || rev.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3 hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white font-bold text-sm">
-                        {(rev.founderName || 'F').charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-gray-900 text-sm">{rev.founderName}</h4>
-                        <p className="text-xs text-gray-500">{rev.startupName || 'Startup'} • {rev.topic || 'Mentoring Session'}</p>
-                      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredFounders.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => { setSelectedFounder(f); setSearch(''); }}
+                  className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md hover:border-[#5B21B6]/30 transition-all text-left group flex flex-col h-full"
+                >
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center font-black text-lg shadow-sm">
+                      {(f.fullName || 'F').charAt(0).toUpperCase()}
                     </div>
-                    <span className="text-xs text-gray-400 font-semibold">{rev.date || 'Recent'}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2 bg-yellow-50/80 px-3 py-1.5 rounded-xl border border-yellow-100 w-fit">
-                    <div className="flex items-center gap-1">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star key={s} size={14} className={s <= rev.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'} />
-                      ))}
+                    <div className="min-w-0">
+                      <h3 className="font-bold text-gray-900 truncate">{f.fullName}</h3>
+                      <p className="text-xs text-gray-500 truncate">{f.email || 'Founder'}</p>
                     </div>
-                    <span className="text-xs font-bold text-gray-900">{rev.rating}/5 Stars</span>
                   </div>
-
-                  {rev.reviewText && (
-                    <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 p-3.5 rounded-xl border border-gray-100 italic">
-                      "{rev.reviewText}"
-                    </p>
-                  )}
-                </div>
+                  <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Star size={14} className="text-[#5B21B6]" />
+                      <span className="font-bold text-gray-900">{f.startups.length}</span>
+                      <span>{f.startups.length === 1 ? 'startup' : 'startups'} to review</span>
+                    </div>
+                    <span className="flex items-center gap-1 text-sm font-bold text-[#5B21B6] group-hover:gap-2 transition-all">
+                      View <ChevronRight size={16} />
+                    </span>
+                  </div>
+                </button>
               ))}
             </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB 2: Startups to Review */}
-      {mainTab === 'startups_review' && (
-        <div>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div className="flex gap-2 w-full sm:w-auto"></div>
-            <div className="flex gap-3 w-full sm:w-auto">
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                <input 
-                  type="text" 
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder={selectedFounder ? "Search startups..." : "Search founders..."} 
-                  className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm"
-                />
-              </div>
-            </div>
-          </div>
-
-          {!selectedFounder ? (
-            founders.length === 0 ? (
-              <div className="text-center p-12 bg-white rounded-xl border border-gray-200 text-gray-500">
-                <Users size={32} className="mx-auto mb-3 text-gray-300" />
-                <p className="font-bold text-gray-700 mb-1">No founders selected you yet</p>
-                <p className="text-sm">When a founder books you as their mentor, their startup will appear here for review.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredFounders.map((f) => (
+          )
+        ) : (
+          <>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-center gap-4">
                   <button
-                    key={f.id}
-                    onClick={() => { setSelectedFounder(f); setSearch(''); }}
-                    className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md hover:border-[#5B21B6]/30 transition-all text-left group flex flex-col h-full"
-                  >
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center font-black text-lg shadow-sm">
-                        {(f.fullName || 'F').charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-gray-900 truncate">{f.fullName}</h3>
-                        <p className="text-xs text-gray-500 truncate">{f.email || 'Founder'}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Star size={14} className="text-[#5B21B6]" />
-                        <span className="font-bold text-gray-900">{f.startups.length}</span>
-                        <span>{f.startups.length === 1 ? 'startup' : 'startups'} to review</span>
-                      </div>
-                      <span className="flex items-center gap-1 text-sm font-bold text-[#5B21B6] group-hover:gap-2 transition-all">
-                        View <ChevronRight size={16} />
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )
-          ) : (
-            <>
-              <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => { setSelectedFounder(null); setSearch(''); }}
-                      className="p-2 hover:bg-gray-100 rounded-full transition-colors shrink-0"
-                      title="Back to founders"
-                    >
-                      <ArrowLeft size={20} className="text-gray-600" />
-                    </button>
-                    <div className="w-12 h-12 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center font-black text-lg shadow-sm">
-                      {(selectedFounder.fullName || 'F').charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                        <UserRound size={18} className="text-[#5B21B6]" /> {selectedFounder.fullName}
-                      </h2>
-                      <p className="text-sm text-gray-500">{selectedFounder.email || 'Founder'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                    <span className="font-bold text-gray-900">{selectedFounder.startups.length}</span>
-                    {selectedFounder.startups.length === 1 ? 'startup' : 'startups'} to review
-                  </div>
-                </div>
-              </div>
-
-              {visibleStartups.length === 0 ? (
-                <div className="text-center p-8 bg-white rounded-xl border border-gray-200 text-gray-500">
-                  No startups match your search.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {visibleStartups.map((startup, idx) => renderStartupCard(startup, idx))}
-                </div>
-              )}
-            </>
-          )}
-
-          {modalMode && selectedStartup && (
-            <div className="fixed inset-0 z-50 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-              <div className="bg-white w-[95%] lg:w-full max-w-[1200px] max-h-[90vh] flex flex-col rounded-[24px] shadow-xl animate-fade-in-up overflow-hidden">
-                <div className="sticky top-0 bg-white border-b border-gray-100 p-8 flex items-center gap-4 shrink-0 z-10">
-                  <button 
-                    onClick={() => { setModalMode(null); setSelectedStartup(null); setFeedback(''); }}
+                    onClick={() => { setSelectedFounder(null); setSearch(''); }}
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors shrink-0"
+                    title="Back to founders"
                   >
                     <ArrowLeft size={20} className="text-gray-600" />
                   </button>
-                  <div className="flex-1">
-                    <h2 className="text-[22px] font-bold text-gray-900">
-                      {modalMode === 'review' ? 'Provide Expert Review' : 'AI Analysis Report'}
-                    </h2>
-                    <p className="text-[15px] text-gray-500 mt-1">{selectedStartup.startupName}</p>
+                  <div className="w-12 h-12 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center font-black text-lg shadow-sm">
+                    {(selectedFounder.fullName || 'F').charAt(0).toUpperCase()}
                   </div>
-                  <button 
-                    onClick={() => { setModalMode(null); setSelectedStartup(null); setFeedback(''); }}
-                    className="p-2.5 hover:bg-gray-100 rounded-full transition-colors shrink-0"
-                  >
-                    <X size={20} className="text-gray-500" />
-                  </button>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                      <UserRound size={18} className="text-[#5B21B6]" /> {selectedFounder.fullName}
+                    </h2>
+                    <p className="text-sm text-gray-500">{selectedFounder.email || 'Founder'}</p>
+                  </div>
                 </div>
-                
-                <div className="p-8 overflow-y-auto flex-1">
-                  {modalMode === 'report' ? (
-                    <div className="space-y-8">
-                      {documents.filter(d => d.startupId === selectedStartup.startupId && d.sharedWith?.includes('mentor')).length > 0 && (
-                        <div className="bg-purple-50 rounded-2xl p-6 border border-purple-100">
-                          <h3 className="text-lg font-bold text-gray-900 mb-4">Shared Documents</h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {documents.filter(d => d.startupId === selectedStartup.startupId && d.sharedWith?.includes('mentor')).map((doc: any) => (
-                              <div key={doc.id} className="bg-white p-4 rounded-xl border border-gray-200 flex justify-between items-center hover:shadow-md transition-shadow">
-                                <div>
-                                  <p className="font-bold text-sm text-gray-800 line-clamp-1">{doc.fileName}</p>
-                                  <p className="text-xs text-gray-500 mt-0.5">{doc.category} • {doc.fileSize}</p>
-                                </div>
-                                <button onClick={() => window.alert(`Downloading ${doc.fileName}...`)} className="px-3 py-1.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white text-xs font-bold rounded-lg transition-colors">
-                                  Download
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <SharedStartupDetailsTabs startupData={selectedStartup} />
-                      
-                      <div className="pt-6 mt-6 border-t border-gray-100 flex justify-between gap-3">
-                        <button 
-                          onClick={() => { setModalMode(null); setSelectedStartup(null); setFeedback(''); }}
-                          className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-sm transition-colors flex items-center"
-                        >
-                          <ArrowLeft size={16} className="mr-2" /> Back
-                        </button>
-                        <button 
-                          onClick={() => setModalMode('review')}
-                          className="px-6 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-lg font-bold text-sm transition-colors shadow-sm flex items-center"
-                        >
-                          <MessageSquare size={16} className="mr-2" /> Provide Review
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
-                        <p className="text-sm text-gray-700 italic border-l-2 border-[#5B21B6] pl-3">"{selectedStartup.startupIdea}"</p>
-                      </div>
-                      
-                      <div className="mb-2">
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Mentor Rating</label>
-                        <div className="flex gap-3">
-                          {['Good', 'Average', 'Bad'].map((r) => (
-                            <button
-                              key={r}
-                              onClick={() => setRating(r as any)}
-                              className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all ${
-                                rating === r 
-                                  ? r === 'Good' ? 'bg-green-500 text-white border-green-500 shadow-md' :
-                                    r === 'Average' ? 'bg-yellow-500 text-white border-yellow-500 shadow-md' :
-                                    'bg-red-500 text-white border-red-500 shadow-md'
-                                  : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                              }`}
-                            >
-                              {r}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                          <MessageSquare size={16} className="text-[#5B21B6]" /> 
-                          Your Feedback & Recommendations 
-                          {rating === 'Good' ? <span className="text-gray-400 font-normal text-xs">(Optional)</span> : <span className="text-red-500 font-normal text-xs">* Required</span>}
-                        </label>
-                        <textarea 
-                          value={feedback}
-                          onChange={(e) => setFeedback(e.target.value)}
-                          placeholder="Write your expert advice, actionable steps, and general feedback for the founder..."
-                          className="w-full h-40 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5B21B6] focus:border-transparent text-sm resize-none transition-shadow"
-                        />
-                      </div>
-                      <div className="flex justify-end gap-3 pt-2">
-                        <button 
-                          onClick={() => { setModalMode(null); setSelectedStartup(null); setFeedback(''); setRating(null); }}
-                          className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-sm transition-colors"
-                        >
-                          Cancel
-                        </button>
-                        <button 
-                          onClick={handleReviewSubmit}
-                          disabled={!rating || (rating !== 'Good' && !feedback)}
-                          className="flex items-center px-6 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] disabled:opacity-50 text-white rounded-lg font-bold text-sm transition-colors shadow-sm"
-                        >
-                          <Send size={16} className="mr-2" /> Submit Review
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                  <span className="font-bold text-gray-900">{selectedFounder.startups.length}</span>
+                  {selectedFounder.startups.length === 1 ? 'startup' : 'startups'} to review
                 </div>
               </div>
             </div>
-          )}
-        </div>
-      )}
+
+            {visibleStartups.length === 0 ? (
+              <div className="text-center p-8 bg-white rounded-xl border border-gray-200 text-gray-500">
+                No startups match your search.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {visibleStartups.map((startup, idx) => renderStartupCard(startup, idx))}
+              </div>
+            )}
+          </>
+        )}
+
+        {modalMode && selectedStartup && (
+          <div className="fixed inset-0 z-50 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white w-[95%] lg:w-full max-w-[1200px] max-h-[90vh] flex flex-col rounded-[24px] shadow-xl animate-fade-in-up overflow-hidden">
+              <div className="sticky top-0 bg-white border-b border-gray-100 p-8 flex items-center gap-4 shrink-0 z-10">
+                <button 
+                  onClick={() => { setModalMode(null); setSelectedStartup(null); setFeedback(''); }}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors shrink-0"
+                >
+                  <ArrowLeft size={20} className="text-gray-600" />
+                </button>
+                <div className="flex-1">
+                  <h2 className="text-[22px] font-bold text-gray-900">
+                    {modalMode === 'review' ? 'Provide Expert Review' : 'AI Analysis Report'}
+                  </h2>
+                  <p className="text-[15px] text-gray-500 mt-1">{selectedStartup.startupName}</p>
+                </div>
+                <button 
+                  onClick={() => { setModalMode(null); setSelectedStartup(null); setFeedback(''); }}
+                  className="p-2.5 hover:bg-gray-100 rounded-full transition-colors shrink-0"
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
+              
+              <div className="p-8 overflow-y-auto flex-1">
+                {modalMode === 'report' ? (
+                  <div className="space-y-8">
+                    {documents.filter(d => d.startupId === selectedStartup.startupId && d.sharedWith?.includes('mentor')).length > 0 && (
+                      <div className="bg-purple-50 rounded-2xl p-6 border border-purple-100">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Shared Documents</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {documents.filter(d => d.startupId === selectedStartup.startupId && d.sharedWith?.includes('mentor')).map((doc: any) => (
+                            <div key={doc.id} className="bg-white p-4 rounded-xl border border-gray-200 flex justify-between items-center hover:shadow-md transition-shadow">
+                              <div>
+                                <p className="font-bold text-sm text-gray-800 line-clamp-1">{doc.fileName}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{doc.category} • {doc.fileSize}</p>
+                              </div>
+                              <button onClick={() => window.alert(`Downloading ${doc.fileName}...`)} className="px-3 py-1.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white text-xs font-bold rounded-lg transition-colors">
+                                Download
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <SharedStartupDetailsTabs startupData={selectedStartup} />
+                    
+                    <div className="pt-6 mt-6 border-t border-gray-100 flex justify-between gap-3">
+                      <button 
+                        onClick={() => { setModalMode(null); setSelectedStartup(null); setFeedback(''); }}
+                        className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-sm transition-colors flex items-center"
+                      >
+                        <ArrowLeft size={16} className="mr-2" /> Back
+                      </button>
+                      <button 
+                        onClick={() => setModalMode('review')}
+                        className="px-6 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-lg font-bold text-sm transition-colors shadow-sm flex items-center"
+                      >
+                        <MessageSquare size={16} className="mr-2" /> Provide Review
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
+                      <p className="text-sm text-gray-700 italic border-l-2 border-[#5B21B6] pl-3">"{selectedStartup.startupIdea}"</p>
+                    </div>
+                    
+                    <div className="mb-2">
+                      <label className="block text-sm font-bold text-gray-700 mb-2">Mentor Rating</label>
+                      <div className="flex gap-3">
+                        {['Good', 'Average', 'Bad'].map((r) => (
+                          <button
+                            key={r}
+                            onClick={() => setRating(r as any)}
+                            className={`flex-1 py-2 rounded-xl text-sm font-bold border transition-all ${
+                              rating === r 
+                                ? r === 'Good' ? 'bg-green-500 text-white border-green-500 shadow-md' :
+                                  r === 'Average' ? 'bg-yellow-500 text-white border-yellow-500 shadow-md' :
+                                  'bg-red-500 text-white border-red-500 shadow-md'
+                                : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            {r}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                        <MessageSquare size={16} className="text-[#5B21B6]" /> 
+                        Your Feedback & Recommendations 
+                        {rating === 'Good' ? <span className="text-gray-400 font-normal text-xs">(Optional)</span> : <span className="text-red-500 font-normal text-xs">* Required</span>}
+                      </label>
+                      <textarea 
+                        value={feedback}
+                        onChange={(e) => setFeedback(e.target.value)}
+                        placeholder="Write your expert advice, actionable steps, and general feedback for the founder..."
+                        className="w-full h-40 p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#5B21B6] focus:border-transparent text-sm resize-none transition-shadow"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-3 pt-2">
+                      <button 
+                        onClick={() => { setModalMode(null); setSelectedStartup(null); setFeedback(''); setRating(null); }}
+                        className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-sm transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handleReviewSubmit}
+                        disabled={!rating || (rating !== 'Good' && !feedback)}
+                        className="flex items-center px-6 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] disabled:opacity-50 text-white rounded-lg font-bold text-sm transition-colors shadow-sm"
+                      >
+                        <Send size={16} className="mr-2" /> Submit Review
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
