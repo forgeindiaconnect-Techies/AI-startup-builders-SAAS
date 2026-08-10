@@ -75,7 +75,7 @@ const FounderMarketResearch: React.FC<Props> = ({ startupData = {} }) => {
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <h2 className="text-base font-bold text-gray-900 mb-4 flex items-center gap-2"><Target size={16} className="text-[#5B21B6]" /> Competitor Analysis</h2>
-              <p className="text-sm text-gray-700 leading-relaxed mb-6">{mr?.competitorAnalysis || 'N/A'}</p>
+              <p className="text-sm text-gray-700 leading-relaxed mb-6">{formatRupee(mr?.competitorAnalysis) || 'N/A'}</p>
               
               <h3 className="text-sm font-bold text-gray-900 mb-2">Customer Segments</h3>
               <ul className="space-y-2">
@@ -102,7 +102,7 @@ const FounderMarketResearch: React.FC<Props> = ({ startupData = {} }) => {
                   <h3 className="text-sm font-bold text-gray-900 mb-2">Pricing Suggestions</h3>
                   <ul className="space-y-2">
                     {getArray(mr?.pricingSuggestions).map((ins: string, i: number) => (
-                      <li key={i} className="text-sm text-gray-600 leading-relaxed">• {ins}</li>
+                      <li key={i} className="text-sm text-gray-600 leading-relaxed">• {formatRupee(ins)}</li>
                     ))}
                   </ul>
               </div>
