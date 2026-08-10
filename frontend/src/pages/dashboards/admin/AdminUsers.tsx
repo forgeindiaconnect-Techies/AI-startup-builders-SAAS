@@ -82,6 +82,8 @@ const AdminUsers: React.FC = () => {
     location: '',
     sessionDuration: '45',
     sessionFee: '0',
+    mentorSharePercentage: 80,
+    platformCommissionPercentage: 20,
     isActive: true,
     availableDays: [1, 2, 3, 4, 5, 6],
     availableSlots: DEFAULT_AVAIL_SLOTS,
@@ -177,6 +179,8 @@ const AdminUsers: React.FC = () => {
       location: u.location || '',
       sessionDuration: String(u.sessionDuration || 45),
       sessionFee: String(u.sessionFee ?? 0),
+      mentorSharePercentage: u.mentorSharePercentage ?? 80,
+      platformCommissionPercentage: u.platformCommissionPercentage ?? 20,
       isActive: u.isActive !== false,
       availableDays: [1, 2, 3, 4, 5, 6],
       availableSlots: DEFAULT_AVAIL_SLOTS,
@@ -205,6 +209,8 @@ const AdminUsers: React.FC = () => {
         location: full.location || '',
         sessionDuration: String(full.sessionDuration || 45),
         sessionFee: String(full.sessionFee ?? 0),
+        mentorSharePercentage: full.mentorSharePercentage ?? 80,
+        platformCommissionPercentage: full.platformCommissionPercentage ?? 20,
         isActive: full.isActive !== false,
         availableDays: daySet.size ? [...daySet].sort() : [1, 2, 3, 4, 5, 6],
         availableSlots: slotSet.size ? TIME_SLOTS.filter((t) => slotSet.has(t.value)).map((t) => t.value) : DEFAULT_AVAIL_SLOTS,
@@ -216,7 +222,7 @@ const AdminUsers: React.FC = () => {
     }
   };
 
-  const updateForm = (key: keyof typeof mentorForm, value: string | boolean) => {
+  const updateForm = (key: keyof typeof mentorForm, value: string | boolean | number) => {
     setMentorForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -244,6 +250,12 @@ const AdminUsers: React.FC = () => {
       showToast('Full name is required.', 'error');
       return;
     }
+    const share = Number(mentorForm.mentorSharePercentage) || 0;
+    const commission = Number(mentorForm.platformCommissionPercentage) || 0;
+    if (Math.abs(share + commission - 100) > 0.01) {
+      showToast(`Mentor Share (${share}%) + Platform Commission (${commission}%) must equal 100%.`, 'error');
+      return;
+    }
     setEditSaving(true);
     try {
       const expertiseStr = mentorForm.expertise.split(',').map(s => s.trim()).filter(Boolean).join(', ');
@@ -261,6 +273,8 @@ const AdminUsers: React.FC = () => {
         location: mentorForm.location.trim(),
         sessionDuration: Number(mentorForm.sessionDuration) || 45,
         sessionFee: Number(mentorForm.sessionFee) || 0,
+        mentorSharePercentage: share,
+        platformCommissionPercentage: commission,
         isActive: mentorForm.isActive,
         availableDays: mentorForm.availableDays,
         availableSlots: mentorForm.availableSlots,
@@ -934,6 +948,52 @@ const AdminUsers: React.FC = () => {
                       className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
                     />
                     <p className="text-[11px] text-gray-400 mt-1">Shown to founders on the Mentors dashboard and used for booking.</p>
+                  </div>
+
+                  {/* Revenue / Commission Split */}
+                  <div className="sm:col-span-2 bg-purple-50/70 border border-purple-100 rounded-xl p-4">
+                    <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Revenue Split (Commission Settings)</label>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <label className="block text-[11px] font-semibold text-gray-500 mb-1">Mentor Share (%)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={mentorForm.mentorSharePercentage}
+                          onChange={(e) => {
+                            const val = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                            setMentorForm((prev) => ({
+                              ...prev,
+                              mentorSharePercentage: val,
+                              platformCommissionPercentage: Math.round((100 - val) * 100) / 100,
+                            }));
+                          }}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-[#5B21B6] focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20"
+                        />
+                      </div>
+                      <span className="text-gray-400 font-bold text-base mt-4">+</span>
+                      <div className="flex-1">
+                        <label className="block text-[11px] font-semibold text-gray-500 mb-1">Platform Commission (%)</label>
+                        <input
+                          type="number"
+                          value={mentorForm.platformCommissionPercentage}
+                          readOnly
+                          className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm font-bold text-amber-600 cursor-not-allowed"
+                        />
+                      </div>
+                      <span className="text-gray-400 font-bold text-base mt-4">=</span>
+                      <div className="mt-4 text-sm font-black text-emerald-600">
+                        {mentorForm.mentorSharePercentage + mentorForm.platformCommissionPercentage}%
+                      </div>
+                    </div>
+                    {Number(mentorForm.sessionFee) > 0 && (
+                      <div className="mt-3 text-xs bg-white p-2.5 rounded-lg border border-purple-100 flex flex-wrap gap-4 text-gray-700 font-medium">
+                        <span>Fee: <strong className="text-gray-900">₹{Number(mentorForm.sessionFee)}</strong></span>
+                        <span>Mentor Gets (80% default): <strong className="text-emerald-700">₹{((Number(mentorForm.sessionFee) * mentorForm.mentorSharePercentage) / 100).toFixed(2)}</strong></span>
+                        <span>Platform Cut: <strong className="text-amber-700">₹{((Number(mentorForm.sessionFee) * mentorForm.platformCommissionPercentage) / 100).toFixed(2)}</strong></span>
+                      </div>
+                    )}
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Expertise (comma separated)</label>
