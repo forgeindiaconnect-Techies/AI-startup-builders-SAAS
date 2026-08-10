@@ -836,13 +836,6 @@ const AdminStartups: React.FC = () => {
                         <Eye size={14} /> View Details
                       </button>
                       <button 
-                        onClick={() => { setSelectedStartup(s); setViewMode('funding'); }}
-                        className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
-                        title="Funding Offers"
-                      >
-                        <IndianRupee size={14} /> Funding
-                      </button>
-                      <button 
                         onClick={() => handleDelete(s.startupId || s.id)}
                         className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
                         title="Delete Startup"
