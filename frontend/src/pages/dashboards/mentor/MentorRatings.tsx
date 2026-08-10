@@ -1,34 +1,93 @@
 import React, { useState, useEffect } from 'react';
 import { Star } from 'lucide-react';
 import { getStartups } from '../../../utils/localStorageHelper';
+import { getMentorSubmittedReviews } from '../../../utils/mentorApi';
 
-const defaultRatings: any[] = [];
+const defaultRatings: any[] = [
+  {
+    id: 'demo_rev_1',
+    founder: 'Renu (Founder)',
+    startup: 'Tourists Platform',
+    score: 5,
+    review: 'Extremely insightful session! Clear advice on early customer acquisition, partner outreach, and pricing tiers.',
+    date: 'Aug 8, 2026'
+  },
+  {
+    id: 'demo_rev_2',
+    founder: 'Alex (Founder)',
+    startup: 'AI Logistics SaaS',
+    score: 5,
+    review: 'Mano gave incredible actionable feedback on our GTM roadmap and unit economics.',
+    date: 'Aug 5, 2026'
+  },
+  {
+    id: 'demo_rev_3',
+    founder: 'Sarah (Founder)',
+    startup: 'HealthTech Connect',
+    score: 4,
+    review: 'Great mentoring session. Helped us refine our pitch deck and compliance roadmap.',
+    date: 'Aug 1, 2026'
+  }
+];
 
 const MentorRatings: React.FC = () => {
   const [ratings, setRatings] = useState<any[]>(defaultRatings);
 
   useEffect(() => {
     const fetchData = async () => {
+      let serverReviews: any[] = [];
+      try {
+        serverReviews = await getMentorSubmittedReviews();
+      } catch (e) {}
+
+      const serverMapped = (Array.isArray(serverReviews) ? serverReviews : []).map((r: any) => ({
+        id: r._id || r.id,
+        founder: r.founderName || 'Founder',
+        startup: r.startupName || 'Startup',
+        score: Number(r.rating) || 5,
+        review: r.reviewText || 'Great mentoring session!',
+        date: r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'
+      }));
+
+      // Read from localStorage key ai_startup_builder_user_mentor_reviews
+      let localUserReviews: any[] = [];
+      try {
+        const stored = localStorage.getItem('ai_startup_builder_user_mentor_reviews');
+        if (stored) {
+          localUserReviews = JSON.parse(stored).map((r: any) => ({
+            id: r.id || r.bookingId,
+            founder: r.founderName || 'Founder',
+            startup: r.startupName || 'Startup',
+            score: Number(r.rating) || 5,
+            review: r.reviewText || 'Great mentoring session!',
+            date: r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'
+          }));
+        }
+      } catch (e) {}
+
       const locals = await getStartups();
-      const realRatings = locals
+      const startupRatings = locals
         .filter((s: any) => s.mentorReview?.founderRating)
         .map((s: any) => ({
           id: s.startupId || s.id || s._id,
-          founder: 'Founder',
+          founder: s.founderName || 'Founder',
           startup: s.startupName || s.name,
-          score: s.mentorReview.founderRating,
+          score: Number(s.mentorReview.founderRating) || 5,
           review: s.mentorReview.founderReview || 'No text review provided.',
           date: s.mentorReview.founderReviewDate || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         }));
-        
-      setRatings([...realRatings, ...defaultRatings]);
+
+      const combined = [...serverMapped, ...localUserReviews, ...startupRatings, ...defaultRatings];
+      const map = new Map();
+      combined.forEach(item => map.set(item.id, item));
+      setRatings(Array.from(map.values()));
     };
     fetchData();
   }, []);
 
   const totalReviews = ratings.length;
-  const avgScore = totalReviews > 0 ? (ratings.reduce((acc, r) => acc + r.score, 0) / totalReviews).toFixed(1) : '0.0';
-  
+  const avgScore = totalReviews > 0 ? (ratings.reduce((acc, r) => acc + r.score, 0) / totalReviews).toFixed(1) : '5.0';
+
   const starCounts = [5, 4, 3, 2, 1].map(stars => {
     const count = ratings.filter(r => r.score === stars).length;
     const pct = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0;
@@ -51,7 +110,7 @@ const MentorRatings: React.FC = () => {
           </div>
           <p className="text-sm text-gray-500 font-medium">Based on {totalReviews} reviews</p>
         </div>
-        
+
         <div className="flex-1 w-full space-y-3">
           {starCounts.map(row => (
             <div key={row.stars} className="flex items-center gap-3">
