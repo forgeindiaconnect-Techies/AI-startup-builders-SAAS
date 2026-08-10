@@ -4,10 +4,13 @@ import { useAuth } from '../../context/AuthContext';
 import { Rocket, IndianRupee, Check, X, Users, Cpu, ShoppingBag, ShieldCheck, Building2, Trash2 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, getAllUsers } = useAuth();
   const navigate = useNavigate();
   const [pendingMentors, setPendingMentors] = useState<any[]>([]);
   const [pendingStartups, setPendingStartups] = useState<any[]>([]);
+  const [allStartups, setAllStartups] = useState<any[]>([]);
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [paymentsList, setPaymentsList] = useState<any[]>([]);
 
   const loadMentors = () => {
     try {
@@ -24,45 +27,10 @@ const AdminDashboard: React.FC = () => {
             bio: p.bio || ''
           }));
       }
-
-      const initialSamplePending: any[] = [];
-
-      const combined = [...loaded];
-      initialSamplePending.forEach(s => {
-        if (!combined.some(c => c.name === s.name || c.id === s.id)) {
-          combined.push(s);
-        }
-      });
-      setPendingMentors(combined);
+      setPendingMentors(loaded);
     } catch (e) {
       setPendingMentors([]);
     }
-  };
-
-  useEffect(() => {
-    loadMentors();
-    loadStartups();
-    window.addEventListener('storage', () => { loadMentors(); loadStartups(); });
-    window.addEventListener('mentor_profile_updated', loadMentors);
-    return () => {
-      window.removeEventListener('storage', () => { loadMentors(); loadStartups(); });
-      window.removeEventListener('mentor_profile_updated', loadMentors);
-    };
-  }, []);
-
-  const handleQuickApprove = (id: any, name: string) => {
-    try {
-      const stored = localStorage.getItem('ai_startup_builder_mentor_profiles');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const updated = parsed.map((p: any) => (p.id === id || p.name === name) ? { ...p, verificationStatus: 'Verified' } : p);
-        localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(updated));
-        window.dispatchEvent(new Event('storage'));
-        window.dispatchEvent(new Event('mentor_profile_updated'));
-      }
-    } catch (e) {}
-    setPendingMentors(prev => prev.filter(m => m.id !== id && m.name !== name));
-    window.alert(`✅ ${name} has been approved as a Mentor!`);
   };
 
   const loadStartups = () => {
@@ -84,6 +52,84 @@ const AdminDashboard: React.FC = () => {
     } catch (e) {
       setPendingStartups([]);
     }
+  };
+
+  const loadDashboardData = async () => {
+    loadMentors();
+    loadStartups();
+
+    // 1. Users list
+    try {
+      const uList = getAllUsers() || [];
+      setUsersList(uList);
+    } catch (e) {
+      setUsersList([]);
+    }
+
+    // 2. Startups list
+    try {
+      const fetchedStartups = await getStartups();
+      const localKeys = Object.keys(localStorage);
+      const localStartups: any[] = [];
+      localKeys.forEach(k => {
+        if (k.startsWith('startup_')) {
+          try {
+            const parsed = JSON.parse(localStorage.getItem(k) || '');
+            if (parsed && (parsed.startupId || parsed.id || parsed._id)) {
+              localStartups.push(parsed);
+            }
+          } catch (e) {}
+        }
+      });
+      const combined = [...fetchedStartups];
+      localStartups.forEach(ls => {
+        const id = ls.startupId || ls.id || ls._id;
+        if (!combined.some(s => (s.startupId || s.id || s._id) === id)) {
+          combined.push(ls);
+        }
+      });
+      setAllStartups(combined);
+    } catch (e) {
+      setAllStartups([]);
+    }
+
+    // 3. Payments list
+    try {
+      const storedPayments = localStorage.getItem('ai_startup_builder_payments');
+      const storedSubs = localStorage.getItem('ai_startup_builder_subs_v2');
+      const storedTrans = localStorage.getItem('ai_startup_builder_trans_v2');
+      const parsedPayments = storedPayments ? JSON.parse(storedPayments) : [];
+      const parsedSubs = storedSubs ? JSON.parse(storedSubs) : [];
+      const parsedTrans = storedTrans ? JSON.parse(storedTrans) : [];
+      setPaymentsList([...parsedPayments, ...parsedSubs, ...parsedTrans]);
+    } catch (e) {
+      setPaymentsList([]);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+    window.addEventListener('storage', loadDashboardData);
+    window.addEventListener('mentor_profile_updated', loadDashboardData);
+    return () => {
+      window.removeEventListener('storage', loadDashboardData);
+      window.removeEventListener('mentor_profile_updated', loadDashboardData);
+    };
+  }, []);
+
+  const handleQuickApprove = (id: any, name: string) => {
+    try {
+      const stored = localStorage.getItem('ai_startup_builder_mentor_profiles');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const updated = parsed.map((p: any) => (p.id === id || p.name === name) ? { ...p, verificationStatus: 'Verified' } : p);
+        localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(updated));
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new Event('mentor_profile_updated'));
+      }
+    } catch (e) {}
+    setPendingMentors(prev => prev.filter(m => m.id !== id && m.name !== name));
+    window.alert(`✅ ${name} has been approved as a Mentor!`);
   };
 
   const handleApproveStartup = (id: string, name: string) => {
@@ -151,11 +197,48 @@ const AdminDashboard: React.FC = () => {
 
       setPendingMentors([]);
       setPendingStartups([]);
+      setAllStartups([]);
+      setUsersList([]);
+      setPaymentsList([]);
       window.dispatchEvent(new Event('storage'));
       window.alert('All platform data has been cleared successfully.');
     }
   };
 
+  // ── Calculated Real Platform Analytics ──────────────────────────────────────
+  const totalUsersCount = usersList.length;
+  const foundersCount = usersList.filter(u => u.role === 'founder').length;
+  const customersCount = usersList.filter(u => u.role === 'customer' || u.role === 'mentor' || u.role === 'investor').length;
+  const adminsCount = usersList.filter(u => u.role === 'admin').length;
+
+  const calculateTotalAiOutputs = () => {
+    let count = 0;
+    allStartups.forEach(s => {
+      const ai = s.aiGenerated || {};
+      if (ai.ideaAnalysis || s.startupIdea) count++;
+      if (ai.branding || s.branding) count++;
+      if (ai.businessPlan || s.businessPlan) count++;
+      if (ai.pitchDeck || s.pitchDeck) count++;
+      if (ai.marketResearch || s.marketResearch) count++;
+      if (ai.legal || s.legal) count++;
+      if (ai.aiReport || s.aiReport) count++;
+      if (ai.ideaValidation) count++;
+      if (ai.competitorAnalysis) count++;
+      if (ai.mvpPlan) count++;
+      if (ai.financialPlan) count++;
+      if (ai.gtmStrategy) count++;
+    });
+    return count;
+  };
+  const totalAiOutputsCount = calculateTotalAiOutputs();
+
+  const businessPlanOutputs = allStartups.filter(s => s.aiGenerated?.businessPlan || s.businessPlan).length;
+  const pitchDeckOutputs = allStartups.filter(s => s.aiGenerated?.pitchDeck || s.pitchDeck).length;
+  const financialOutputs = allStartups.filter(s => s.aiGenerated?.financialPlan || s.aiGenerated?.financialProjection).length;
+  const marketResearchOutputs = allStartups.filter(s => s.aiGenerated?.marketResearch || s.aiGenerated?.competitorAnalysis).length;
+
+  const totalRevenue = paymentsList.reduce((sum, p) => sum + (Number(p.amount) || Number(p.price) || 0), 0);
+  const approvedStartupsCount = allStartups.filter(s => s.approvalStatus === 'approved' || s.status === 'generated').length;
 
   return (
     <div className="animate-fade-in-up pb-10">
@@ -163,7 +246,7 @@ const AdminDashboard: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Welcome, {user?.fullName || 'Admin'}</h1>
-            <p className="text-gray-500 mt-1">Manage users, monitor AI usage, and view platform analytics.</p>
+            <p className="text-gray-500 mt-1">Manage users, monitor AI usage, and view real-time platform analytics.</p>
           </div>
           <button
             onClick={handleClearAllData}
@@ -174,13 +257,13 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Top 5 Stats Cards ── */}
+      {/* ── Real Top 5 Stats Cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {[
           {
             label: 'Total Users',
-            value: '2,840',
-            change: '+12% this month',
+            value: totalUsersCount.toLocaleString(),
+            change: 'Real-time Users',
             icon: Users,
             iconBg: 'bg-violet-50',
             iconColor: 'text-[#5B21B6]',
@@ -189,8 +272,8 @@ const AdminDashboard: React.FC = () => {
           },
           {
             label: 'Total AI Outputs',
-            value: '4,000+',
-            change: '99.8% Uptime',
+            value: totalAiOutputsCount.toLocaleString(),
+            change: 'Live System',
             icon: Cpu,
             iconBg: 'bg-purple-50',
             iconColor: 'text-purple-600',
@@ -199,8 +282,8 @@ const AdminDashboard: React.FC = () => {
           },
           {
             label: 'Founders',
-            value: '1,240',
-            change: '+8% this month',
+            value: foundersCount.toLocaleString(),
+            change: 'Active Founders',
             icon: Rocket,
             iconBg: 'bg-blue-50',
             iconColor: 'text-blue-600',
@@ -209,8 +292,8 @@ const AdminDashboard: React.FC = () => {
           },
           {
             label: 'Customers',
-            value: '980',
-            change: '+15% this month',
+            value: customersCount.toLocaleString(),
+            change: 'Mentors & Investors',
             icon: ShoppingBag,
             iconBg: 'bg-amber-50',
             iconColor: 'text-amber-600',
@@ -219,8 +302,8 @@ const AdminDashboard: React.FC = () => {
           },
           {
             label: 'Admins',
-            value: '12',
-            change: 'Super & Sub-Admins',
+            value: adminsCount.toLocaleString(),
+            change: 'System Admins',
             icon: ShieldCheck,
             iconBg: 'bg-emerald-50',
             iconColor: 'text-emerald-600',
@@ -261,16 +344,16 @@ const AdminDashboard: React.FC = () => {
               <p className="text-xs text-gray-500 mt-0.5">Highest rated AI generator models based on founder completion rate & satisfaction.</p>
             </div>
             <span className="px-3 py-1 bg-purple-50 text-[#5B21B6] border border-purple-100 rounded-full text-xs font-extrabold">
-              ⚡ 96.4% Avg Accuracy
+              ⚡ Live Metrics
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { title: 'AI Business Plan Generator', score: '98.8% Success Rate', usage: '1,420 outputs this month', rating: '4.9 ★', badge: 'Top Performer', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-              { title: 'AI Pitch Deck Builder', score: '97.2% Success Rate', usage: '980 outputs this month', rating: '4.9 ★', badge: 'Most Active', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-              { title: 'Financial Projections & Valuation', score: '95.5% Success Rate', usage: '740 outputs this month', rating: '4.8 ★', badge: 'High Value', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-              { title: 'Market Research & Competitor AI', score: '94.1% Success Rate', usage: '860 outputs this month', rating: '4.8 ★', badge: 'Fastest Growth', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+              { title: 'AI Business Plan Generator', score: 'High Usage', usage: `${businessPlanOutputs} outputs generated`, rating: '4.9 ★', badge: 'Top Performer', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+              { title: 'AI Pitch Deck Builder', score: 'Active', usage: `${pitchDeckOutputs} outputs generated`, rating: '4.9 ★', badge: 'Most Active', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+              { title: 'Financial Projections & Valuation', score: 'High Value', usage: `${financialOutputs} outputs generated`, rating: '4.8 ★', badge: 'High Value', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+              { title: 'Market Research & Competitor AI', score: 'Fast Growth', usage: `${marketResearchOutputs} outputs generated`, rating: '4.8 ★', badge: 'Fastest Growth', color: 'bg-amber-50 text-amber-700 border-amber-200' },
             ].map((item, idx) => (
               <div key={idx} className="bg-gray-50/70 border border-gray-100 rounded-xl p-4 hover:border-purple-200 transition-all">
                 <div className="flex justify-between items-start mb-2">
@@ -296,31 +379,31 @@ const AdminDashboard: React.FC = () => {
               </h2>
               <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">Live Status</span>
             </div>
-            <p className="text-xs text-gray-500 mb-5">Comprehensive platform performance summary for the current month.</p>
+            <p className="text-xs text-gray-500 mb-5">Comprehensive platform performance summary calculated from live database.</p>
 
             <div className="space-y-4">
               <div className="flex justify-between items-center p-3 bg-emerald-50/60 rounded-xl border border-emerald-100">
                 <div>
                   <span className="text-xs text-emerald-800 font-bold block">Monthly Recurring Revenue</span>
-                  <span className="text-lg font-black text-emerald-950">₹4,85,200</span>
+                  <span className="text-lg font-black text-emerald-950">₹{totalRevenue.toLocaleString('en-IN')}</span>
                 </div>
-                <span className="text-xs font-black text-emerald-700 bg-white px-2 py-1 rounded-lg shadow-sm">+18.4% vs last mo</span>
+                <span className="text-xs font-black text-emerald-700 bg-white px-2 py-1 rounded-lg shadow-sm">Live Payments</span>
               </div>
 
               <div className="flex justify-between items-center p-3 bg-purple-50/60 rounded-xl border border-purple-100">
                 <div>
                   <span className="text-xs text-purple-800 font-bold block">AI Generations Executed</span>
-                  <span className="text-lg font-black text-purple-950">4,000+ Tasks</span>
+                  <span className="text-lg font-black text-purple-950">{totalAiOutputsCount.toLocaleString()} Tasks</span>
                 </div>
-                <span className="text-xs font-black text-[#5B21B6] bg-white px-2 py-1 rounded-lg shadow-sm">99.8% Uptime</span>
+                <span className="text-xs font-black text-[#5B21B6] bg-white px-2 py-1 rounded-lg shadow-sm">Real-time</span>
               </div>
 
               <div className="flex justify-between items-center p-3 bg-blue-50/60 rounded-xl border border-blue-100">
                 <div>
                   <span className="text-xs text-blue-800 font-bold block">Startups Funded / Approved</span>
-                  <span className="text-lg font-black text-blue-950">64 Active Deals</span>
+                  <span className="text-lg font-black text-blue-950">{approvedStartupsCount} Active Deals</span>
                 </div>
-                <span className="text-xs font-black text-blue-700 bg-white px-2 py-1 rounded-lg shadow-sm">12 New this mo</span>
+                <span className="text-xs font-black text-blue-700 bg-white px-2 py-1 rounded-lg shadow-sm">Approved</span>
               </div>
             </div>
           </div>
@@ -389,9 +472,21 @@ const AdminDashboard: React.FC = () => {
           </div>
           
           <div className="space-y-4">
-            <div className="p-6 text-center text-gray-400 text-sm italic border border-dashed border-gray-200 rounded-xl">
-              No upgrades yet.
-            </div>
+            {paymentsList.length > 0 ? (
+              paymentsList.slice(0, 5).map((p, idx) => (
+                <div key={idx} className="flex justify-between items-center p-3.5 border border-gray-100 rounded-xl hover:bg-gray-50/50 transition-colors">
+                  <div>
+                    <p className="font-bold text-gray-900 text-sm">{p.userName || p.userEmail || p.planName || 'Subscription Upgrade'}</p>
+                    <p className="text-xs text-gray-500">{p.plan || p.planType || 'Pro Plan'} • {p.date || new Date().toLocaleDateString()}</p>
+                  </div>
+                  <span className="font-extrabold text-emerald-600 text-sm">₹{(Number(p.amount) || Number(p.price) || 999).toLocaleString('en-IN')}</span>
+                </div>
+              ))
+            ) : (
+              <div className="p-6 text-center text-gray-400 text-sm italic border border-dashed border-gray-200 rounded-xl">
+                No upgrades yet.
+              </div>
+            )}
           </div>
         </div>
       </div>
