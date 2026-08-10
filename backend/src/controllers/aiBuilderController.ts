@@ -212,6 +212,124 @@ AI JSON output structure:
     "scalabilityScore": 0,
     "fundingReadiness": "",
     "mentorReviewSummary": ""
+  },
+  "ideaValidation": {
+    "validationScore": 85,
+    "problemStrength": "High",
+    "marketNeed": "Strong Demand",
+    "customerDemand": "High Willingness to Pay",
+    "solutionFeasibility": "High Feasibility",
+    "businessPotential": "Strong Margin Potential",
+    "keyRisks": [],
+    "strengths": [],
+    "weaknesses": [],
+    "validationSummary": "",
+    "recommendedImprovements": [],
+    "finalRecommendation": "Strong"
+  },
+  "competitorAnalysis": {
+    "directCompetitors": [
+      {
+        "name": "",
+        "product": "",
+        "pricing": "",
+        "keyFeatures": [],
+        "targetAudience": "",
+        "strengths": [],
+        "weaknesses": [],
+        "marketPositioning": ""
+      }
+    ],
+    "indirectCompetitors": [
+      {
+        "name": "",
+        "product": "",
+        "pricing": "",
+        "keyFeatures": [],
+        "targetAudience": "",
+        "strengths": [],
+        "weaknesses": [],
+        "marketPositioning": ""
+      }
+    ],
+    "comparisonMatrix": [
+      {
+        "feature": "",
+        "myStartup": "",
+        "competitor1": "",
+        "competitor2": ""
+      }
+    ],
+    "marketGaps": [],
+    "differentiationOpportunities": [],
+    "uniqueSellingProposition": "",
+    "competitiveAdvantages": []
+  },
+  "mvpPlan": {
+    "mvpConcept": "",
+    "coreFeatures": [],
+    "mustHaveFeatures": [],
+    "niceToHaveFeatures": [],
+    "userRoles": [],
+    "userFlow": [
+      { "step": 1, "title": "", "description": "" }
+    ],
+    "requiredTechStack": {
+      "frontend": [],
+      "backend": [],
+      "database": [],
+      "cloudServices": []
+    },
+    "developmentPhases": [
+      { "phase": "Phase 1: Foundation", "duration": "4 Weeks", "focus": "" }
+    ],
+    "mvpRoadmap": [
+      { "milestone": "", "targetWeek": "Week 2" }
+    ],
+    "estimatedComplexity": "Medium",
+    "futureFeatures": []
+  },
+  "financialPlan": {
+    "initialStartupCost": "₹5,00,000",
+    "developmentCost": "₹2,50,000",
+    "marketingCost": "₹1,00,000",
+    "operationalExpenses": "₹1,50,000",
+    "monthlyExpenses": "₹80,000",
+    "revenueModel": "",
+    "suggestedPricing": "",
+    "revenueProjection": "",
+    "customerAcquisitionAssumptions": "",
+    "breakEvenEstimate": "Month 8",
+    "year1Projection": { "revenue": "₹24,00,000", "expenses": "₹14,00,000", "netProfit": "₹10,00,000" },
+    "year3Projection": { "revenue": "₹75,00,000", "expenses": "₹35,00,000", "netProfit": "₹40,00,000" },
+    "year5Projection": { "revenue": "₹2,00,00,000", "expenses": "₹80,00,000", "netProfit": "₹1,20,00,000" }
+  },
+  "gtmStrategy": {
+    "targetAudience": "",
+    "idealCustomerProfile": "",
+    "customerPersonas": [
+      { "name": "", "role": "", "painPoints": [], "goal": "", "channels": [] }
+    ],
+    "positioningStrategy": "",
+    "valueProposition": "",
+    "marketingChannels": [],
+    "customerAcquisitionStrategy": "",
+    "launchStrategy": {
+      "preLaunch": [],
+      "launchDay": [],
+      "postLaunch": []
+    },
+    "first100CustomersStrategy": "",
+    "socialMediaStrategy": [],
+    "contentStrategy": [],
+    "growthStrategy": "",
+    "keyMarketingKPIs": [],
+    "thirtyDayLaunchPlan": [
+      { "week": "Week 1", "goal": "", "keyTasks": [] }
+    ],
+    "ninetyDayRoadmap": [
+      { "month": "Month 1", "focus": "", "keyMilestones": [] }
+    ]
   }
 }`;
 

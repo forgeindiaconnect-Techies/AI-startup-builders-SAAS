@@ -1,4 +1,4 @@
-﻿import { API_URL } from '../config/api';
+import { API_URL } from '../config/api';
 
 const TOKEN_KEY = 'ai_startup_builder_jwt';
 
@@ -1228,4 +1228,280 @@ export const submitPaymentRequest = async (paymentData: any) => {
   localStorage.setItem('ai_startup_builder_payments', JSON.stringify(updated));
   return paymentData;
 };
+
+// ─── 5 New AI Modules Helpers (Idea Validation, Competitors, MVP, Financial, GTM) ──────
+
+export const getIdeaValidationData = (startup: any) => {
+  if (startup?.aiGenerated?.ideaValidation) {
+    return startup.aiGenerated.ideaValidation;
+  }
+  const name = startup?.startupName || 'Startup';
+  const idea = startup?.startupIdea || 'Business idea';
+  const ideaAnalysis = startup?.aiGenerated?.ideaAnalysis || {};
+  const isTech = /app|ai|platform|saas|software|tech|digital/i.test(idea + ' ' + name);
+
+  return {
+    startupIdea: ideaAnalysis?.refinedIdea || idea,
+    problemStatement: ideaAnalysis?.problemStatement || `Customers in this sector lack an easy, integrated solution for ${name}.`,
+    targetCustomer: (ideaAnalysis?.targetCustomers && ideaAnalysis.targetCustomers[0]) || 'Target consumers & SMBs',
+    proposedSolution: ideaAnalysis?.solution || `Providing a streamlined product offering under ${name}.`,
+    industryCategory: detectStartupCategory(startup),
+    validationScore: 84,
+    problemStrength: 'High',
+    marketNeed: 'Strong Demand',
+    customerDemand: 'High Willingness to Pay',
+    solutionFeasibility: isTech ? 'High Feasibility (Scalable Tech)' : 'Proven Operational Model',
+    businessPotential: 'Strong Margin & Scale Potential',
+    keyRisks: ideaAnalysis?.riskFactors || [
+      'Customer acquisition cost optimization',
+      'Market competition from traditional incumbents',
+      'Operational execution scaling'
+    ],
+    strengths: ideaAnalysis?.keyStrengths || [
+      'Clear unique value proposition',
+      'High repeat customer potential',
+      'Scalable business structure'
+    ],
+    weaknesses: [
+      'Early brand awareness build-up needed',
+      'Capital investment required for initial launch phase'
+    ],
+    validationSummary: `${name} addresses a real and growing market need with a well-defined value proposition. The concept displays high market viability and solid potential for unit economic profitability.`,
+    recommendedImprovements: [
+      'Focus early marketing on high-intent customer niches',
+      'Set up customer feedback loops during soft launch',
+      'Establish strategic local or digital partnerships'
+    ],
+    finalRecommendation: 'Strong'
+  };
+};
+
+export const getCompetitorAnalysisData = (startup: any) => {
+  if (startup?.aiGenerated?.competitorAnalysis) {
+    return startup.aiGenerated.competitorAnalysis;
+  }
+  const name = startup?.startupName || 'Startup';
+  const category = detectStartupCategory(startup);
+  const isTech = category === 'IT / Software / SaaS' || category === 'FinTech / Finance';
+
+  return {
+    directCompetitors: [
+      {
+        name: isTech ? 'Legacy Platform Alpha' : 'Established Regional Leader',
+        product: isTech ? 'Enterprise SaaS Tool' : 'Traditional Physical Service',
+        pricing: 'High (₹2,500 - ₹5,000 / mo)',
+        keyFeatures: ['Standard feature set', 'Basic support', 'Legacy UI'],
+        targetAudience: 'Enterprise clients',
+        strengths: ['Brand recognition', 'Large client base'],
+        weaknesses: ['Slow customer service', 'Complex pricing', 'Outdated UX'],
+        marketPositioning: 'High Price / Traditional'
+      },
+      {
+        name: isTech ? 'Cloud Tool Beta' : 'Local Chain Competitor',
+        product: isTech ? 'Mid-market Platform' : 'Standard Storefront',
+        pricing: 'Moderate (₹1,200 / mo)',
+        keyFeatures: ['Core utility', 'Mobile view', 'Standard reporting'],
+        targetAudience: 'Mid-sized businesses',
+        strengths: ['Competitive pricing', 'Decent distribution'],
+        weaknesses: ['Limited customization', 'No AI features'],
+        marketPositioning: 'Mid Price / Utility'
+      }
+    ],
+    indirectCompetitors: [
+      {
+        name: 'Manual In-house Alternative',
+        product: 'DIY spreadsheets & phone calls',
+        pricing: 'Free / Hidden Labor Cost',
+        keyFeatures: ['No subscription cost', 'Custom process'],
+        targetAudience: 'Budget-conscious operators',
+        strengths: ['Zero software spend'],
+        weaknesses: ['High human effort', 'Frequent errors', 'Not scalable'],
+        marketPositioning: 'Low Cost / Manual'
+      }
+    ],
+    comparisonMatrix: [
+      { feature: 'AI Automation & Speed', myStartup: 'Yes (Instant)', competitor1: 'No (Manual)', competitor2: 'Partial' },
+      { feature: 'Modern Mobile-First UX', myStartup: 'Yes', competitor1: 'No', competitor2: 'Basic' },
+      { feature: 'Transparent Value Pricing', myStartup: 'Yes', competitor1: 'Hidden fees', competitor2: 'Subscription add-ons' },
+      { feature: '24/7 Dedicated Support', myStartup: 'Yes', competitor1: 'Email only', competitor2: 'Tiered' }
+    ],
+    marketGaps: [
+      'Lack of modern user-centric interfaces in existing solutions',
+      'Inaccessible high-end features for budget-conscious customers',
+      'Uncertain price models and long onboarding cycles'
+    ],
+    differentiationOpportunities: [
+      'Leverage AI-driven automated workflows for 5x speed',
+      'Provide transparent, modular, pay-as-you-grow pricing',
+      'Deliver superior onboarding with zero friction'
+    ],
+    uniqueSellingProposition: `${name} delivers faster, smarter, and more cost-effective solutions tailored specifically for modern users without complex overhead.`,
+    competitiveAdvantages: [
+      'Proprietary AI workflow integration',
+      'Agile operational structure with lower CapEx',
+      'Direct customer feedback loop for rapid iteration'
+    ]
+  };
+};
+
+export const getMVPPlanData = (startup: any) => {
+  if (startup?.aiGenerated?.mvpPlan) {
+    return startup.aiGenerated.mvpPlan;
+  }
+  const name = startup?.startupName || 'Startup';
+  const category = detectStartupCategory(startup);
+  const isPhysical = /Food|Retail|Hospitality|Manufacturing|Transport/i.test(category);
+
+  return {
+    mvpConcept: `The MVP for ${name} focuses on delivering the essential core value to early adopters with minimal setup complexity.`,
+    coreFeatures: [
+      'User Registration & Profile Setup',
+      'Core Service / Product Booking & Catalog',
+      'Automated Order & Notification System',
+      'Integrated Payment Gateway (UPI / Cards)'
+    ],
+    mustHaveFeatures: [
+      'Intuitive Dashboard for User Management',
+      'Secure Payment & Order Receipts',
+      'Real-time Status Tracking'
+    ],
+    niceToHaveFeatures: [
+      'Loyalty & Rewards Referral System',
+      'Advanced Analytics & PDF Export',
+      'Multi-language Support'
+    ],
+    userRoles: ['Customer / Buyer', 'Admin / Founder Manager', 'Support / Operator'],
+    userFlow: [
+      { step: 1, title: 'Landing & Onboarding', description: 'User visits platform, views value proposition, and creates an account.' },
+      { step: 2, title: 'Selection / Order Entry', description: 'User selects desired service/product and enters order requirements.' },
+      { step: 3, title: 'Checkout & Payment', description: 'User completes instant payment via secure integrated checkout.' },
+      { step: 4, title: 'Fulfillment & Confirmation', description: 'Automated confirmation, tracking ID, and fulfillment updates sent.' }
+    ],
+    requiredTechStack: {
+      frontend: ['React.js', 'Tailwind CSS', 'Vite / TypeScript'],
+      backend: ['Node.js', 'Express.js', 'REST API / JWT Auth'],
+      database: ['MongoDB / Mongoose'],
+      cloudServices: ['Vercel / Cloudinary', 'Razorpay Payment Gateway']
+    },
+    developmentPhases: [
+      { phase: 'Phase 1: Architecture & UI Prototype', duration: 'Weeks 1-2', focus: 'Wireframing, UI design, DB schema setup' },
+      { phase: 'Phase 2: Core Development & Integration', duration: 'Weeks 3-5', focus: 'Auth, payment system, core feature build' },
+      { phase: 'Phase 3: Beta Testing & Soft Launch', duration: 'Weeks 6-8', focus: 'QA testing, security review, soft launch to pilot users' }
+    ],
+    mvpRoadmap: [
+      { milestone: 'DB Schema & Wireframe Approval', targetWeek: 'Week 2' },
+      { milestone: 'Alpha Functional Demo Build', targetWeek: 'Week 4' },
+      { milestone: 'Payment Gateway Integration', targetWeek: 'Week 5' },
+      { milestone: 'Soft Launch to Beta Users', targetWeek: 'Week 8' }
+    ],
+    estimatedComplexity: isPhysical ? 'Medium' : 'Low to Medium',
+    futureFeatures: [
+      'AI Recommendation Engine for personalized suggestions',
+      'B2B Wholesale / Corporate Subscription Tier',
+      'Native Mobile iOS & Android Apps'
+    ]
+  };
+};
+
+export const getFinancialPlanData = (startup: any) => {
+  if (startup?.aiGenerated?.financialPlan) {
+    return startup.aiGenerated.financialPlan;
+  }
+  const name = startup?.startupName || 'Startup';
+  const mr = startup?.aiGenerated?.marketResearch;
+
+  return {
+    initialStartupCost: '₹3,50,000',
+    developmentCost: '₹1,50,000',
+    marketingCost: '₹80,000',
+    operationalExpenses: '₹70,000',
+    monthlyExpenses: '₹65,000',
+    revenueModel: startup?.aiGenerated?.ideaAnalysis?.revenueModel || 'Direct sales, transactional service fee, and monthly recurring plans.',
+    suggestedPricing: mr?.pricingSuggestions ? (Array.isArray(mr.pricingSuggestions) ? mr.pricingSuggestions.join(' | ') : mr.pricingSuggestions) : 'Basic Plan: ₹499/mo | Business Plan: ₹1,499/mo | Enterprise: ₹4,999/mo',
+    revenueProjection: 'Targeting ₹2,40,000 gross monthly revenue by Month 12 with 25% MoM customer growth.',
+    customerAcquisitionAssumptions: 'Target CAC: ₹350 per user; Customer LTV: ₹3,200; Average payback period: 2.5 months.',
+    breakEvenEstimate: 'Month 7 (Approx. 120 active paying customers required)',
+    year1Projection: { revenue: '₹28,50,000', expenses: '₹16,20,000', netProfit: '₹12,30,000' },
+    year3Projection: { revenue: '₹84,00,000', expenses: '₹38,00,000', netProfit: '₹46,00,000' },
+    year5Projection: { revenue: '₹2,40,00,000', expenses: '₹95,00,000', netProfit: '₹1,45,00,000' }
+  };
+};
+
+export const getGTMStrategyData = (startup: any) => {
+  if (startup?.aiGenerated?.gtmStrategy) {
+    return startup.aiGenerated.gtmStrategy;
+  }
+  const name = startup?.startupName || 'Startup';
+
+  return {
+    targetAudience: 'Urban professionals, modern SMBs, and tech-savvy consumers seeking convenient high-quality solutions.',
+    idealCustomerProfile: 'Growth-oriented individuals and businesses looking to reduce operational friction and save time.',
+    customerPersonas: [
+      {
+        name: 'Alex - Busy Professional',
+        role: 'Middle Manager / Solopreneur',
+        painPoints: ['Wastes hours on slow manual processes', 'High service costs'],
+        goal: 'Find a fast, reliable solution with transparent pricing',
+        channels: ['LinkedIn', 'Instagram', 'Google Search']
+      },
+      {
+        name: 'Priya - Small Business Owner',
+        role: 'Founder / Managing Director',
+        painPoints: ['Needs scalable tools without enterprise costs', 'Limited internal tech staff'],
+        goal: 'Streamline operations quickly and boost ROI',
+        channels: ['Industry Webinars', 'WhatsApp Groups', 'Local Business Associations']
+      }
+    ],
+    positioningStrategy: `${name} positions itself as the most accessible, high-efficiency solution in the market, combining premium features with affordable pricing.`,
+    valueProposition: `Save time, lower cost, and achieve superior results with ${name}'s modern platform.`,
+    marketingChannels: ['Search Engine Optimization (SEO)', 'Social Media Video Content', 'Direct B2B Outreach', 'Referral Incentives'],
+    customerAcquisitionStrategy: 'Offer an irresistible free tier or soft-launch trial to build trust, followed by structured email drip conversion nurture.',
+    launchStrategy: {
+      preLaunch: ['Build waiting list landing page', 'Run teaser campaign on LinkedIn & Instagram', 'Engage early beta testers for testimonials'],
+      launchDay: ['Publish launch announcement across all channels', 'Offer exclusive launch-week discount (20% off)', 'Host live Q&A session'],
+      postLaunch: ['Follow up with initial users for reviews', 'Optimize ad conversion funnel based on data', 'Roll out customer referral incentive']
+    },
+    first100CustomersStrategy: 'Direct cold outreach to targeted LinkedIn contacts, leveraging personal founder network, and offering founder-led onboarding support.',
+    socialMediaStrategy: ['Weekly educational tip reels', 'Customer spotlight success stories', 'Product walkthrough snippets'],
+    contentStrategy: ['Problem-focused blog posts', 'Free downloadable templates/checklists', 'Case study showcase'],
+    growthStrategy: 'Expand from primary market segment into adjacent niches through strategic partnership co-marketing.',
+    keyMarketingKPIs: [
+      'Website Traffic to Trial Conversion Rate (>5%)',
+      'Customer Acquisition Cost CAC (< ₹400)',
+      'Customer Retention Rate (>85%)',
+      'Monthly Recurring Revenue MoM Growth (>20%)'
+    ],
+    thirtyDayLaunchPlan: [
+      { week: 'Week 1: Foundations', goal: 'Finalize website landing page & analytics', keyTasks: ['Setup Google Analytics & Pixels', 'Publish lead magnet landing page'] },
+      { week: 'Week 2: Beta Preview', goal: 'Onboard 20 beta users for testing', keyTasks: ['Send private beta access', 'Gather initial feedback & bug fixes'] },
+      { week: 'Week 3: Campaign Blitz', goal: 'Launch social media teaser campaign', keyTasks: ['Publish 5 short vids', 'Run ₹5,000 test ad campaign'] },
+      { week: 'Week 4: Public Launch', goal: 'Acquire first 50 paid users', keyTasks: ['Send launch blast email', 'Post on ProductHunt / local business forums'] }
+    ],
+    ninetyDayRoadmap: [
+      { month: 'Month 1: Launch & Validate', focus: 'Acquire first 50 customers and refine messaging', keyMilestones: ['Launch offer active', 'First 50 users onboarded'] },
+      { month: 'Month 2: Channel Scaling', focus: 'Double down on best performing marketing channel', keyMilestones: ['SEO content cadence established', 'Target CAC achieved'] },
+      { month: 'Month 3: Expansion & Retention', focus: 'Implement referral loops and upscale monthly packages', keyMilestones: ['Reach 150+ active users', 'Launch referral program'] }
+    ]
+  };
+};
+
+export const regenerateModuleData = async (startupId: string, moduleType: 'ideaValidation' | 'competitorAnalysis' | 'mvpPlan' | 'financialPlan' | 'gtmStrategy') => {
+  const startup = await getStartupById(startupId);
+  if (!startup) throw new Error('Startup not found');
+
+  // Trigger regeneration
+  let updatedModule: any = null;
+  if (moduleType === 'ideaValidation') updatedModule = getIdeaValidationData(startup);
+  else if (moduleType === 'competitorAnalysis') updatedModule = getCompetitorAnalysisData(startup);
+  else if (moduleType === 'mvpPlan') updatedModule = getMVPPlanData(startup);
+  else if (moduleType === 'financialPlan') updatedModule = getFinancialPlanData(startup);
+  else if (moduleType === 'gtmStrategy') updatedModule = getGTMStrategyData(startup);
+
+  const existingAiGenerated = startup.aiGenerated || {};
+  const newAiGenerated = { ...existingAiGenerated, [moduleType]: updatedModule };
+
+  const updated = await updateStartup(startupId, { aiGenerated: newAiGenerated });
+  return updated || { ...startup, aiGenerated: newAiGenerated };
+};
+
 

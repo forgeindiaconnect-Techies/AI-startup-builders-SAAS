@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
-import { Lightbulb, Sparkles, FileText, BarChart3, Search, Scale, ClipboardList, MessageSquare, Lock } from 'lucide-react';
+import { Lightbulb, Sparkles, FileText, BarChart3, Search, Scale, ClipboardList, MessageSquare, Lock, ShieldCheck, Target, Layers, IndianRupee, Send } from 'lucide-react';
 import FounderIdeaGenerator from '../../pages/dashboards/founder/FounderIdeaGenerator';
+import FounderIdeaValidation from '../../pages/dashboards/founder/FounderIdeaValidation';
+import FounderCompetitorAnalysis from '../../pages/dashboards/founder/FounderCompetitorAnalysis';
+import FounderMVPPlanner from '../../pages/dashboards/founder/FounderMVPPlanner';
+import FounderFinancialPlan from '../../pages/dashboards/founder/FounderFinancialPlan';
+import FounderGTMStrategy from '../../pages/dashboards/founder/FounderGTMStrategy';
 import FounderBranding from '../../pages/dashboards/founder/FounderBranding';
 import FounderBusinessPlan from '../../pages/dashboards/founder/FounderBusinessPlan';
 import FounderPitchDeck from '../../pages/dashboards/founder/FounderPitchDeck';
@@ -15,14 +20,19 @@ interface Props {
 }
 
 const tabs = [
-  { id: 'idea',     label: 'AI Idea Generator',    icon: Lightbulb,    component: FounderIdeaGenerator },
-  { id: 'branding', label: 'Logo & Branding',      icon: Sparkles,     component: FounderBranding, plans: ['pro', 'premium_startup_builder'] },
-  { id: 'plan',     label: 'Business Plan',         icon: FileText,     component: FounderBusinessPlan },
-  { id: 'pitch',    label: 'Pitch Deck',             icon: BarChart3,    component: FounderPitchDeck },
-  { id: 'market',   label: 'Market Research',        icon: Search,       component: FounderMarketResearch },
-  { id: 'legal',    label: 'Legal & Documents',      icon: Scale,        component: FounderLegalDocs },
-  { id: 'reports',  label: 'AI Reports',             icon: ClipboardList,component: FounderReports },
-  { id: 'chat',     label: 'AI Chat',                icon: MessageSquare,component: FounderAIChat, plans: ['pro', 'premium_startup_builder'] },
+  { id: 'idea',                label: 'AI Idea Generator',    icon: Lightbulb,     component: FounderIdeaGenerator },
+  { id: 'idea_validation',     label: 'Idea Validation',      icon: ShieldCheck,   component: FounderIdeaValidation },
+  { id: 'competitor_analysis', label: 'Competitor Analysis',  icon: Target,        component: FounderCompetitorAnalysis },
+  { id: 'mvp_planner',         label: 'MVP Planner',          icon: Layers,        component: FounderMVPPlanner },
+  { id: 'financial_plan',      label: 'Financial Plan',       icon: IndianRupee,   component: FounderFinancialPlan },
+  { id: 'gtm_strategy',        label: 'Go-To-Market Strategy', icon: Send,         component: FounderGTMStrategy },
+  { id: 'branding',            label: 'Logo & Branding',      icon: Sparkles,      component: FounderBranding, plans: ['pro', 'premium_startup_builder'] },
+  { id: 'plan',                label: 'Business Plan',        icon: FileText,      component: FounderBusinessPlan },
+  { id: 'pitch',               label: 'Pitch Deck',           icon: BarChart3,     component: FounderPitchDeck },
+  { id: 'market',              label: 'Market Research',      icon: Search,        component: FounderMarketResearch },
+  { id: 'legal',               label: 'Legal & Documents',    icon: Scale,         component: FounderLegalDocs },
+  { id: 'reports',             label: 'AI Reports',           icon: ClipboardList, component: FounderReports },
+  { id: 'chat',                label: 'AI Chat',              icon: MessageSquare, component: FounderAIChat, plans: ['pro', 'premium_startup_builder'] },
 ];
 
 const SharedStartupDetailsTabs: React.FC<Props> = ({ startupData }) => {

@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Lightbulb, FileText, BarChart3, Search, ClipboardList, MessageSquare, RefreshCw, Play, ChevronDown, Download, File as FileIcon, Sparkles, Scale, Lock, ShieldCheck } from 'lucide-react';
+import { Lightbulb, FileText, BarChart3, Search, ClipboardList, MessageSquare, RefreshCw, Play, ChevronDown, Download, File as FileIcon, Sparkles, Scale, Lock, ShieldCheck, Target, Layers, IndianRupee, Send } from 'lucide-react';
 import FounderIdeaGenerator from './FounderIdeaGenerator';
+import FounderIdeaValidation from './FounderIdeaValidation';
+import FounderCompetitorAnalysis from './FounderCompetitorAnalysis';
+import FounderMVPPlanner from './FounderMVPPlanner';
+import FounderFinancialPlan from './FounderFinancialPlan';
+import FounderGTMStrategy from './FounderGTMStrategy';
 import FounderBranding from './FounderBranding';
 import FounderBusinessPlan from './FounderBusinessPlan';
 import FounderPitchDeck from './FounderPitchDeck';
@@ -14,15 +19,20 @@ import PlanGate, { usePlanAccess } from '../../../components/shared/PlanGate';
 import { getStartups, getStartupById, updateStartup, generateStartupFromBackend, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument, detectStartupCategory, generateCategoryDocuments, sanitizeStartupId } from '../../../utils/localStorageHelper';
 
 const tabs = [
-  { id: 'idea',       label: 'AI Idea Generator', icon: Lightbulb,     component: FounderIdeaGenerator },
-  { id: 'branding',   label: 'Logo & Branding',   icon: Sparkles,      component: FounderBranding, plans: ['pro', 'premium_startup_builder'] },
-  { id: 'plan',       label: 'Business Plan',     icon: FileText,      component: FounderBusinessPlan },
-  { id: 'pitch',      label: 'Pitch Deck',        icon: BarChart3,     component: FounderPitchDeck },
-  { id: 'market',     label: 'Market Research',   icon: Search,        component: FounderMarketResearch },
-  { id: 'legal',      label: 'Legal & Documents', icon: Scale,         component: FounderLegalDocs },
-  { id: 'reports',    label: 'AI Reports',        icon: ClipboardList, component: FounderReports },
-  { id: 'chat',       label: 'AI Chat',           icon: MessageSquare, component: FounderAIChat, plans: ['pro', 'premium_startup_builder'] },
-  { id: 'plagiarism', label: 'Plagiarism Check',  icon: ShieldCheck,   component: FounderPlagiarism },
+  { id: 'idea',                label: 'AI Idea Generator',    icon: Lightbulb,     component: FounderIdeaGenerator },
+  { id: 'idea_validation',     label: 'Idea Validation',      icon: ShieldCheck,   component: FounderIdeaValidation },
+  { id: 'competitor_analysis', label: 'Competitor Analysis',  icon: Target,        component: FounderCompetitorAnalysis },
+  { id: 'mvp_planner',         label: 'MVP Planner',          icon: Layers,        component: FounderMVPPlanner },
+  { id: 'financial_plan',      label: 'Financial Plan',       icon: IndianRupee,   component: FounderFinancialPlan },
+  { id: 'gtm_strategy',        label: 'Go-To-Market Strategy', icon: Send,         component: FounderGTMStrategy },
+  { id: 'branding',            label: 'Logo & Branding',      icon: Sparkles,      component: FounderBranding, plans: ['pro', 'premium_startup_builder'] },
+  { id: 'plan',                label: 'Business Plan',        icon: FileText,      component: FounderBusinessPlan },
+  { id: 'pitch',               label: 'Pitch Deck',           icon: BarChart3,     component: FounderPitchDeck },
+  { id: 'market',              label: 'Market Research',      icon: Search,        component: FounderMarketResearch },
+  { id: 'legal',               label: 'Legal & Documents',    icon: Scale,         component: FounderLegalDocs },
+  { id: 'reports',             label: 'AI Reports',           icon: ClipboardList, component: FounderReports },
+  { id: 'chat',                label: 'AI Chat',              icon: MessageSquare, component: FounderAIChat, plans: ['pro', 'premium_startup_builder'] },
+  { id: 'plagiarism',          label: 'Plagiarism Check',     icon: ShieldCheck,   component: FounderPlagiarism },
 ];
 
 const FounderAIBuilder: React.FC = () => {

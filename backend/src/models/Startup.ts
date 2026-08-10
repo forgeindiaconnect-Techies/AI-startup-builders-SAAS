@@ -12,6 +12,11 @@ export interface IStartup extends Document {
     marketResearch?: any;
     aiReport?: any;
     logo?: any;
+    ideaValidation?: any;
+    competitorAnalysis?: any;
+    mvpPlan?: any;
+    financialPlan?: any;
+    gtmStrategy?: any;
   };
   logo?: any;
   isSavedToMyStartups: boolean;
@@ -47,7 +52,12 @@ const StartupSchema: Schema = new Schema(
       pitchDeck: [{ type: Schema.Types.Mixed }],
       marketResearch: { type: Schema.Types.Mixed },
       aiReport: { type: Schema.Types.Mixed },
-      logo: { type: Schema.Types.Mixed, default: null }
+      logo: { type: Schema.Types.Mixed, default: null },
+      ideaValidation: { type: Schema.Types.Mixed },
+      competitorAnalysis: { type: Schema.Types.Mixed },
+      mvpPlan: { type: Schema.Types.Mixed },
+      financialPlan: { type: Schema.Types.Mixed },
+      gtmStrategy: { type: Schema.Types.Mixed }
     },
     logo: {
       type: Schema.Types.Mixed,
