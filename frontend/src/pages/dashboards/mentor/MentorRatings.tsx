@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star } from 'lucide-react';
 import { getStartups } from '../../../utils/localStorageHelper';
-import { getMentorSubmittedReviews } from '../../../utils/mentorApi';
+import { getMentorSessionReviews } from '../../../utils/mentorApi';
 
 const defaultRatings: any[] = [
   {
@@ -37,7 +37,7 @@ const MentorRatings: React.FC = () => {
     const fetchData = async () => {
       let serverReviews: any[] = [];
       try {
-        serverReviews = await getMentorSubmittedReviews();
+        serverReviews = await getMentorSessionReviews();
       } catch (e) {}
 
       const serverMapped = (Array.isArray(serverReviews) ? serverReviews : []).map((r: any) => ({
