@@ -30,6 +30,8 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; role?: string; subscriptionStatus?: string }>;
   logout: () => void;
+  sendResetOTP: (email: string) => Promise<{ success: boolean; error?: string }>;
+  resetPassword: (email: string, otp: string, password: string) => Promise<{ success: boolean; error?: string; role?: string; subscriptionStatus?: string }>;
   checkAuth: () => Promise<{ subscriptionStatus?: string; role?: string } | null>;
   getToken: () => string | null;
   getTokenRole: () => string | null;
@@ -267,6 +269,48 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     usersFetchBlockedRef.current = false;
   };
 
+  const sendResetOTP = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (data.success) {
+        return { success: true };
+      }
+      return { success: false, error: data.error || 'Failed to send reset code' };
+    } catch {
+      return { success: false, error: 'Network error. Please try again.' };
+    }
+  };
+
+  const resetPassword = async (email: string, otp: string, password: string): Promise<{ success: boolean; error?: string; role?: string; subscriptionStatus?: string }> => {
+    try {
+      const res = await fetch(`${API_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, password })
+      });
+      const data = await res.json();
+
+      if (data.success && data.token) {
+        setToken(data.token);
+        usersFetchBlockedRef.current = false;
+        const authData = await checkAuth();
+        return {
+          success: true,
+          role: authData?.role || data.user?.role,
+          subscriptionStatus: authData?.subscriptionStatus || data.user?.subscriptionStatus
+        };
+      }
+      return { success: false, error: data.error || 'Failed to reset password' };
+    } catch {
+      return { success: false, error: 'Network error. Please try again.' };
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -275,6 +319,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       isLoading,
       login,
       logout,
+      sendResetOTP,
+      resetPassword,
       checkAuth,
       getToken,
       getTokenRole,

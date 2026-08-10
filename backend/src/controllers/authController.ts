@@ -5,10 +5,12 @@ import { User } from '../models/User.js';
 import { OTP } from '../models/OTP.js';
 import { Subscription } from '../models/Subscription.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
-import { sendOTPEmail } from '../utils/emailService.js';
+import { sendOTPEmail, sendPasswordResetEmail } from '../utils/emailService.js';
 
 // In-memory OTP store for fallback (when MongoDB OTP lookup fails)
 const demoEmailOtpStore: Record<string, { otp: string; expiresAt: number }> = {};
+// In-memory store for password reset OTPs (separate from signup OTPs)
+const resetOtpStore: Record<string, { otp: string; expiresAt: number }> = {};
 
 // Helper to generate JWT
 const generateToken = (id: string, role: string) => {
@@ -297,6 +299,149 @@ export const loginUser = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error in login:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
+// 7. Forgot password - Step 1: send reset OTP to the user's email
+export const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'No account found with this email' });
+    }
+
+    if (user.status === 'suspended') {
+      return res.status(403).json({ success: false, error: 'Account suspended' });
+    }
+
+    // Generate 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
+
+    // Save OTP to DB (best-effort)
+    try {
+      await OTP.deleteMany({ email: email.toLowerCase(), type: 'email' });
+      await OTP.create({
+        email: email.toLowerCase(),
+        otp: otpCode,
+        type: 'email',
+        expiresAt
+      });
+    } catch (dbErr) {
+      console.warn('⚠️ DB OTP save failed (proceeding with in-memory fallback):', (dbErr as Error).message);
+    }
+
+    // In-memory fallback so reset still works even if Mongo is down
+    resetOtpStore[email.toLowerCase()] = { otp: otpCode, expiresAt: expiresAt.getTime() };
+
+    // Send the reset OTP as a real email notification
+    let emailSent = false;
+    try {
+      emailSent = await sendPasswordResetEmail(email.toLowerCase(), otpCode);
+    } catch (emailErr) {
+      console.warn('⚠️ Email delivery failed:', (emailErr as Error).message);
+    }
+
+    // Do NOT expose the OTP in the response — it must only arrive via email
+    if (!emailSent) {
+      return res.status(500).json({ success: false, error: 'Failed to send the reset email. Please try again.' });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Reset code sent to your email'
+    });
+  } catch (error) {
+    console.error('Error in forgotPassword:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
+// 8. Reset password - Step 2: verify OTP, update password, and auto-login
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { email, otp, password } = req.body;
+    if (!email || !otp || !password) {
+      return res.status(400).json({ success: false, error: 'Email, OTP and new password are required' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, error: 'Password must be at least 8 characters' });
+    }
+
+    // Find valid OTP (best-effort DB lookup, then in-memory fallback)
+    let validOtp = null;
+    try {
+      validOtp = await OTP.findOne({
+        email: email.toLowerCase(),
+        otp,
+        type: 'email',
+        expiresAt: { $gt: new Date() }
+      });
+    } catch (dbErr) {
+      console.warn('⚠️ DB OTP check failed (using in-memory fallback):', (dbErr as Error).message);
+    }
+
+    // Fallback: check in-memory store
+    if (!validOtp) {
+      const stored = resetOtpStore[email.toLowerCase()];
+      if (stored && stored.otp === otp && stored.expiresAt > Date.now()) {
+        delete resetOtpStore[email.toLowerCase()];
+        validOtp = { _id: 'inmemory' } as any;
+      }
+    }
+
+    if (!validOtp) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'No account found with this email' });
+    }
+
+    if (user.status === 'suspended') {
+      return res.status(403).json({ success: false, error: 'Account suspended' });
+    }
+
+    // Hash new password and save
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(password, salt);
+    user.lastLoginAt = new Date();
+    await user.save();
+
+    // Delete the used OTP (only if it was found in DB)
+    if (validOtp) {
+      await OTP.deleteOne({ _id: validOtp._id });
+    }
+
+    // Auto-login: generate JWT token and return it so the user is sent to their dashboard
+    const subscription = await Subscription.findOne({ userId: user._id });
+    const flatUser = user.toObject();
+    if (subscription) {
+      Object.assign(flatUser, {
+        plan: subscription.planName,
+        subscriptionStatus: subscription.status,
+        paymentStatus: subscription.paymentStatus,
+        trialUsed: subscription.trialUsed,
+        trialStartDate: subscription.startDate,
+        trialEndDate: subscription.endDate
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully. Logging you in...',
+      token: generateToken(user._id.toString(), user.role),
+      user: flatUser,
+      subscription
+    });
+  } catch (error) {
+    console.error('Error in resetPassword:', error);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 };
