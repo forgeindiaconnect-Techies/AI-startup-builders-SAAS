@@ -170,7 +170,6 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Doc Verification',        icon: File,            path: '/dashboard/admin/document-verification' },
         { name: 'Subscriptions & Payments',icon: CreditCard,      path: '/dashboard/admin/sub-payments' },
         { name: 'AI Analytics',            icon: BarChart2,       path: '/dashboard/admin/analytics' },
-        { name: 'Platform Settings',       icon: Settings,        path: '/dashboard/admin/platform-settings' },
         { name: 'Mentor Earnings',         icon: IndianRupee,     path: '/dashboard/admin/mentor-earnings' },
         { name: 'Notifications',           icon: Bell,            path: '/dashboard/admin/notifications' },
       ],
