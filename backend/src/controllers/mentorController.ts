@@ -1422,11 +1422,11 @@ export const markWithdrawalPaid = async (req: AuthRequest, res: Response) => {
     const withdrawal = await MentorWithdrawal.findById(id);
     if (!withdrawal) return res.status(404).json({ success: false, message: 'Withdrawal request not found' });
 
-    // Strict status transition check: only Processing -> Paid (or Pending -> Paid rejected)
-    if (withdrawal.status !== 'processing') {
+    // Status transition check: allow pending or processing to be marked paid
+    if (withdrawal.status !== 'processing' && withdrawal.status !== 'pending') {
       return res.status(400).json({
         success: false,
-        message: `Cannot mark as Paid directly from "${withdrawal.status}". Must be in "Processing" state first.`,
+        message: `Cannot mark as Paid directly from "${withdrawal.status}".`,
       });
     }
 

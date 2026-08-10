@@ -97,10 +97,6 @@ const AdminMentorEarnings: React.FC = () => {
 
   // Open Mark Paid Modal
   const openMarkPaidModal = (withdrawal: any) => {
-    if (withdrawal.status !== 'processing') {
-      alert('Withdrawal must be in "Processing" state before marking as Paid. Click [Process] first.');
-      return;
-    }
     setSelectedWithdrawalForPaid(withdrawal);
     setUtrReference('');
     setPaidDate(new Date().toISOString().split('T')[0]);
@@ -439,13 +435,21 @@ const AdminMentorEarnings: React.FC = () => {
                         </td>
                         <td className="px-5 py-3.5">
                           {w.status === 'pending' && (
-                            <button
-                              onClick={() => handleProcessWithdrawal(w._id)}
-                              disabled={updating[w._id]}
-                              className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1 shadow-sm disabled:opacity-50"
-                            >
-                              {updating[w._id] ? <Loader2 size={12} className="animate-spin" /> : 'Process'}
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleProcessWithdrawal(w._id)}
+                                disabled={updating[w._id]}
+                                className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1 shadow-sm disabled:opacity-50"
+                              >
+                                {updating[w._id] ? <Loader2 size={12} className="animate-spin" /> : 'Process'}
+                              </button>
+                              <button
+                                onClick={() => openMarkPaidModal(w)}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1 shadow-sm"
+                              >
+                                <Check size={12} /> Mark as Paid
+                              </button>
+                            </div>
                           )}
 
                           {w.status === 'processing' && (
