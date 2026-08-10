@@ -50,6 +50,7 @@ import AdminSubPayments from '../pages/dashboards/admin/AdminSubPayments';
 import AdminAnalytics from '../pages/dashboards/admin/AdminAnalytics';
 import AdminPlatformSettings from '../pages/dashboards/admin/AdminPlatformSettings';
 import AdminMentorEarnings from '../pages/dashboards/admin/AdminMentorEarnings';
+import AdminProfile from '../pages/dashboards/admin/AdminProfile';
 
 const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
   founder: {
@@ -101,6 +102,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/admin/platform-settings': AdminPlatformSettings,
     '/dashboard/admin/notifications': SharedNotifications,
     '/dashboard/admin/mentor-earnings': AdminMentorEarnings,
+    '/dashboard/admin/profile': AdminProfile,
   },
 };
 
@@ -172,6 +174,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'AI Analytics',            icon: BarChart2,       path: '/dashboard/admin/analytics' },
         { name: 'Mentor Earnings',         icon: IndianRupee,     path: '/dashboard/admin/mentor-earnings' },
         { name: 'Notifications',           icon: Bell,            path: '/dashboard/admin/notifications' },
+        { name: 'Profile',                 icon: UserCog,         path: '/dashboard/admin/profile' },
       ],
     },
   ],
@@ -386,7 +389,7 @@ const DashboardLayout: React.FC = () => {
                     founder: '/dashboard/founder/profile-billing',
                     investor: '/dashboard/investor/profile-kyc',
                     mentor: '/dashboard/mentor/profile',
-                    admin: '/dashboard/admin',
+                    admin: '/dashboard/admin/profile',
                   };
                   navigate(profileMap[user?.role ?? ''] ?? '/dashboard');
                 }}

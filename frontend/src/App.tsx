@@ -85,7 +85,7 @@ import AdminMentorEarnings     from './pages/dashboards/admin/AdminMentorEarning
 
 import SharedNotifications from './pages/dashboards/founder/FounderNotifications';
 import SharedHelp          from './pages/dashboards/founder/FounderHelp';
-import AdminProfile        from './pages/dashboards/founder/FounderProfile';
+import AdminProfile        from './pages/dashboards/admin/AdminProfile';
 // ── Founder Combined Pages ──────────────────────────────────────────
 import FounderAIBuilder        from './pages/dashboards/founder/FounderAIBuilder';
 import FounderProfileBilling   from './pages/dashboards/founder/FounderProfileBilling';
