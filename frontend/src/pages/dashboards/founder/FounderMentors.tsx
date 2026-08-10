@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import QRCode from 'qrcode';
 import {
   GraduationCap, Search, Star, MapPin, Briefcase, Clock, IndianRupee, ExternalLink,
@@ -6,12 +6,13 @@ import {
   Video, RotateCcw, CalendarX, BadgeCheck, Award, BookOpen, FileText,
   MessageSquare, Send, Bot, Copy, QrCode, Smartphone,
 } from 'lucide-react';
-import { getStartups } from '../../../utils/localStorageHelper';
+import { getStartups, addNotification } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
 import { useChat } from '../../../context/ChatContext';
 import {
   getMentors, getMentorProfile, getMentorAvailability, createMentorBooking,
   getMyBookings, cancelBooking, rescheduleBooking, getBookingFeedback, acceptMentorSession,
+  completeSession,
 } from '../../../utils/mentorApi';
 
 // ─── Constants ────────────────────────────────────────────────────
