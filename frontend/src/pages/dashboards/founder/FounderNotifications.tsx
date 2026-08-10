@@ -130,49 +130,7 @@ const FounderNotifications: React.FC = () => {
   return (
     <div className="animate-fade-in-up pb-10">
 
-      {/* ── User Profile Card ── */}
-      {authUser && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-xl font-black shadow-md shrink-0">
-            {(authUser.fullName || '?').charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h2 className="text-base font-bold text-gray-900">{authUser.fullName}</h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-yellow-100 text-yellow-700 border border-yellow-200">
-                {authUser.role}
-              </span>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                authUser.status === 'active'
-                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                  : 'bg-amber-50 text-amber-600 border border-amber-100'
-              }`}>
-                {authUser.status || 'active'}
-              </span>
-            </div>
-            <p className="text-xs text-gray-500 flex items-center gap-1.5 mb-2">
-              <Mail size={13} className="text-gray-400" /> {authUser.email}
-            </p>
-            <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <Calendar size={12} className="text-gray-400" />
-                Signed up {formatDate(authUser.signupDate || authUser.createdAt)}
-              </span>
-              <span className="flex items-center gap-1">
-                <LogIn size={12} className="text-gray-400" />
-                Last login{' '}
-                {authUser.lastLoginAt
-                  ? formatDate(authUser.lastLoginAt)
-                  : <span className="italic">Never</span>}
-              </span>
-              <span className="flex items-center gap-1">
-                <ShieldCheck size={12} className="text-gray-400" />
-                Login count {authUser.loginCount || 0}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* ── Page Header ── */}
       <div className="flex items-center justify-between mb-6">

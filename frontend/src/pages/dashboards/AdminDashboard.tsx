@@ -2,11 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getStartups } from '../../utils/localStorageHelper';
-import { Rocket, IndianRupee, Check, X, Users, Cpu, ShoppingBag, ShieldCheck, Building2, Trash2 } from 'lucide-react';
+import { Rocket, IndianRupee, Check, X, Users, Cpu, ShoppingBag, ShieldCheck, Building2, Trash2, Mail, Calendar, LogIn } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
   const { user, getAllUsers } = useAuth();
   const navigate = useNavigate();
+
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '—';
+    try {
+      return new Date(dateStr).toLocaleString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
   const [pendingMentors, setPendingMentors] = useState<any[]>([]);
   const [pendingStartups, setPendingStartups] = useState<any[]>([]);
   const [allStartups, setAllStartups] = useState<any[]>([]);
@@ -243,6 +259,44 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up pb-10">
+      {/* ── Admin Login Activity & Profile Card ── */}
+      {user && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#7C3AED] via-[#5B21B6] to-[#FBBF24] flex items-center justify-center text-white text-xl font-black shadow-md shrink-0">
+            {(user.fullName || 'A').charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h2 className="text-base font-bold text-gray-900">{user.fullName || 'Admin'}</h2>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-yellow-100 text-yellow-800 border border-yellow-200">
+                {user.role || 'Admin'}
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100">
+                Active
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 flex items-center gap-1.5 mb-2">
+              <Mail size={13} className="text-gray-400" /> {user.email}
+            </p>
+            <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-500 font-medium">
+              <span className="flex items-center gap-1">
+                <Calendar size={12} className="text-gray-400" />
+                Signed up {formatDate(user.signupDate || user.createdAt)}
+              </span>
+              <span className="flex items-center gap-1">
+                <LogIn size={12} className="text-gray-400" />
+                Last login{' '}
+                {user.lastLoginAt ? formatDate(user.lastLoginAt) : formatDate(new Date().toISOString())}
+              </span>
+              <span className="flex items-center gap-1">
+                <ShieldCheck size={12} className="text-gray-400" />
+                Login count {user.loginCount || 1}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
