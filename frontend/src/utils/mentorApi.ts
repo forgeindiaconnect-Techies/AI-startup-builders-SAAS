@@ -226,13 +226,16 @@ export const getMentorEarnings = async (): Promise<{
   summary: {
     totalEarnings: number;
     thisMonthEarnings: number;
-    pendingEarnings: number;
-    paidEarnings: number;
+    eligibleEarnings: number;
+    availableToWithdraw: number;
+    pendingWithdrawal: number;
+    paidOut: number;
     mentorSharePercentage: number;
     platformCommissionPercentage: number;
     sessionFee: number;
   };
   transactions: any[];
+  withdrawals: any[];
 }> => {
   const res = await fetch(`${API_URL}/mentors/mentor/earnings`, { headers: authHeaders(false) });
   const data = await handleResponse(res);
@@ -265,3 +268,44 @@ export const getAdminMentorPaymentSettings = async (mentorId: string): Promise<a
   const data = await handleResponse(res);
   return data.data;
 };
+
+// POST /api/mentors/mentor/withdraw
+export const requestWithdrawal = async (payload: {
+  amount: number;
+  withdrawalMethod: 'upi' | 'bank_account';
+  upiId?: string;
+  accountHolderName?: string;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+}): Promise<any> => {
+  const res = await fetch(`${API_URL}/mentors/mentor/withdraw`, {
+    method: 'POST',
+    headers: authHeaders(true),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+};
+
+// PUT /api/mentors/admin/withdrawals/:id/process
+export const processWithdrawal = async (withdrawalId: string): Promise<any> => {
+  const res = await fetch(`${API_URL}/mentors/admin/withdrawals/${withdrawalId}/process`, {
+    method: 'PUT',
+    headers: authHeaders(true),
+  });
+  return handleResponse(res);
+};
+
+// PUT /api/mentors/admin/withdrawals/:id/mark-paid
+export const markWithdrawalPaid = async (
+  withdrawalId: string,
+  payload: { transactionReference: string; paidDate?: string }
+): Promise<any> => {
+  const res = await fetch(`${API_URL}/mentors/admin/withdrawals/${withdrawalId}/mark-paid`, {
+    method: 'PUT',
+    headers: authHeaders(true),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+};
+

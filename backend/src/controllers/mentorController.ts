@@ -7,6 +7,7 @@ import MentorBooking from '../models/MentorBooking.js';
 import MentorFeedback from '../models/MentorFeedback.js';
 import MentorReview from '../models/MentorReview.js';
 import MentorTransaction from '../models/MentorTransaction.js';
+import MentorWithdrawal from '../models/MentorWithdrawal.js';
 import Startup from '../models/Startup.js';
 import NotificationModel from '../models/Notification.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
@@ -1110,33 +1111,55 @@ export const getBookingFeedback = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// GET /api/mentors/mentor/earnings  (earnings summary + transactions for logged-in mentor)
+// GET /api/mentors/mentor/earnings  (earnings summary + transactions + withdrawals for logged-in mentor)
 export const getMentorEarnings = async (req: AuthRequest, res: Response) => {
   try {
     const mentorId = req.user!.id;
     const transactions = await MentorTransaction.find({ mentorId }).sort({ createdAt: -1 });
+    const withdrawals = await MentorWithdrawal.find({ mentorId }).sort({ createdAt: -1 });
+
+    // Completed bookings map to ensure only completed sessions count towards available earnings
+    const completedBookings = await MentorBooking.find({
+      mentorId,
+      status: 'completed',
+    }).select('_id');
+    const completedBookingIds = new Set(completedBookings.map((b) => b._id.toString()));
 
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     let totalEarnings = 0;
     let thisMonthEarnings = 0;
-    let pendingEarnings = 0;
-    let paidEarnings = 0;
+    let eligibleEarnings = 0; // Completed sessions earnings
 
     transactions.forEach((tx) => {
       totalEarnings += tx.mentorEarnings;
       if (new Date(tx.createdAt) >= startOfMonth) {
         thisMonthEarnings += tx.mentorEarnings;
       }
-      if (tx.payoutStatus === 'paid') {
-        paidEarnings += tx.mentorEarnings;
-      } else {
-        pendingEarnings += tx.mentorEarnings;
+      // Check if session is completed
+      if (completedBookingIds.has(tx.bookingId.toString())) {
+        eligibleEarnings += tx.mentorEarnings;
       }
     });
 
-    // Also include mentor profile payment settings (read-only for mentor)
+    let pendingWithdrawal = 0;
+    let processingWithdrawal = 0;
+    let paidOut = 0;
+
+    withdrawals.forEach((w) => {
+      if (w.status === 'pending') {
+        pendingWithdrawal += w.amount;
+      } else if (w.status === 'processing') {
+        processingWithdrawal += w.amount;
+      } else if (w.status === 'paid') {
+        paidOut += w.amount;
+      }
+    });
+
+    // Available to withdraw = Eligible Earnings - (Pending + Processing + PaidOut)
+    const availableToWithdraw = Math.max(0, eligibleEarnings - (pendingWithdrawal + processingWithdrawal + paidOut));
+
     const profile = await MentorProfile.findOne({ mentorId });
 
     res.json({
@@ -1145,13 +1168,16 @@ export const getMentorEarnings = async (req: AuthRequest, res: Response) => {
         summary: {
           totalEarnings: Math.round(totalEarnings * 100) / 100,
           thisMonthEarnings: Math.round(thisMonthEarnings * 100) / 100,
-          pendingEarnings: Math.round(pendingEarnings * 100) / 100,
-          paidEarnings: Math.round(paidEarnings * 100) / 100,
+          eligibleEarnings: Math.round(eligibleEarnings * 100) / 100,
+          availableToWithdraw: Math.round(availableToWithdraw * 100) / 100,
+          pendingWithdrawal: Math.round((pendingWithdrawal + processingWithdrawal) * 100) / 100,
+          paidOut: Math.round(paidOut * 100) / 100,
           mentorSharePercentage: profile?.mentorSharePercentage ?? 80,
           platformCommissionPercentage: profile?.platformCommissionPercentage ?? 20,
           sessionFee: profile?.sessionFee ?? 0,
         },
         transactions,
+        withdrawals,
       },
     });
   } catch (error) {
@@ -1160,12 +1186,15 @@ export const getMentorEarnings = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// GET /api/mentors/admin/earnings  (admin: per-mentor earnings summary)
+// GET /api/mentors/admin/earnings  (admin: per-mentor earnings & withdrawals summary)
 export const getAdminMentorEarnings = async (req: AuthRequest, res: Response) => {
   try {
     const transactions = await MentorTransaction.find({}).sort({ createdAt: -1 });
+    const withdrawals = await MentorWithdrawal.find({}).sort({ createdAt: -1 });
     const mentors = await User.find({ role: 'mentor' });
     const profiles = await MentorProfile.find({});
+    const completedBookings = await MentorBooking.find({ status: 'completed' }).select('_id');
+    const completedSet = new Set(completedBookings.map((b) => b._id.toString()));
     const profileMap = new Map(profiles.map((p) => [p.mentorId.toString(), p]));
 
     const mentorMap = new Map<string, any>();
@@ -1182,9 +1211,12 @@ export const getAdminMentorEarnings = async (req: AuthRequest, res: Response) =>
         totalRevenue: 0,
         totalMentorEarnings: 0,
         totalPlatformCommission: 0,
+        eligibleEarnings: 0,
         pendingPayout: 0,
+        processingPayout: 0,
         paidPayout: 0,
         transactions: [] as any[],
+        withdrawals: [] as any[],
       });
     });
 
@@ -1193,7 +1225,7 @@ export const getAdminMentorEarnings = async (req: AuthRequest, res: Response) =>
       if (!mentorMap.has(mid)) {
         mentorMap.set(mid, {
           mentorId: tx.mentorId,
-          mentorName: '',
+          mentorName: tx.founderName || '',
           email: '',
           sessionFee: 0,
           mentorSharePercentage: tx.mentorSharePercentage,
@@ -1202,9 +1234,12 @@ export const getAdminMentorEarnings = async (req: AuthRequest, res: Response) =>
           totalRevenue: 0,
           totalMentorEarnings: 0,
           totalPlatformCommission: 0,
+          eligibleEarnings: 0,
           pendingPayout: 0,
+          processingPayout: 0,
           paidPayout: 0,
           transactions: [],
+          withdrawals: [],
         });
       }
       const entry = mentorMap.get(mid);
@@ -1212,12 +1247,24 @@ export const getAdminMentorEarnings = async (req: AuthRequest, res: Response) =>
       entry.totalRevenue += tx.sessionFee;
       entry.totalMentorEarnings += tx.mentorEarnings;
       entry.totalPlatformCommission += tx.platformCommission;
-      if (tx.payoutStatus === 'paid') {
-        entry.paidPayout += tx.mentorEarnings;
-      } else {
-        entry.pendingPayout += tx.mentorEarnings;
+      if (completedSet.has(tx.bookingId.toString())) {
+        entry.eligibleEarnings += tx.mentorEarnings;
       }
-      entry.transactions.push(tx);
+      // Attach completion status to tx object for admin view
+      const txObj = tx.toObject();
+      (txObj as any).isCompleted = completedSet.has(tx.bookingId.toString());
+      entry.transactions.push(txObj);
+    });
+
+    withdrawals.forEach((w) => {
+      const mid = w.mentorId.toString();
+      if (mentorMap.has(mid)) {
+        const entry = mentorMap.get(mid);
+        if (w.status === 'pending') entry.pendingPayout += w.amount;
+        if (w.status === 'processing') entry.processingPayout += w.amount;
+        if (w.status === 'paid') entry.paidPayout += w.amount;
+        entry.withdrawals.push(w);
+      }
     });
 
     const result = Array.from(mentorMap.values()).map((e) => ({
@@ -1225,18 +1272,192 @@ export const getAdminMentorEarnings = async (req: AuthRequest, res: Response) =>
       totalRevenue: Math.round(e.totalRevenue * 100) / 100,
       totalMentorEarnings: Math.round(e.totalMentorEarnings * 100) / 100,
       totalPlatformCommission: Math.round(e.totalPlatformCommission * 100) / 100,
+      eligibleEarnings: Math.round(e.eligibleEarnings * 100) / 100,
       pendingPayout: Math.round(e.pendingPayout * 100) / 100,
+      processingPayout: Math.round(e.processingPayout * 100) / 100,
       paidPayout: Math.round(e.paidPayout * 100) / 100,
+      availableToWithdraw: Math.max(0, Math.round((e.eligibleEarnings - (e.pendingPayout + e.processingPayout + e.paidPayout)) * 100) / 100),
     }));
 
-    res.json({ success: true, data: result });
+    res.json({ success: true, data: result, withdrawals });
   } catch (error) {
     console.error('Error fetching admin mentor earnings:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch mentor earnings' });
   }
 };
 
-// PUT /api/mentors/admin/transactions/:id/payout  (admin: update payout status)
+// POST /api/mentors/mentor/withdraw  (mentor submits a withdrawal request)
+export const requestWithdrawal = async (req: AuthRequest, res: Response) => {
+  try {
+    const mentorId = req.user!.id;
+    const { amount, withdrawalMethod, upiId, accountHolderName, bankName, accountNumber, ifscCode } = req.body;
+
+    const withdrawAmount = Number(amount);
+    if (!withdrawAmount || withdrawAmount <= 0) {
+      return res.status(400).json({ success: false, message: 'Invalid withdrawal amount' });
+    }
+
+    if (!['upi', 'bank_account'].includes(withdrawalMethod)) {
+      return res.status(400).json({ success: false, message: 'Invalid withdrawal method' });
+    }
+
+    if (withdrawalMethod === 'upi' && (!upiId || !upiId.trim())) {
+      return res.status(400).json({ success: false, message: 'UPI ID is required' });
+    }
+
+    if (withdrawalMethod === 'bank_account' && (!accountHolderName || !accountNumber || !ifscCode)) {
+      return res.status(400).json({ success: false, message: 'Complete bank account details are required' });
+    }
+
+    // Verify available balance
+    const completedBookings = await MentorBooking.find({ mentorId, status: 'completed' }).select('_id');
+    const completedIds = new Set(completedBookings.map((b) => b._id.toString()));
+    const transactions = await MentorTransaction.find({ mentorId });
+    const eligibleEarnings = transactions
+      .filter((tx) => completedIds.has(tx.bookingId.toString()))
+      .reduce((sum, tx) => sum + tx.mentorEarnings, 0);
+
+    const withdrawals = await MentorWithdrawal.find({ mentorId, status: { $in: ['pending', 'processing', 'paid'] } });
+    const existingWithdrawnOrPending = withdrawals.reduce((sum, w) => sum + w.amount, 0);
+
+    const availableToWithdraw = Math.max(0, eligibleEarnings - existingWithdrawnOrPending);
+
+    if (withdrawAmount > availableToWithdraw) {
+      return res.status(400).json({
+        success: false,
+        message: `Requested amount (₹${withdrawAmount}) exceeds your available balance (₹${availableToWithdraw.toFixed(2)})`,
+      });
+    }
+
+    const withdrawal = await MentorWithdrawal.create({
+      mentorId,
+      amount: withdrawAmount,
+      withdrawalMethod,
+      upiId: withdrawalMethod === 'upi' ? upiId.trim() : '',
+      accountHolderName: withdrawalMethod === 'bank_account' ? accountHolderName.trim() : '',
+      bankName: withdrawalMethod === 'bank_account' ? (bankName || '').trim() : '',
+      accountNumber: withdrawalMethod === 'bank_account' ? accountNumber.trim() : '',
+      ifscCode: withdrawalMethod === 'bank_account' ? ifscCode.trim() : '',
+      status: 'pending',
+      requestedAt: new Date(),
+    });
+
+    // Notify Admin about new withdrawal request
+    try {
+      const mentor = await User.findById(mentorId);
+      await NotificationModel.create({
+        userId: 'admin',
+        title: 'New Mentor Withdrawal Request',
+        message: `${mentor?.fullName || 'A mentor'} requested a withdrawal of ₹${withdrawAmount.toLocaleString('en-IN')} via ${withdrawalMethod.toUpperCase()}.`,
+        type: 'mentor_withdrawal',
+        actionUrl: '/dashboard/admin/mentor-earnings',
+      });
+    } catch (notifErr) {
+      console.warn('Could not create admin withdrawal notification:', (notifErr as Error).message);
+    }
+
+    res.status(201).json({ success: true, message: 'Withdrawal request submitted successfully', data: withdrawal });
+  } catch (error) {
+    console.error('Error submitting withdrawal request:', error);
+    res.status(500).json({ success: false, message: 'Failed to submit withdrawal request' });
+  }
+};
+
+// PUT /api/mentors/admin/withdrawals/:id/process  (admin: pending -> processing)
+export const processWithdrawal = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!isValidId(id)) return res.status(400).json({ success: false, message: 'Invalid withdrawal id' });
+
+    const withdrawal = await MentorWithdrawal.findById(id);
+    if (!withdrawal) return res.status(404).json({ success: false, message: 'Withdrawal request not found' });
+
+    // Strict status transition check: only Pending -> Processing or Failed -> Processing
+    if (withdrawal.status !== 'pending' && withdrawal.status !== 'failed') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot process a withdrawal that is currently "${withdrawal.status}". Valid transition is Pending/Failed -> Processing.`,
+      });
+    }
+
+    withdrawal.status = 'processing';
+    withdrawal.processedAt = new Date();
+    await withdrawal.save();
+
+    // Notify Mentor
+    try {
+      await NotificationModel.create({
+        userId: withdrawal.mentorId.toString(),
+        title: 'Withdrawal Processing',
+        message: `Your withdrawal request of ₹${withdrawal.amount.toLocaleString('en-IN')} is now being processed by admin.`,
+        type: 'withdrawal_update',
+        actionUrl: '/dashboard/mentor/earnings',
+      });
+    } catch (notifErr) {
+      console.warn('Could not create mentor notification:', (notifErr as Error).message);
+    }
+
+    res.json({ success: true, message: 'Withdrawal is now processing', data: withdrawal });
+  } catch (error) {
+    console.error('Error processing withdrawal:', error);
+    res.status(500).json({ success: false, message: 'Failed to process withdrawal' });
+  }
+};
+
+// PUT /api/mentors/admin/withdrawals/:id/mark-paid  (admin: processing -> paid with UTR reference)
+export const markWithdrawalPaid = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { transactionReference, paidDate } = req.body;
+
+    if (!isValidId(id)) return res.status(400).json({ success: false, message: 'Invalid withdrawal id' });
+    if (!transactionReference || !transactionReference.trim()) {
+      return res.status(400).json({ success: false, message: 'Transaction / UTR Reference is required' });
+    }
+
+    const withdrawal = await MentorWithdrawal.findById(id);
+    if (!withdrawal) return res.status(404).json({ success: false, message: 'Withdrawal request not found' });
+
+    // Strict status transition check: only Processing -> Paid (or Pending -> Paid rejected)
+    if (withdrawal.status !== 'processing') {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot mark as Paid directly from "${withdrawal.status}". Must be in "Processing" state first.`,
+      });
+    }
+
+    withdrawal.status = 'paid';
+    withdrawal.paidAt = paidDate ? new Date(paidDate) : new Date();
+    withdrawal.transactionReference = transactionReference.trim();
+    await withdrawal.save();
+
+    // Update associated transactions payoutStatus to paid
+    await MentorTransaction.updateMany(
+      { mentorId: withdrawal.mentorId, payoutStatus: { $ne: 'paid' } },
+      { $set: { payoutStatus: 'paid' } }
+    );
+
+    // Notify Mentor
+    try {
+      await NotificationModel.create({
+        userId: withdrawal.mentorId.toString(),
+        title: 'Withdrawal Paid Successfully',
+        message: `Your withdrawal of ₹${withdrawal.amount.toLocaleString('en-IN')} has been paid! UTR/Ref: ${withdrawal.transactionReference}`,
+        type: 'withdrawal_update',
+        actionUrl: '/dashboard/mentor/earnings',
+      });
+    } catch (notifErr) {
+      console.warn('Could not create mentor notification:', (notifErr as Error).message);
+    }
+
+    res.json({ success: true, message: 'Withdrawal marked as Paid successfully', data: withdrawal });
+  } catch (error) {
+    console.error('Error marking withdrawal paid:', error);
+    res.status(500).json({ success: false, message: 'Failed to mark withdrawal as paid' });
+  }
+};
+
+// PUT /api/mentors/admin/transactions/:id/payout  (admin: update payout status for individual transaction)
 export const updatePayoutStatus = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -1250,12 +1471,19 @@ export const updatePayoutStatus = async (req: AuthRequest, res: Response) => {
     const tx = await MentorTransaction.findById(id);
     if (!tx) return res.status(404).json({ success: false, message: 'Transaction not found' });
 
+    // Validate status transition
+    if (tx.payoutStatus === 'pending' && payoutStatus === 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid transition: Pending -> Paid is not allowed. Transaction must be set to Processing first.',
+      });
+    }
+
     tx.payoutStatus = payoutStatus;
     await tx.save();
 
     // Notify mentor of payout update
     try {
-      const mentor = await User.findById(tx.mentorId);
       const statusLabel = payoutStatus === 'paid' ? 'has been paid' : payoutStatus === 'processing' ? 'is being processed' : `is now ${payoutStatus}`;
       await NotificationModel.create({
         userId: tx.mentorId.toString(),
@@ -1295,4 +1523,5 @@ export const getMentorPaymentSettings = async (req: AuthRequest, res: Response) 
     res.status(500).json({ success: false, message: 'Failed to fetch payment settings' });
   }
 };
+
 

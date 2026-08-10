@@ -21,6 +21,9 @@ import {
   getAdminMentorEarnings,
   updatePayoutStatus,
   getMentorPaymentSettings,
+  requestWithdrawal,
+  processWithdrawal,
+  markWithdrawalPaid,
 } from '../controllers/mentorController.js';
 import { protect, adminOnly } from '../middleware/authMiddleware.js';
 
@@ -33,6 +36,7 @@ router.get('/', getAvailableMentors);
 router.get('/bookings', getMyBookings);
 router.get('/mentor/bookings', getMentorBookings);
 router.get('/mentor/earnings', getMentorEarnings);
+router.post('/mentor/withdraw', requestWithdrawal);
 router.post('/book', createBooking);
 router.post('/reviews', submitSessionReview);
 router.get('/reviews/me', getMentorSessionReviews);
@@ -41,6 +45,8 @@ router.get('/reviews/mine', getMySubmittedReviews);
 // Admin routes
 router.get('/admin/earnings', adminOnly, getAdminMentorEarnings);
 router.put('/admin/transactions/:id/payout', adminOnly, updatePayoutStatus);
+router.put('/admin/withdrawals/:id/process', adminOnly, processWithdrawal);
+router.put('/admin/withdrawals/:id/mark-paid', adminOnly, markWithdrawalPaid);
 router.get('/admin/:id/payment-settings', adminOnly, getMentorPaymentSettings);
 router.put('/admin/:id', adminOnly, updateMentorProfileAdmin);
 
