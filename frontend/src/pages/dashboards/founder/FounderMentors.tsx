@@ -723,28 +723,10 @@ const BookingRow: React.FC<{
   onComplete?: (b: any) => void;
   accepting?: boolean;
 }> = ({ booking, onCancel, onReschedule, onAccept, onComplete, accepting }) => {
-  const [feedback, setFeedback] = useState<any>(null);
-  const [feedbackLoading, setFeedbackLoading] = useState(false);
-  const [showFeedbackSection, setShowFeedbackSection] = useState(false);
-
   const status = STATUS_STYLES[booking.status] || STATUS_STYLES.pending;
   const canModify = ['pending', 'confirmed', 'accepted', 'rescheduled'].includes(booking.status);
   const hasSchedule = !!(booking.date && booking.time);
   const awaitingSchedule = booking.status === 'pending' && !hasSchedule;
-
-  const loadFeedback = async () => {
-    setShowFeedbackSection((prev) => !prev);
-    if (showFeedbackSection) return;
-    setFeedbackLoading(true);
-    try {
-      const f = await getBookingFeedback(booking._id);
-      setFeedback(f || null);
-    } catch {
-      setFeedback(null);
-    } finally {
-      setFeedbackLoading(false);
-    }
-  };
 
   return (
     <div className="p-5 border border-gray-100 rounded-2xl bg-white shadow-sm hover:shadow-md transition-shadow">
@@ -823,54 +805,11 @@ const BookingRow: React.FC<{
               </button>
             </>
           )}
-          {booking.status === 'completed' && (
-            <button onClick={loadFeedback}
-              className="px-3.5 py-2 text-sm font-bold text-white bg-[#5B21B6] hover:bg-[#4C1D95] rounded-xl transition-colors flex items-center gap-1.5">
-              <FileText size={14} /> {showFeedbackSection ? 'Hide' : 'Session Details'}
-            </button>
-          )}
         </div>
       </div>
-
-      {/* Mentor feedback for completed sessions */}
-      {showFeedbackSection && booking.status === 'completed' && (
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
-            <FileText size={13} className="text-[#5B21B6]" /> Mentor Feedback
-          </h4>
-          {feedbackLoading ? (
-            <div className="flex justify-center py-4"><Loader2 size={20} className="animate-spin text-[#5B21B6]" /></div>
-          ) : feedback ? (
-            <div className="space-y-4">
-              {feedback.rating > 0 && (
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <Star key={s} size={16} className={s <= feedback.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'} />
-                  ))}
-                </div>
-              )}
-              {feedback.feedback && <FeedbackBlock label="Feedback" text={feedback.feedback} />}
-              {feedback.recommendations && <FeedbackBlock label="Recommendations" text={feedback.recommendations} />}
-              {feedback.actionItems && <FeedbackBlock label="Action Items" text={feedback.actionItems} />}
-              {feedback.improvementSuggestions && <FeedbackBlock label="Startup Improvement Suggestions" text={feedback.improvementSuggestions} />}
-            </div>
-          ) : (
-            <div className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-sm text-gray-500">
-              No feedback has been shared for this session yet.
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
-
-const FeedbackBlock: React.FC<{ label: string; text: string }> = ({ label, text }) => (
-  <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
-    <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1">{label}</p>
-    <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">{text}</p>
-  </div>
-);
 
 // ─── Accept Session Payment Modal ─────────────────────────────────
 const UPI_ID = 'aistartupbuilder@okaxis';
