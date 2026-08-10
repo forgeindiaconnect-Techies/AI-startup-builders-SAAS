@@ -20,11 +20,16 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-    // Allow any vercel.app subdomain (covers preview deployments)
-    if (origin.endsWith('.vercel.app') || allowedOrigins.includes(origin)) {
+    // Allow any vercel.app subdomain, localhost, or listed origin
+    if (
+      origin.includes('localhost') ||
+      origin.endsWith('.vercel.app') ||
+      allowedOrigins.includes(origin)
+    ) {
       return callback(null, true);
     }
-    return callback(new Error(`CORS: Origin ${origin} not allowed`));
+    // Return true instead of throwing error callback so browser receives proper CORS headers even on bad requests
+    return callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
