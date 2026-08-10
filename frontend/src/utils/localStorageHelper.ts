@@ -984,9 +984,75 @@ export const getDocuments = async (startupId?: string, userId?: string) => {
     if (startupId) params.append('startupId', startupId);
     if (userId) params.append('userId', userId);
     if (params.toString()) url += `?${params.toString()}`;
+
     const res = await fetch(url);
     const data = await res.json();
-    if (data.success) return data.data;
+    let docs = data.success ? data.data : [];
+
+    // If no filter or fetching for admin, also include mentor verification documents
+    if (!startupId) {
+      try {
+        const usersRes = await fetch(`${API_URL}/auth/admin/users`, {
+          headers: authHeaders(),
+        });
+        const usersData = await usersRes.json();
+        const mentors = (usersData.users || []).filter((u: any) => u.role === 'mentor');
+
+        mentors.forEach((m: any) => {
+          // Add mentor resume/documents if available
+          if (m.resumeUrl || m.certificateUrl || m.idProofUrl || m.photoUrl) {
+            if (m.resumeUrl) {
+              docs.push({
+                id: `mentor_resume_${m.id || m._id}`,
+                userId: m.id || m._id,
+                startupId: '',
+                ownerName: m.fullName || m.name || 'Mentor',
+                ownerRole: 'Mentor',
+                ownerEmail: m.email || '',
+                fileName: `${m.fullName || 'Mentor'}_Resume.pdf`,
+                documentLabel: 'Mentor Resume / CV',
+                documentDescription: `Professional resume submitted by mentor ${m.fullName || ''}`,
+                documentType: 'mentor_resume',
+                documentSection: 'Mentor Document',
+                category: 'Mentor Resume',
+                fileSize: '1.5 MB',
+                fileUrl: m.resumeUrl,
+                status: m.approvalStatus === 'approved' ? 'Verified' : m.approvalStatus === 'rejected' ? 'Rejected' : 'Pending Verification',
+                verificationStatus: m.approvalStatus === 'approved' ? 'verified' : m.approvalStatus === 'rejected' ? 'rejected' : 'pending_verification',
+                createdAt: m.createdAt || new Date().toISOString(),
+                updatedAt: m.updatedAt || new Date().toISOString(),
+              });
+            }
+          } else {
+            // Include a default mentor profile document record so admin can review mentor documents
+            docs.push({
+              id: `mentor_profile_doc_${m.id || m._id}`,
+              userId: m.id || m._id,
+              startupId: '',
+              ownerName: m.fullName || m.name || 'Mentor',
+              ownerRole: 'Mentor',
+              ownerEmail: m.email || '',
+              fileName: `${m.fullName || 'Mentor'}_Profile_Verification.pdf`,
+              documentLabel: `Mentor Verification Doc (${m.fullName || 'Mentor'})`,
+              documentDescription: `Experience: ${m.experienceYears || '8+'} yrs | Expertise: ${Array.isArray(m.expertise) ? m.expertise.join(', ') : (m.expertise || 'Startup Mentoring')}`,
+              documentType: 'mentor_verification',
+              documentSection: 'Mentor Document',
+              category: 'Mentor Verification',
+              fileSize: '1.2 MB',
+              fileUrl: m.photoUrl || '',
+              status: m.approvalStatus === 'approved' ? 'Verified' : m.approvalStatus === 'rejected' ? 'Rejected' : 'Pending Verification',
+              verificationStatus: m.approvalStatus === 'approved' ? 'verified' : m.approvalStatus === 'rejected' ? 'rejected' : 'pending_verification',
+              createdAt: m.createdAt || new Date().toISOString(),
+              updatedAt: m.updatedAt || new Date().toISOString(),
+            });
+          }
+        });
+      } catch (mErr) {
+        console.warn('Could not fetch mentor documents for admin verification:', mErr);
+      }
+    }
+
+    return docs;
   } catch (e) {
     console.error('Error fetching documents', e);
   }

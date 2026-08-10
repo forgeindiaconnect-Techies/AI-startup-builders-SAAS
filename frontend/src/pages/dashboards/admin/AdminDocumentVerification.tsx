@@ -145,7 +145,7 @@ const AdminDocumentVerification: React.FC = () => {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Founder</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Owner / Entity</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Document</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
@@ -163,12 +163,22 @@ const AdminDocumentVerification: React.FC = () => {
               ) : (
                 filteredDocs.map((doc) => {
                   const startup = allStartups.find((s: any) => s.startupId === doc.startupId);
+                  const isMentorDoc = doc.ownerRole === 'Mentor' || doc.documentType?.startsWith('mentor_');
                   return (
                     <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <Building2 size={14} className="text-gray-400" />
-                          <span className="text-sm font-bold text-gray-900">{startup?.startupName || 'Unknown'}</span>
+                          <Building2 size={14} className={isMentorDoc ? 'text-[#5B21B6]' : 'text-gray-400'} />
+                          <div>
+                            <span className="text-sm font-bold text-gray-900">
+                              {isMentorDoc ? doc.ownerName || 'Mentor' : (startup?.startupName || 'Founder')}
+                            </span>
+                            {isMentorDoc && (
+                              <span className="ml-2 text-[10px] font-extrabold text-[#5B21B6] bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+                                Mentor
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
