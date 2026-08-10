@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { IndianRupee, RefreshCw, Download, Edit3, Save, TrendingUp, DollarSign, Calculator, AlertCircle, PieChart, ShieldCheck } from 'lucide-react';
-import { getFinancialPlanData, updateStartup, addNotification } from '../../../utils/localStorageHelper';
+import { getFinancialPlanData, updateStartup, addNotification, formatRupeeText } from '../../../utils/localStorageHelper';
 import jsPDF from 'jspdf';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 }
 
 const FounderFinancialPlan: React.FC<Props> = ({ startupData, setStartupData }) => {
-  const data = getFinancialPlanData(startupData);
+  const data = formatRupeeText(getFinancialPlanData(startupData));
   const [isEditing, setIsEditing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [editForm, setEditForm] = useState(data);
@@ -99,19 +99,12 @@ const FounderFinancialPlan: React.FC<Props> = ({ startupData, setStartupData }) 
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {isEditing ? (
+          {isEditing && (
             <button
               onClick={handleSave}
               className="flex items-center gap-2 px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-sm font-bold shadow-sm transition-all"
             >
               <Save size={16} /> Save Changes
-            </button>
-          ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-sm font-semibold transition-all"
-            >
-              <Edit3 size={16} /> Edit Data
             </button>
           )}
 
@@ -299,7 +292,7 @@ const FounderFinancialPlan: React.FC<Props> = ({ startupData, setStartupData }) 
             <Calculator size={18} className="text-[#5B21B6]" /> Suggested Pricing Strategy
           </h3>
           <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
-            {editForm.suggestedPricing}
+            {formatRupeeText(editForm.suggestedPricing)}
           </p>
         </div>
 

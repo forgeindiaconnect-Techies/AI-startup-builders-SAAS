@@ -1403,28 +1403,47 @@ export const getMVPPlanData = (startup: any) => {
   };
 };
 
+export const formatRupeeText = (text: any): any => {
+  if (typeof text === 'string') {
+    return text.replace(/\$/g, '₹').replace(/USD/gi, '₹');
+  }
+  if (Array.isArray(text)) {
+    return text.map(formatRupeeText);
+  }
+  if (typeof text === 'object' && text !== null) {
+    const res: any = {};
+    for (const key in text) {
+      res[key] = formatRupeeText(text[key]);
+    }
+    return res;
+  }
+  return text;
+};
+
 export const getFinancialPlanData = (startup: any) => {
   if (startup?.aiGenerated?.financialPlan) {
-    return startup.aiGenerated.financialPlan;
+    return formatRupeeText(startup.aiGenerated.financialPlan);
   }
   const name = startup?.startupName || 'Startup';
   const mr = startup?.aiGenerated?.marketResearch;
 
-  return {
+  const rawPricing = mr?.pricingSuggestions ? (Array.isArray(mr.pricingSuggestions) ? mr.pricingSuggestions.join(' | ') : mr.pricingSuggestions) : 'Basic Plan: ₹499/mo | Business Plan: ₹1,499/mo | Enterprise: ₹4,999/mo';
+
+  return formatRupeeText({
     initialStartupCost: '₹3,50,000',
     developmentCost: '₹1,50,000',
     marketingCost: '₹80,000',
     operationalExpenses: '₹70,000',
     monthlyExpenses: '₹65,000',
     revenueModel: startup?.aiGenerated?.ideaAnalysis?.revenueModel || 'Direct sales, transactional service fee, and monthly recurring plans.',
-    suggestedPricing: mr?.pricingSuggestions ? (Array.isArray(mr.pricingSuggestions) ? mr.pricingSuggestions.join(' | ') : mr.pricingSuggestions) : 'Basic Plan: ₹499/mo | Business Plan: ₹1,499/mo | Enterprise: ₹4,999/mo',
+    suggestedPricing: rawPricing,
     revenueProjection: 'Targeting ₹2,40,000 gross monthly revenue by Month 12 with 25% MoM customer growth.',
     customerAcquisitionAssumptions: 'Target CAC: ₹350 per user; Customer LTV: ₹3,200; Average payback period: 2.5 months.',
     breakEvenEstimate: 'Month 7 (Approx. 120 active paying customers required)',
     year1Projection: { revenue: '₹28,50,000', expenses: '₹16,20,000', netProfit: '₹12,30,000' },
     year3Projection: { revenue: '₹84,00,000', expenses: '₹38,00,000', netProfit: '₹46,00,000' },
     year5Projection: { revenue: '₹2,40,00,000', expenses: '₹95,00,000', netProfit: '₹1,45,00,000' }
-  };
+  });
 };
 
 export const getGTMStrategyData = (startup: any) => {

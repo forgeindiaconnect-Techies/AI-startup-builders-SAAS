@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Layers, RefreshCw, Download, Edit3, Save, CheckSquare, Code2, Users, Rocket, Clock, Sparkles, AlertCircle } from 'lucide-react';
-import { getMVPPlanData, updateStartup, addNotification } from '../../../utils/localStorageHelper';
+import { getMVPPlanData, updateStartup, addNotification, formatRupeeText } from '../../../utils/localStorageHelper';
 import jsPDF from 'jspdf';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 }
 
 const FounderMVPPlanner: React.FC<Props> = ({ startupData, setStartupData }) => {
-  const data = getMVPPlanData(startupData);
+  const data = formatRupeeText(getMVPPlanData(startupData));
   const [isEditing, setIsEditing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [editForm, setEditForm] = useState(data);
@@ -100,19 +100,12 @@ const FounderMVPPlanner: React.FC<Props> = ({ startupData, setStartupData }) => 
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {isEditing ? (
+          {isEditing && (
             <button
               onClick={handleSave}
               className="flex items-center gap-2 px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl text-sm font-bold shadow-sm transition-all"
             >
               <Save size={16} /> Save Changes
-            </button>
-          ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-sm font-semibold transition-all"
-            >
-              <Edit3 size={16} /> Edit Data
             </button>
           )}
 
