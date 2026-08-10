@@ -11,6 +11,7 @@ import {
   scheduleMentorSession,
   completeSession,
 } from '../../../utils/mentorApi';
+import { addNotification } from '../../../utils/localStorageHelper';
 
 const formatDateDisplay = (dateStr: string) => {
   if (!dateStr) return '';
@@ -271,6 +272,16 @@ const MentorSessions: React.FC = () => {
     setCompletingId(b._id);
     try {
       await completeSession(b._id);
+      addNotification({
+        id: `notif_admin_comp_${Date.now()}`,
+        userId: 'admin',
+        title: 'Mentoring Session Completed',
+        message: `Session for "${startupNameOf(b)}" between founder "${founderNameOf(b)}" and mentor is marked as completed.`,
+        type: 'session_completed',
+        actionUrl: '/dashboard/admin/notifications',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
       showToast('success', 'Session marked as completed.');
       loadBookings();
     } catch (err: any) {

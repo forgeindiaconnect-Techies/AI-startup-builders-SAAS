@@ -794,6 +794,23 @@ export const completeSession = async (req: AuthRequest, res: Response) => {
     }
     booking.status = 'completed';
     await booking.save();
+
+    // Create notification for admin
+    try {
+      const founder = await User.findById(booking.userId);
+      const mentor = await User.findById(booking.mentorId);
+      const startup = await Startup.findById(booking.startupId);
+      await NotificationModel.create({
+        userId: 'admin',
+        title: 'Mentoring Session Completed',
+        message: `Mentoring session for "${startup?.startupName || 'Startup'}" between founder "${founder?.fullName || 'Founder'}" and mentor "${mentor?.fullName || 'Mentor'}" is completed.`,
+        type: 'session_completed',
+        actionUrl: '/dashboard/admin/notifications',
+      });
+    } catch (notifErr) {
+      console.warn('Could not create admin notification:', (notifErr as Error).message);
+    }
+
     res.json({ success: true, message: 'Session completed', data: booking });
   } catch (error) {
     console.error('Error completing session:', error);
