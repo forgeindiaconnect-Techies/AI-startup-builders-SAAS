@@ -73,14 +73,9 @@ const AdminDocumentVerification: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Document Verification</h1>
-          <p className="text-gray-500 mt-1">Review and verify documents uploaded by founders.</p>
-        </div>
-        <button onClick={refreshDocs} className="px-3 py-1.5 text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center gap-1 transition-colors">
-          <RefreshCw size={12} /> Refresh
-        </button>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Document Verification</h1>
+        <p className="text-gray-500 mt-1">Review and verify documents uploaded by founders.</p>
       </div>
 
       {/* Stats */}

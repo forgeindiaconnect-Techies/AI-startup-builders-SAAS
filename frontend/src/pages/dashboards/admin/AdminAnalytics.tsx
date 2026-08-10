@@ -67,17 +67,9 @@ const AdminAnalytics: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up pb-12 space-y-8">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">AI Analytics</h1>
-          <p className="text-gray-500 mt-1">Real-time platform insights, active user breakdown, and AI valuation outputs.</p>
-        </div>
-        <button
-          onClick={fetchAnalytics}
-          className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors shadow-sm"
-        >
-          <RefreshCw size={14} /> Refresh Data
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">AI Analytics</h1>
+        <p className="text-gray-500 mt-1">Real-time platform insights, active user breakdown, and AI valuation outputs.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

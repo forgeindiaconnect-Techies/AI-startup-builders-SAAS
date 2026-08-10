@@ -48,12 +48,6 @@ const AdminLogs: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={loadLogs}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold rounded-xl text-sm transition-colors"
-          >
-            <RefreshCw size={15} /> Refresh
-          </button>
-          <button
             onClick={handleClearAllLogs}
             className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-600 font-bold rounded-xl text-sm transition-colors"
           >

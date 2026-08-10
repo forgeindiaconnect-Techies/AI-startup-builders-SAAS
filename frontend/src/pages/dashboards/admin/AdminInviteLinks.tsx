@@ -318,12 +318,6 @@ const AdminInviteLinks: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={loadInvites}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold rounded-xl text-sm transition-colors"
-          >
-            <RefreshCw size={15} /> Refresh
-          </button>
-          <button
             onClick={() => { setShowCreateModal(true); setGeneratedLink(null); setForm({ mentorName: '', mentorEmail: '', expiryDate: '', message: '' }); setFormErrors({}); }}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white font-bold rounded-xl text-sm shadow-md hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all"
           >

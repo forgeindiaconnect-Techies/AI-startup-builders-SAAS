@@ -102,14 +102,9 @@ const AdminPayments: React.FC = () => {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="font-['Poppins'] text-2xl font-bold text-[#1F2937]">Subscription Payments</h1>
-          <p className="text-[#6B7280] mt-1">Review and approve founder upgrade payments.</p>
-        </div>
-        <button onClick={fetchPayments} disabled={loading} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors shadow-sm">
-          <RefreshCw size={15} className={loading ? 'animate-spin' : ''} /> Refresh
-        </button>
+      <div className="mb-8">
+        <h1 className="font-['Poppins'] text-2xl font-bold text-[#1F2937]">Subscription Payments</h1>
+        <p className="text-[#6B7280] mt-1">Review and approve founder upgrade payments.</p>
       </div>
 
       {/* Stats */}
