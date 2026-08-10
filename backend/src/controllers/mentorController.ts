@@ -24,6 +24,20 @@ export const MENTOR_CATEGORIES = [
 ];
 
 export const SESSION_TOPICS = [
+  'AI Idea Generator',
+  'Idea Validation',
+  'Competitor Analysis',
+  'MVP Planner',
+  'Financial Plan',
+  'Go-To-Market Strategy',
+  'Logo & Branding',
+  'Business Plan',
+  'Pitch Deck',
+  'Market Research',
+  'Legal & Documents',
+  'AI Reports',
+  'AI Chat',
+  'Plagiarism Check',
   'Financial Planning',
   'Fundraising Strategy',
   'Business Model Review',

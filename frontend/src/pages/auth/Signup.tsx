@@ -63,9 +63,31 @@ const ROLES: { id: UserRole; title: string; icon: React.FC<any>; color: string; 
 ];
 
 const EXPERTISE_OPTIONS = [
-  'Business Strategy', 'Marketing', 'Finance', 'Technology',
-  'Product Development', 'Legal', 'Sales', 'HR', 'Operations',
-  'AI/ML', 'Other',
+  'AI Idea Generator',
+  'Idea Validation',
+  'Competitor Analysis',
+  'MVP Planner',
+  'Financial Plan',
+  'Go-To-Market Strategy',
+  'Logo & Branding',
+  'Business Plan',
+  'Pitch Deck',
+  'Market Research',
+  'Legal & Documents',
+  'AI Reports',
+  'AI Chat',
+  'Plagiarism Check',
+  'Business Strategy',
+  'Marketing',
+  'Finance',
+  'Technology',
+  'Product Development',
+  'Legal',
+  'Sales',
+  'HR',
+  'Operations',
+  'AI/ML',
+  'Other',
 ];
 
 const EXPERIENCE_OPTIONS = [

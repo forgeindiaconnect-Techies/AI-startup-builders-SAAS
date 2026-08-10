@@ -21,9 +21,27 @@ const MENTOR_CATEGORIES = [
 ];
 
 const BOOKING_TOPICS = [
-  'Financial Planning', 'Fundraising Strategy', 'Business Model Review', 'Go-to-Market Strategy',
-  'Product Roadmap', 'Pricing Strategy', 'Pitch Deck Review', 'Growth & Marketing',
-  'Sales Strategy', 'Legal & Compliance', 'Operations & Scaling', 'Team Building',
+  'AI Idea Generator',
+  'Idea Validation',
+  'Competitor Analysis',
+  'MVP Planner',
+  'Financial Plan',
+  'Go-To-Market Strategy',
+  'Logo & Branding',
+  'Business Plan',
+  'Pitch Deck',
+  'Market Research',
+  'Legal & Documents',
+  'AI Reports',
+  'AI Chat',
+  'Plagiarism Check',
+  'Fundraising Strategy',
+  'Product Roadmap',
+  'Pricing Strategy',
+  'Growth & Marketing',
+  'Sales Strategy',
+  'Operations & Scaling',
+  'Team Building',
 ];
 
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
