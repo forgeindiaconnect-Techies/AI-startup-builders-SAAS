@@ -6,6 +6,7 @@ import MentorProfile, { IMentorProfile } from '../models/MentorProfile.js';
 import MentorBooking from '../models/MentorBooking.js';
 import MentorFeedback from '../models/MentorFeedback.js';
 import MentorReview from '../models/MentorReview.js';
+import MentorTransaction from '../models/MentorTransaction.js';
 import Startup from '../models/Startup.js';
 import NotificationModel from '../models/Notification.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
@@ -378,9 +379,25 @@ export const updateMentorProfileAdmin = async (req: AuthRequest, res: Response) 
     const {
       fullName, title, expertise, industry, categories, bio,
       experienceYears, linkedin, photoUrl, location,
-      sessionDuration, sessionFee, isActive, status, approvalStatus,
+      sessionDuration, sessionFee, mentorSharePercentage, platformCommissionPercentage,
+      paymentModel, isActive, status, approvalStatus,
       availableDays, availableSlots,
     } = req.body;
+
+    // Validate commission percentages sum to 100
+    if (mentorSharePercentage !== undefined || platformCommissionPercentage !== undefined) {
+      const share = typeof mentorSharePercentage === 'number' ? mentorSharePercentage : 80;
+      const commission = typeof platformCommissionPercentage === 'number' ? platformCommissionPercentage : 20;
+      if (Math.abs(share + commission - 100) > 0.01) {
+        return res.status(400).json({
+          success: false,
+          message: `Mentor Share (${share}%) + Platform Commission (${commission}%) must equal 100%. Current total: ${share + commission}%`,
+        });
+      }
+      if (share < 0 || share > 100 || commission < 0 || commission > 100) {
+        return res.status(400).json({ success: false, message: 'Percentages must be between 0 and 100' });
+      }
+    }
 
     // Update User fields so the admin list / signup data stay in sync
     if (typeof fullName === 'string' && fullName.trim()) user.fullName = fullName.trim();
@@ -407,6 +424,10 @@ export const updateMentorProfileAdmin = async (req: AuthRequest, res: Response) 
     if (typeof location === 'string') profile.location = location;
     if (typeof sessionDuration === 'number') profile.sessionDuration = sessionDuration;
     if (typeof sessionFee === 'number') profile.sessionFee = sessionFee;
+    // Payment commission settings
+    if (typeof mentorSharePercentage === 'number') profile.mentorSharePercentage = mentorSharePercentage;
+    if (typeof platformCommissionPercentage === 'number') profile.platformCommissionPercentage = platformCommissionPercentage;
+    if (typeof paymentModel === 'string') profile.paymentModel = paymentModel;
     if (typeof isActive === 'boolean') profile.isActive = isActive;
 
     // Regenerate rolling availability from admin-selected days + time slots
@@ -424,7 +445,12 @@ export const updateMentorProfileAdmin = async (req: AuthRequest, res: Response) 
     res.json({
       success: true,
       message: 'Mentor profile updated successfully',
-      data: buildMentorView(user, profile),
+      data: {
+        ...buildMentorView(user, profile),
+        mentorSharePercentage: profile.mentorSharePercentage,
+        platformCommissionPercentage: profile.platformCommissionPercentage,
+        paymentModel: profile.paymentModel,
+      },
     });
   } catch (error) {
     console.error('Error updating mentor profile (admin):', error);
@@ -752,6 +778,43 @@ export const acceptSession = async (req: AuthRequest, res: Response) => {
     }
     await booking.save();
 
+    // Create MentorTransaction (earnings snapshot) — only if session has a fee
+    if (booking.sessionFee > 0) {
+      try {
+        const existing = await MentorTransaction.findOne({ bookingId: booking._id });
+        if (!existing) {
+          const mentorProfile = await MentorProfile.findOne({ mentorId: booking.mentorId });
+          const sharePercent = mentorProfile?.mentorSharePercentage ?? 80;
+          const commissionPercent = mentorProfile?.platformCommissionPercentage ?? 20;
+          const mentorEarnings = Math.round((booking.sessionFee * sharePercent) / 100 * 100) / 100;
+          const platformCommission = Math.round((booking.sessionFee * commissionPercent) / 100 * 100) / 100;
+
+          const founder = await User.findById(booking.userId);
+          const startup = await Startup.findById(booking.startupId);
+
+          await MentorTransaction.create({
+            bookingId: booking._id,
+            mentorId: booking.mentorId,
+            founderId: booking.userId,
+            startupId: booking.startupId,
+            sessionFee: booking.sessionFee,
+            mentorSharePercentage: sharePercent,
+            platformCommissionPercentage: commissionPercent,
+            mentorEarnings,
+            platformCommission,
+            paymentStatus: 'paid',
+            payoutStatus: 'pending',
+            founderName: founder?.fullName || '',
+            startupName: startup?.startupName || '',
+            topic: booking.topic || '',
+            sessionDate: booking.date || '',
+          });
+        }
+      } catch (txErr) {
+        console.warn('Could not create MentorTransaction:', (txErr as Error).message);
+      }
+    }
+
     // Notify the mentor that the founder accepted the session
     try {
       const founder = await User.findById(booking.userId);
@@ -795,6 +858,40 @@ export const completeSession = async (req: AuthRequest, res: Response) => {
     }
     booking.status = 'completed';
     await booking.save();
+
+    // Create MentorTransaction if not already created (e.g. free sessions or sessions completed without prior accept)
+    try {
+      const existing = await MentorTransaction.findOne({ bookingId: booking._id });
+      if (!existing && booking.sessionFee >= 0) {
+        const mentorProfile = await MentorProfile.findOne({ mentorId: booking.mentorId });
+        const sharePercent = mentorProfile?.mentorSharePercentage ?? 80;
+        const commissionPercent = mentorProfile?.platformCommissionPercentage ?? 20;
+        const fee = booking.sessionFee || 0;
+        const mentorEarnings = Math.round((fee * sharePercent) / 100 * 100) / 100;
+        const platformCommission = Math.round((fee * commissionPercent) / 100 * 100) / 100;
+        const founder = await User.findById(booking.userId);
+        const startup = await Startup.findById(booking.startupId);
+        await MentorTransaction.create({
+          bookingId: booking._id,
+          mentorId: booking.mentorId,
+          founderId: booking.userId,
+          startupId: booking.startupId,
+          sessionFee: fee,
+          mentorSharePercentage: sharePercent,
+          platformCommissionPercentage: commissionPercent,
+          mentorEarnings,
+          platformCommission,
+          paymentStatus: fee > 0 ? (booking.paymentStatus === 'paid' ? 'paid' : 'pending') : 'paid',
+          payoutStatus: 'pending',
+          founderName: founder?.fullName || '',
+          startupName: startup?.startupName || '',
+          topic: booking.topic || '',
+          sessionDate: booking.date || '',
+        });
+      }
+    } catch (txErr) {
+      console.warn('Could not create MentorTransaction on complete:', (txErr as Error).message);
+    }
 
     // Create notification for admin
     try {
@@ -1012,3 +1109,190 @@ export const getBookingFeedback = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ success: false, message: 'Failed to fetch feedback' });
   }
 };
+
+// GET /api/mentors/mentor/earnings  (earnings summary + transactions for logged-in mentor)
+export const getMentorEarnings = async (req: AuthRequest, res: Response) => {
+  try {
+    const mentorId = req.user!.id;
+    const transactions = await MentorTransaction.find({ mentorId }).sort({ createdAt: -1 });
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let totalEarnings = 0;
+    let thisMonthEarnings = 0;
+    let pendingEarnings = 0;
+    let paidEarnings = 0;
+
+    transactions.forEach((tx) => {
+      totalEarnings += tx.mentorEarnings;
+      if (new Date(tx.createdAt) >= startOfMonth) {
+        thisMonthEarnings += tx.mentorEarnings;
+      }
+      if (tx.payoutStatus === 'paid') {
+        paidEarnings += tx.mentorEarnings;
+      } else {
+        pendingEarnings += tx.mentorEarnings;
+      }
+    });
+
+    // Also include mentor profile payment settings (read-only for mentor)
+    const profile = await MentorProfile.findOne({ mentorId });
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          totalEarnings: Math.round(totalEarnings * 100) / 100,
+          thisMonthEarnings: Math.round(thisMonthEarnings * 100) / 100,
+          pendingEarnings: Math.round(pendingEarnings * 100) / 100,
+          paidEarnings: Math.round(paidEarnings * 100) / 100,
+          mentorSharePercentage: profile?.mentorSharePercentage ?? 80,
+          platformCommissionPercentage: profile?.platformCommissionPercentage ?? 20,
+          sessionFee: profile?.sessionFee ?? 0,
+        },
+        transactions,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching mentor earnings:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch earnings' });
+  }
+};
+
+// GET /api/mentors/admin/earnings  (admin: per-mentor earnings summary)
+export const getAdminMentorEarnings = async (req: AuthRequest, res: Response) => {
+  try {
+    const transactions = await MentorTransaction.find({}).sort({ createdAt: -1 });
+    const mentors = await User.find({ role: 'mentor' });
+    const profiles = await MentorProfile.find({});
+    const profileMap = new Map(profiles.map((p) => [p.mentorId.toString(), p]));
+
+    const mentorMap = new Map<string, any>();
+    mentors.forEach((m) => {
+      const profile = profileMap.get(m._id.toString());
+      mentorMap.set(m._id.toString(), {
+        mentorId: m._id,
+        mentorName: m.fullName,
+        email: m.email,
+        sessionFee: profile?.sessionFee ?? 0,
+        mentorSharePercentage: profile?.mentorSharePercentage ?? 80,
+        platformCommissionPercentage: profile?.platformCommissionPercentage ?? 20,
+        totalSessions: 0,
+        totalRevenue: 0,
+        totalMentorEarnings: 0,
+        totalPlatformCommission: 0,
+        pendingPayout: 0,
+        paidPayout: 0,
+        transactions: [] as any[],
+      });
+    });
+
+    transactions.forEach((tx) => {
+      const mid = tx.mentorId.toString();
+      if (!mentorMap.has(mid)) {
+        mentorMap.set(mid, {
+          mentorId: tx.mentorId,
+          mentorName: '',
+          email: '',
+          sessionFee: 0,
+          mentorSharePercentage: tx.mentorSharePercentage,
+          platformCommissionPercentage: tx.platformCommissionPercentage,
+          totalSessions: 0,
+          totalRevenue: 0,
+          totalMentorEarnings: 0,
+          totalPlatformCommission: 0,
+          pendingPayout: 0,
+          paidPayout: 0,
+          transactions: [],
+        });
+      }
+      const entry = mentorMap.get(mid);
+      entry.totalSessions += 1;
+      entry.totalRevenue += tx.sessionFee;
+      entry.totalMentorEarnings += tx.mentorEarnings;
+      entry.totalPlatformCommission += tx.platformCommission;
+      if (tx.payoutStatus === 'paid') {
+        entry.paidPayout += tx.mentorEarnings;
+      } else {
+        entry.pendingPayout += tx.mentorEarnings;
+      }
+      entry.transactions.push(tx);
+    });
+
+    const result = Array.from(mentorMap.values()).map((e) => ({
+      ...e,
+      totalRevenue: Math.round(e.totalRevenue * 100) / 100,
+      totalMentorEarnings: Math.round(e.totalMentorEarnings * 100) / 100,
+      totalPlatformCommission: Math.round(e.totalPlatformCommission * 100) / 100,
+      pendingPayout: Math.round(e.pendingPayout * 100) / 100,
+      paidPayout: Math.round(e.paidPayout * 100) / 100,
+    }));
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error fetching admin mentor earnings:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch mentor earnings' });
+  }
+};
+
+// PUT /api/mentors/admin/transactions/:id/payout  (admin: update payout status)
+export const updatePayoutStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { payoutStatus } = req.body;
+
+    if (!isValidId(id)) return res.status(400).json({ success: false, message: 'Invalid transaction id' });
+    if (!['pending', 'processing', 'paid', 'failed'].includes(payoutStatus)) {
+      return res.status(400).json({ success: false, message: 'Invalid payout status' });
+    }
+
+    const tx = await MentorTransaction.findById(id);
+    if (!tx) return res.status(404).json({ success: false, message: 'Transaction not found' });
+
+    tx.payoutStatus = payoutStatus;
+    await tx.save();
+
+    // Notify mentor of payout update
+    try {
+      const mentor = await User.findById(tx.mentorId);
+      const statusLabel = payoutStatus === 'paid' ? 'has been paid' : payoutStatus === 'processing' ? 'is being processed' : `is now ${payoutStatus}`;
+      await NotificationModel.create({
+        userId: tx.mentorId.toString(),
+        title: 'Payout Status Updated',
+        message: `Your payout of ₹${tx.mentorEarnings.toLocaleString('en-IN')} for session "${tx.topic || 'Mentoring Session'}" ${statusLabel}.`,
+        type: 'payout_update',
+        actionUrl: '/dashboard/mentor/earnings',
+      });
+    } catch (notifErr) {
+      console.warn('Could not create payout notification:', (notifErr as Error).message);
+    }
+
+    res.json({ success: true, message: `Payout status updated to ${payoutStatus}`, data: tx });
+  } catch (error) {
+    console.error('Error updating payout status:', error);
+    res.status(500).json({ success: false, message: 'Failed to update payout status' });
+  }
+};
+
+// GET /api/mentors/admin/:id/payment-settings  (admin: get mentor payment settings)
+export const getMentorPaymentSettings = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!isValidId(id)) return res.status(400).json({ success: false, message: 'Invalid mentor id' });
+    const profile = await MentorProfile.findOne({ mentorId: id });
+    res.json({
+      success: true,
+      data: {
+        sessionFee: profile?.sessionFee ?? 0,
+        mentorSharePercentage: profile?.mentorSharePercentage ?? 80,
+        platformCommissionPercentage: profile?.platformCommissionPercentage ?? 20,
+        paymentModel: profile?.paymentModel ?? 'per_session',
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching mentor payment settings:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch payment settings' });
+  }
+};
+

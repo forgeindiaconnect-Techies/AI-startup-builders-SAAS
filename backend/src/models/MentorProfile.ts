@@ -20,6 +20,9 @@ export interface IMentorProfile extends Document {
   reviewsCount: number;
   sessionDuration: number;
   sessionFee: number;
+  mentorSharePercentage: number;
+  platformCommissionPercentage: number;
+  paymentModel: string;
   isActive: boolean;
   availability: IMentorAvailability[];
 }
@@ -45,6 +48,9 @@ const MentorProfileSchema: Schema = new Schema(
     reviewsCount: { type: Number, default: 0 },
     sessionDuration: { type: Number, default: 45 },
     sessionFee: { type: Number, default: 0 },
+    mentorSharePercentage: { type: Number, default: 80, min: 0, max: 100 },
+    platformCommissionPercentage: { type: Number, default: 20, min: 0, max: 100 },
+    paymentModel: { type: String, default: 'per_session' },
     isActive: { type: Boolean, default: true },
     availability: [
       {

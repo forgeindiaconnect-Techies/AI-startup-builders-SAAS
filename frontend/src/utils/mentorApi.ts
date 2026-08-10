@@ -32,7 +32,7 @@ export const getMentorProfile = async (id: string): Promise<any> => {
   return data.data;
 };
 
-// PUT /api/mentors/admin/:id  (admin edits mentor profile + session fee)
+// PUT /api/mentors/admin/:id  (admin edits mentor profile + session fee + commission)
 export const updateMentorProfileAdmin = async (
   id: string,
   payload: {
@@ -48,6 +48,9 @@ export const updateMentorProfileAdmin = async (
     location?: string;
     sessionDuration?: number;
     sessionFee?: number;
+    mentorSharePercentage?: number;
+    platformCommissionPercentage?: number;
+    paymentModel?: string;
     isActive?: boolean;
     status?: string;
     approvalStatus?: string;
@@ -214,4 +217,51 @@ export const getMySubmittedReviews = async (): Promise<any[]> => {
   const res = await fetch(`${API_URL}/mentors/reviews/mine`, { headers: authHeaders(false) });
   const data = await handleResponse(res);
   return data.data || [];
+};
+
+// ─── Earnings APIs ────────────────────────────────────────────────────────────
+
+// GET /api/mentors/mentor/earnings
+export const getMentorEarnings = async (): Promise<{
+  summary: {
+    totalEarnings: number;
+    thisMonthEarnings: number;
+    pendingEarnings: number;
+    paidEarnings: number;
+    mentorSharePercentage: number;
+    platformCommissionPercentage: number;
+    sessionFee: number;
+  };
+  transactions: any[];
+}> => {
+  const res = await fetch(`${API_URL}/mentors/mentor/earnings`, { headers: authHeaders(false) });
+  const data = await handleResponse(res);
+  return data.data;
+};
+
+// GET /api/mentors/admin/earnings  (admin: per-mentor earnings)
+export const getAdminMentorEarnings = async (): Promise<any[]> => {
+  const res = await fetch(`${API_URL}/mentors/admin/earnings`, { headers: authHeaders(false) });
+  const data = await handleResponse(res);
+  return data.data || [];
+};
+
+// PUT /api/mentors/admin/transactions/:id/payout  (admin: update payout status)
+export const updateMentorPayoutStatus = async (
+  transactionId: string,
+  payoutStatus: 'pending' | 'processing' | 'paid' | 'failed'
+): Promise<any> => {
+  const res = await fetch(`${API_URL}/mentors/admin/transactions/${transactionId}/payout`, {
+    method: 'PUT',
+    headers: authHeaders(true),
+    body: JSON.stringify({ payoutStatus }),
+  });
+  return handleResponse(res);
+};
+
+// GET /api/mentors/admin/:id/payment-settings
+export const getAdminMentorPaymentSettings = async (mentorId: string): Promise<any> => {
+  const res = await fetch(`${API_URL}/mentors/admin/${mentorId}/payment-settings`, { headers: authHeaders(false) });
+  const data = await handleResponse(res);
+  return data.data;
 };

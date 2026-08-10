@@ -81,6 +81,7 @@ import AdminSettings         from './pages/dashboards/admin/AdminSettings';
 import AdminApprovalsHub      from './pages/dashboards/admin/AdminApprovalsHub';
 import AdminDocumentVerification from './pages/dashboards/admin/AdminDocumentVerification';
 import AdminInviteLinks        from './pages/dashboards/admin/AdminInviteLinks';
+import AdminMentorEarnings     from './pages/dashboards/admin/AdminMentorEarnings';
 
 import SharedNotifications from './pages/dashboards/founder/FounderNotifications';
 import SharedHelp          from './pages/dashboards/founder/FounderHelp';
@@ -184,6 +185,7 @@ function App() {
                     <Route path="notifications"      element={<SharedNotifications />} />
                     <Route path="profile"            element={<AdminProfile />} />
                     <Route path="help"              element={<SharedHelp />} />
+                    <Route path="mentor-earnings"    element={<AdminMentorEarnings />} />
                   </Route>
 
                   {/* ───────────── MENTOR ───────────── */}

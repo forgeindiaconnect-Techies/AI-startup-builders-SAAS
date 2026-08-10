@@ -49,6 +49,7 @@ import AdminDocumentVerification from '../pages/dashboards/admin/AdminDocumentVe
 import AdminSubPayments from '../pages/dashboards/admin/AdminSubPayments';
 import AdminAnalytics from '../pages/dashboards/admin/AdminAnalytics';
 import AdminPlatformSettings from '../pages/dashboards/admin/AdminPlatformSettings';
+import AdminMentorEarnings from '../pages/dashboards/admin/AdminMentorEarnings';
 
 const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
   founder: {
@@ -99,6 +100,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/admin/analytics': AdminAnalytics,
     '/dashboard/admin/platform-settings': AdminPlatformSettings,
     '/dashboard/admin/notifications': SharedNotifications,
+    '/dashboard/admin/mentor-earnings': AdminMentorEarnings,
   },
 };
 
@@ -169,6 +171,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Subscriptions & Payments',icon: CreditCard,      path: '/dashboard/admin/sub-payments' },
         { name: 'AI Analytics',            icon: BarChart2,       path: '/dashboard/admin/analytics' },
         { name: 'Platform Settings',       icon: Settings,        path: '/dashboard/admin/platform-settings' },
+        { name: 'Mentor Earnings',         icon: IndianRupee,     path: '/dashboard/admin/mentor-earnings' },
         { name: 'Notifications',           icon: Bell,            path: '/dashboard/admin/notifications' },
       ],
     },
