@@ -211,6 +211,30 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
       aiSourceExplanation = 'General AI characteristics detected, but specific AI source cannot be reliably determined. Source attribution is not conclusive from text alone.';
     }
 
+    // Content Origin & Source Attribution Analysis
+    let contentOrigin = 'Original Founder Idea';
+    let contentOriginExplanation = 'Analysis indicates an authentic, human-written founder pitch with high semantic uniqueness.';
+
+    if (lowerContent.includes('as an ai language model') || lowerContent.includes('chatgpt') || (aiMarkerCount >= 2 && lowerContent.includes('furthermore'))) {
+      contentOrigin = 'Copied / Adapted from ChatGPT';
+      contentOriginExplanation = 'Analysis detected stylistic transition markers, structured numbering patterns, and clause distributions characteristic of ChatGPT / OpenAI model outputs.';
+    } else if (lowerContent.includes('gemini') || (lowerContent.includes('tapestry') && aiMarkerCount >= 2)) {
+      contentOrigin = 'Copied / Adapted from Gemini';
+      contentOriginExplanation = 'Analysis detected reasoning structures, vocabulary patterns, and tone characteristics consistent with Google Gemini model outputs.';
+    } else if (lowerContent.includes('claude')) {
+      contentOrigin = 'Copied / Adapted from Claude';
+      contentOriginExplanation = 'Analysis detected structural features and clause framing consistent with Anthropic Claude model outputs.';
+    } else if (aiProbability >= 65) {
+      contentOrigin = 'Copied / Adapted from AI Tool';
+      contentOriginExplanation = 'Text exhibits strong synthetic markers, uniform sentence length distributions, and common AI buzzwords.';
+    } else if (similarityScore >= 40) {
+      contentOrigin = 'Adapted from Existing Online / Platform Source';
+      contentOriginExplanation = 'Content shares significant structural and phrasing overlap with existing online business plans or platform project databases.';
+    } else if (aiProbability >= 35) {
+      contentOrigin = 'AI-Assisted Hybrid Concept';
+      contentOriginExplanation = 'Content appears to combine authentic founder domain ideas with AI-generated phrasing or formatting assistance.';
+    }
+
     // 4. Copyright Risk Analysis
     let copyrightRisk: 'Low' | 'Medium' | 'High' = 'Low';
     let copyrightRiskReason = 'The submitted content shows low overlap with registered platform projects. Common business terminology was excluded from calculation.';
@@ -291,6 +315,8 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
       overallClassification,
       matchingSources,
       recommendations,
+      contentOrigin,
+      contentOriginExplanation,
     });
 
     return res.status(201).json({

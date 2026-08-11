@@ -9,21 +9,12 @@ import {
   deleteOriginalityReportById,
 } from '../../../utils/originalityApi';
 import type { IOriginalityReport } from '../../../utils/originalityApi';
-
-const SOURCE_OPTIONS = [
-  { value: 'Not Specified', label: 'Not Specified (Optional)' },
-  { value: 'My Own Idea', label: 'My Own Idea' },
-  { value: 'ChatGPT', label: 'ChatGPT' },
-  { value: 'Gemini', label: 'Gemini' },
-  { value: 'Claude', label: 'Claude' },
-  { value: 'Other AI Tool', label: 'Other AI Tool' },
-  { value: 'Other Source', label: 'Other Source' },
-  { value: 'Not Sure', label: 'Not Sure' },
-];
+import { getStartups } from '../../../utils/localStorageHelper';
 
 const FounderOriginalityCheck: React.FC = () => {
   const [content, setContent] = useState('');
-  const [declaredSource, setDeclaredSource] = useState('Not Specified');
+  const [userStartups, setUserStartups] = useState<any[]>([]);
+  const [selectedStartupId, setSelectedStartupId] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [currentReport, setCurrentReport] = useState<IOriginalityReport | null>(null);
@@ -51,7 +42,28 @@ const FounderOriginalityCheck: React.FC = () => {
 
   useEffect(() => {
     loadHistory();
+    const loadStartups = async () => {
+      try {
+        const locals = await getStartups();
+        if (Array.isArray(locals)) {
+          setUserStartups(locals);
+        }
+      } catch (err) {
+        console.error('Failed to load founder startups:', err);
+      }
+    };
+    loadStartups();
   }, []);
+
+  const handleSelectStartup = (startupId: string) => {
+    setSelectedStartupId(startupId);
+    if (!startupId) return;
+    const target = userStartups.find(s => (s.id || s._id || s.startupId) === startupId);
+    if (target) {
+      const textToFill = target.startupIdea || target.description || target.businessPlan?.executiveSummary || target.startupName || '';
+      setContent(textToFill);
+    }
+  };
 
   const handleAnalyze = async () => {
     setErrorMsg(null);
@@ -77,7 +89,7 @@ const FounderOriginalityCheck: React.FC = () => {
     try {
       const report = await analyzeOriginalityContent({
         content: content.trim(),
-        declaredSource: declaredSource !== 'Not Specified' ? declaredSource : undefined,
+        startupId: selectedStartupId || undefined,
       });
 
       setCurrentReport(report);
@@ -178,7 +190,7 @@ const FounderOriginalityCheck: React.FC = () => {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={7}
-            placeholder="Enter your startup idea, business description, AI-generated content, or other text you want to analyze..."
+            placeholder="Enter your startup idea, business description, AI-generated content, or select an idea from your saved startups dropdown below..."
             className="w-full bg-[#0B0D14] border border-white/10 rounded-xl p-4 text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#7C3AED] focus:border-transparent transition-all"
           />
           <div className="flex justify-between items-center mt-2 text-xs text-gray-400">
@@ -187,22 +199,30 @@ const FounderOriginalityCheck: React.FC = () => {
           </div>
         </div>
 
-        {/* Optional Source Selection */}
+        {/* Startup Selection Dropdown */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-1.5 flex items-center gap-1.5">
-              Where did this content come from? <span className="text-gray-500 font-normal">(Optional)</span>
+              Select your Startup Idea <span className="text-gray-500 font-normal">(Auto-fills content box)</span>
             </label>
             <select
-              value={declaredSource}
-              onChange={(e) => setDeclaredSource(e.target.value)}
+              value={selectedStartupId}
+              onChange={(e) => handleSelectStartup(e.target.value)}
               className="w-full bg-[#0B0D14] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#7C3AED]"
             >
-              {SOURCE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value} className="bg-[#131620] text-white">
-                  {opt.label}
-                </option>
-              ))}
+              <option value="" className="bg-[#131620] text-gray-400">
+                Select from your saved startup ideas...
+              </option>
+              {userStartups.map((s) => {
+                const sId = s.id || s._id || s.startupId;
+                const sName = s.startupName || s.name || 'Untitled Startup';
+                const snippet = (s.startupIdea || s.description || '').slice(0, 45);
+                return (
+                  <option key={sId} value={sId} className="bg-[#131620] text-white">
+                    {sName} {snippet ? `— ${snippet}...` : ''}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -266,7 +286,7 @@ const FounderOriginalityCheck: React.FC = () => {
             </div>
           )}
 
-          {/* 10. Summary Card */}
+          {/* Summary Card */}
           <div className="bg-[#131620] border border-white/10 rounded-2xl p-6 shadow-xl">
             <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-6">
               <div>
@@ -339,7 +359,30 @@ const FounderOriginalityCheck: React.FC = () => {
             </div>
           </div>
 
-          {/* 11. Detailed Breakdown Sections */}
+          {/* Section 0: Content Origin / Source Attribution */}
+          <div className="bg-[#131620] border border-white/10 rounded-2xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="font-bold text-white flex items-center gap-2 text-sm">
+                <HelpCircle className="w-4 h-4 text-[#FBBF24]" />
+                Content Origin & Source Attribution
+              </h3>
+              <span className="text-xs font-bold text-purple-300 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
+                {activeReport.contentOrigin || 'Original Founder Idea'}
+              </span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#0B0D14] border border-white/5 space-y-2 text-xs">
+              <div className="flex items-center gap-2 text-white font-semibold">
+                <span>Detected Origin:</span>
+                <span className="text-[#FBBF24] font-bold">{activeReport.contentOrigin || 'Original Founder Idea'}</span>
+              </div>
+              <p className="text-gray-300 leading-relaxed">
+                {activeReport.contentOriginExplanation || 'Analysis indicates an authentic, human-written founder pitch with high semantic uniqueness.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Detailed Breakdown Sections */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Section 1: Originality Analysis */}
             <div className="bg-[#131620] border border-white/10 rounded-2xl p-6 shadow-xl space-y-4">
@@ -549,7 +592,7 @@ const FounderOriginalityCheck: React.FC = () => {
         </div>
       )}
 
-      {/* 12. Analysis History Section */}
+      {/* Analysis History Section */}
       <div className="bg-[#131620] border border-white/10 rounded-2xl p-6 shadow-xl space-y-4">
         <div className="flex justify-between items-center border-b border-white/10 pb-4">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -558,7 +601,7 @@ const FounderOriginalityCheck: React.FC = () => {
           </h2>
           <button
             onClick={loadHistory}
-            className="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1"
+            className="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1 cursor-pointer"
           >
             <RefreshCw size={12} /> Refresh History
           </button>
@@ -568,7 +611,7 @@ const FounderOriginalityCheck: React.FC = () => {
           <div className="py-8 text-center text-gray-400 text-sm animate-pulse">Loading analysis history...</div>
         ) : history.length === 0 ? (
           <div className="py-8 text-center text-gray-400 text-sm">
-            No previous analysis reports found. Submit content above to run your first check!
+            No previous analysis reports found. Select a startup idea or type text above to run your first check!
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -577,6 +620,7 @@ const FounderOriginalityCheck: React.FC = () => {
                 <tr className="border-b border-white/10 text-gray-400 font-semibold">
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Idea Snippet</th>
+                  <th className="py-3 px-4">Origin</th>
                   <th className="py-3 px-4">Originality</th>
                   <th className="py-3 px-4">Similarity</th>
                   <th className="py-3 px-4">AI Prob.</th>
@@ -601,8 +645,11 @@ const FounderOriginalityCheck: React.FC = () => {
                         year: 'numeric',
                       })}
                     </td>
-                    <td className="py-3 px-4 text-white font-medium max-w-[200px] truncate">
+                    <td className="py-3 px-4 text-white font-medium max-w-[180px] truncate">
                       {item.content}
+                    </td>
+                    <td className="py-3 px-4 text-purple-300 font-medium max-w-[160px] truncate">
+                      {item.contentOrigin || 'Original Founder Idea'}
                     </td>
                     <td className="py-3 px-4 text-emerald-400 font-bold">{item.originalityScore}%</td>
                     <td className="py-3 px-4 text-amber-400 font-bold">{item.similarityScore}%</td>

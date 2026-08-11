@@ -42,6 +42,8 @@ export interface IOriginalityReport {
   overallClassification: string;
   matchingSources: IMatchingSource[];
   recommendations: string[];
+  contentOrigin?: string;
+  contentOriginExplanation?: string;
   createdAt: string;
   updatedAt: string;
 }

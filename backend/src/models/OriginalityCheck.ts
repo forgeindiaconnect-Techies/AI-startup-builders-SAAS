@@ -41,6 +41,8 @@ export interface IOriginalityCheck extends Document {
   overallClassification: string;
   matchingSources: IMatchingSource[];
   recommendations: string[];
+  contentOrigin: string;
+  contentOriginExplanation: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -93,6 +95,8 @@ const OriginalityCheckSchema = new Schema<IOriginalityCheck>(
     overallClassification: { type: String, required: true },
     matchingSources: [MatchingSourceSchema],
     recommendations: [{ type: String }],
+    contentOrigin: { type: String, default: 'Original Founder Idea' },
+    contentOriginExplanation: { type: String, default: 'The submitted idea shows characteristics of an authentic founder pitch.' },
   },
   { timestamps: true }
 );
