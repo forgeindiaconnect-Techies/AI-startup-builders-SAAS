@@ -192,10 +192,6 @@ const FounderStartups: React.FC = () => {
                   
                   <div className="space-y-3 mb-6 bg-gray-50/50 p-3 rounded-lg border border-gray-100/50">
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-500 font-medium">Status</span>
-                      <span className={`font-bold px-2.5 py-0.5 rounded-md border text-xs ${statusStyles[startup.status]}`}>{startup.status}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
                       <span className="text-gray-500 font-medium">AI Score</span>
                       <span className={`font-black ${startup.score >= 90 ? 'text-green-600' : startup.score > 80 ? 'text-blue-600' : 'text-gray-900'}`}>{startup.score}/100</span>
                     </div>

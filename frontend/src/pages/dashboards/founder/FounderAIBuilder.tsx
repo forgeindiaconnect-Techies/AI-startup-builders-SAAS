@@ -215,11 +215,6 @@ const FounderAIBuilder: React.FC = () => {
                   <div className="w-12 h-12 bg-purple-100 text-purple-700 rounded-xl flex items-center justify-center font-black text-xl shadow-sm">
                     {startup.startupName.charAt(0)}
                   </div>
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-md border ${
-                    startup.status === 'generated' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                  }`}>
-                    {startup.status === 'generated' ? 'Generated' : 'Draft'}
-                  </span>
                 </div>
                 
                 <h3 className="text-lg font-bold text-gray-900 mb-2">{startup.startupName}</h3>
