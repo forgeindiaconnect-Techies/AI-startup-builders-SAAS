@@ -22,6 +22,7 @@ import FounderFunding from '../pages/dashboards/founder/FounderFunding';
 import FounderBilling from '../pages/dashboards/founder/FounderBilling';
 import FounderDocuments from '../pages/dashboards/founder/FounderDocuments';
 import FounderLearningVideos from '../pages/dashboards/founder/FounderLearningVideos';
+import FounderOriginalityCheck from '../pages/dashboards/founder/FounderOriginalityCheck';
 import FounderProfileBilling from '../pages/dashboards/founder/FounderProfileBilling';
 import SharedNotifications from '../pages/dashboards/founder/FounderNotifications';
 import SharedInbox from '../pages/dashboards/founder/SharedInbox';
@@ -58,6 +59,9 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/founder/startups': FounderStartups,
     '/dashboard/founder/ai-builder': FounderAIBuilder,
     '/dashboard/founder/ai_builder': FounderAIBuilder,
+    '/dashboard/founder/originality-check': FounderOriginalityCheck,
+    '/dashboard/founder/originality_check': FounderOriginalityCheck,
+    '/dashboard/founder/plagiarism': FounderOriginalityCheck,
     '/dashboard/founder/mentors': FounderMentors,
     '/dashboard/founder/mentor-reviews': FounderMentorReviews,
     '/dashboard/founder/funding': () => (
@@ -115,17 +119,18 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
   founder: [
     {
       items: [
-        { name: 'Overview',         icon: LayoutDashboard, path: '/dashboard/founder' },
-        { name: 'My Startups',      icon: Rocket,          path: '/dashboard/founder/startups' },
-        { name: 'AI Builder',       icon: Lightbulb,       path: '/dashboard/founder/ai-builder' },
-        { name: 'Mentors',          icon: GraduationCap,   path: '/dashboard/founder/mentors' },
-        { name: 'Mentor Reviews',   icon: Star,            path: '/dashboard/founder/mentor-reviews' },
-        { name: 'Funding',          icon: Wallet,          path: '/dashboard/founder/funding', plans: ['premium_startup_builder'] },
-        { name: 'Subscription',     icon: CreditCard,      path: '/dashboard/founder/billing' },
-        { name: 'Documents',        icon: File,            path: '/dashboard/founder/documents' },
-        { name: 'Learning Videos',  icon: Film,            path: '/dashboard/founder/learning-videos' },
-        { name: 'Notifications',    icon: Bell,           path: '/dashboard/founder/notifications' },
-        { name: 'Profile',           icon: UserCog,         path: '/dashboard/founder/profile-billing' },
+        { name: 'Overview',                 icon: LayoutDashboard, path: '/dashboard/founder' },
+        { name: 'My Startups',              icon: Rocket,          path: '/dashboard/founder/startups' },
+        { name: 'AI Builder',               icon: Lightbulb,       path: '/dashboard/founder/ai-builder' },
+        { name: 'Originality & Plagiarism', icon: ShieldCheck,     path: '/dashboard/founder/originality-check' },
+        { name: 'Mentors',                  icon: GraduationCap,   path: '/dashboard/founder/mentors' },
+        { name: 'Mentor Reviews',           icon: Star,            path: '/dashboard/founder/mentor-reviews' },
+        { name: 'Funding',                  icon: Wallet,          path: '/dashboard/founder/funding', plans: ['premium_startup_builder'] },
+        { name: 'Subscription',             icon: CreditCard,      path: '/dashboard/founder/billing' },
+        { name: 'Documents',                icon: File,            path: '/dashboard/founder/documents' },
+        { name: 'Learning Videos',          icon: Film,            path: '/dashboard/founder/learning-videos' },
+        { name: 'Notifications',            icon: Bell,            path: '/dashboard/founder/notifications' },
+        { name: 'Profile',                  icon: UserCog,         path: '/dashboard/founder/profile-billing' },
       ],
     },
   ],
@@ -309,7 +314,7 @@ const DashboardLayout: React.FC = () => {
   const resolveAllowed = (path: string): string => {
     if (role === 'founder' && user?.subscriptionStatus !== 'active') {
       const isAllowed =
-        ['/billing', '/profile', '/ai-builder', '/ai_builder', '/startups', '/documents', '/roadmap', '/notifications', '/funding', '/mentors']
+        ['/billing', '/profile', '/ai-builder', '/ai_builder', '/startups', '/documents', '/roadmap', '/notifications', '/funding', '/mentors', '/originality-check', '/originality_check', '/plagiarism']
           .some((s) => path.includes(s)) || path.endsWith('/founder');
       if (!isAllowed) return '/dashboard/founder/billing';
     }
