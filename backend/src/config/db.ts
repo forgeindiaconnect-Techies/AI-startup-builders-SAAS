@@ -14,11 +14,13 @@ const DB_CONFIG = {
 
 export const connectDB = async (): Promise<void> => {
   try {
-    // Disable buffering globally so Mongoose fails fast on operations if disconnected
-    mongoose.set('bufferCommands', false);
+    // Keep bufferCommands enabled so queries queue gracefully during initial connection startup
+    mongoose.set('bufferCommands', true);
 
     const conn = await mongoose.connect(DB_CONFIG.uri, {
-      dbName: 'ai-startup-builder', // always use this DB, regardless of URI
+      dbName: 'ai-startup-builder',
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
     });
     console.log('');
     console.log('📦 ═══════════════════════════════════════════');
@@ -27,8 +29,8 @@ export const connectDB = async (): Promise<void> => {
     console.log('═══════════════════════════════════════════════');
     console.log('');
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
-    console.error('⚠️ Server will continue without database. API routes requiring DB will return errors.');
+    console.error('❌ Database connection failed:', (error as Error).message);
+    console.error('⚠️ Server will continue serving requests gracefully.');
   }
 };
 

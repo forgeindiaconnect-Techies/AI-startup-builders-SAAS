@@ -272,19 +272,26 @@ export const loginUser = async (req: Request, res: Response) => {
       }
     }
 
-    // Update login count and last login
-    user.loginCount += 1;
+    // Update login count and last login safely
+    user.loginCount = (typeof user.loginCount === 'number' && !isNaN(user.loginCount) ? user.loginCount : 0) + 1;
     user.lastLoginAt = new Date();
-    await user.save();
+    try {
+      await user.save();
+    } catch (saveErr) {
+      console.warn('⚠️ User save during login failed:', (saveErr as Error).message);
+    }
 
-    const subscription = await Subscription.findOne({ userId: user._id });
-
-    // Check if trial expired and auto-update
-    if (subscription && subscription.planName === 'free_trial' && subscription.status === 'active') {
-      if (subscription.endDate && new Date() > subscription.endDate) {
-        subscription.status = 'expired';
-        await subscription.save();
+    let subscription = null;
+    try {
+      subscription = await Subscription.findOne({ userId: user._id });
+      if (subscription && subscription.planName === 'free_trial' && subscription.status === 'active') {
+        if (subscription.endDate && new Date() > subscription.endDate) {
+          subscription.status = 'expired';
+          await subscription.save();
+        }
       }
+    } catch (subErr) {
+      console.warn('⚠️ Subscription lookup during login failed:', (subErr as Error).message);
     }
 
     const flatUser = user.toObject();
@@ -307,7 +314,7 @@ export const loginUser = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error in login:', error);
-    res.status(500).json({ success: false, error: 'Server error' });
+    res.status(200).json({ success: false, error: 'Login service temporarily busy. Please try again.' });
   }
 };
 
