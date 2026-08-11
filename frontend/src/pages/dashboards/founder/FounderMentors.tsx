@@ -4,7 +4,7 @@ import {
   GraduationCap, Search, Star, MapPin, Briefcase, Clock, IndianRupee, ExternalLink,
   X, ArrowRight, ArrowLeft, Check, CheckCircle2, Calendar, Loader2, Link2,
   Video, RotateCcw, CalendarX, BadgeCheck, Award, BookOpen, FileText,
-  MessageSquare, Send, Bot, Copy, QrCode, Smartphone,
+  MessageSquare, Send, Bot, Copy, QrCode, Smartphone, Lock,
 } from 'lucide-react';
 import { getStartups, addNotification } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
@@ -769,10 +769,16 @@ const BookingRow: React.FC<{
                 )}
               </span>
               {booking.meetingLink && canModify && (
-                <a href={booking.meetingLink} target="_blank" rel="noreferrer"
-                  className="flex items-center gap-1 text-[#5B21B6] font-bold hover:underline">
-                  <Link2 size={12} /> {booking.status === 'completed' ? 'Meeting link' : 'Join meeting link'}
-                </a>
+                booking.paymentStatus === 'paid' || booking.paymentStatus === 'not_required' || Number(booking.sessionFee || 0) === 0 ? (
+                  <a href={booking.meetingLink} target="_blank" rel="noreferrer"
+                    className="flex items-center gap-1 text-[#5B21B6] font-bold hover:underline">
+                    <Link2 size={12} /> {booking.status === 'completed' ? 'Meeting link' : 'Join meeting link'}
+                  </a>
+                ) : (
+                  <span className="flex items-center gap-1 text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[11px]" title="Complete payment details to view and join the mentor meeting link">
+                    <Lock size={11} /> Payment pending for meeting link
+                  </span>
+                )
               )}
             </div>
           </div>
