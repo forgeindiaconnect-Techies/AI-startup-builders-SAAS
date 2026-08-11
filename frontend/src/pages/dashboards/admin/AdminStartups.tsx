@@ -769,7 +769,7 @@ const AdminStartups: React.FC = () => {
   return (
   <div className="animate-fade-in-up pb-10">
     <div className="mb-8">
-      <h1 className="text-2xl font-bold text-gray-900">Manage Startups</h1>
+      <h1 className="text-2xl font-bold text-gray-900">Startup Ideas</h1>
       <p className="text-gray-500 mt-1">View, edit, and moderate all startups on the platform.</p>
     </div>
 
