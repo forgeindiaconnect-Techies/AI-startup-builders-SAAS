@@ -331,7 +331,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       getPendingApprovals: () => allUsers.filter((u: any) => u.approvalStatus === 'pending'),
       approveUser: async (userId: string) => {
         const token = getToken();
-        if (!token) return;
+        if (!token || (user?.role || '').toLowerCase() !== 'admin') return;
         try {
           await fetch(`${API_URL}/auth/admin/users/action`, {
             method: 'POST',
@@ -343,7 +343,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       },
       rejectUser: async (userId: string) => {
         const token = getToken();
-        if (!token) return;
+        if (!token || (user?.role || '').toLowerCase() !== 'admin') return;
         try {
           await fetch(`${API_URL}/auth/admin/users/action`, {
             method: 'POST',
@@ -357,7 +357,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       getAllUsers: () => allUsers,
       updateUserStatus: async (userId: string, status: string) => {
         const token = getToken();
-        if (!token) return;
+        if (!token || (user?.role || '').toLowerCase() !== 'admin') return;
         try {
           await fetch(`${API_URL}/auth/admin/users/action`, {
             method: 'POST',
@@ -369,7 +369,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       },
       deleteUser: async (userId: string) => {
         const token = getToken();
-        if (!token) return;
+        if (!token || (user?.role || '').toLowerCase() !== 'admin') return;
         try {
           await fetch(`${API_URL}/auth/admin/users/action`, {
             method: 'POST',
@@ -383,7 +383,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       refreshUsers: () => { fetchAllUsers(); },
       updateUserSubscription: async (userId: string, data: { plan?: string; status?: string; paymentStatus?: string }) => {
         const token = getToken();
-        if (!token) return;
+        if (!token || (user?.role || '').toLowerCase() !== 'admin') return;
         try {
           await fetch(`${API_URL}/auth/admin/users/subscription`, {
             method: 'POST',
