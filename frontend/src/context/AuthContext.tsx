@@ -78,21 +78,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const fetchAllUsers = async () => {
     const token = getToken();
     if (!token) return;
-    const role = (user?.role || getTokenRole() || '').toLowerCase();
-    if (role !== 'admin') return;
+    // Strictly verify role: only fetch if user object is loaded and role is explicitly admin
+    const currentRole = (user?.role || '').toLowerCase();
+    if (currentRole !== 'admin') return;
     if (usersFetchBlockedRef.current) return;
+
+    usersFetchBlockedRef.current = true;
     try {
       const res = await fetch(`${API_URL}/auth/admin/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.status === 403) {
-        // Token is not authorized for admin access — stop hammering the endpoint.
-        usersFetchBlockedRef.current = true;
+      if (!res.ok) {
         setAllUsers([]);
         return;
       }
       const data = await res.json();
       if (data.success && data.users) {
+        usersFetchBlockedRef.current = false;
         const mapped = data.users.map((u: any) => ({
           id: u._id,
           name: u.fullName,
