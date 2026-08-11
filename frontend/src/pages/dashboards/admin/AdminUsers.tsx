@@ -460,8 +460,8 @@ const AdminUsers: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${roleColors[u.role] || roleColors.founder}`}>
-                      {u.role}
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${roleColors[(u.role || '').toLowerCase()] || roleColors.founder}`}>
+                      {(!u.role || u.role.toLowerCase() === 'user' || u.role.toLowerCase() === 'founder') ? 'founder' : u.role}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">{formatDate(u.signupDate)}</td>

@@ -227,7 +227,7 @@ const SidebarInner: React.FC<{
             </div>
             <div className="overflow-hidden min-w-0">
               <p className="text-[13px] font-semibold text-white truncate">{userName}</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#FBBF24] truncate">{userRole === 'founder' ? 'User' : userRole}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#FBBF24] truncate">{(!userRole || userRole.toLowerCase() === 'user' || userRole.toLowerCase() === 'founder') ? 'Founder' : userRole}</p>
             </div>
           </div>
         )}
@@ -302,7 +302,8 @@ const DashboardLayout: React.FC = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const role = user?.role ?? '';
+  const rawRole = (user?.role ?? '').toLowerCase();
+  const role = (rawRole === 'user' || !rawRole) ? 'founder' : rawRole;
 
   // Preserve the founder subscription gate that ProtectedRoute applies on route change
   const resolveAllowed = (path: string): string => {
@@ -375,7 +376,7 @@ const DashboardLayout: React.FC = () => {
             </button>
             <div className="hidden sm:block">
               <p className="text-xs text-gray-400 font-semibold capitalize">
-                {user?.role === 'founder' ? 'User' : user?.role} Dashboard
+                {user?.role === 'founder' || user?.role === 'user' ? 'Founder' : user?.role} Dashboard
               </p>
             </div>
           </div>

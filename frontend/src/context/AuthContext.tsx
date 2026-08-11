@@ -68,7 +68,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (!token) return null;
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return typeof payload.role === 'string' ? payload.role.toLowerCase() : null;
+      const r = typeof payload.role === 'string' ? payload.role.toLowerCase() : null;
+      return r === 'user' ? 'founder' : r;
     } catch {
       return null;
     }
