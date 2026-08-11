@@ -34,6 +34,7 @@ import FounderAIChat    from './pages/dashboards/founder/FounderAIChat';
 import FounderProfile   from './pages/dashboards/founder/FounderProfile';
 import FounderBilling   from './pages/dashboards/founder/FounderBilling';
 import FounderLearningVideos from './pages/dashboards/founder/FounderLearningVideos';
+import FounderOriginalityCheck from './pages/dashboards/founder/FounderOriginalityCheck';
 import FounderMentors   from './pages/dashboards/founder/FounderMentors';
 import FounderMentorReviews from './pages/dashboards/founder/FounderMentorReviews';
 
@@ -137,6 +138,8 @@ function App() {
                     <Route path="startups"        element={<FounderStartups />} />
                     <Route path="ai-builder"      element={<FounderAIBuilder />} />
                     <Route path="ai_builder"      element={<FounderAIBuilder />} />
+                    <Route path="originality-check" element={<FounderOriginalityCheck />} />
+                    <Route path="plagiarism"      element={<FounderOriginalityCheck />} />
                     <Route path="mentors"         element={<FounderMentors />} />
                     <Route path="mentor-reviews"  element={<FounderMentorReviews />} />
                     <Route path="funding"         element={<PlanGate requiredPlans={['premium_startup_builder']}><FounderFunding /></PlanGate>} />

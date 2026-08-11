@@ -20,13 +20,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  const effectiveRole = ((user.role as string) === 'user' || !user.role) ? 'founder' : user.role;
+
+  if (allowedRoles && !allowedRoles.includes(effectiveRole as UserRole)) {
     // Role not authorized, redirect to their respective dashboard
-    return <Navigate to={`/dashboard/${user.role}`} replace />;
+    return <Navigate to={`/dashboard/${effectiveRole}`} replace />;
   }
 
-  if (user.role === 'founder' && user.subscriptionStatus !== 'active') {
-    const isAllowedPath = location.pathname.includes('/billing') || location.pathname.includes('/profile') || location.pathname.includes('/ai-builder') || location.pathname.includes('/ai_builder') || location.pathname.includes('/startups') || location.pathname.includes('/documents') || location.pathname.includes('/roadmap') || location.pathname.includes('/notifications') || location.pathname.includes('/funding') || location.pathname.includes('/mentors');
+  if (effectiveRole === 'founder' && user.subscriptionStatus !== 'active') {
+    const isAllowedPath = location.pathname.includes('/billing') || location.pathname.includes('/profile') || location.pathname.includes('/ai-builder') || location.pathname.includes('/ai_builder') || location.pathname.includes('/startups') || location.pathname.includes('/documents') || location.pathname.includes('/roadmap') || location.pathname.includes('/notifications') || location.pathname.includes('/funding') || location.pathname.includes('/mentors') || location.pathname.includes('/originality-check') || location.pathname.includes('/originality_check') || location.pathname.includes('/plagiarism');
     if (!isAllowedPath && !location.pathname.endsWith('/founder')) {
       return <Navigate to="/dashboard/founder/billing" replace state={{ expired: true }} />;
     }
