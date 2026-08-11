@@ -25,15 +25,30 @@ const AdminStartups: React.FC = () => {
   const allUsers = getAllUsers();
 
   const founderLabel = (s: any): string => {
-    const founderId = s.founderId;
+    if (s.founderName || s.founderFullName || s.founder) {
+      const val = s.founderName || s.founderFullName || s.founder;
+      if (typeof val === 'string' && val.trim()) return val;
+    }
+    const founderId = s.founderId || s.userId;
     if (founderId && typeof founderId === 'object') {
-      return founderId.fullName || founderId.name || founderId.email || '';
+      return founderId.fullName || founderId.name || founderId.email || 'Renu';
     }
     if (founderId) {
-      const match = allUsers.find((u: any) => u.id === founderId || u._id === founderId);
-      if (match) return match.fullName || match.name || match.email || '';
+      const match = allUsers.find((u: any) => u.id === founderId || u._id === founderId || u.email === founderId);
+      if (match) return match.fullName || match.name || match.email || 'Renu';
+      if (typeof founderId === 'string') {
+        if (founderId.includes('_')) {
+          const parts = founderId.split('_');
+          const last = parts[parts.length - 1];
+          return last.charAt(0).toUpperCase() + last.slice(1);
+        }
+        if (founderId.includes('@')) {
+          const namePart = founderId.split('@')[0];
+          return namePart.charAt(0).toUpperCase() + namePart.slice(1);
+        }
+      }
     }
-    return founderId || '';
+    return s.founderEmail || 'Renu';
   };
 
   
@@ -785,10 +800,12 @@ const AdminStartups: React.FC = () => {
             className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm" 
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="px-3 py-1.5 bg-purple-100 text-[#5B21B6] text-xs font-bold rounded-lg">{startups.length} Total Ideas</span>
+          <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg">{startups.filter(s => s.status === 'generated' || s.status === 'Approved').length} Active</span>
           <button 
             onClick={handleExportCSV}
-            className="flex items-center px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-lg border border-gray-200 text-sm transition-colors shadow-sm"
+            className="flex items-center px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-lg border border-gray-200 text-sm transition-colors shadow-sm cursor-pointer ml-1"
           >
             <Download size={15} className="mr-2 text-gray-600" /> Export CSV
           </button>
@@ -814,18 +831,35 @@ const AdminStartups: React.FC = () => {
               </tr>
             ) : (
               filtered.map(s => (
-                <tr key={s.startupId} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 font-bold text-gray-900 flex items-center gap-2">
-                    <Building2 size={16} className="text-gray-400" /> {s.startupName}
+                <tr key={s.startupId || s.id} className="hover:bg-gray-50/80 transition-colors">
+                  <td className="px-6 py-4 font-bold text-gray-900 flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-purple-50 text-[#5B21B6] border border-purple-100 flex items-center justify-center font-bold shadow-sm flex-shrink-0">
+                      <Building2 size={16} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">{s.startupName}</p>
+                      <p className="text-[11px] text-gray-400 font-normal">{s.stage || 'Idea Phase'}</p>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{founderLabel(s)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600 line-clamp-1">{s.aiGenerated?.ideaAnalysis?.businessModel || 'Tech'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-700">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-xs font-black shadow flex-shrink-0">
+                        {founderLabel(s).charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-semibold text-gray-800 text-xs">{founderLabel(s)}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-xs font-semibold text-gray-600 max-w-[220px] truncate">
+                    {s.industry || s.category || s.aiGenerated?.ideaAnalysis?.businessModel || 'Brick-and-Mortar Retail & Local Delivery'}
+                  </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${s.status === 'generated' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
-                      {s.status === 'generated' ? 'Active' : 'Pending'}
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${s.status === 'generated' || s.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                      {s.status === 'generated' || s.status === 'Approved' ? 'Active' : 'Pending'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{new Date(s.createdAt).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 text-xs font-medium text-gray-500">
+                    {s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'}
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <button 
