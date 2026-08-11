@@ -844,20 +844,20 @@ export const acceptSession = async (req: AuthRequest, res: Response) => {
 export const completeSession = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    if (!isValidId(id)) return res.status(400).json({ success: false, message: 'Invalid booking id' });
+    if (!isValidId(id)) return res.json({ success: false, message: 'Invalid booking id' });
     const booking = await MentorBooking.findById(id);
-    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+    if (!booking) return res.json({ success: false, message: 'Booking not found' });
 
     const isMentor = booking.mentorId.toString() === req.user!.id;
     const isOwner = booking.userId.toString() === req.user!.id;
     if (!isMentor && !isOwner) {
-      return res.status(403).json({ success: false, message: 'Not authorized to complete this session' });
+      return res.json({ success: false, message: 'Not authorized to complete this session' });
     }
     if (booking.status === 'cancelled') {
-      return res.status(400).json({ success: false, message: 'Cannot complete a cancelled booking' });
+      return res.json({ success: false, message: 'Cannot complete a cancelled booking' });
     }
     if (booking.status === 'completed') {
-      return res.status(400).json({ success: false, message: 'Session is already completed' });
+      return res.json({ success: true, message: 'Session is already completed', data: booking });
     }
     booking.status = 'completed';
     await booking.save();
