@@ -376,7 +376,7 @@ const DashboardLayout: React.FC = () => {
             </button>
             <div className="hidden sm:block">
               <p className="text-xs text-gray-400 font-semibold capitalize">
-                {user?.role === 'founder' || user?.role === 'user' ? 'Founder' : user?.role} Dashboard
+                {(role === 'founder' ? 'Founder' : role)} Dashboard
               </p>
             </div>
           </div>
