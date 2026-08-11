@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, CheckCircle2, XCircle, Clock, Eye, RefreshCw,
-  AlertTriangle, Building2, X, ExternalLink, FileText, UserCheck, Download,
+  AlertTriangle, Building2, X, ExternalLink, FileText, UserCheck, ShieldCheck, Filter,
 } from 'lucide-react';
 import {
   getDocuments, updateDocument, getStartups,
@@ -19,9 +19,9 @@ const AdminDocumentVerification: React.FC = () => {
   const [documents, setDocuments] = useState<any[]>([]);
   const [allStartups, setAllStartups] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<'mentors' | 'founders' | 'all'>('mentors');
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterStartup, setFilterStartup] = useState('All');
-  const [filterEntity, setFilterEntity] = useState('All');
   const [rejectModal, setRejectModal] = useState<{ doc: any; reason: string }>({ doc: null, reason: '' });
   const [previewDoc, setPreviewDoc] = useState<any>(null);
 
@@ -58,6 +58,8 @@ const AdminDocumentVerification: React.FC = () => {
     await refreshDocs();
   };
 
+  const isMentorDocument = (d: any) => d.ownerRole === 'Mentor' || d.documentType?.startsWith('mentor_');
+
   const filteredDocs = documents.filter((d) => {
     const searchLower = search.trim().toLowerCase();
     const matchesSearch =
@@ -74,16 +76,31 @@ const AdminDocumentVerification: React.FC = () => {
       docStatusLower === filterStatus.toLowerCase() ||
       (filterStatus === 'Pending Verification' && (docStatusLower.includes('pending') || docStatusLower.includes('uploaded')));
 
-    const matchesStartup = filterStartup === 'All' || d.startupId === filterStartup;
+    const isMentor = isMentorDocument(d);
 
-    const isMentor = d.ownerRole === 'Mentor' || d.documentType?.startsWith('mentor_');
-    const matchesEntity =
-      filterEntity === 'All' ||
-      (filterEntity === 'Mentor' && isMentor) ||
-      (filterEntity === 'Founder' && !isMentor);
+    // Startup filter applies to founder docs only
+    const matchesStartup = filterStartup === 'All' || isMentor || d.startupId === filterStartup;
 
-    return matchesSearch && matchesStatus && matchesStartup && matchesEntity;
+    // Tab filter
+    const matchesTab =
+      activeTab === 'all' ||
+      (activeTab === 'mentors' && isMentor) ||
+      (activeTab === 'founders' && !isMentor);
+
+    return matchesSearch && matchesStatus && matchesStartup && matchesTab;
+  }).sort((a, b) => {
+    // Prioritize Mentor Proof Docs & Pending Statuses
+    const aIsMentor = isMentorDocument(a) ? 1 : 0;
+    const bIsMentor = isMentorDocument(b) ? 1 : 0;
+    if (aIsMentor !== bIsMentor) return bIsMentor - aIsMentor;
+
+    const aPending = (a.status || a.verificationStatus || '').toLowerCase().includes('pending') ? 1 : 0;
+    const bPending = (b.status || b.verificationStatus || '').toLowerCase().includes('pending') ? 1 : 0;
+    return bPending - aPending;
   });
+
+  const mentorDocsCount = documents.filter(isMentorDocument).length;
+  const founderDocsCount = documents.filter((d) => !isMentorDocument(d)).length;
 
   const pendingCount = documents.filter(
     (d) =>
@@ -104,8 +121,47 @@ const AdminDocumentVerification: React.FC = () => {
   return (
     <div className="animate-fade-in-up pb-10">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Document & Mentor Proof Verification</h1>
-        <p className="text-gray-500 mt-1">Review and verify identity proofs, Aadhaar, PAN, certificates, resumes, and startup documents.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Document Verification</h1>
+        <p className="text-gray-500 mt-1">Review and verify documents uploaded by mentors during signup (Aadhaar, PAN, Certificates, Resumes) and startup founders.</p>
+      </div>
+
+      {/* Navigation Sub-Tabs */}
+      <div className="flex border-b border-gray-200 mb-6 gap-6 overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('mentors')}
+          className={`pb-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'mentors'
+              ? 'border-[#5B21B6] text-[#5B21B6]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <UserCheck size={16} />
+          Mentor Signup Proof Docs ({mentorDocsCount})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('founders')}
+          className={`pb-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'founders'
+              ? 'border-[#5B21B6] text-[#5B21B6]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Building2 size={16} />
+          Startup Founder Documents ({founderDocsCount})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('all')}
+          className={`pb-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'all'
+              ? 'border-[#5B21B6] text-[#5B21B6]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <FileText size={16} />
+          All Documents ({documents.length})
+        </button>
       </div>
 
       {/* Metrics Stats Cards */}
@@ -137,7 +193,7 @@ const AdminDocumentVerification: React.FC = () => {
       <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
         <AlertTriangle size={20} className="text-amber-600 shrink-0 mt-0.5" />
         <p className="text-xs text-amber-800 font-medium">
-          <strong>Note:</strong> Verification confirms completeness and authenticity of uploaded mentor signup proofs (Aadhaar, PAN, degree/experience certificates) and startup documents.
+          <strong>Note:</strong> Admin verification confirms document completeness and authenticity for uploaded mentor signup proofs (Aadhaar, PAN, degree/experience certificates, resume) and founder business documents.
         </p>
       </div>
 
@@ -154,17 +210,6 @@ const AdminDocumentVerification: React.FC = () => {
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#5B21B6] focus:ring-2 focus:ring-[#5B21B6]/10"
           />
         </div>
-
-        {/* Entity Filter */}
-        <select
-          value={filterEntity}
-          onChange={(e) => setFilterEntity(e.target.value)}
-          className="px-3 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:border-[#5B21B6] bg-white cursor-pointer"
-        >
-          <option value="All">All Uploaders</option>
-          <option value="Mentor">Mentors Only</option>
-          <option value="Founder">Founders Only</option>
-        </select>
 
         {/* Status Filter */}
         <select
@@ -211,13 +256,13 @@ const AdminDocumentVerification: React.FC = () => {
               {filteredDocs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-sm font-medium">
-                    No proof documents found matching your search and filter criteria.
+                    No documents found matching your search and filter criteria.
                   </td>
                 </tr>
               ) : (
                 filteredDocs.map((doc) => {
+                  const isMentorDoc = isMentorDocument(doc);
                   const startup = allStartups.find((s: any) => (s.startupId || s._id) === doc.startupId);
-                  const isMentorDoc = doc.ownerRole === 'Mentor' || doc.documentType?.startsWith('mentor_');
                   const docStatus = doc.status || (doc.verificationStatus === 'verified' ? 'Verified' : doc.verificationStatus === 'rejected' ? 'Rejected' : 'Pending Verification');
                   const statusClass = STATUS_COLORS[docStatus.toLowerCase()] || STATUS_COLORS['pending'];
 
@@ -226,11 +271,11 @@ const AdminDocumentVerification: React.FC = () => {
                       {/* Owner / Entity */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${isMentorDoc ? 'bg-purple-100 text-[#5B21B6]' : 'bg-blue-100 text-blue-700'}`}>
+                          <div className={`w-8.5 h-8.5 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${isMentorDoc ? 'bg-purple-100 text-[#5B21B6]' : 'bg-blue-100 text-blue-700'}`}>
                             {(doc.ownerName || 'U').charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-xs font-bold text-gray-900 truncate">
                                 {doc.ownerName || (isMentorDoc ? 'Mentor User' : startup?.startupName || 'Founder')}
                               </span>
@@ -238,12 +283,15 @@ const AdminDocumentVerification: React.FC = () => {
                                 {isMentorDoc ? 'Mentor' : 'Founder'}
                               </span>
                             </div>
-                            {doc.ownerEmail && <p className="text-[10px] text-gray-400 truncate mt-0.5">{doc.ownerEmail}</p>}
+                            {doc.ownerEmail && <p className="text-[10px] text-gray-400 truncate mt-0.5 font-mono">{doc.ownerEmail}</p>}
+                            {!isMentorDoc && startup?.startupName && (
+                              <p className="text-[10px] text-purple-700 font-semibold truncate mt-0.5">🚀 {startup.startupName}</p>
+                            )}
                           </div>
                         </div>
                       </td>
 
-                      {/* Document Label & Description */}
+                      {/* Document Label & Details */}
                       <td className="px-5 py-4">
                         <div>
                           <p className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
@@ -282,7 +330,7 @@ const AdminDocumentVerification: React.FC = () => {
                           <button
                             onClick={() => setPreviewDoc(doc)}
                             title="Inspect Proof Document"
-                            className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1"
+                            className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 shadow-2xs"
                           >
                             <Eye size={13} /> View Proof
                           </button>
