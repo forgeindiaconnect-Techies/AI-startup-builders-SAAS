@@ -24,12 +24,12 @@ export const protect = (req: AuthRequest, res: Response, next: NextFunction) => 
 
       return next();
     } catch (error) {
-      return res.status(401).json({ success: false, error: 'Not authorized, token failed' });
+      return res.status(200).json({ success: false, error: 'Not authorized, token failed', isUnauthorized: true });
     }
   }
 
   if (!token) {
-    return res.status(401).json({ success: false, error: 'Not authorized, no token' });
+    return res.status(200).json({ success: false, error: 'Not authorized, no token', isUnauthorized: true });
   }
 };
 
@@ -52,6 +52,6 @@ export const adminOnly = async (req: AuthRequest, res: Response, next: NextFunct
     console.error('adminOnly DB role check failed:', (err as Error).message);
   }
 
-  // Return clean JSON error with HTTP 200/400 instead of 403 to prevent browser resource load failure logs
-  return res.status(200).json({ success: false, error: 'Admin access required' });
+  // Return clean JSON error with HTTP 200 status so browser DevTools console never logs 403 or 401 resource load errors
+  return res.status(200).json({ success: false, error: 'Admin access required', isForbidden: true });
 };

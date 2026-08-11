@@ -248,15 +248,15 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 
     if (user.status === 'suspended') {
-      return res.status(403).json({ success: false, error: 'Account suspended' });
+      return res.status(200).json({ success: false, error: 'Account suspended' });
     }
 
     if (user.approvalStatus === 'pending') {
-      return res.status(403).json({ success: false, error: 'Account pending admin approval' });
+      return res.status(200).json({ success: false, error: 'Account pending admin approval' });
     }
 
     if (user.approvalStatus === 'rejected') {
-      return res.status(403).json({ success: false, error: 'Account request rejected' });
+      return res.status(200).json({ success: false, error: 'Account request rejected' });
     }
 
     let isMatch = await bcrypt.compare(password, user.passwordHash);
