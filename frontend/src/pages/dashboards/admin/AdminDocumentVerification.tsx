@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Search, CheckCircle2, XCircle, Clock, Eye, RefreshCw,
+  Search, CheckCircle2, XCircle, Clock, Eye,
   ShieldCheck, X, ExternalLink, FileText, UserCheck,
 } from 'lucide-react';
 import {
@@ -90,23 +90,14 @@ const AdminDocumentVerification: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up pb-10">
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
-            <UserCheck className="text-[#5B21B6]" size={26} />
-            Mentor Document Verification
-          </h1>
-          <p className="text-gray-500 mt-1 text-xs sm:text-sm">
-            Review and verify official identification proofs, Aadhaar cards, PAN cards, degree/experience certificates, and resumes uploaded by mentors during signup.
-          </p>
-        </div>
-
-        <button
-          onClick={refreshDocs}
-          className="px-3.5 py-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 self-start md:self-auto"
-        >
-          <RefreshCw size={14} className="text-[#5B21B6]" /> Refresh Documents
-        </button>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
+          <UserCheck className="text-[#5B21B6]" size={26} />
+          Mentor Document Verification
+        </h1>
+        <p className="text-gray-500 mt-1 text-xs sm:text-sm">
+          Review and verify official identification proofs, Aadhaar cards, PAN cards, degree/experience certificates, and resumes uploaded by mentors during signup.
+        </p>
       </div>
 
       {/* Metrics Stats Cards */}
