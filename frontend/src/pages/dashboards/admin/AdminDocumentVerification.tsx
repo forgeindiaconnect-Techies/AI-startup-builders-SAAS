@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, CheckCircle2, XCircle, Clock, Eye, RefreshCw,
-  AlertTriangle, X, ExternalLink, FileText, UserCheck, ShieldCheck, Filter,
+  ShieldCheck, X, ExternalLink, FileText, UserCheck,
 } from 'lucide-react';
 import {
   getDocuments, updateDocument,
@@ -18,7 +18,6 @@ const STATUS_COLORS: Record<string, string> = {
 const AdminDocumentVerification: React.FC = () => {
   const [documents, setDocuments] = useState<any[]>([]);
   const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('All');
   const [rejectModal, setRejectModal] = useState<{ doc: any; reason: string }>({ doc: null, reason: '' });
   const [previewDoc, setPreviewDoc] = useState<any>(null);
 
@@ -59,21 +58,14 @@ const AdminDocumentVerification: React.FC = () => {
 
   const filteredDocs = documents.filter((d) => {
     const searchLower = search.trim().toLowerCase();
-    const matchesSearch =
+    return (
       !searchLower ||
       d.fileName?.toLowerCase().includes(searchLower) ||
       d.documentLabel?.toLowerCase().includes(searchLower) ||
       d.documentDescription?.toLowerCase().includes(searchLower) ||
       d.ownerName?.toLowerCase().includes(searchLower) ||
-      d.ownerEmail?.toLowerCase().includes(searchLower);
-
-    const docStatusLower = (d.status || d.verificationStatus || '').toLowerCase();
-    const matchesStatus =
-      filterStatus === 'All' ||
-      docStatusLower === filterStatus.toLowerCase() ||
-      (filterStatus === 'Pending Verification' && (docStatusLower.includes('pending') || docStatusLower.includes('uploaded')));
-
-    return matchesSearch && matchesStatus;
+      d.ownerEmail?.toLowerCase().includes(searchLower)
+    );
   }).sort((a, b) => {
     const aPending = (a.status || a.verificationStatus || '').toLowerCase().includes('pending') ? 1 : 0;
     const bPending = (b.status || b.verificationStatus || '').toLowerCase().includes('pending') ? 1 : 0;
@@ -150,10 +142,9 @@ const AdminDocumentVerification: React.FC = () => {
         </p>
       </div>
 
-      {/* Filter Controls Bar */}
-      <div className="mb-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-3">
-        {/* Search */}
-        <div className="relative flex-1">
+      {/* Search Bar */}
+      <div className="mb-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
           <input
             type="text"
@@ -162,21 +153,6 @@ const AdminDocumentVerification: React.FC = () => {
             placeholder="Search mentor name, email, document type, or Aadhaar/PAN ref..."
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#5B21B6] focus:ring-2 focus:ring-[#5B21B6]/10"
           />
-        </div>
-
-        {/* Status Filter */}
-        <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 text-xs">
-          <Filter size={13} className="text-gray-400" />
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="bg-transparent font-bold text-gray-700 outline-none cursor-pointer"
-          >
-            <option value="All">All Statuses</option>
-            <option value="Pending Verification">Pending Verification</option>
-            <option value="Verified">Verified</option>
-            <option value="Rejected">Rejected</option>
-          </select>
         </div>
       </div>
 
