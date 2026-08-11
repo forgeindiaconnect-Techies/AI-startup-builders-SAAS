@@ -800,12 +800,10 @@ const AdminStartups: React.FC = () => {
             className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-sm" 
           />
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="px-3 py-1.5 bg-purple-100 text-[#5B21B6] text-xs font-bold rounded-lg">{startups.length} Total Ideas</span>
-          <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg">{startups.filter(s => s.status === 'generated' || s.status === 'Approved').length} Active</span>
+        <div className="flex gap-2">
           <button 
             onClick={handleExportCSV}
-            className="flex items-center px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-lg border border-gray-200 text-sm transition-colors shadow-sm cursor-pointer ml-1"
+            className="flex items-center px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-lg border border-gray-200 text-sm transition-colors shadow-sm cursor-pointer"
           >
             <Download size={15} className="mr-2 text-gray-600" /> Export CSV
           </button>
