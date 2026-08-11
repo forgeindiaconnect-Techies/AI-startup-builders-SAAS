@@ -14,7 +14,6 @@ import FounderMarketResearch from './FounderMarketResearch';
 import FounderReports from './FounderReports';
 import FounderAIChat from './FounderAIChat';
 import FounderLegalDocs from './FounderLegalDocs';
-import FounderPlagiarism from './FounderPlagiarism';
 import PlanGate, { usePlanAccess } from '../../../components/shared/PlanGate';
 import { getStartups, getStartupById, updateStartup, generateStartupFromBackend, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument, detectStartupCategory, generateCategoryDocuments, sanitizeStartupId } from '../../../utils/localStorageHelper';
 
@@ -32,7 +31,6 @@ const tabs = [
   { id: 'legal',               label: 'Legal & Documents',    icon: Scale,         component: FounderLegalDocs },
   { id: 'reports',             label: 'AI Reports',           icon: ClipboardList, component: FounderReports },
   { id: 'chat',                label: 'AI Chat',              icon: MessageSquare, component: FounderAIChat, plans: ['pro', 'premium_startup_builder'] },
-  { id: 'plagiarism',          label: 'Plagiarism Check',     icon: ShieldCheck,   component: FounderPlagiarism },
 ];
 
 const FounderAIBuilder: React.FC = () => {
