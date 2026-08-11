@@ -16,6 +16,10 @@ import {
   X,
   FileText,
   Filter,
+  Search,
+  ArrowRight,
+  ShieldCheck,
+  UserCheck,
 } from 'lucide-react';
 import {
   getAdminMentorEarnings,
@@ -43,6 +47,15 @@ const formatDate = (iso: string) => {
   }
 };
 
+const formatDateTime = (iso: string) => {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return iso;
+  }
+};
+
 const AdminMentorEarnings: React.FC = () => {
   const [mentors, setMentors] = useState<any[]>([]);
   const [allWithdrawals, setAllWithdrawals] = useState<any[]>([]);
@@ -50,7 +63,11 @@ const AdminMentorEarnings: React.FC = () => {
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState<'overview' | 'withdrawals' | 'transactions'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'user_payments' | 'withdrawals'>('overview');
+
+  // Search and filter for User Payments section
+  const [paymentSearch, setPaymentSearch] = useState('');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
 
   // Mark Paid confirmation modal state
   const [selectedWithdrawalForPaid, setSelectedWithdrawalForPaid] = useState<any | null>(null);
@@ -64,7 +81,6 @@ const AdminMentorEarnings: React.FC = () => {
     setError('');
     try {
       const res = await getAdminMentorEarnings();
-      // Handle response structure
       if (Array.isArray(res)) {
         setMentors(res);
       } else if (res && (res as any).data) {
@@ -165,6 +181,36 @@ const AdminMentorEarnings: React.FC = () => {
     (m.withdrawals || []).map((w: any) => ({ ...w, mentorName: m.mentorName, mentorEmail: m.email }))
   );
 
+  // Aggregate all user payments to mentors across all mentors
+  const allUserPayments = mentors.flatMap((m) =>
+    (m.transactions || []).map((tx: any) => ({
+      ...tx,
+      mentorName: tx.mentorName || m.mentorName,
+      mentorEmail: tx.mentorEmail || m.email,
+      mentorId: m.mentorId,
+    }))
+  );
+
+  // Filter user payments based on search and status
+  const filteredUserPayments = allUserPayments.filter((tx) => {
+    const searchLower = paymentSearch.trim().toLowerCase();
+    const matchesSearch =
+      searchLower === '' ||
+      (tx.founderName || '').toLowerCase().includes(searchLower) ||
+      (tx.founderEmail || '').toLowerCase().includes(searchLower) ||
+      (tx.mentorName || '').toLowerCase().includes(searchLower) ||
+      (tx.mentorEmail || '').toLowerCase().includes(searchLower) ||
+      (tx.topic || '').toLowerCase().includes(searchLower) ||
+      (tx.startupName || '').toLowerCase().includes(searchLower);
+
+    const matchesStatus =
+      paymentStatusFilter === 'all' ||
+      (tx.payoutStatus || 'pending') === paymentStatusFilter ||
+      (paymentStatusFilter === 'completed' && tx.isCompleted);
+
+    return matchesSearch && matchesStatus;
+  });
+
   if (loading) {
     return (
       <div className="animate-fade-in-up flex items-center justify-center py-24">
@@ -193,14 +239,14 @@ const AdminMentorEarnings: React.FC = () => {
     <div className="animate-fade-in-up pb-10">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Mentor Earnings & Withdrawal Payouts</h1>
-        <p className="text-gray-500 mt-1">Monitor mentor session revenue, platform commission, and process withdrawal requests.</p>
+        <p className="text-gray-500 mt-1">Monitor mentor session revenue, platform commission, user payment details, and withdrawal requests.</p>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex border-b border-gray-200 mb-6 gap-6">
+      <div className="flex border-b border-gray-200 mb-6 gap-6 overflow-x-auto">
         <button
           onClick={() => setActiveTab('overview')}
-          className={`pb-3 text-sm font-bold border-b-2 transition-all ${
+          className={`pb-3 text-sm font-bold border-b-2 transition-all whitespace-nowrap ${
             activeTab === 'overview'
               ? 'border-[#5B21B6] text-[#5B21B6]'
               : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -208,9 +254,22 @@ const AdminMentorEarnings: React.FC = () => {
         >
           Overview & Mentors ({mentors.length})
         </button>
+
+        <button
+          onClick={() => setActiveTab('user_payments')}
+          className={`pb-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'user_payments'
+              ? 'border-[#5B21B6] text-[#5B21B6]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <CreditCard size={15} />
+          User Payments Details ({allUserPayments.length})
+        </button>
+
         <button
           onClick={() => setActiveTab('withdrawals')}
-          className={`pb-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+          className={`pb-3 text-sm font-bold border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'withdrawals'
               ? 'border-[#5B21B6] text-[#5B21B6]'
               : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -368,7 +427,162 @@ const AdminMentorEarnings: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: WITHDRAWAL REQUESTS & PROCESS / MARK AS PAID */}
+      {/* TAB 2: USER PAYMENTS DETAILS TO MENTORS (NEW SECTION) */}
+      {activeTab === 'user_payments' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          {/* Header & Filter Controls */}
+          <div className="p-5 border-b border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <CreditCard size={18} className="text-[#5B21B6]" />
+                User Payment Details to Mentors
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">Detailed breakdown of startup founder session bookings, payments made, and mentor earnings distribution.</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              {/* Search Bar */}
+              <div className="relative flex-1 md:w-64">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={paymentSearch}
+                  onChange={(e) => setPaymentSearch(e.target.value)}
+                  placeholder="Search founder, mentor, or topic..."
+                  className="w-full pl-9 pr-3.5 py-1.5 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#5B21B6] focus:ring-2 focus:ring-[#5B21B6]/10"
+                />
+                {paymentSearch && (
+                  <button onClick={() => setPaymentSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200 text-xs">
+                <Filter size={13} className="text-gray-400" />
+                <select
+                  value={paymentStatusFilter}
+                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                  className="bg-transparent font-semibold text-gray-700 outline-none cursor-pointer"
+                >
+                  <option value="all">All Payout Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="processing">Processing</option>
+                  <option value="paid">Paid</option>
+                  <option value="failed">Failed</option>
+                  <option value="completed">Completed Sessions</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Table Content */}
+          {filteredUserPayments.length === 0 ? (
+            <div className="py-16 text-center">
+              <CreditCard size={40} className="mx-auto text-gray-300 mb-3" />
+              <h3 className="font-bold text-gray-700 mb-1">No User Payment Transactions Found</h3>
+              <p className="text-xs text-gray-500">
+                {paymentSearch || paymentStatusFilter !== 'all'
+                  ? 'No transactions match your search filter criteria.'
+                  : 'User payments to mentors for booked sessions will appear here.'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Date & Time</th>
+                    <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">User / Founder</th>
+                    <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Assigned Mentor</th>
+                    <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Session Topic / Startup</th>
+                    <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">User Paid Fee</th>
+                    <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Mentor Share (80%)</th>
+                    <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Platform Cut (20%)</th>
+                    <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Payout Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredUserPayments.map((tx) => (
+                    <tr key={tx._id} className="hover:bg-gray-50/80 transition-colors">
+                      {/* Date & Time */}
+                      <td className="px-5 py-4 text-xs text-gray-600 whitespace-nowrap">
+                        <p className="font-bold text-gray-900">{formatDate(tx.createdAt)}</p>
+                        <p className="text-[10px] text-gray-400 font-mono mt-0.5">{formatDateTime(tx.createdAt).split(',')[1] || ''}</p>
+                      </td>
+
+                      {/* User / Founder */}
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-purple-100 text-[#5B21B6] font-extrabold text-xs flex items-center justify-center flex-shrink-0">
+                            {(tx.founderName || 'F').charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-gray-900 truncate">{tx.founderName || 'Founder User'}</p>
+                            {tx.founderEmail && <p className="text-[10px] text-gray-400 truncate">{tx.founderEmail}</p>}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Assigned Mentor */}
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center justify-center flex-shrink-0">
+                            {(tx.mentorName || 'M').charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-gray-900 truncate">{tx.mentorName || 'Mentor'}</p>
+                            {tx.mentorEmail && <p className="text-[10px] text-gray-400 truncate">{tx.mentorEmail}</p>}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Session Topic & Startup */}
+                      <td className="px-5 py-4">
+                        <p className="text-xs font-semibold text-gray-900 max-w-[180px] truncate">{tx.topic || '1-on-1 Mentorship Session'}</p>
+                        {tx.startupName && <p className="text-[10px] text-purple-700 font-medium truncate max-w-[180px] mt-0.5">🚀 {tx.startupName}</p>}
+                      </td>
+
+                      {/* User Paid Fee */}
+                      <td className="px-5 py-4 text-xs font-black text-gray-900 text-right whitespace-nowrap">
+                        <span className="px-2.5 py-1 bg-gray-100 rounded-lg">{formatCurrency(tx.sessionFee)}</span>
+                      </td>
+
+                      {/* Mentor Share */}
+                      <td className="px-5 py-4 text-xs font-black text-emerald-600 text-right whitespace-nowrap">
+                        <span className="px-2.5 py-1 bg-emerald-50 rounded-lg border border-emerald-100">{formatCurrency(tx.mentorEarnings)}</span>
+                      </td>
+
+                      {/* Platform Cut */}
+                      <td className="px-5 py-4 text-xs font-semibold text-amber-700 text-right whitespace-nowrap">
+                        <span className="px-2.5 py-1 bg-amber-50 rounded-lg border border-amber-100">{formatCurrency(tx.platformCommission)}</span>
+                      </td>
+
+                      {/* Payout Status Selector */}
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <select
+                          value={tx.payoutStatus || 'pending'}
+                          onChange={(e) => handleTxPayoutStatusChange(tx._id, tx.payoutStatus || 'pending', e.target.value)}
+                          disabled={updating[tx._id]}
+                          className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:border-[#5B21B6] focus:ring-2 focus:ring-[#5B21B6]/10 outline-none cursor-pointer"
+                        >
+                          <option value="pending">⏳ Pending</option>
+                          <option value="processing">⚙️ Processing</option>
+                          <option value="paid">✓ Paid</option>
+                          <option value="failed">❌ Failed</option>
+                        </select>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: WITHDRAWAL REQUESTS & PROCESS / MARK AS PAID */}
       {activeTab === 'withdrawals' && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-5 border-b border-gray-100 flex justify-between items-center">

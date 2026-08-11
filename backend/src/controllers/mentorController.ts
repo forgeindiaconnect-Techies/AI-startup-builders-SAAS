@@ -1193,7 +1193,10 @@ export const getMentorEarnings = async (req: AuthRequest, res: Response) => {
 // GET /api/mentors/admin/earnings  (admin: per-mentor earnings & withdrawals summary)
 export const getAdminMentorEarnings = async (req: AuthRequest, res: Response) => {
   try {
-    const transactions = await MentorTransaction.find({}).sort({ createdAt: -1 });
+    const transactions = await MentorTransaction.find({})
+      .populate('founderId', 'fullName email')
+      .populate('mentorId', 'fullName email')
+      .sort({ createdAt: -1 });
     const withdrawals = await MentorWithdrawal.find({}).sort({ createdAt: -1 });
     const mentors = await User.find({ role: 'mentor' });
     const profiles = await MentorProfile.find({});
@@ -1225,12 +1228,12 @@ export const getAdminMentorEarnings = async (req: AuthRequest, res: Response) =>
     });
 
     transactions.forEach((tx) => {
-      const mid = tx.mentorId.toString();
+      const mid = (tx.mentorId && (tx.mentorId as any)._id ? (tx.mentorId as any)._id : tx.mentorId).toString();
       if (!mentorMap.has(mid)) {
         mentorMap.set(mid, {
           mentorId: tx.mentorId,
-          mentorName: tx.founderName || '',
-          email: '',
+          mentorName: (tx.mentorId as any)?.fullName || tx.mentorName || '',
+          email: (tx.mentorId as any)?.email || '',
           sessionFee: 0,
           mentorSharePercentage: tx.mentorSharePercentage,
           platformCommissionPercentage: tx.platformCommissionPercentage,
@@ -1254,9 +1257,17 @@ export const getAdminMentorEarnings = async (req: AuthRequest, res: Response) =>
       if (completedSet.has(tx.bookingId.toString())) {
         entry.eligibleEarnings += tx.mentorEarnings;
       }
-      // Attach completion status to tx object for admin view
+      // Attach completion status & detailed founder/mentor metadata to tx object for admin view
       const txObj = tx.toObject();
       (txObj as any).isCompleted = completedSet.has(tx.bookingId.toString());
+      if (typeof tx.founderId === 'object' && tx.founderId !== null) {
+        (txObj as any).founderName = (tx.founderId as any).fullName || tx.founderName || 'Founder User';
+        (txObj as any).founderEmail = (tx.founderId as any).email || '';
+      }
+      if (typeof tx.mentorId === 'object' && tx.mentorId !== null) {
+        (txObj as any).mentorName = (tx.mentorId as any).fullName || entry.mentorName || 'Mentor';
+        (txObj as any).mentorEmail = (tx.mentorId as any).email || entry.email || '';
+      }
       entry.transactions.push(txObj);
     });
 
