@@ -989,59 +989,159 @@ export const getDocuments = async (startupId?: string, userId?: string) => {
     const data = await res.json();
     let docs = data.success ? data.data : [];
 
-    // If no filter or fetching for admin, also include mentor verification documents
+    // If no filter or fetching for admin, also include mentor verification proof documents
     if (!startupId) {
       try {
-        const usersRes = await fetch(`${API_URL}/auth/admin/users`, {
-          headers: authHeaders(),
-        });
-        const usersData = await usersRes.json();
-        const mentors = (usersData.users || []).filter((u: any) => u.role === 'mentor');
+        let mentorsList: any[] = [];
+        try {
+          const usersRes = await fetch(`${API_URL}/auth/admin/users`, {
+            headers: authHeaders(),
+          });
+          const usersData = await usersRes.json();
+          if (usersData.success && Array.isArray(usersData.users)) {
+            mentorsList = usersData.users.filter((u: any) => u.role === 'mentor');
+          }
+        } catch { /* fallback */ }
 
-        mentors.forEach((m: any) => {
-          // Add mentor resume/documents if available
-          if (m.resumeUrl || m.certificateUrl || m.idProofUrl || m.photoUrl) {
-            if (m.resumeUrl) {
-              docs.push({
-                id: `mentor_resume_${m.id || m._id}`,
-                userId: m.id || m._id,
-                startupId: '',
-                ownerName: m.fullName || m.name || 'Mentor',
-                ownerRole: 'Mentor',
-                ownerEmail: m.email || '',
-                fileName: `${m.fullName || 'Mentor'}_Resume.pdf`,
-                documentLabel: 'Mentor Resume / CV',
-                documentDescription: `Professional resume submitted by mentor ${m.fullName || ''}`,
-                documentType: 'mentor_resume',
-                documentSection: 'Mentor Document',
-                category: 'Mentor Resume',
-                fileSize: '1.5 MB',
-                fileUrl: m.resumeUrl,
-                status: m.approvalStatus === 'approved' ? 'Verified' : m.approvalStatus === 'rejected' ? 'Rejected' : 'Pending Verification',
-                verificationStatus: m.approvalStatus === 'approved' ? 'verified' : m.approvalStatus === 'rejected' ? 'rejected' : 'pending_verification',
-                createdAt: m.createdAt || new Date().toISOString(),
-                updatedAt: m.updatedAt || new Date().toISOString(),
-              });
-            }
-          } else {
-            // Include a default mentor profile document record so admin can review mentor documents
+        // Also check local storage for mentors
+        try {
+          const storedUsers = localStorage.getItem('ai_startup_builder_users');
+          const parsedUsers = storedUsers ? JSON.parse(storedUsers) : [];
+          const localMentors = parsedUsers.filter((u: any) => u.role === 'mentor');
+          localMentors.forEach((lm: any) => {
+            const exists = mentorsList.some((m) => (m.id || m._id)?.toString() === (lm.id || lm._id)?.toString());
+            if (!exists) mentorsList.push(lm);
+          });
+        } catch {}
+
+        mentorsList.forEach((m: any) => {
+          const mId = m.id || m._id;
+          const mName = m.fullName || m.name || 'Mentor';
+          const mEmail = m.email || '';
+          const mStatus = m.approvalStatus === 'approved' ? 'Verified' : m.approvalStatus === 'rejected' ? 'Rejected' : 'Pending Verification';
+          const mVerifStatus = m.approvalStatus === 'approved' ? 'verified' : m.approvalStatus === 'rejected' ? 'rejected' : 'pending_verification';
+
+          let addedSpecificDoc = false;
+
+          // 1. Aadhaar Card Proof
+          if (m.aadharDocUrl || m.aadharNumber) {
+            addedSpecificDoc = true;
             docs.push({
-              id: `mentor_profile_doc_${m.id || m._id}`,
-              userId: m.id || m._id,
+              id: `mentor_aadhar_${mId}`,
+              userId: mId,
               startupId: '',
-              ownerName: m.fullName || m.name || 'Mentor',
+              ownerName: mName,
               ownerRole: 'Mentor',
-              ownerEmail: m.email || '',
-              fileName: `${m.fullName || 'Mentor'}_Profile_Verification.pdf`,
-              documentLabel: `Mentor Verification Doc (${m.fullName || 'Mentor'})`,
-              documentDescription: `Experience: ${m.experienceYears || '8+'} yrs | Expertise: ${Array.isArray(m.expertise) ? m.expertise.join(', ') : (m.expertise || 'Startup Mentoring')}`,
-              documentType: 'mentor_verification',
-              documentSection: 'Mentor Document',
-              category: 'Mentor Verification',
+              ownerEmail: mEmail,
+              fileName: `${mName.replace(/\s+/g, '_')}_Aadhaar_ID_Proof.pdf`,
+              documentLabel: 'Aadhaar Card ID Proof',
+              documentDescription: `Aadhaar Ref: ${m.aadharNumber || 'Submitted during mentor signup'}`,
+              documentType: 'mentor_aadhar_proof',
+              documentSection: 'Mentor Proof Document',
+              category: 'ID Proof',
+              fileSize: '1.4 MB',
+              fileUrl: m.aadharDocUrl || '',
+              status: mStatus,
+              verificationStatus: mVerifStatus,
+              createdAt: m.createdAt || new Date().toISOString(),
+              updatedAt: m.updatedAt || new Date().toISOString(),
+            });
+          }
+
+          // 2. PAN Card Proof
+          if (m.panDocUrl || m.panNumber) {
+            addedSpecificDoc = true;
+            docs.push({
+              id: `mentor_pan_${mId}`,
+              userId: mId,
+              startupId: '',
+              ownerName: mName,
+              ownerRole: 'Mentor',
+              ownerEmail: mEmail,
+              fileName: `${mName.replace(/\s+/g, '_')}_PAN_Tax_Proof.pdf`,
+              documentLabel: 'PAN Card Tax Proof',
+              documentDescription: `PAN Number: ${m.panNumber || 'Submitted during mentor signup'}`,
+              documentType: 'mentor_pan_proof',
+              documentSection: 'Mentor Proof Document',
+              category: 'Tax / Identity Proof',
               fileSize: '1.2 MB',
-              fileUrl: m.photoUrl || '',
-              status: m.approvalStatus === 'approved' ? 'Verified' : m.approvalStatus === 'rejected' ? 'Rejected' : 'Pending Verification',
-              verificationStatus: m.approvalStatus === 'approved' ? 'verified' : m.approvalStatus === 'rejected' ? 'rejected' : 'pending_verification',
+              fileUrl: m.panDocUrl || '',
+              status: mStatus,
+              verificationStatus: mVerifStatus,
+              createdAt: m.createdAt || new Date().toISOString(),
+              updatedAt: m.updatedAt || new Date().toISOString(),
+            });
+          }
+
+          // 3. Qualification / Degree / Experience Proof
+          if (m.otherDocUrl || m.otherDocType || m.otherDocNumber) {
+            addedSpecificDoc = true;
+            docs.push({
+              id: `mentor_other_${mId}`,
+              userId: mId,
+              startupId: '',
+              ownerName: mName,
+              ownerRole: 'Mentor',
+              ownerEmail: mEmail,
+              fileName: `${mName.replace(/\s+/g, '_')}_${(m.otherDocType || 'Qualification').replace(/\s+/g, '_')}.pdf`,
+              documentLabel: `${m.otherDocType || 'Degree / Experience Certificate'}`,
+              documentDescription: `Doc Ref: ${m.otherDocNumber || 'Submitted during signup'} | Expertise: ${Array.isArray(m.expertise) ? m.expertise.join(', ') : (m.expertise || 'Mentoring')}`,
+              documentType: 'mentor_qualification_proof',
+              documentSection: 'Mentor Proof Document',
+              category: m.otherDocType || 'Degree & Qualification',
+              fileSize: '1.8 MB',
+              fileUrl: m.otherDocUrl || '',
+              status: mStatus,
+              verificationStatus: mVerifStatus,
+              createdAt: m.createdAt || new Date().toISOString(),
+              updatedAt: m.updatedAt || new Date().toISOString(),
+            });
+          }
+
+          // 4. Resume CV Document
+          if (m.resumeUrl) {
+            addedSpecificDoc = true;
+            docs.push({
+              id: `mentor_resume_${mId}`,
+              userId: mId,
+              startupId: '',
+              ownerName: mName,
+              ownerRole: 'Mentor',
+              ownerEmail: mEmail,
+              fileName: `${mName.replace(/\s+/g, '_')}_Resume_CV.pdf`,
+              documentLabel: 'Mentor Resume / CV',
+              documentDescription: `Experience: ${m.experienceYears || '8+'} yrs | Location: ${m.location || 'India'}`,
+              documentType: 'mentor_resume',
+              documentSection: 'Mentor Proof Document',
+              category: 'Mentor Resume',
+              fileSize: '1.5 MB',
+              fileUrl: m.resumeUrl,
+              status: mStatus,
+              verificationStatus: mVerifStatus,
+              createdAt: m.createdAt || new Date().toISOString(),
+              updatedAt: m.updatedAt || new Date().toISOString(),
+            });
+          }
+
+          // 5. Default Mentor Profile Verification Record
+          if (!addedSpecificDoc || m.photoUrl || m.idProofUrl || m.certificateUrl) {
+            docs.push({
+              id: `mentor_profile_doc_${mId}`,
+              userId: mId,
+              startupId: '',
+              ownerName: mName,
+              ownerRole: 'Mentor',
+              ownerEmail: mEmail,
+              fileName: `${mName.replace(/\s+/g, '_')}_Verification_Profile.pdf`,
+              documentLabel: `Mentor Profile & Credentials Verification (${mName})`,
+              documentDescription: `Experience: ${m.experienceYears || '8+'} yrs | Expertise: ${Array.isArray(m.expertise) ? m.expertise.join(', ') : (m.expertise || 'Startup Guidance')}`,
+              documentType: 'mentor_verification',
+              documentSection: 'Mentor Proof Document',
+              category: 'Mentor Verification',
+              fileSize: '1.3 MB',
+              fileUrl: m.idProofUrl || m.photoUrl || m.certificateUrl || '',
+              status: mStatus,
+              verificationStatus: mVerifStatus,
               createdAt: m.createdAt || new Date().toISOString(),
               updatedAt: m.updatedAt || new Date().toISOString(),
             });
