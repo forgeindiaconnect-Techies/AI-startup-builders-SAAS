@@ -399,18 +399,10 @@ const AdminMentorEarnings: React.FC = () => {
                                       {tx.isCompleted ? 'Completed' : 'Booked'}
                                     </span>
                                   </td>
-                                  <td className="px-5 py-3.5">
-                                    <select
-                                      value={tx.payoutStatus || 'pending'}
-                                      onChange={(e) => handleTxPayoutStatusChange(tx._id, tx.payoutStatus || 'pending', e.target.value)}
-                                      disabled={updating[tx._id]}
-                                      className="px-2 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-700 focus:border-[#5B21B6] outline-none"
-                                    >
-                                      <option value="pending">Pending</option>
-                                      <option value="processing">Processing</option>
-                                      <option value="paid">Paid</option>
-                                      <option value="failed">Failed</option>
-                                    </select>
+                                  <td className="px-5 py-3.5 whitespace-nowrap">
+                                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 text-emerald-700 font-bold rounded-full border border-emerald-200 text-xs shadow-2xs">
+                                      <Check size={13} className="text-emerald-600" /> Paid
+                                    </span>
                                   </td>
                                 </tr>
                               ))}
@@ -559,19 +551,11 @@ const AdminMentorEarnings: React.FC = () => {
                         <span className="px-2.5 py-1 bg-amber-50 rounded-lg border border-amber-100">{formatCurrency(tx.platformCommission)}</span>
                       </td>
 
-                      {/* Payout Status Selector */}
+                      {/* Payout Status Fixed Badge */}
                       <td className="px-5 py-4 whitespace-nowrap">
-                        <select
-                          value={tx.payoutStatus || 'pending'}
-                          onChange={(e) => handleTxPayoutStatusChange(tx._id, tx.payoutStatus || 'pending', e.target.value)}
-                          disabled={updating[tx._id]}
-                          className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:border-[#5B21B6] focus:ring-2 focus:ring-[#5B21B6]/10 outline-none cursor-pointer"
-                        >
-                          <option value="pending">⏳ Pending</option>
-                          <option value="processing">⚙️ Processing</option>
-                          <option value="paid">✓ Paid</option>
-                          <option value="failed">❌ Failed</option>
-                        </select>
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 text-emerald-700 font-bold rounded-full border border-emerald-200 text-xs shadow-2xs">
+                          <Check size={13} className="text-emerald-600" /> Paid
+                        </span>
                       </td>
                     </tr>
                   ))}
