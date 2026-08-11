@@ -20,7 +20,7 @@ const MentorReviewSchema: Schema = new Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'MentorBooking',
       required: true,
-      index: true,
+      unique: true,
     },
     mentorId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -50,6 +50,4 @@ const MentorReviewSchema: Schema = new Schema(
 );
 
 // A founder can review a given completed session only once
-MentorReviewSchema.index({ bookingId: 1 }, { unique: true });
-
 export default mongoose.model<IMentorReview>('MentorReview', MentorReviewSchema);
