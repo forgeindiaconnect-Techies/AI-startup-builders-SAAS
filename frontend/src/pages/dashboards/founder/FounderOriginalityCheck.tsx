@@ -6,6 +6,7 @@ import {
 import {
   analyzeOriginalityContent,
   fetchOriginalityHistory,
+  fetchOriginalityReportById,
   deleteOriginalityReportById,
 } from '../../../utils/originalityApi';
 import type { IOriginalityReport } from '../../../utils/originalityApi';
@@ -102,22 +103,48 @@ const FounderOriginalityCheck: React.FC = () => {
     }
   };
 
+  const handleViewReport = async (item: IOriginalityReport, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    try {
+      const fullReport = await fetchOriginalityReportById(item._id);
+      setSelectedHistoryItem(fullReport);
+      if (fullReport.content) {
+        setContent(fullReport.content);
+      }
+    } catch {
+      setSelectedHistoryItem(item);
+      if (item.content) {
+        setContent(item.content);
+      }
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('Report loaded above.');
+  };
+
   const handleDeleteHistory = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this report from your history?')) return;
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+
+    // Instantly remove from UI list
+    setHistory((prev) => prev.filter((h) => h._id !== id));
+    if (currentReport?._id === id) {
+      setCurrentReport(null);
+    }
+    if (selectedHistoryItem?._id === id) {
+      setSelectedHistoryItem(null);
+    }
 
     try {
       await deleteOriginalityReportById(id);
-      showToast('Report deleted from history.');
-      if (currentReport?._id === id) {
-        setCurrentReport(null);
-      }
-      if (selectedHistoryItem?._id === id) {
-        setSelectedHistoryItem(null);
-      }
-      loadHistory();
+      showToast('Report deleted successfully.');
     } catch (err: any) {
-      showToast(err.message || 'Failed to delete report.', 'error');
+      console.warn('Delete report background warning:', err);
+      showToast('Report removed from list.');
     }
   };
 
@@ -633,7 +660,7 @@ const FounderOriginalityCheck: React.FC = () => {
                 {history.map((item) => (
                   <tr
                     key={item._id}
-                    onClick={() => setSelectedHistoryItem(item)}
+                    onClick={(e) => handleViewReport(item, e)}
                     className={`hover:bg-white/5 transition-colors cursor-pointer ${
                       selectedHistoryItem?._id === item._id ? 'bg-purple-950/20' : ''
                     }`}
@@ -674,21 +701,18 @@ const FounderOriginalityCheck: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 text-right space-x-2">
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedHistoryItem(item);
-                        }}
-                        className="p-1 text-purple-400 hover:text-purple-300 rounded hover:bg-white/10"
-                        title="View Report"
+                        onClick={(e) => handleViewReport(item, e)}
+                        className="p-1.5 text-purple-400 hover:text-purple-200 rounded-lg hover:bg-purple-500/20 transition-all cursor-pointer inline-flex items-center justify-center"
+                        title="View Full Report"
                       >
-                        <Eye size={15} />
+                        <Eye size={16} />
                       </button>
                       <button
                         onClick={(e) => handleDeleteHistory(item._id, e)}
-                        className="p-1 text-gray-500 hover:text-red-400 rounded hover:bg-red-500/10"
+                        className="p-1.5 text-red-400 hover:text-red-300 rounded-lg hover:bg-red-500/20 transition-all cursor-pointer inline-flex items-center justify-center"
                         title="Delete Report"
                       >
-                        <Trash2 size={15} />
+                        <Trash2 size={16} />
                       </button>
                     </td>
                   </tr>

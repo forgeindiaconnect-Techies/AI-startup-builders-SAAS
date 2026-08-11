@@ -342,7 +342,6 @@ export const getOriginalityHistory = async (req: Request, res: Response) => {
 
     const history = await OriginalityCheck.find({ userId: authUser.id })
       .sort({ createdAt: -1 })
-      .select('-content') // exclude heavy full content for fast list fetch
       .lean();
 
     return res.status(200).json({
