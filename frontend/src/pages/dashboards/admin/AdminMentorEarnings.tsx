@@ -20,6 +20,9 @@ import {
   ArrowRight,
   ShieldCheck,
   UserCheck,
+  Eye,
+  History,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   getAdminMentorEarnings,
@@ -69,7 +72,8 @@ const AdminMentorEarnings: React.FC = () => {
   const [paymentSearch, setPaymentSearch] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('all');
 
-  // Mark Paid confirmation modal state
+  // Modal states
+  const [selectedPaymentForHistory, setSelectedPaymentForHistory] = useState<any | null>(null);
   const [selectedWithdrawalForPaid, setSelectedWithdrawalForPaid] = useState<any | null>(null);
   const [utrReference, setUtrReference] = useState('');
   const [paidDate, setPaidDate] = useState(new Date().toISOString().split('T')[0]);
@@ -380,6 +384,7 @@ const AdminMentorEarnings: React.FC = () => {
                                 <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Platform Cut</th>
                                 <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Session Status</th>
                                 <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Payout Status</th>
+                                <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Action</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -404,6 +409,15 @@ const AdminMentorEarnings: React.FC = () => {
                                       <Check size={13} className="text-emerald-600" /> Paid
                                     </span>
                                   </td>
+                                  <td className="px-5 py-3.5 text-center whitespace-nowrap">
+                                    <button
+                                      onClick={() => setSelectedPaymentForHistory(tx)}
+                                      className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1"
+                                      title="View History Details"
+                                    >
+                                      <Eye size={12} /> Details
+                                    </button>
+                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -419,7 +433,7 @@ const AdminMentorEarnings: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: USER PAYMENTS DETAILS TO MENTORS (NEW SECTION) */}
+      {/* TAB 2: USER PAYMENTS DETAILS TO MENTORS (WITH VIEW HISTORY ACTION) */}
       {activeTab === 'user_payments' && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           {/* Header & Filter Controls */}
@@ -493,6 +507,7 @@ const AdminMentorEarnings: React.FC = () => {
                     <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Mentor Share (80%)</th>
                     <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Platform Cut (20%)</th>
                     <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Payout Status</th>
+                    <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -556,6 +571,17 @@ const AdminMentorEarnings: React.FC = () => {
                         <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 text-emerald-700 font-bold rounded-full border border-emerald-200 text-xs shadow-2xs">
                           <Check size={13} className="text-emerald-600" /> Paid
                         </span>
+                      </td>
+
+                      {/* Action: View History Button */}
+                      <td className="px-5 py-4 text-center whitespace-nowrap">
+                        <button
+                          onClick={() => setSelectedPaymentForHistory(tx)}
+                          className="px-3 py-1.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-xl text-xs font-bold transition-all shadow-xs inline-flex items-center gap-1.5"
+                          title="View Payment History Details"
+                        >
+                          <Eye size={13} /> View History
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -667,6 +693,172 @@ const AdminMentorEarnings: React.FC = () => {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* PAYMENT HISTORY & TRANSACTION AUDIT DETAILS MODAL */}
+      {selectedPaymentForHistory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#5B21B6] via-[#6C4CF1] to-[#7C3AED] px-6 py-4 flex items-center justify-between text-white flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+                  <History size={20} className="text-purple-200" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base tracking-tight">Payment History & Audit Details</h3>
+                  <p className="text-xs text-purple-200 font-mono">
+                    Txn ID: #{selectedPaymentForHistory._id ? selectedPaymentForHistory._id.toString().slice(-8).toUpperCase() : 'TXN-PAYMENT'} • {formatDateTime(selectedPaymentForHistory.createdAt)}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedPaymentForHistory(null)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-purple-100 hover:text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Scrollable Modal Content */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Founder and Mentor Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Founder Box */}
+                <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100/80">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                      Payer (Founder)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#5B21B6] text-white font-black text-sm flex items-center justify-center shadow-xs">
+                      {(selectedPaymentForHistory.founderName || 'F').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{selectedPaymentForHistory.founderName || 'Founder User'}</p>
+                      <p className="text-xs text-gray-500">{selectedPaymentForHistory.founderEmail || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mentor Box */}
+                <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/80">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                      Payee (Mentor)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-black text-sm flex items-center justify-center shadow-xs">
+                      {(selectedPaymentForHistory.mentorName || 'M').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{selectedPaymentForHistory.mentorName || 'Mentor'}</p>
+                      <p className="text-xs text-gray-500">{selectedPaymentForHistory.mentorEmail || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Session Information */}
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1">Session & Topic Details</p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-900">{selectedPaymentForHistory.topic || 'Mentorship Session'}</h4>
+                    {selectedPaymentForHistory.startupName && (
+                      <p className="text-xs text-purple-700 font-semibold mt-0.5">🚀 Startup: {selectedPaymentForHistory.startupName}</p>
+                    )}
+                  </div>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    <CheckCircle size={13} /> {selectedPaymentForHistory.isCompleted ? 'Session Completed' : 'Booking Active'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Payment Financial Breakdown */}
+              <div>
+                <p className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Financial Transaction Breakdown</p>
+                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xs divide-y divide-gray-100">
+                  <div className="p-3.5 flex justify-between items-center text-xs">
+                    <span className="text-gray-600 font-medium">Total Session Fee Paid by User</span>
+                    <span className="font-black text-gray-900 text-sm">{formatCurrency(selectedPaymentForHistory.sessionFee)}</span>
+                  </div>
+                  <div className="p-3.5 flex justify-between items-center text-xs bg-emerald-50/40">
+                    <span className="text-emerald-800 font-semibold flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                      Mentor Share ({selectedPaymentForHistory.mentorSharePercentage || 80}%)
+                    </span>
+                    <span className="font-black text-emerald-700 text-sm">{formatCurrency(selectedPaymentForHistory.mentorEarnings)}</span>
+                  </div>
+                  <div className="p-3.5 flex justify-between items-center text-xs bg-amber-50/40">
+                    <span className="text-amber-800 font-semibold flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                      Platform Commission ({selectedPaymentForHistory.platformCommissionPercentage || 20}%)
+                    </span>
+                    <span className="font-black text-amber-700 text-sm">{formatCurrency(selectedPaymentForHistory.platformCommission)}</span>
+                  </div>
+                  <div className="p-3.5 flex justify-between items-center text-xs">
+                    <span className="text-gray-500 font-medium">Payout Status</span>
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 text-emerald-700 font-extrabold rounded-full border border-emerald-200 text-xs">
+                      <Check size={13} className="text-emerald-600" /> Paid
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Activity Audit History Timeline */}
+              <div>
+                <p className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3">Audit Activity History</p>
+                <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-100 space-y-4">
+                  <div className="flex gap-3 text-xs">
+                    <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">✓</div>
+                    <div>
+                      <p className="font-bold text-gray-900">Payment Processed & Received</p>
+                      <p className="text-[11px] text-gray-500">User completed online payment of {formatCurrency(selectedPaymentForHistory.sessionFee)}.</p>
+                      <p className="text-[10px] text-gray-400 font-mono mt-0.5">{formatDateTime(selectedPaymentForHistory.createdAt)}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 text-xs">
+                    <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">✓</div>
+                    <div>
+                      <p className="font-bold text-gray-900">Session Booking Recorded</p>
+                      <p className="text-[11px] text-gray-500">Mentorship slot booked with {selectedPaymentForHistory.mentorName || 'Mentor'}.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 text-xs">
+                    <div className="w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">✓</div>
+                    <div>
+                      <p className="font-bold text-gray-900">Platform Commission & Mentor Split Calculated</p>
+                      <p className="text-[11px] text-gray-500">20% ({formatCurrency(selectedPaymentForHistory.platformCommission)}) retained by platform, 80% ({formatCurrency(selectedPaymentForHistory.mentorEarnings)}) assigned to mentor.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 text-xs">
+                    <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">✓</div>
+                    <div>
+                      <p className="font-bold text-gray-900">Payout Status Verified as Paid</p>
+                      <p className="text-[11px] text-emerald-700 font-semibold">Earnings available for mentor withdrawal payout.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end flex-shrink-0">
+              <button
+                onClick={() => setSelectedPaymentForHistory(null)}
+                className="px-5 py-2 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold text-xs rounded-xl transition-colors shadow-sm"
+              >
+                Close History Details
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
