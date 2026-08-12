@@ -65,6 +65,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   🌐 Server:  http://0.0.0.0:${PORT}`);
   console.log(`   📡 API:     http://0.0.0.0:${PORT}/api`);
   console.log(`   💚 Health:  http://0.0.0.0:${PORT}/api/health`);
+  console.log(`   🔑 Brevo Key Exists: ${!!process.env.BREVO_API_KEY}`);
+  console.log(`   📧 Brevo Sender:     ${process.env.BREVO_SENDER_EMAIL || 'undefined'}`);
   console.log('═══════════════════════════════════════════════');
   console.log('');
 
