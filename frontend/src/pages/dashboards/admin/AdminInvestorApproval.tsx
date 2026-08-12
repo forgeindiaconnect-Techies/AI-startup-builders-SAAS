@@ -765,7 +765,7 @@ const AdminInvestorApproval: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Full Name *</label>
                     <input
@@ -788,9 +788,6 @@ const AdminInvestorApproval: React.FC = () => {
                       className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#6C4CF1]"
                     />
                   </div>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 uppercase mb-1">LinkedIn Profile URL *</label>
                     <input
@@ -802,55 +799,6 @@ const AdminInvestorApproval: React.FC = () => {
                       className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#6C4CF1]"
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Investor Type *</label>
-                    <select
-                      value={inviteForm.investorType}
-                      onChange={e => setInviteForm({ ...inviteForm, investorType: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#6C4CF1]"
-                    >
-                      <option value="Angel Investor">Angel Investor</option>
-                      <option value="Individual Investor">Individual Investor</option>
-                      <option value="Venture Capital Representative">Venture Capital Representative</option>
-                      <option value="Corporate Investor">Corporate Investor</option>
-                      <option value="Family Office">Family Office</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Organization / Firm Name</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Nexus Venture Partners"
-                      value={inviteForm.companyName}
-                      onChange={e => setInviteForm({ ...inviteForm, companyName: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#6C4CF1]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Designation</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Partner / Angel Investor"
-                      value={inviteForm.designation}
-                      onChange={e => setInviteForm({ ...inviteForm, designation: e.target.value })}
-                      className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#6C4CF1]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Admin Notes (Private - Admins Only)</label>
-                  <textarea
-                    rows={2}
-                    placeholder="Private notes e.g. Met on LinkedIn. Active SaaS VC in SEA."
-                    value={inviteForm.adminNotes}
-                    onChange={e => setInviteForm({ ...inviteForm, adminNotes: e.target.value })}
-                    className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#6C4CF1] resize-none"
-                  />
                 </div>
 
                 <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
