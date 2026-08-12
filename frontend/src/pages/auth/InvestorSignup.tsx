@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { API_URL } from '../../config/api';
+import { getLeadByToken } from '../../utils/investorInvites';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7; // Step 7 is Pending Verification Confirmation
@@ -334,8 +335,41 @@ const InvestorSignup: React.FC = () => {
   const [apiError, setApiError] = useState('');
   const [applicationId, setApplicationId] = useState('');
   const [submittedDate, setSubmittedDate] = useState('');
+  const [isInvited, setIsInvited] = useState(false);
 
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto pre-fill name, email, and linkedinUrl from invitation link
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('invitationToken') || params.get('token');
+    const nameParam = params.get('fullName') || params.get('name');
+    const emailParam = params.get('email');
+    const linkedinParam = params.get('linkedinUrl') || params.get('linkedin');
+
+    let name = nameParam || '';
+    let email = emailParam || '';
+    let linkedin = linkedinParam || '';
+
+    if (token) {
+      const lead = getLeadByToken(token);
+      if (lead) {
+        if (lead.fullName) name = lead.fullName;
+        if (lead.email) email = lead.email;
+        if (lead.linkedinUrl) linkedin = lead.linkedinUrl;
+      }
+    }
+
+    if (name || email || linkedin || token) {
+      setIsInvited(true);
+      setForm(prev => ({
+        ...prev,
+        fullName: name || prev.fullName,
+        email: email || prev.email,
+        linkedin: linkedin || prev.linkedin,
+      }));
+    }
+  }, []);
 
   const update = (field: keyof InvestorFormData, val: any) => {
     setForm(prev => ({ ...prev, [field]: val }));
@@ -655,6 +689,20 @@ const InvestorSignup: React.FC = () => {
               </h2>
               <p className="text-xs text-gray-500 mt-1">Provide your primary contact details and verify your email address.</p>
             </div>
+
+            {isInvited && (
+              <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-purple-50 via-amber-50 to-purple-50 border border-purple-200 shadow-sm flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-[#6C4CF1] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-md">
+                  <Sparkles size={18} className="text-[#FBBF24]" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase text-[#6C4CF1] tracking-wider">Official Investor Invitation</h4>
+                  <p className="text-xs text-gray-700 font-medium mt-0.5">
+                    Your invitation details (<strong>Full Name</strong>, <strong>Email Address</strong>, and <strong>LinkedIn Profile</strong>) have been automatically pre-filled from your invitation.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-5">
               {/* Full Name */}

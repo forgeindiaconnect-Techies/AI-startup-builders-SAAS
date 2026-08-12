@@ -254,7 +254,7 @@ export const createInvestorInvite = async (req: Request, res: Response) => {
     }
 
     const invitationToken = `inv_tok_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`;
-    const relativeUrl = `/investor-signup?invitationToken=${invitationToken}`;
+    const relativeUrl = `/investor-signup?invitationToken=${invitationToken}&fullName=${encodeURIComponent(fullName)}&email=${encodeURIComponent(email)}&linkedinUrl=${encodeURIComponent(linkedinUrl)}`;
     const fullInviteUrl = `${getBaseOrigin(req)}${relativeUrl}`;
     const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 

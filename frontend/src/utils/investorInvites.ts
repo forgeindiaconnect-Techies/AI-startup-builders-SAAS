@@ -86,7 +86,7 @@ export const saveInvestorLead = (lead: Omit<InvestorInviteLead, 'id' | 'invitati
     id: `inv_lead_${Date.now()}`,
     ...lead,
     invitationToken: token,
-    inviteUrl: `${origin}/investor-signup?invitationToken=${token}`,
+    inviteUrl: `${origin}/investor-signup?invitationToken=${token}&fullName=${encodeURIComponent(lead.fullName)}&email=${encodeURIComponent(lead.email)}&linkedinUrl=${encodeURIComponent(lead.linkedinUrl)}`,
     status: 'INVITED',
     createdAt: new Date().toISOString(),
     expiryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
