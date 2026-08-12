@@ -6,6 +6,7 @@ import { FundingProvider } from './context/FundingContext';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
+import InvestorSignup from './pages/auth/InvestorSignup';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import PendingApproval from './pages/auth/PendingApproval';
 import BlogPage from './pages/info/BlogPage';
@@ -118,6 +119,7 @@ function App() {
               <Route path="/admin-login" element={<Login />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/investor-signup" element={<InvestorSignup />} />
               <Route path="/pending-approval" element={<PendingApproval />} />
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/help-center" element={<HelpCenterPage />} />

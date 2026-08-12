@@ -998,9 +998,13 @@ const Signup: React.FC = () => {
                       <button
                         key={role.id}
                         onClick={() => {
-                          setSelectedRole(role.id);
-                          resetForm();
-                          setStep('basic');
+                          if (role.id === 'investor') {
+                            navigate('/investor-signup');
+                          } else {
+                            setSelectedRole(role.id);
+                            resetForm();
+                            setStep('basic');
+                          }
                         }}
                         className="w-full flex items-center gap-4 p-5 rounded-2xl border-2 border-gray-100 hover:border-[#6C4CF1]/30 hover:bg-[#6C4CF1]/[0.02] transition-all duration-200 text-left group"
                       >

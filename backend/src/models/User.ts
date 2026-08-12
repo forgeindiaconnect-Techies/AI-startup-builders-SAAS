@@ -38,6 +38,29 @@ export interface IUser extends mongoose.Document {
   preferredIndustry?: string;
   minInvestment?: string;
   maxInvestment?: string;
+  designation?: string;
+  website?: string;
+  profilePhotoUrl?: string;
+  preferredIndustries?: string[];
+  investmentStages?: string[];
+  investmentRange?: string;
+  preferredLocation?: string;
+  investmentFocus?: string;
+  previousExperience?: string;
+  startupsInvestedCount?: string;
+  portfolioCompanies?: string;
+  notableInvestments?: string;
+  areasOfExpertise?: string;
+  investmentThesis?: string;
+  kycDocUrl?: string;
+  kycDocName?: string;
+  orgProofUrl?: string;
+  orgProofName?: string;
+  supportingDocUrl?: string;
+  supportingDocName?: string;
+  additionalDocUrl?: string;
+  additionalDocName?: string;
+  rejectionReason?: string;
 
   lastLoginAt?: Date;
   loginCount: number;
@@ -50,7 +73,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['founder', 'mentor', 'investor', 'admin'], required: true },
   isVerified: { type: Boolean, default: false },
   status: { type: String, enum: ['active', 'inactive', 'suspended'], default: 'active' },
-  approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' },
+  approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected', 'PENDING_VERIFICATION', 'APPROVED', 'REJECTED'], default: 'approved' },
 
   // Founder fields
   mobile: { type: String },
@@ -81,6 +104,29 @@ const userSchema = new mongoose.Schema({
   preferredIndustry: { type: String },
   minInvestment: { type: String },
   maxInvestment: { type: String },
+  designation: { type: String },
+  website: { type: String },
+  profilePhotoUrl: { type: String },
+  preferredIndustries: [{ type: String }],
+  investmentStages: [{ type: String }],
+  investmentRange: { type: String },
+  preferredLocation: { type: String },
+  investmentFocus: { type: String },
+  previousExperience: { type: String },
+  startupsInvestedCount: { type: String },
+  portfolioCompanies: { type: String },
+  notableInvestments: { type: String },
+  areasOfExpertise: { type: String },
+  investmentThesis: { type: String },
+  kycDocUrl: { type: String },
+  kycDocName: { type: String },
+  orgProofUrl: { type: String },
+  orgProofName: { type: String },
+  supportingDocUrl: { type: String },
+  supportingDocName: { type: String },
+  additionalDocUrl: { type: String },
+  additionalDocName: { type: String },
+  rejectionReason: { type: String },
 
   lastLoginAt: { type: Date },
   loginCount: { type: Number, default: 0 },

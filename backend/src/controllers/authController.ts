@@ -83,10 +83,14 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
   try {
     const {
       email, otp, password, role, fullName,
-      mobile, currentRole, startupName, startupStage, industry, agreedToTerms,
+      mobile, location, currentRole, startupName, startupStage, industry, agreedToTerms,
       expertise, experienceYears, linkedin, bio,
       aadharNumber, aadharDocUrl, panNumber, panDocUrl, otherDocType, otherDocNumber, otherDocUrl,
       companyName, investorType, preferredIndustry, minInvestment, maxInvestment,
+      designation, website, profilePhotoUrl, preferredIndustries, investmentStages, investmentRange,
+      preferredLocation, investmentFocus, previousExperience, startupsInvestedCount, portfolioCompanies,
+      notableInvestments, areasOfExpertise, investmentThesis, kycDocUrl, kycDocName, orgProofUrl,
+      orgProofName, supportingDocUrl, supportingDocName, additionalDocUrl, additionalDocName,
       ...otherData
     } = req.body;
 
@@ -139,7 +143,13 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
         aadharNumber, aadharDocUrl, panNumber, panDocUrl, otherDocType, otherDocNumber, otherDocUrl
       });
     } else if (role === 'investor') {
-      Object.assign(roleFields, { mobile, companyName, investorType, preferredIndustry, minInvestment, maxInvestment });
+      Object.assign(roleFields, {
+        mobile, location, companyName, investorType, preferredIndustry, minInvestment, maxInvestment,
+        designation, website, profilePhotoUrl, preferredIndustries, investmentStages, investmentRange,
+        preferredLocation, investmentFocus, previousExperience, startupsInvestedCount, portfolioCompanies,
+        notableInvestments, areasOfExpertise, investmentThesis, kycDocUrl, kycDocName, orgProofUrl,
+        orgProofName, supportingDocUrl, supportingDocName, additionalDocUrl, additionalDocName
+      });
     }
 
     if (user) {

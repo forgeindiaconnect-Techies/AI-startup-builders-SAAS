@@ -34,6 +34,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     }
   }
 
+  if (effectiveRole === 'investor') {
+    const isApproved = user.approvalStatus === 'approved' || user.approvalStatus === 'APPROVED';
+    if (!isApproved) {
+      return <Navigate to="/pending-approval?role=investor" replace />;
+    }
+  }
+
   return <Outlet />;
 };
 
