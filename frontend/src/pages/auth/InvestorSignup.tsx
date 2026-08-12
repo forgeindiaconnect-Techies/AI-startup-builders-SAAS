@@ -1059,11 +1059,16 @@ const InvestorSignup: React.FC = () => {
             </div>
 
             <div className="space-y-6">
-              {/* Preferred Industries (Multi-Select Pills) */}
+              {/* Preferred Industries (Single Select Pills) */}
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Preferred Industries / Sectors <span className="text-amber-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Preferred Industry / Sector <span className="text-amber-500">*</span>
+                  </label>
+                  <span className="text-xs font-bold text-[#6C4CF1] bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
+                    Select One
+                  </span>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {INDUSTRIES_OPTIONS.map(ind => {
                     const selected = form.preferredIndustries.includes(ind);
@@ -1071,11 +1076,17 @@ const InvestorSignup: React.FC = () => {
                       <button
                         type="button"
                         key={ind}
-                        onClick={() => toggleArrayItem('preferredIndustries', ind)}
-                        className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
+                        onClick={() => {
+                          setForm(prev => ({
+                            ...prev,
+                            preferredIndustries: selected ? [] : [ind],
+                          }));
+                          if (errors.preferredIndustries) setErrors(prev => ({ ...prev, preferredIndustries: '' }));
+                        }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                           selected
-                            ? 'bg-[#6C4CF1] text-white border-[#6C4CF1] shadow-sm'
-                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-purple-300'
+                            ? 'bg-[#6C4CF1] text-white border-[#6C4CF1] shadow-md shadow-purple-500/20 scale-[1.02]'
+                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-purple-300 hover:bg-gray-100'
                         }`}
                       >
                         {selected ? '✓ ' : '+ '}{ind}
@@ -1086,11 +1097,16 @@ const InvestorSignup: React.FC = () => {
                 {errors.preferredIndustries && <p className="text-red-500 text-xs font-medium mt-2">{errors.preferredIndustries}</p>}
               </div>
 
-              {/* Investment Stage (Multi-Select Pills) */}
+              {/* Investment Stage (Single Select Pills) */}
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Investment Stage <span className="text-amber-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-semibold text-gray-900">
+                    Investment Stage <span className="text-amber-500">*</span>
+                  </label>
+                  <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
+                    Select One
+                  </span>
+                </div>
                 <div className="flex flex-wrap gap-2.5">
                   {STAGE_OPTIONS.map(stage => {
                     const selected = form.investmentStages.includes(stage);
@@ -1098,10 +1114,16 @@ const InvestorSignup: React.FC = () => {
                       <button
                         type="button"
                         key={stage}
-                        onClick={() => toggleArrayItem('investmentStages', stage)}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-extrabold border transition-all ${
+                        onClick={() => {
+                          setForm(prev => ({
+                            ...prev,
+                            investmentStages: selected ? [] : [stage],
+                          }));
+                          if (errors.investmentStages) setErrors(prev => ({ ...prev, investmentStages: '' }));
+                        }}
+                        className={`px-4 py-2.5 rounded-xl text-xs font-extrabold border transition-all cursor-pointer ${
                           selected
-                            ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                            ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20 scale-[1.02]'
                             : 'bg-amber-50/60 text-amber-900 border-amber-200 hover:bg-amber-100'
                         }`}
                       >
