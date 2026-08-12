@@ -151,6 +151,7 @@ const AdminInvestorApproval: React.FC = () => {
   const [invitedLeads, setInvitedLeads] = useState<InvestorInviteLead[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedApp, setSelectedApp] = useState<InvestorApplication | null>(null);
+  const [selectedLead, setSelectedLead] = useState<InvestorInviteLead | null>(null);
 
   // Invite Modal State
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -608,8 +609,16 @@ const AdminInvestorApproval: React.FC = () => {
                         <td className="p-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
+                              onClick={() => setSelectedLead(lead)}
+                              className="px-3 py-1.5 bg-purple-50 text-[#6C4CF1] font-bold rounded-lg hover:bg-purple-100 text-xs transition-colors flex items-center gap-1 border border-purple-100"
+                              title="View Investor Invitation Details"
+                            >
+                              <Eye size={13} /> View Details
+                            </button>
+                            <button
                               onClick={() => copyToClipboard(lead.inviteUrl)}
-                              className="px-3 py-1.5 bg-purple-50 text-[#6C4CF1] font-bold rounded-lg hover:bg-purple-100 text-xs transition-colors flex items-center gap-1"
+                              className="px-3 py-1.5 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200 text-xs transition-colors flex items-center gap-1"
+                              title="Copy Invitation Link"
                             >
                               <Copy size={13} /> Copy Link
                             </button>
@@ -1021,6 +1030,136 @@ const AdminInvestorApproval: React.FC = () => {
               <button onClick={handleConfirmReject} className="px-5 py-2 bg-red-600 text-white font-bold text-xs rounded-xl hover:bg-red-700">
                 Confirm Rejection
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL 4: INVESTOR INVITATION LEAD DETAILS ── */}
+      {selectedLead && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 text-left">
+            <button
+              onClick={() => setSelectedLead(null)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="mb-6 border-b border-gray-100 pb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-3 py-0.5 rounded-full text-xs font-black uppercase bg-amber-100 text-amber-800 border border-amber-200">
+                  Status: {selectedLead.status}
+                </span>
+                <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-[#6C4CF1] border border-purple-100">
+                  {selectedLead.investorType}
+                </span>
+              </div>
+              <h2 className="text-2xl font-black text-gray-900">{selectedLead.fullName}</h2>
+              <p className="text-xs text-gray-500">{selectedLead.companyName ? `${selectedLead.companyName} • ` : ''}{selectedLead.email}</p>
+            </div>
+
+            <div className="space-y-5 text-xs text-gray-700">
+              {/* Profile Overview */}
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-3">
+                <h4 className="font-bold text-gray-900 uppercase text-[11px] text-[#6C4CF1] flex items-center gap-1.5">
+                  <Mail size={14} /> Contact & Professional Profile
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div><span className="text-gray-400 block">Full Name:</span> <strong>{selectedLead.fullName}</strong></div>
+                  <div><span className="text-gray-400 block">Email Address:</span> <strong>{selectedLead.email}</strong></div>
+                  <div><span className="text-gray-400 block">Phone Number:</span> <strong>{selectedLead.phone || 'N/A'}</strong></div>
+                  <div><span className="text-gray-400 block">Firm / Company:</span> <strong>{selectedLead.companyName || 'N/A'}</strong></div>
+                  <div><span className="text-gray-400 block">Designation:</span> <strong>{selectedLead.designation || 'N/A'}</strong></div>
+                  <div><span className="text-gray-400 block">Location:</span> <strong>{selectedLead.location || 'N/A'}</strong></div>
+                </div>
+
+                <div className="pt-2 border-t border-gray-200/60 flex items-center gap-4 flex-wrap">
+                  {selectedLead.linkedinUrl && (
+                    <a href={selectedLead.linkedinUrl} target="_blank" rel="noreferrer" className="text-[#6C4CF1] font-bold hover:underline inline-flex items-center gap-1">
+                      LinkedIn Profile <ArrowUpRight size={13} />
+                    </a>
+                  )}
+                  {selectedLead.website && (
+                    <a href={selectedLead.website} target="_blank" rel="noreferrer" className="text-gray-700 font-bold hover:underline inline-flex items-center gap-1">
+                      Website <ArrowUpRight size={13} />
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Preferences */}
+              <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 space-y-2">
+                <h4 className="font-bold text-gray-900 uppercase text-[11px] text-[#6C4CF1]">Target Investment Criteria</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <span className="text-gray-400 block">Cheque Range:</span>
+                    <strong className="text-[#6C4CF1]">{selectedLead.investmentRange || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 block">Target Industries:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {selectedLead.interestedIndustries && selectedLead.interestedIndustries.length > 0 ? (
+                        selectedLead.interestedIndustries.map((ind, i) => (
+                          <span key={i} className="px-2 py-0.5 bg-white border border-purple-200 rounded text-[10px] font-bold text-purple-700">{ind}</span>
+                        ))
+                      ) : <span className="text-gray-500 font-medium">All Industries</span>}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 block">Target Stages:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {selectedLead.investmentStage && selectedLead.investmentStage.length > 0 ? (
+                        selectedLead.investmentStage.map((stg, i) => (
+                          <span key={i} className="px-2 py-0.5 bg-white border border-purple-200 rounded text-[10px] font-bold text-purple-700">{stg}</span>
+                        ))
+                      ) : <span className="text-gray-500 font-medium">All Stages</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Admin Notes */}
+              {selectedLead.adminNotes && (
+                <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-100">
+                  <h4 className="font-bold text-amber-900 uppercase text-[11px] mb-1">Admin Notes / Context</h4>
+                  <p className="text-xs text-amber-800 italic">"{selectedLead.adminNotes}"</p>
+                </div>
+              )}
+
+              {/* Invitation Token & Link */}
+              <div className="bg-gray-900 text-white p-4 rounded-2xl space-y-2">
+                <p className="text-[11px] font-extrabold uppercase text-amber-400">Unique Invitation Link</p>
+                <div className="bg-gray-800 border border-gray-700 p-2.5 rounded-xl flex items-center justify-between gap-2">
+                  <span className="font-mono text-xs text-gray-200 truncate flex-1">{selectedLead.inviteUrl}</span>
+                  <button
+                    onClick={() => copyToClipboard(selectedLead.inviteUrl)}
+                    className="px-3 py-1.5 bg-[#6C4CF1] hover:bg-[#5B21B6] text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1 shrink-0"
+                  >
+                    {copiedLink ? <Check size={13} /> : <Copy size={13} />} {copiedLink ? 'Copied!' : 'Copy Link'}
+                  </button>
+                </div>
+                <div className="flex items-center justify-between text-[11px] text-gray-400 pt-1">
+                  <span>Issued On: {new Date(selectedLead.createdAt).toLocaleDateString()}</span>
+                  <span>Expires On: {new Date(selectedLead.expiryDate).toLocaleDateString()}</span>
+                </div>
+              </div>
+
+              {/* Action Buttons Footer */}
+              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => { handleDeleteLead(selectedLead); setSelectedLead(null); }}
+                  className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5"
+                >
+                  <Trash2 size={14} /> Delete Invitation
+                </button>
+                <button
+                  onClick={() => setSelectedLead(null)}
+                  className="px-6 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all"
+                >
+                  Close Details
+                </button>
+              </div>
             </div>
           </div>
         </div>
