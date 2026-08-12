@@ -785,45 +785,6 @@ const AdminUsers: React.FC = () => {
                 </div>
               </div>
 
-              <div className="my-4 border-t border-gray-100" />
-
-              {/* Subscription Information */}
-              <div>
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                  <span className="w-1 h-4 rounded-full bg-purple-500"></span> Subscription Information
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Free Trial Expiry</span>
-                    <span className={`font-bold ${selectedUser.trialEndDate && new Date(selectedUser.trialEndDate) < new Date() ? 'text-red-600' : 'text-gray-900'}`}>
-                      {selectedUser.trialEndDate ? formatDate(selectedUser.trialEndDate) : <span className="text-gray-400 italic">N/A</span>}
-                    </span>
-                    {selectedUser.trialEndDate && new Date(selectedUser.trialEndDate) < new Date() && (
-                      <span className="text-[10px] font-bold text-red-500 block mt-1">Expired</span>
-                    )}
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Subscription Plan Expiry</span>
-                    <span className={`font-bold ${selectedUser.subscriptionEndDate && new Date(selectedUser.subscriptionEndDate) < new Date() ? 'text-red-600' : 'text-gray-900'}`}>
-                      {selectedUser.subscriptionEndDate ? formatDate(selectedUser.subscriptionEndDate) : <span className="text-gray-400 italic">N/A</span>}
-                    </span>
-                    {selectedUser.subscriptionEndDate && new Date(selectedUser.subscriptionEndDate) < new Date() && (
-                      <span className="text-[10px] font-bold text-red-500 block mt-1">Expired</span>
-                    )}
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Current Plan</span>
-                    <span className="font-bold text-gray-900">{selectedUser.plan || 'none'}</span>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Subscription Status</span>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${statusBgColors[selectedUser.subscriptionStatus] || statusBgColors.inactive}`}>
-                      {selectedUser.subscriptionStatus || 'none'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
             </div>
 
             {/* Footer actions */}
