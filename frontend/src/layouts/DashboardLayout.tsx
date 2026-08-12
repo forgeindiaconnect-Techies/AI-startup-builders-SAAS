@@ -46,6 +46,7 @@ import AdminUsers from '../pages/dashboards/admin/AdminUsers';
 import AdminInviteLinks from '../pages/dashboards/admin/AdminInviteLinks';
 import AdminStartups from '../pages/dashboards/admin/AdminStartups';
 import AdminApprovalsHub from '../pages/dashboards/admin/AdminApprovalsHub';
+import AdminInvestorApproval from '../pages/dashboards/admin/AdminInvestorApproval';
 import AdminDocumentVerification from '../pages/dashboards/admin/AdminDocumentVerification';
 import AdminSubPayments from '../pages/dashboards/admin/AdminSubPayments';
 import AdminAnalytics from '../pages/dashboards/admin/AdminAnalytics';
@@ -97,6 +98,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
   admin: {
     '/dashboard/admin': AdminDashboard,
     '/dashboard/admin/users': AdminUsers,
+    '/dashboard/admin/investors': AdminInvestorApproval,
     '/dashboard/admin/invite-links': AdminInviteLinks,
     '/dashboard/admin/startups': AdminStartups,
     '/dashboard/admin/approvals-hub': AdminApprovalsHub,
@@ -171,6 +173,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
       items: [
         { name: 'Overview',                icon: LayoutDashboard, path: '/dashboard/admin' },
         { name: 'Manage Users',            icon: Users,           path: '/dashboard/admin/users' },
+        { name: 'Investor Management',     icon: TrendingUp,      path: '/dashboard/admin/investors' },
         { name: 'Invite Links',            icon: Link2,           path: '/dashboard/admin/invite-links' },
         { name: 'Startup Ideas',           icon: Rocket,          path: '/dashboard/admin/startups' },
         { name: 'Approvals',               icon: ShieldCheck,     path: '/dashboard/admin/approvals-hub' },

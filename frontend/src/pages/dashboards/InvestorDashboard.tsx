@@ -132,24 +132,32 @@ const InvestorDashboard: React.FC = () => {
               
               <div className="grid grid-cols-2 gap-4 mb-4 pt-4 border-t border-gray-100">
                 <div>
-                  <p className="text-xs text-gray-400 font-medium">AI Score</p>
-                  <p className="font-bold text-gray-900">{startup.aiGenerated?.aiReport?.investmentReadinessScore || '85'}/100</p>
+                  <p className="text-xs text-gray-400 font-bold">Funding Readiness</p>
+                  <p className="font-extrabold text-[#6C4CF1]">{startup.aiGenerated?.aiReport?.investmentReadinessScore || '85'}/100</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 font-medium">Revenue Model</p>
-                  <p className="font-bold text-gray-900 text-sm line-clamp-1">{startup.aiGenerated?.ideaAnalysis?.businessModel || 'Tech'}</p>
+                  <p className="text-xs text-gray-400 font-bold">AI-Assisted Analysis</p>
+                  <p className="font-bold text-gray-900 text-sm line-clamp-1">{startup.aiGenerated?.ideaAnalysis?.businessModel || 'Tech Moat'}</p>
                 </div>
               </div>
               
               <button 
                 onClick={() => setSelectedStartup(startup)}
-                className="w-full py-2 bg-gray-50 group-hover:bg-[#10B981] text-gray-700 group-hover:text-white rounded-lg font-medium text-sm transition-colors"
+                className="w-full py-2.5 bg-[#6C4CF1]/10 group-hover:bg-[#6C4CF1] text-[#6C4CF1] group-hover:text-white rounded-xl font-bold text-xs transition-all shadow-sm flex items-center justify-center gap-1.5"
               >
-                View Details
+                View AI Analysis & Pitch
               </button>
             </div>
             ))
           )}
+        </div>
+
+        {/* AI Disclaimer Box */}
+        <div className="mt-8 p-4 bg-amber-50/60 border border-amber-200/80 rounded-2xl flex items-start gap-3">
+          <ShieldCheck size={20} className="text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-900 font-semibold leading-relaxed">
+            💡 <strong>AI-Assisted Startup Analysis Disclaimer:</strong> Platform scores and validation metrics provide analytical deal-flow insights to assist your due diligence. Final investment decisions remain solely with the investor.
+          </p>
         </div>
       </div>
       
