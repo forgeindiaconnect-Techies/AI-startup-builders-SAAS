@@ -99,6 +99,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/admin': AdminDashboard,
     '/dashboard/admin/users': AdminUsers,
     '/dashboard/admin/investors': AdminInvestorApproval,
+    '/dashboard/admin/investor-approval': AdminInvestorApproval,
     '/dashboard/admin/invite-links': AdminInviteLinks,
     '/dashboard/admin/startups': AdminStartups,
     '/dashboard/admin/approvals-hub': AdminApprovalsHub,

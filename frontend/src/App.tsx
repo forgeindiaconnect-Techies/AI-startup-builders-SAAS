@@ -167,6 +167,7 @@ function App() {
                   <Route path="admin" element={<ProtectedRoute allowedRoles={['admin']} />}>
                     <Route index                     element={<AdminDashboard />} />
                     <Route path="users"              element={<AdminUsers />} />
+                    <Route path="investors"          element={<AdminInvestorApproval />} />
                     <Route path="startups"           element={<AdminStartups />} />
                     <Route path="approvals-hub"      element={<AdminApprovalsHub />} />
                     <Route path="sub-payments"       element={<AdminSubPayments />} />
