@@ -56,22 +56,26 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   });
 });
 
-// Start server synchronously to satisfy hosting port scan (Render / Heroku / Railway)
-app.listen(PORT, '0.0.0.0', () => {
-  console.log('');
-  console.log('🚀 ═══════════════════════════════════════════');
-  console.log('   AI Startup Builder API Server');
-  console.log('═══════════════════════════════════════════════');
-  console.log(`   🌐 Server:  http://0.0.0.0:${PORT}`);
-  console.log(`   📡 API:     http://0.0.0.0:${PORT}/api`);
-  console.log(`   💚 Health:  http://0.0.0.0:${PORT}/api/health`);
-  console.log(`   🔑 Brevo Key Exists: ${!!process.env.BREVO_API_KEY}`);
-  console.log(`   📧 Brevo Sender:     ${process.env.BREVO_SENDER_EMAIL || 'undefined'}`);
-  console.log('═══════════════════════════════════════════════');
-  console.log('');
+// Start server
+const startServer = async () => {
+  try {
+    app.listen(PORT, '0.0.0.0', () => {
+      // Connect to DB in the background
+      connectDB();
 
-  // Connect to DB in the background
-  connectDB().catch(err => {
-    console.error('⚠️ DB Connection Background Warning:', err?.message || err);
-  });
-});
+      console.log('');
+      console.log('🚀 ═══════════════════════════════════════════');
+      console.log('   AI Startup Builder API Server');
+      console.log('═══════════════════════════════════════════════');
+      console.log(`   🌐 Server:  http://localhost:${PORT}`);
+      console.log(`   📡 API:     http://localhost:${PORT}/api`);
+      console.log(`   💚 Health:  http://localhost:${PORT}/api/health`);
+      console.log('═══════════════════════════════════════════════');
+      console.log('');
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+  }
+};
+
+startServer();

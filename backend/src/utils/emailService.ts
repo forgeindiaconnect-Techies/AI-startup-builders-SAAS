@@ -20,14 +20,13 @@ export const sendOTPEmail = async (to: string, otpCode: string) => {
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px;">
       <h2 style="color: #6C4CF1; text-align: center;">AI Startup Builder</h2>
       <p style="font-size: 16px; color: #333;">Hello,</p>
-      <p style="font-size: 16px; color: #333;">Please use the 6-digit verification code below to complete your registration. This code is valid for <strong>10 minutes</strong>.</p>
+      <p style="font-size: 16px; color: #333;">Please use the verification code below to complete your registration. This code is valid for 1 minute.</p>
       
-      <div style="background-color: #f4f4f5; padding: 20px; border-radius: 12px; text-align: center; margin: 25px 0;">
-        <p style="font-size: 12px; color: #666; margin-top: 0; margin-bottom: 8px; font-weight: 700; text-transform: uppercase;">Your Verification Code</p>
-        <h1 style="font-size: 36px; letter-spacing: 6px; color: #6C4CF1; margin: 0; font-weight: 800;">${otpCode}</h1>
+      <div style="background-color: #f4f4f5; padding: 15px; border-radius: 8px; text-align: center; margin: 30px 0;">
+        <h1 style="font-size: 32px; letter-spacing: 5px; color: #333; margin: 0;">${otpCode}</h1>
       </div>
       
-      <p style="font-size: 14px; color: #666; text-align: center;">If you didn't request this verification code, please safely ignore this email.</p>
+      <p style="font-size: 14px; color: #666; text-align: center;">If you didn't request this code, you can safely ignore this email.</p>
       <hr style="border: 0; border-top: 1px solid #eaeaec; margin: 30px 0;" />
       <p style="font-size: 12px; color: #999; text-align: center;">© ${new Date().getFullYear()} AI Startup Builder. All rights reserved.</p>
     </div>

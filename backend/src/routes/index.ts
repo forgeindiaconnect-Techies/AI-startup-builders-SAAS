@@ -40,66 +40,13 @@ router.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-// Test Brevo email endpoint
-router.get('/test-email', async (req: Request, res: Response) => {
-  try {
-    const targetEmail = (req.query.to as string) || process.env.BREVO_SENDER_EMAIL || 'renugopal603@gmail.com';
-    const apiKey = process.env.BREVO_API_KEY;
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || 'renugopal603@gmail.com';
-    const senderName = process.env.BREVO_SENDER_NAME || 'AI-startup';
+// Placeholder routes for future implementation
+router.get('/investors', (_req: Request, res: Response) => {
+  res.json({ message: 'Investors endpoint - Coming soon' });
+});
 
-    if (!apiKey) {
-      return res.status(400).json({
-        success: false,
-        error: 'BREVO_API_KEY environment variable is not defined in backend .env'
-      });
-    }
-
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'api-key': apiKey,
-        'Content-Type': 'application/json',
-        'accept': 'application/json',
-      },
-      body: JSON.stringify({
-        sender: {
-          name: senderName,
-          email: senderEmail,
-        },
-        to: [
-          {
-            email: targetEmail,
-          },
-        ],
-        subject: 'AI Startup Builder Test Email',
-        htmlContent: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-            <h2 style="color: #6C4CF1;">Brevo Test Email</h2>
-            <p>Your Brevo email integration is working properly!</p>
-            <p><strong>Sent To:</strong> ${targetEmail}</p>
-            <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
-          </div>
-        `,
-      }),
-    });
-
-    const data = await response.json();
-    console.log('Brevo status:', response.status);
-    console.log('Brevo response:', data);
-
-    return res.status(response.status).json({
-      status: response.status,
-      success: response.ok,
-      brevoResponse: data,
-    });
-  } catch (error: any) {
-    console.error('Email test error:', error);
-    return res.status(500).json({
-      success: false,
-      error: error.message || 'Failed to trigger Brevo test email',
-    });
-  }
+router.get('/ai/analyze', (_req: Request, res: Response) => {
+  res.json({ message: 'AI Analysis endpoint - Coming soon' });
 });
 
 export default router;
