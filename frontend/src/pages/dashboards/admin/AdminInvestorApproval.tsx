@@ -986,7 +986,7 @@ const AdminInvestorApproval: React.FC = () => {
       {/* ── MODAL 4: INVESTOR INVITATION LEAD DETAILS ── */}
       {selectedLead && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 text-left">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 text-left">
             <button
               onClick={() => setSelectedLead(null)}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -999,78 +999,63 @@ const AdminInvestorApproval: React.FC = () => {
                 <span className="px-3 py-0.5 rounded-full text-xs font-black uppercase bg-amber-100 text-amber-800 border border-amber-200">
                   Status: {selectedLead.status}
                 </span>
-                <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-[#6C4CF1] border border-purple-100">
-                  {selectedLead.investorType}
-                </span>
+                {selectedLead.investorType && selectedLead.investorType !== 'Angel Investor' && (
+                  <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-[#6C4CF1] border border-purple-100">
+                    {selectedLead.investorType}
+                  </span>
+                )}
               </div>
               <h2 className="text-2xl font-black text-gray-900">{selectedLead.fullName}</h2>
-              <p className="text-xs text-gray-500">{selectedLead.companyName ? `${selectedLead.companyName} • ` : ''}{selectedLead.email}</p>
+              <p className="text-xs text-gray-500">{selectedLead.email}</p>
             </div>
 
             <div className="space-y-5 text-xs text-gray-700">
-              {/* Profile Overview */}
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-3">
+              {/* Profile Details (Name, Email, LinkedIn) */}
+              <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 space-y-3">
                 <h4 className="font-bold text-gray-900 uppercase text-[11px] text-[#6C4CF1] flex items-center gap-1.5">
-                  <Mail size={14} /> Contact & Professional Profile
+                  <Mail size={14} /> Invitation Profile Details
                 </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div><span className="text-gray-400 block">Full Name:</span> <strong>{selectedLead.fullName}</strong></div>
-                  <div><span className="text-gray-400 block">Email Address:</span> <strong>{selectedLead.email}</strong></div>
-                  <div><span className="text-gray-400 block">Phone Number:</span> <strong>{selectedLead.phone || 'N/A'}</strong></div>
-                  <div><span className="text-gray-400 block">Firm / Company:</span> <strong>{selectedLead.companyName || 'N/A'}</strong></div>
-                  <div><span className="text-gray-400 block">Designation:</span> <strong>{selectedLead.designation || 'N/A'}</strong></div>
-                  <div><span className="text-gray-400 block">Location:</span> <strong>{selectedLead.location || 'N/A'}</strong></div>
-                </div>
 
-                <div className="pt-2 border-t border-gray-200/60 flex items-center gap-4 flex-wrap">
+                <div className="space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
+                    <span className="text-gray-500 font-medium">Full Name:</span>
+                    <strong className="text-gray-900 font-bold">{selectedLead.fullName}</strong>
+                  </div>
+
+                  <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
+                    <span className="text-gray-500 font-medium">Email Address:</span>
+                    <strong className="text-gray-900 font-bold">{selectedLead.email}</strong>
+                  </div>
+
                   {selectedLead.linkedinUrl && (
-                    <a href={selectedLead.linkedinUrl} target="_blank" rel="noreferrer" className="text-[#6C4CF1] font-bold hover:underline inline-flex items-center gap-1">
-                      LinkedIn Profile <ArrowUpRight size={13} />
-                    </a>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-gray-500 font-medium">LinkedIn Profile:</span>
+                      <a href={selectedLead.linkedinUrl} target="_blank" rel="noreferrer" className="text-[#6C4CF1] font-bold hover:underline inline-flex items-center gap-1">
+                        LinkedIn Profile <ArrowUpRight size={13} />
+                      </a>
+                    </div>
                   )}
-                  {selectedLead.website && (
-                    <a href={selectedLead.website} target="_blank" rel="noreferrer" className="text-gray-700 font-bold hover:underline inline-flex items-center gap-1">
-                      Website <ArrowUpRight size={13} />
-                    </a>
+
+                  {selectedLead.phone && (
+                    <div className="flex items-center justify-between border-t border-gray-200/60 pt-2">
+                      <span className="text-gray-500 font-medium">Phone Number:</span>
+                      <strong className="text-gray-900 font-bold">{selectedLead.phone}</strong>
+                    </div>
+                  )}
+
+                  {selectedLead.companyName && (
+                    <div className="flex items-center justify-between border-t border-gray-200/60 pt-2">
+                      <span className="text-gray-500 font-medium">Firm / Company:</span>
+                      <strong className="text-gray-900 font-bold">{selectedLead.companyName}</strong>
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* Preferences */}
-              <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 space-y-2">
-                <h4 className="font-bold text-gray-900 uppercase text-[11px] text-[#6C4CF1]">Target Investment Criteria</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <span className="text-gray-400 block">Cheque Range:</span>
-                    <strong className="text-[#6C4CF1]">{selectedLead.investmentRange || 'N/A'}</strong>
-                  </div>
-                  <div>
-                    <span className="text-gray-400 block">Target Industries:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {selectedLead.interestedIndustries && selectedLead.interestedIndustries.length > 0 ? (
-                        selectedLead.interestedIndustries.map((ind, i) => (
-                          <span key={i} className="px-2 py-0.5 bg-white border border-purple-200 rounded text-[10px] font-bold text-purple-700">{ind}</span>
-                        ))
-                      ) : <span className="text-gray-500 font-medium">All Industries</span>}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-gray-400 block">Target Stages:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {selectedLead.investmentStage && selectedLead.investmentStage.length > 0 ? (
-                        selectedLead.investmentStage.map((stg, i) => (
-                          <span key={i} className="px-2 py-0.5 bg-white border border-purple-200 rounded text-[10px] font-bold text-purple-700">{stg}</span>
-                        ))
-                      ) : <span className="text-gray-500 font-medium">All Stages</span>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Admin Notes */}
+              {/* Admin Notes if present */}
               {selectedLead.adminNotes && (
                 <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-100">
-                  <h4 className="font-bold text-amber-900 uppercase text-[11px] mb-1">Admin Notes / Context</h4>
+                  <h4 className="font-bold text-amber-900 uppercase text-[11px] mb-1">Admin Notes</h4>
                   <p className="text-xs text-amber-800 italic">"{selectedLead.adminNotes}"</p>
                 </div>
               )}
