@@ -126,3 +126,99 @@ export const sendPasswordResetEmail = async (to: string, otpCode: string) => {
     return false; // Caller can decide, but reset won't crash
   }
 };
+
+export const sendInvestorInviteEmail = async (
+  to: string,
+  fullName: string,
+  inviteUrl: string,
+  adminNotes?: string
+) => {
+  if (!BREVO_API_KEY) {
+    console.warn('\n⚠️ BREVO_API_KEY not configured in .env');
+    console.warn(`📧 WOULD HAVE SENT INVESTOR INVITE EMAIL TO: ${to}`);
+    console.warn(`🔗 INVITE URL: ${inviteUrl}\n`);
+    return true;
+  }
+
+  const subject = "You're Invited to Join Our Investor Network - AI Startup Builder";
+  const htmlContent = `
+    <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; border: 1px solid #E5E7EB; border-radius: 16px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 28px;">
+        <h1 style="color: #6C4CF1; font-size: 26px; margin: 0; font-weight: 800; tracking-tight: -0.5px;">AI Startup Builder</h1>
+        <p style="color: #D97706; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; margin-bottom: 0;">Exclusive Investor Network Invitation</p>
+      </div>
+
+      <p style="font-size: 16px; color: #111827; font-weight: 700; margin-bottom: 12px;">Dear ${fullName},</p>
+
+      <p style="font-size: 14px; color: #374151; line-height: 1.6; margin-bottom: 16px;">
+        You have been personally invited by our platform administrators to join the <strong>AI Startup Builder Investor Network</strong>.
+      </p>
+
+      <p style="font-size: 14px; color: #374151; line-height: 1.6; margin-bottom: 24px;">
+        AI Startup Builder connects accredited angel investors, VCs, and family offices with pre-validated, high-potential AI startups. As an onboarded investor, you gain direct access to structured pitch decks, AI-assisted market research, financial models, and direct founder deal-flow.
+      </p>
+
+      <div style="background-color: #FAFAFA; border: 1px solid #E5E7EB; border-radius: 12px; padding: 24px; text-align: center; margin: 28px 0;">
+        <p style="font-size: 14px; font-weight: 700; color: #111827; margin-top: 0; margin-bottom: 20px;">
+          Click the button below to accept your invitation and complete your investor profile:
+        </p>
+        <a href="${inviteUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #6C4CF1 0%, #5B21B6 100%); color: #ffffff; font-weight: 800; font-size: 14px; padding: 14px 32px; text-decoration: none; border-radius: 12px; box-shadow: 0 4px 14px rgba(108, 76, 241, 0.35);">
+          Accept Invitation & Create Investor Account &rarr;
+        </a>
+      </div>
+
+      <p style="font-size: 12px; color: #6B7280; margin-bottom: 6px; font-weight: 600;">
+        Direct Invitation URL:
+      </p>
+      <div style="background-color: #F3F4F6; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px; word-break: break-all; margin-bottom: 24px;">
+        <a href="${inviteUrl}" style="color: #6C4CF1; font-size: 12px; font-family: monospace; text-decoration: underline;">
+          ${inviteUrl}
+        </a>
+      </div>
+
+      ${adminNotes ? `
+        <div style="background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 14px; margin-bottom: 24px;">
+          <p style="font-size: 12px; color: #92400E; margin: 0;"><strong>Note from Administrator:</strong> ${adminNotes}</p>
+        </div>
+      ` : ''}
+
+      <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 28px 0;" />
+      <p style="font-size: 11px; color: #9CA3AF; text-align: center; margin: 0;">
+        © ${new Date().getFullYear()} AI Startup Builder. All rights reserved.<br />
+        This email was sent to <strong>${to}</strong> because an administrator created an invitation for you.
+      </p>
+    </div>
+  `;
+
+  try {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL
+        },
+        to: [{ email: to, name: fullName }],
+        subject: subject,
+        htmlContent: htmlContent
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Brevo API Error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log(`✉️ Investor Invite Email sent via Brevo to ${to}: ${data.messageId || 'Success'}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to send investor invite email to ${to}:`, error);
+    return false;
+  }
+};

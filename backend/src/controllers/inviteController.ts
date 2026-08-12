@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { MentorInvite, IMentorInvite } from '../models/Invite.js';
+import { InvestorInvite } from '../models/InvestorInvite.js';
 import { sendMentorInviteEmail } from '../utils/sendMentorInviteEmail.js';
+import { sendInvestorInviteEmail } from '../utils/emailService.js';
 
 const DEFAULT_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -233,5 +235,97 @@ export const listInvites = async (_req: Request, res: Response) => {
   } catch (error: any) {
     console.error('List mentor invites failed:', error);
     return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const createInvestorInvite = async (req: Request, res: Response) => {
+  try {
+    const {
+      fullName, email, phone, companyName, designation,
+      investorType, linkedinUrl, website, location,
+      interestedIndustries, investmentStage, investmentRange, adminNotes
+    } = req.body;
+
+    if (!fullName || !email || !linkedinUrl) {
+      return res.status(400).json({
+        success: false,
+        error: 'Full Name, Email Address, and LinkedIn Profile URL are required'
+      });
+    }
+
+    const invitationToken = `inv_tok_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`;
+    const relativeUrl = `/investor-signup?invitationToken=${invitationToken}`;
+    const fullInviteUrl = `${getBaseOrigin(req)}${relativeUrl}`;
+    const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+    const invite = await InvestorInvite.create({
+      fullName,
+      email: email.toLowerCase().trim(),
+      phone: phone || '',
+      companyName: companyName || '',
+      designation: designation || '',
+      investorType: investorType || 'Angel Investor',
+      linkedinUrl,
+      website: website || '',
+      location: location || '',
+      interestedIndustries: interestedIndustries || [],
+      investmentStage: investmentStage || [],
+      investmentRange: investmentRange || '',
+      adminNotes: adminNotes || '',
+      invitationToken,
+      inviteUrl: fullInviteUrl,
+      status: 'INVITED',
+      expiresAt,
+    });
+
+    let emailSent = false;
+    let emailError = '';
+    try {
+      emailSent = await sendInvestorInviteEmail(
+        email.toLowerCase().trim(),
+        fullName,
+        fullInviteUrl,
+        adminNotes
+      );
+    } catch (e: any) {
+      emailSent = false;
+      emailError = e.message || 'Email sending failed';
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: emailSent
+        ? 'Investor invitation created and email notification sent successfully!'
+        : 'Investor invitation created locally, but email delivery failed.',
+      emailSent,
+      emailError,
+      invite: {
+        id: invite._id.toString(),
+        fullName: invite.fullName,
+        email: invite.email,
+        phone: invite.phone,
+        companyName: invite.companyName,
+        designation: invite.designation,
+        investorType: invite.investorType,
+        linkedinUrl: invite.linkedinUrl,
+        website: invite.website,
+        location: invite.location,
+        interestedIndustries: invite.interestedIndustries,
+        investmentStage: invite.investmentStage,
+        investmentRange: invite.investmentRange,
+        adminNotes: invite.adminNotes,
+        invitationToken: invite.invitationToken,
+        inviteUrl: invite.inviteUrl,
+        status: invite.status,
+        createdAt: invite.createdAt.toISOString(),
+        expiryDate: invite.expiresAt.toISOString(),
+      }
+    });
+  } catch (error: any) {
+    console.error('Create investor invite error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to create investor invitation'
+    });
   }
 };

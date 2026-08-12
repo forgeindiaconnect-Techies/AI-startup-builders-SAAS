@@ -212,13 +212,14 @@ const AdminInvestorApproval: React.FC = () => {
   };
 
   // ── Send Investor Invitation (Admin) ───────────────────────────────────────
-  const handleCreateInvitation = (e: React.FormEvent) => {
+  const handleCreateInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteForm.fullName || !inviteForm.email || !inviteForm.linkedinUrl) {
       alert('Full Name, Email Address, and LinkedIn Profile URL are required!');
       return;
     }
 
+    // 1. Save local lead copy
     const lead = saveInvestorLead({
       fullName: inviteForm.fullName,
       email: inviteForm.email,
@@ -237,6 +238,36 @@ const AdminInvestorApproval: React.FC = () => {
 
     setInviteResult(lead);
     setInvitedLeads(getInvestorLeads());
+
+    // 2. Call backend API to trigger real email delivery via Brevo
+    try {
+      const res = await fetch(`${API_URL}/invites/investor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: inviteForm.fullName,
+          email: inviteForm.email,
+          phone: inviteForm.phone,
+          companyName: inviteForm.companyName,
+          designation: inviteForm.designation,
+          investorType: inviteForm.investorType,
+          linkedinUrl: inviteForm.linkedinUrl,
+          website: inviteForm.website,
+          location: inviteForm.location,
+          interestedIndustries: inviteForm.interestedIndustries,
+          investmentStage: inviteForm.investmentStage,
+          investmentRange: inviteForm.investmentRange,
+          adminNotes: inviteForm.adminNotes,
+        }),
+      });
+      const json = await res.json();
+      if (json.success && json.invite?.inviteUrl) {
+        setInviteResult(prev => prev ? { ...prev, inviteUrl: json.invite.inviteUrl, invitationToken: json.invite.invitationToken } : lead);
+      }
+    } catch (err) {
+      console.warn('Backend invite notification API call fallback:', err);
+    }
+
     setInviteForm({
       fullName: '', email: '', phone: '', companyName: '', designation: '',
       investorType: 'Angel Investor', linkedinUrl: '', website: '', location: '',

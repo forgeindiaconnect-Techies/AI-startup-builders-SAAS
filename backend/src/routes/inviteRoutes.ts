@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   createMentorInvite,
+  createInvestorInvite,
   getInviteByToken,
   resendInvite,
   markInviteUsed,
@@ -12,6 +13,7 @@ import {
 const router = Router();
 
 router.post('/mentor', createMentorInvite);
+router.post('/investor', createInvestorInvite);
 router.get('/', listInvites);
 router.get('/:token', getInviteByToken);
 router.post('/:token/use', markInviteUsed);
