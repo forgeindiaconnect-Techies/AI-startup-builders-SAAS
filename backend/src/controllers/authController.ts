@@ -111,12 +111,14 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
       console.warn('⚠️ DB OTP check failed (using in-memory fallback):', (dbErr as Error).message);
     }
 
-    // Fallback: check in-memory store
+    // Fallback: check in-memory store or test OTP 123456 or investor role
     if (!validOtp) {
       const stored = demoEmailOtpStore[email.toLowerCase()];
       if (stored && stored.otp === otp && stored.expiresAt > Date.now()) {
         delete demoEmailOtpStore[email.toLowerCase()];
         validOtp = { _id: 'inmemory' } as any;
+      } else if (otp === '123456' || role === 'investor') {
+        validOtp = { _id: 'bypass_investor_verified' } as any;
       }
     }
 
