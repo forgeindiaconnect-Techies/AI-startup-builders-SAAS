@@ -3,10 +3,10 @@ import {
   TrendingUp, UserPlus, CheckCircle2, XCircle, Clock, Eye, AlertCircle,
   FileText, ShieldCheck, Mail, Phone, Building2, MapPin, Globe, Link2,
   Lock, Copy, Check, Search, Filter, Sparkles, AlertTriangle, ChevronRight,
-  Shield, RefreshCw, X, ArrowUpRight
+  Shield, RefreshCw, X, ArrowUpRight, Trash2
 } from 'lucide-react';
 import { addNotification } from '../../../utils/localStorageHelper';
-import { getInvestorLeads, saveInvestorLead, type InvestorInviteLead } from '../../../utils/investorInvites';
+import { getInvestorLeads, saveInvestorLead, deleteInvestorLead, type InvestorInviteLead } from '../../../utils/investorInvites';
 import { API_URL } from '../../../config/api';
 
 type TabType = 'all' | 'invited' | 'pending' | 'approved' | 'rejected' | 'suspended';
@@ -367,6 +367,39 @@ const AdminInvestorApproval: React.FC = () => {
     if (selectedApp?.id === app.id) setSelectedApp({ ...app, status: 'SUSPENDED' });
   };
 
+  // ── Delete Invitation Lead ──────────────────────────────────────────────────
+  const handleDeleteLead = async (lead: InvestorInviteLead) => {
+    if (!window.confirm(`Are you sure you want to delete invitation for ${lead.fullName} (${lead.email})?`)) return;
+
+    deleteInvestorLead(lead.id);
+
+    try {
+      await fetch(`${API_URL}/invites/${lead.invitationToken}`, {
+        method: 'DELETE',
+      });
+    } catch {}
+
+    setInvitedLeads(getInvestorLeads());
+  };
+
+  // ── Delete Investor Application ─────────────────────────────────────────────
+  const handleDeleteApp = async (app: InvestorApplication) => {
+    if (!window.confirm(`Are you sure you want to delete investor application for ${app.fullName} (${app.email})?`)) return;
+
+    const updated = applications.filter(a => a.id !== app.id);
+    handleSaveApplications(updated);
+
+    try {
+      await fetch(`${API_URL}/auth/admin/users/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: app.id, action: 'delete' }),
+      });
+    } catch {}
+
+    if (selectedApp?.id === app.id) setSelectedApp(null);
+  };
+
   // Filtered lists
   const filteredApps = applications.filter(a => {
     const matchesSearch = (a.fullName + a.email + (a.companyName || '') + (a.investorType || '')).toLowerCase().includes(searchQuery.toLowerCase());
@@ -534,12 +567,21 @@ const AdminInvestorApproval: React.FC = () => {
                         </div>
                       </td>
                       <td className="p-4 text-right">
-                        <button
-                          onClick={() => copyToClipboard(lead.inviteUrl)}
-                          className="px-3 py-1.5 bg-purple-50 text-[#6C4CF1] font-bold rounded-lg hover:bg-purple-100 text-xs transition-colors"
-                        >
-                          Copy Link
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => copyToClipboard(lead.inviteUrl)}
+                            className="px-3 py-1.5 bg-purple-50 text-[#6C4CF1] font-bold rounded-lg hover:bg-purple-100 text-xs transition-colors flex items-center gap-1"
+                          >
+                            <Copy size={13} /> Copy Link
+                          </button>
+                          <button
+                            onClick={() => handleDeleteLead(lead)}
+                            className="px-3 py-1.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-100 text-xs transition-colors flex items-center gap-1 border border-red-200"
+                            title="Delete Invitation"
+                          >
+                            <Trash2 size={13} /> Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -633,6 +675,14 @@ const AdminInvestorApproval: React.FC = () => {
                         Suspend
                       </button>
                     )}
+
+                    <button
+                      onClick={() => handleDeleteApp(app)}
+                      className="px-3.5 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5"
+                      title="Delete Application"
+                    >
+                      <Trash2 size={14} /> Delete
+                    </button>
                   </div>
                 </div>
               ))

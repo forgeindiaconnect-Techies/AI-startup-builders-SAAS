@@ -104,3 +104,11 @@ export const getLeadByToken = (token: string): InvestorInviteLead | null => {
   const leads = getInvestorLeads();
   return leads.find(l => l.invitationToken === token) || null;
 };
+
+export const deleteInvestorLead = (id: string): void => {
+  const leads = getInvestorLeads();
+  const updated = leads.filter(l => l.id !== id && l.invitationToken !== id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  window.dispatchEvent(new Event('storage'));
+  window.dispatchEvent(new Event('investor_invites_updated'));
+};
