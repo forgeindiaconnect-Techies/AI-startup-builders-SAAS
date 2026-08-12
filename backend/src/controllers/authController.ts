@@ -37,7 +37,7 @@ export const sendOTP = async (req: Request, res: Response) => {
 
     // Generate 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 1 * 60 * 1000); // 1 min expiry
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
 
     // Save OTP to DB (best-effort)
     try {
