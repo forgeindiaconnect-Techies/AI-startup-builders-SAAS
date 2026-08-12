@@ -5,7 +5,7 @@ import { getStartups } from '../../utils/localStorageHelper';
 import { Rocket, IndianRupee, Check, X, Users, Cpu, ShoppingBag, ShieldCheck, Building2, Trash2, Mail, Calendar, LogIn } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
-  const { user, getAllUsers } = useAuth();
+  const { user, getAllUsers, refreshUsers } = useAuth();
   const navigate = useNavigate();
 
   const formatDate = (dateStr: string | null | undefined) => {
@@ -78,7 +78,22 @@ const AdminDashboard: React.FC = () => {
     // 1. Users list
     try {
       const uList = getAllUsers() || [];
-      setUsersList(uList);
+      const localUsersStr = localStorage.getItem('ai_startup_builder_users');
+      let localUsers: any[] = [];
+      if (localUsersStr) {
+        try { localUsers = JSON.parse(localUsersStr); } catch (e) {}
+      }
+      const combined = [...uList];
+      localUsers.forEach(lu => {
+        const id = lu.id || lu._id || lu.email;
+        if (id && !combined.some(u => (u.id || u._id || u.email) === id)) {
+          combined.push(lu);
+        }
+      });
+      if (user && !combined.some(u => (u.id || u._id || u.email) === (user.id || user._id || user.email))) {
+        combined.push(user);
+      }
+      setUsersList(combined);
     } catch (e) {
       setUsersList([]);
     }
@@ -125,10 +140,13 @@ const AdminDashboard: React.FC = () => {
   };
 
   useEffect(() => {
+    if (refreshUsers) refreshUsers();
     loadDashboardData();
+    const interval = setInterval(loadDashboardData, 3000);
     window.addEventListener('storage', loadDashboardData);
     window.addEventListener('mentor_profile_updated', loadDashboardData);
     return () => {
+      clearInterval(interval);
       window.removeEventListener('storage', loadDashboardData);
       window.removeEventListener('mentor_profile_updated', loadDashboardData);
     };
@@ -405,23 +423,34 @@ const AdminDashboard: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { title: 'AI Business Plan Generator', score: 'High Usage', usage: `${businessPlanOutputs} outputs generated`, rating: '4.9 ★', badge: 'Top Performer', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-              { title: 'AI Pitch Deck Builder', score: 'Active', usage: `${pitchDeckOutputs} outputs generated`, rating: '4.9 ★', badge: 'Most Active', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-              { title: 'Financial Projections & Valuation', score: 'High Value', usage: `${financialOutputs} outputs generated`, rating: '4.8 ★', badge: 'High Value', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-              { title: 'Market Research & Competitor AI', score: 'Fast Growth', usage: `${marketResearchOutputs} outputs generated`, rating: '4.8 ★', badge: 'Fastest Growth', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-            ].map((item, idx) => (
-              <div key={idx} className="bg-gray-50/70 border border-gray-100 rounded-xl p-4 hover:border-purple-200 transition-all">
-                <div className="flex justify-between items-start mb-2">
-                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${item.color}`}>{item.badge}</span>
-                  <span className="text-xs font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-md">{item.rating}</span>
+              { title: 'AI Business Plan Generator', score: 'High Usage', count: businessPlanOutputs, usage: `${businessPlanOutputs} outputs generated`, rating: '4.9 ★', badge: 'Top Performer', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+              { title: 'AI Pitch Deck Builder', score: 'Active', count: pitchDeckOutputs, usage: `${pitchDeckOutputs} outputs generated`, rating: '4.9 ★', badge: 'Most Active', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+              { title: 'Financial Projections & Valuation', score: 'High Value', count: financialOutputs, usage: `${financialOutputs} outputs generated`, rating: '4.8 ★', badge: 'High Value', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+              { title: 'Market Research & Competitor AI', score: 'Fast Growth', count: marketResearchOutputs, usage: `${marketResearchOutputs} outputs generated`, rating: '4.8 ★', badge: 'Fastest Growth', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+            ].filter(item => item.count > 0).length > 0 ? (
+              [
+                { title: 'AI Business Plan Generator', score: 'High Usage', count: businessPlanOutputs, usage: `${businessPlanOutputs} outputs generated`, rating: '4.9 ★', badge: 'Top Performer', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                { title: 'AI Pitch Deck Builder', score: 'Active', count: pitchDeckOutputs, usage: `${pitchDeckOutputs} outputs generated`, rating: '4.9 ★', badge: 'Most Active', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+                { title: 'Financial Projections & Valuation', score: 'High Value', count: financialOutputs, usage: `${financialOutputs} outputs generated`, rating: '4.8 ★', badge: 'High Value', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+                { title: 'Market Research & Competitor AI', score: 'Fast Growth', count: marketResearchOutputs, usage: `${marketResearchOutputs} outputs generated`, rating: '4.8 ★', badge: 'Fastest Growth', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+              ].filter(item => item.count > 0).map((item, idx) => (
+                <div key={idx} className="bg-gray-50/70 border border-gray-100 rounded-xl p-4 hover:border-purple-200 transition-all">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${item.color}`}>{item.badge}</span>
+                    <span className="text-xs font-bold text-yellow-600 bg-yellow-50 px-2 py-0.5 rounded-md">{item.rating}</span>
+                  </div>
+                  <h4 className="font-bold text-gray-900 text-sm mb-1">{item.title}</h4>
+                  <div className="flex items-center justify-between text-xs font-semibold text-gray-600 mt-3 pt-2 border-t border-gray-200/50">
+                    <span className="text-emerald-600 font-extrabold">{item.score}</span>
+                    <span className="text-gray-400">{item.usage}</span>
+                  </div>
                 </div>
-                <h4 className="font-bold text-gray-900 text-sm mb-1">{item.title}</h4>
-                <div className="flex items-center justify-between text-xs font-semibold text-gray-600 mt-3 pt-2 border-t border-gray-200/50">
-                  <span className="text-emerald-600 font-extrabold">{item.score}</span>
-                  <span className="text-gray-400">{item.usage}</span>
-                </div>
+              ))
+            ) : (
+              <div className="col-span-full p-6 text-center text-gray-400 text-sm italic border border-dashed border-gray-200 rounded-xl">
+                No AI outputs generated yet.
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -437,29 +466,41 @@ const AdminDashboard: React.FC = () => {
             <p className="text-xs text-gray-500 mb-5">Comprehensive platform performance summary calculated from live database.</p>
 
             <div className="space-y-4">
-              <div className="flex justify-between items-center p-3 bg-emerald-50/60 rounded-xl border border-emerald-100">
-                <div>
-                  <span className="text-xs text-emerald-800 font-bold block">Monthly Recurring Revenue</span>
-                  <span className="text-lg font-black text-emerald-950">₹{totalRevenue.toLocaleString('en-IN')}</span>
+              {totalRevenue > 0 && (
+                <div className="flex justify-between items-center p-3 bg-emerald-50/60 rounded-xl border border-emerald-100">
+                  <div>
+                    <span className="text-xs text-emerald-800 font-bold block">Monthly Recurring Revenue</span>
+                    <span className="text-lg font-black text-emerald-950">₹{totalRevenue.toLocaleString('en-IN')}</span>
+                  </div>
+                  <span className="text-xs font-black text-emerald-700 bg-white px-2 py-1 rounded-lg shadow-sm">Live Payments</span>
                 </div>
-                <span className="text-xs font-black text-emerald-700 bg-white px-2 py-1 rounded-lg shadow-sm">Live Payments</span>
-              </div>
+              )}
 
-              <div className="flex justify-between items-center p-3 bg-purple-50/60 rounded-xl border border-purple-100">
-                <div>
-                  <span className="text-xs text-purple-800 font-bold block">AI Generations Executed</span>
-                  <span className="text-lg font-black text-purple-950">{totalAiOutputsCount.toLocaleString()} Tasks</span>
+              {totalAiOutputsCount > 0 && (
+                <div className="flex justify-between items-center p-3 bg-purple-50/60 rounded-xl border border-purple-100">
+                  <div>
+                    <span className="text-xs text-purple-800 font-bold block">AI Generations Executed</span>
+                    <span className="text-lg font-black text-purple-950">{totalAiOutputsCount.toLocaleString()} Tasks</span>
+                  </div>
+                  <span className="text-xs font-black text-[#5B21B6] bg-white px-2 py-1 rounded-lg shadow-sm">Real-time</span>
                 </div>
-                <span className="text-xs font-black text-[#5B21B6] bg-white px-2 py-1 rounded-lg shadow-sm">Real-time</span>
-              </div>
+              )}
 
-              <div className="flex justify-between items-center p-3 bg-blue-50/60 rounded-xl border border-blue-100">
-                <div>
-                  <span className="text-xs text-blue-800 font-bold block">Startups Funded / Approved</span>
-                  <span className="text-lg font-black text-blue-950">{approvedStartupsCount} Active Deals</span>
+              {approvedStartupsCount > 0 && (
+                <div className="flex justify-between items-center p-3 bg-blue-50/60 rounded-xl border border-blue-100">
+                  <div>
+                    <span className="text-xs text-blue-800 font-bold block">Startups Funded / Approved</span>
+                    <span className="text-lg font-black text-blue-950">{approvedStartupsCount} Active Deals</span>
+                  </div>
+                  <span className="text-xs font-black text-blue-700 bg-white px-2 py-1 rounded-lg shadow-sm">Approved</span>
                 </div>
-                <span className="text-xs font-black text-blue-700 bg-white px-2 py-1 rounded-lg shadow-sm">Approved</span>
-              </div>
+              )}
+
+              {totalRevenue === 0 && totalAiOutputsCount === 0 && approvedStartupsCount === 0 && (
+                <div className="p-6 text-center text-gray-400 text-sm italic border border-dashed border-gray-200 rounded-xl">
+                  No monthly report data available yet.
+                </div>
+              )}
             </div>
           </div>
 

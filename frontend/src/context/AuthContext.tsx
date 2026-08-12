@@ -78,8 +78,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const fetchAllUsers = async () => {
     const token = getToken();
     if (!token) return;
-    // Strictly verify role: only fetch if user object is loaded and role is explicitly admin
-    const currentRole = (user?.role || '').toLowerCase();
+    const currentRole = (user?.role || getTokenRole() || '').toLowerCase();
     if (currentRole !== 'admin') return;
     if (usersFetchBlockedRef.current) return;
 
@@ -94,7 +93,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       const data = await res.json();
       if (data.success && data.users) {
-        usersFetchBlockedRef.current = false;
         const mapped = data.users.map((u: any) => ({
           id: u._id,
           name: u.fullName,
@@ -112,15 +110,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           trialEndDate: u.trialEndDate || null,
           subscriptionStartDate: u.subscriptionStartDate || null,
           subscriptionEndDate: u.subscriptionEndDate || null,
-          // Common contact details (from signup)
           mobile: u.mobile || '',
           location: u.location || '',
-          // Founder fields
           startupName: u.startupName || '',
           currentRole: u.currentRole || '',
           startupStage: u.startupStage || '',
           industry: u.industry || '',
-          // Mentor fields (from signup)
           expertise: u.expertise || '',
           experienceYears: u.experienceYears || '',
           linkedin: u.linkedin || '',
@@ -132,7 +127,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           otherDocType: u.otherDocType || '',
           otherDocNumber: u.otherDocNumber || '',
           otherDocUrl: u.otherDocUrl || '',
-          // Investor fields
           companyName: u.companyName || '',
           investorType: u.investorType || '',
           preferredIndustry: u.preferredIndustry || '',
@@ -143,6 +137,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     } catch (err) {
       console.error('Failed to fetch admin users:', err);
+    } finally {
+      usersFetchBlockedRef.current = false;
     }
   };
 
