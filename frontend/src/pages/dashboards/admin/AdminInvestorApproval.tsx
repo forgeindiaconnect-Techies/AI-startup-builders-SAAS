@@ -262,7 +262,11 @@ const AdminInvestorApproval: React.FC = () => {
       });
       const json = await res.json();
       if (json.success && json.invite?.inviteUrl) {
-        setInviteResult(prev => prev ? { ...prev, inviteUrl: json.invite.inviteUrl, invitationToken: json.invite.invitationToken } : lead);
+        setInviteResult({
+          ...lead,
+          inviteUrl: json.invite.inviteUrl,
+          invitationToken: json.invite.invitationToken,
+        });
       }
     } catch (err) {
       console.warn('Backend invite notification API call fallback:', err);
@@ -820,29 +824,49 @@ const AdminInvestorApproval: React.FC = () => {
               </form>
             ) : (
               /* Success Invitation Link View */
-              <div className="text-center space-y-5 animate-in fade-in">
+              <div className="space-y-5 animate-in fade-in text-left">
                 <div className="w-16 h-16 bg-emerald-50 border-2 border-emerald-200 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
                   <CheckCircle2 size={36} />
                 </div>
-                <h3 className="text-2xl font-black text-gray-900">Investor Invitation Generated!</h3>
-                <p className="text-xs text-gray-500">
-                  Invitation created for <strong>{inviteResult.fullName}</strong> ({inviteResult.email}). Send them the link below:
-                </p>
 
-                <div className="bg-gray-50 border border-gray-200 p-3 rounded-2xl flex items-center justify-between gap-2 text-left">
-                  <span className="font-mono text-xs text-gray-800 truncate flex-1">{inviteResult.inviteUrl}</span>
-                  <button
-                    onClick={() => copyToClipboard(inviteResult.inviteUrl)}
-                    className="px-4 py-2 bg-[#6C4CF1] text-white font-bold text-xs rounded-xl hover:bg-[#5B21B6] transition-colors flex items-center gap-1 shrink-0"
-                  >
-                    {copiedLink ? <Check size={14} /> : <Copy size={14} />} {copiedLink ? 'Copied!' : 'Copy Link'}
-                  </button>
+                <div className="text-center">
+                  <h3 className="text-2xl font-black text-gray-900">Investor Invitation Dispatched!</h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Invitation generated for <strong>{inviteResult.fullName}</strong> (<span className="text-[#6C4CF1] font-bold">{inviteResult.email}</span>)
+                  </p>
                 </div>
 
-                <div className="pt-4 flex justify-center">
+                {/* Email Notification Status Card */}
+                <div className="bg-emerald-50/80 border border-emerald-200 p-4 rounded-2xl space-y-1">
+                  <div className="flex items-center gap-2 text-emerald-800 font-extrabold text-xs">
+                    <Mail size={16} className="text-emerald-600 shrink-0" />
+                    <span>Email Notification Sent to {inviteResult.email}</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-700 leading-relaxed">
+                    An email containing the invitation link <strong>Accept Invitation & Create Investor Account</strong> has been sent directly to <strong>{inviteResult.email}</strong> via Brevo SMTP.
+                  </p>
+                </div>
+
+                {/* Direct Signup Link Box */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-gray-500">
+                    Direct Investor Signup Link:
+                  </label>
+                  <div className="bg-gray-50 border border-gray-200 p-3 rounded-2xl flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs text-gray-800 truncate flex-1">{inviteResult.inviteUrl}</span>
+                    <button
+                      onClick={() => copyToClipboard(inviteResult.inviteUrl)}
+                      className="px-4 py-2 bg-[#6C4CF1] text-white font-bold text-xs rounded-xl hover:bg-[#5B21B6] transition-colors flex items-center gap-1.5 shrink-0"
+                    >
+                      {copiedLink ? <Check size={14} /> : <Copy size={14} />} {copiedLink ? 'Copied!' : 'Copy Link'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-center">
                   <button
                     onClick={() => { setShowInviteModal(false); setInviteResult(null); setActiveTab('invited'); }}
-                    className="px-6 py-2.5 bg-gray-900 text-white font-bold text-xs rounded-xl hover:bg-gray-800"
+                    className="px-6 py-2.5 bg-gray-900 text-white font-bold text-xs rounded-xl hover:bg-gray-800 transition-colors shadow-md"
                   >
                     Close & View Invitations
                   </button>
