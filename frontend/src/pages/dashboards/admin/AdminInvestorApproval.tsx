@@ -146,7 +146,7 @@ const RANGE_LIST = [
 ];
 
 const AdminInvestorApproval: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabType>('pending');
+  const [activeTab, setActiveTab] = useState<TabType>('invited');
   const [applications, setApplications] = useState<InvestorApplication[]>([]);
   const [invitedLeads, setInvitedLeads] = useState<InvestorInviteLead[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -202,7 +202,16 @@ const AdminInvestorApproval: React.FC = () => {
     setApplications(loadedApps);
 
     // 2. Load Invited Leads
-    setInvitedLeads(getInvestorLeads());
+    const leads = getInvestorLeads();
+    setInvitedLeads(leads);
+
+    // Auto-select tab if pending is 0 and invited leads exist
+    const pendingCount = loadedApps.filter(a => a.status === 'PENDING_VERIFICATION').length;
+    if (pendingCount > 0) {
+      setActiveTab('pending');
+    } else if (leads.length > 0) {
+      setActiveTab('invited');
+    }
   };
 
   const handleSaveApplications = (newApps: InvestorApplication[]) => {
@@ -443,26 +452,55 @@ const AdminInvestorApproval: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-          <p className="text-[11px] font-extrabold uppercase text-gray-400">Total Leads</p>
-          <p className="text-2xl font-black text-gray-900 mt-1">{applications.length + invitedLeads.length}</p>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-purple-100 shadow-sm">
-          <p className="text-[11px] font-extrabold uppercase text-[#6C4CF1]">Invited Leads</p>
-          <p className="text-2xl font-black text-[#6C4CF1] mt-1">{invitedLeads.length}</p>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-amber-100 shadow-sm">
-          <p className="text-[11px] font-extrabold uppercase text-amber-600">Pending Review</p>
-          <p className="text-2xl font-black text-amber-600 mt-1">{applications.filter(a => a.status === 'PENDING_VERIFICATION').length}</p>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm">
-          <p className="text-[11px] font-extrabold uppercase text-emerald-600">Approved</p>
-          <p className="text-2xl font-black text-emerald-600 mt-1">{applications.filter(a => a.status === 'APPROVED').length}</p>
-        </div>
-        <div className="bg-white p-4 rounded-2xl border border-red-100 shadow-sm">
-          <p className="text-[11px] font-extrabold uppercase text-red-500">Rejected</p>
-          <p className="text-2xl font-black text-red-500 mt-1">{applications.filter(a => a.status === 'REJECTED').length}</p>
-        </div>
+        <button
+          onClick={() => setActiveTab('all')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+            activeTab === 'all' ? 'bg-gray-900 text-white border-gray-900 shadow-md' : 'bg-white border-gray-100 hover:border-gray-300 shadow-sm'
+          }`}
+        >
+          <p className={`text-[11px] font-extrabold uppercase ${activeTab === 'all' ? 'text-gray-300' : 'text-gray-400'}`}>Total Leads</p>
+          <p className={`text-2xl font-black mt-1 ${activeTab === 'all' ? 'text-white' : 'text-gray-900'}`}>{applications.length + invitedLeads.length}</p>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('invited')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+            activeTab === 'invited' ? 'bg-[#6C4CF1] text-white border-[#6C4CF1] shadow-md' : 'bg-white border-purple-100 hover:border-purple-300 shadow-sm'
+          }`}
+        >
+          <p className={`text-[11px] font-extrabold uppercase ${activeTab === 'invited' ? 'text-purple-200' : 'text-[#6C4CF1]'}`}>Invited Leads</p>
+          <p className={`text-2xl font-black mt-1 ${activeTab === 'invited' ? 'text-white' : 'text-[#6C4CF1]'}`}>{invitedLeads.length}</p>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('pending')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+            activeTab === 'pending' ? 'bg-amber-500 text-white border-amber-500 shadow-md' : 'bg-white border-amber-100 hover:border-amber-300 shadow-sm'
+          }`}
+        >
+          <p className={`text-[11px] font-extrabold uppercase ${activeTab === 'pending' ? 'text-amber-100' : 'text-amber-600'}`}>Pending Review</p>
+          <p className={`text-2xl font-black mt-1 ${activeTab === 'pending' ? 'text-white' : 'text-amber-600'}`}>{applications.filter(a => a.status === 'PENDING_VERIFICATION').length}</p>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('approved')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+            activeTab === 'approved' ? 'bg-emerald-600 text-white border-emerald-600 shadow-md' : 'bg-white border-emerald-100 hover:border-emerald-300 shadow-sm'
+          }`}
+        >
+          <p className={`text-[11px] font-extrabold uppercase ${activeTab === 'approved' ? 'text-emerald-100' : 'text-emerald-600'}`}>Approved</p>
+          <p className={`text-2xl font-black mt-1 ${activeTab === 'approved' ? 'text-white' : 'text-emerald-600'}`}>{applications.filter(a => a.status === 'APPROVED').length}</p>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('rejected')}
+          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+            activeTab === 'rejected' ? 'bg-red-600 text-white border-red-600 shadow-md' : 'bg-white border-red-100 hover:border-red-300 shadow-sm'
+          }`}
+        >
+          <p className={`text-[11px] font-extrabold uppercase ${activeTab === 'rejected' ? 'text-red-100' : 'text-red-500'}`}>Rejected</p>
+          <p className={`text-2xl font-black mt-1 ${activeTab === 'rejected' ? 'text-white' : 'text-red-500'}`}>{applications.filter(a => a.status === 'REJECTED').length}</p>
+        </button>
       </div>
 
       {/* Filter Tabs & Search */}
@@ -506,98 +544,101 @@ const AdminInvestorApproval: React.FC = () => {
       </div>
 
       {/* ── TAB CONTENT ── */}
-      {activeTab === 'invited' ? (
-        /* Invited Leads Table */
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <Mail size={18} className="text-[#6C4CF1]" /> Admin Investor Invitations ({filteredInvitedLeads.length})
-            </h3>
-            <span className="text-xs text-gray-400">Outreach invitations created by Admin</span>
-          </div>
+      <div className="space-y-8">
+        {(activeTab === 'invited' || activeTab === 'all') && (
+          /* Invited Leads Table */
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <Mail size={18} className="text-[#6C4CF1]" /> Admin Investor Invitations ({filteredInvitedLeads.length})
+              </h3>
+              <span className="text-xs text-gray-400">Outreach invitations created by Admin</span>
+            </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50/80 text-[11px] font-extrabold uppercase text-gray-400 border-b border-gray-100">
-                  <th className="p-4">Investor Name</th>
-                  <th className="p-4">Type & Firm</th>
-                  <th className="p-4">LinkedIn / Contact</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Invitation Link</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-xs font-medium text-gray-700">
-                {filteredInvitedLeads.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-400">
-                      No invitations match the current search filter. Click <strong>"+ Invite Investor"</strong> to issue a new invitation.
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50/80 text-[11px] font-extrabold uppercase text-gray-400 border-b border-gray-100">
+                    <th className="p-4">Investor Name</th>
+                    <th className="p-4">Type & Firm</th>
+                    <th className="p-4">LinkedIn / Contact</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4">Invitation Link</th>
+                    <th className="p-4 text-right">Actions</th>
                   </tr>
-                ) : (
-                  filteredInvitedLeads.map(lead => (
-                    <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="p-4">
-                        <p className="font-bold text-gray-900">{lead.fullName}</p>
-                        <p className="text-[11px] text-gray-400">{lead.email}</p>
-                      </td>
-                      <td className="p-4">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-[#6C4CF1] border border-purple-100 inline-block mb-1">
-                          {lead.investorType}
-                        </span>
-                        <p className="text-[11px] text-gray-600">{lead.companyName || 'N/A'}</p>
-                      </td>
-                      <td className="p-4">
-                        <a href={lead.linkedinUrl} target="_blank" rel="noreferrer" className="text-[#6C4CF1] hover:underline font-bold inline-flex items-center gap-1">
-                          LinkedIn Profile <ArrowUpRight size={12} />
-                        </a>
-                      </td>
-                      <td className="p-4">
-                        <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-200">
-                          {lead.status}
-                        </span>
-                      </td>
-                      <td className="p-4 max-w-xs">
-                        <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg p-1.5">
-                          <input readOnly value={lead.inviteUrl} className="bg-transparent text-[10px] font-mono text-gray-600 truncate flex-1 focus:outline-none" />
-                          <button onClick={() => copyToClipboard(lead.inviteUrl)} className="p-1 text-gray-500 hover:text-[#6C4CF1]" title="Copy link">
-                            <Copy size={13} />
-                          </button>
-                        </div>
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => copyToClipboard(lead.inviteUrl)}
-                            className="px-3 py-1.5 bg-purple-50 text-[#6C4CF1] font-bold rounded-lg hover:bg-purple-100 text-xs transition-colors flex items-center gap-1"
-                          >
-                            <Copy size={13} /> Copy Link
-                          </button>
-                          <button
-                            onClick={() => handleDeleteLead(lead)}
-                            className="px-3 py-1.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-100 text-xs transition-colors flex items-center gap-1 border border-red-200"
-                            title="Delete Invitation"
-                          >
-                            <Trash2 size={13} /> Delete
-                          </button>
-                        </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs font-medium text-gray-700">
+                  {filteredInvitedLeads.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-gray-400">
+                        No invitations match the current search filter. Click <strong>"+ Invite Investor"</strong> to issue a new invitation.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    filteredInvitedLeads.map(lead => (
+                      <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="p-4">
+                          <p className="font-bold text-gray-900">{lead.fullName}</p>
+                          <p className="text-[11px] text-gray-400">{lead.email}</p>
+                        </td>
+                        <td className="p-4">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-[#6C4CF1] border border-purple-100 inline-block mb-1">
+                            {lead.investorType}
+                          </span>
+                          <p className="text-[11px] text-gray-600">{lead.companyName || 'N/A'}</p>
+                        </td>
+                        <td className="p-4">
+                          <a href={lead.linkedinUrl} target="_blank" rel="noreferrer" className="text-[#6C4CF1] hover:underline font-bold inline-flex items-center gap-1">
+                            LinkedIn Profile <ArrowUpRight size={12} />
+                          </a>
+                        </td>
+                        <td className="p-4">
+                          <span className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-200">
+                            {lead.status}
+                          </span>
+                        </td>
+                        <td className="p-4 max-w-xs">
+                          <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-lg p-1.5">
+                            <input readOnly value={lead.inviteUrl} className="bg-transparent text-[10px] font-mono text-gray-600 truncate flex-1 focus:outline-none" />
+                            <button onClick={() => copyToClipboard(lead.inviteUrl)} className="p-1 text-gray-500 hover:text-[#6C4CF1]" title="Copy link">
+                              <Copy size={13} />
+                            </button>
+                          </div>
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => copyToClipboard(lead.inviteUrl)}
+                              className="px-3 py-1.5 bg-purple-50 text-[#6C4CF1] font-bold rounded-lg hover:bg-purple-100 text-xs transition-colors flex items-center gap-1"
+                            >
+                              <Copy size={13} /> Copy Link
+                            </button>
+                            <button
+                              onClick={() => handleDeleteLead(lead)}
+                              className="px-3 py-1.5 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-100 text-xs transition-colors flex items-center gap-1 border border-red-200"
+                              title="Delete Invitation"
+                            >
+                              <Trash2 size={13} /> Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      ) : (
-        /* Applications List Cards / Table */
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <ShieldCheck size={18} className="text-[#6C4CF1]" /> Investor Applications ({filteredApps.length})
-            </h3>
-          </div>
+        )}
+
+        {activeTab !== 'invited' && (
+          /* Applications List Cards / Table */
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <ShieldCheck size={18} className="text-[#6C4CF1]" /> Investor Applications ({filteredApps.length})
+              </h3>
+            </div>
 
           <div className="divide-y divide-gray-100">
             {filteredApps.length === 0 ? (
@@ -690,6 +731,7 @@ const AdminInvestorApproval: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
 
       {/* ── MODAL 1: INVITE INVESTOR ── */}
       {showInviteModal && (
