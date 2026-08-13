@@ -820,7 +820,7 @@ const AdminUsers: React.FC = () => {
                 </>
               )}
 
-              {(selectedUser.role || '').toLowerCase() === 'investor' && (
+              {((selectedUser.role || '').toLowerCase().includes('investor') || !!selectedUser.investorType || !!selectedUser.isInvitedLead) && (
                 <>
                   <div>
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
@@ -860,10 +860,22 @@ const AdminUsers: React.FC = () => {
                         ) : <span className="font-bold text-gray-900">—</span>}
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Website</span>
+                        {selectedUser.website ? (
+                          <a href={selectedUser.website} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
+                            {selectedUser.website}
+                          </a>
+                        ) : <span className="font-bold text-gray-900">—</span>}
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Range</span>
                         <span className="font-bold text-[#5B21B6]">
                           {selectedUser.investmentRange || (selectedUser.minInvestment ? `₹${selectedUser.minInvestment} - ₹${selectedUser.maxInvestment}` : '—')}
                         </span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Location</span>
+                        <span className="font-bold text-gray-900">{selectedUser.preferredLocation || '—'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Industries</span>
@@ -877,6 +889,34 @@ const AdminUsers: React.FC = () => {
                         <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
                           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Stages</span>
                           <span className="font-bold text-gray-900">{selectedUser.investmentStages.join(', ')}</span>
+                        </div>
+                      )}
+                      {selectedUser.investmentFocus && (
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Focus & Strategy</span>
+                          <p className="text-xs text-gray-800">{selectedUser.investmentFocus}</p>
+                        </div>
+                      )}
+                      {selectedUser.previousExperience && (
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Previous Investment Experience</span>
+                          <p className="text-xs text-gray-800">{selectedUser.previousExperience}</p>
+                        </div>
+                      )}
+                      {(selectedUser.startupsInvestedCount || selectedUser.portfolioCompanies || selectedUser.notableInvestments) && (
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2 space-y-2">
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Portfolio & Investment Track Record</span>
+                          {selectedUser.startupsInvestedCount && <div><span className="text-gray-400">Startups Invested:</span> <strong>{selectedUser.startupsInvestedCount}</strong></div>}
+                          {selectedUser.portfolioCompanies && <div><span className="text-gray-400">Portfolio Companies:</span> <strong>{selectedUser.portfolioCompanies}</strong></div>}
+                          {selectedUser.notableInvestments && <div><span className="text-gray-400">Notable Investments:</span> <strong>{selectedUser.notableInvestments}</strong></div>}
+                        </div>
+                      )}
+                      {selectedUser.areasOfExpertise && (
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Areas of Expertise</span>
+                          <span className="font-bold text-gray-900">
+                            {Array.isArray(selectedUser.areasOfExpertise) ? selectedUser.areasOfExpertise.join(', ') : selectedUser.areasOfExpertise}
+                          </span>
                         </div>
                       )}
                       {selectedUser.bio && (
