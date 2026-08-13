@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Trash2, Download, X, AlertCircle, CheckCircle, ChevronDown, ExternalLink, Pencil, Loader2 } from 'lucide-react';
+import { Search, Eye, Trash2, Download, X, AlertCircle, CheckCircle, ChevronDown, ExternalLink, Pencil, Loader2, Copy } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { getMentorProfile, updateMentorProfileAdmin } from '../../../utils/mentorApi';
+import { getInvestorLeads, deleteInvestorLead } from '../../../utils/investorInvites';
 
 const WEEKDAYS: { label: string; value: number }[] = [
   { label: 'Mon', value: 1 },
@@ -102,62 +103,108 @@ const AdminUsers: React.FC = () => {
     refreshUsers();
     const fetched = getAllUsers();
     
-    // Merge investor applications from localStorage if present
-    const storedApps = JSON.parse(localStorage.getItem('ai_startup_builder_investor_apps') || '[]');
     const existingEmails = new Set(fetched.map((u: any) => u.email?.toLowerCase()));
-    
+
+    // 1. Merge investor applications from localStorage if present
+    const storedApps = JSON.parse(localStorage.getItem('ai_startup_builder_investor_apps') || '[]');
     const localInvestors = storedApps
       .filter((app: any) => app.email && !existingEmails.has(app.email.toLowerCase()))
-      .map((app: any) => ({
-        id: app.id,
-        name: app.fullName,
-        fullName: app.fullName,
-        email: app.email,
-        role: 'investor',
-        status: app.status === 'APPROVED' ? 'active' : 'active',
-        approvalStatus: app.status === 'APPROVED' ? 'approved' : app.status === 'REJECTED' ? 'rejected' : 'pending',
-        signupDate: app.submittedAt || new Date().toISOString(),
-        lastLoginAt: null,
-        loginCount: 0,
-        mobile: app.mobile || '',
-        location: app.location || '',
-        companyName: app.companyName || '',
-        designation: app.designation || '',
-        investorType: app.investorType || app.investorCategory || 'Individual Investor',
-        experienceYears: app.experienceYears || '',
-        linkedin: app.linkedinUrl || app.linkedin || '',
-        website: app.website || '',
-        bio: app.bio || '',
-        preferredIndustries: app.preferredIndustries || [],
-        investmentStages: app.investmentStages || [],
-        investmentRange: app.investmentRange || '',
-        preferredLocation: app.preferredLocation || '',
-        investmentFocus: app.investmentFocus || '',
-        previousExperience: app.previousExperience || '',
-        startupsInvestedCount: app.startupsInvestedCount || '',
-        portfolioCompanies: app.portfolioCompanies || '',
-        notableInvestments: app.notableInvestments || '',
-        areasOfExpertise: app.areasOfExpertise || '',
-        kycDocUrl: app.kycDocUrl || '',
-        kycDocName: app.kycDocName || '',
-        panTaxDocUrl: app.panTaxDocUrl || '',
-        panTaxDocName: app.panTaxDocName || '',
-        orgProofUrl: app.orgProofUrl || '',
-        orgProofName: app.orgProofName || '',
-        repProofUrl: app.repProofUrl || '',
-        repProofName: app.repProofName || '',
-        supportingDocUrl: app.supportingDocUrl || '',
-        supportingDocName: app.supportingDocName || '',
-      }));
+      .map((app: any) => {
+        existingEmails.add(app.email.toLowerCase());
+        return {
+          id: app.id,
+          name: app.fullName,
+          fullName: app.fullName,
+          email: app.email,
+          role: 'investor',
+          status: app.status === 'APPROVED' ? 'active' : 'active',
+          approvalStatus: app.status === 'APPROVED' ? 'approved' : app.status === 'REJECTED' ? 'rejected' : 'pending',
+          signupDate: app.submittedAt || new Date().toISOString(),
+          lastLoginAt: null,
+          loginCount: 0,
+          mobile: app.mobile || '',
+          location: app.location || '',
+          companyName: app.companyName || '',
+          designation: app.designation || '',
+          investorType: app.investorType || app.investorCategory || 'Individual Investor',
+          experienceYears: app.experienceYears || '',
+          linkedin: app.linkedinUrl || app.linkedin || '',
+          website: app.website || '',
+          bio: app.bio || '',
+          preferredIndustries: app.preferredIndustries || [],
+          investmentStages: app.investmentStages || [],
+          investmentRange: app.investmentRange || '',
+          preferredLocation: app.preferredLocation || '',
+          investmentFocus: app.investmentFocus || '',
+          previousExperience: app.previousExperience || '',
+          startupsInvestedCount: app.startupsInvestedCount || '',
+          portfolioCompanies: app.portfolioCompanies || '',
+          notableInvestments: app.notableInvestments || '',
+          areasOfExpertise: app.areasOfExpertise || '',
+          kycDocUrl: app.kycDocUrl || '',
+          kycDocName: app.kycDocName || '',
+          panTaxDocUrl: app.panTaxDocUrl || '',
+          panTaxDocName: app.panTaxDocName || '',
+          orgProofUrl: app.orgProofUrl || '',
+          orgProofName: app.orgProofName || '',
+          repProofUrl: app.repProofUrl || '',
+          repProofName: app.repProofName || '',
+          supportingDocUrl: app.supportingDocUrl || '',
+          supportingDocName: app.supportingDocName || '',
+        };
+      });
 
-    setUsersList([...fetched, ...localInvestors]);
+    // 2. Merge invited investor leads (e.g. Rakesh)
+    const storedLeads = getInvestorLeads() || [];
+    const localInvited = storedLeads
+      .filter((lead: any) => lead.email && !existingEmails.has(lead.email.toLowerCase()))
+      .map((lead: any) => {
+        existingEmails.add(lead.email.toLowerCase());
+        return {
+          id: lead.id,
+          name: lead.fullName,
+          fullName: lead.fullName,
+          email: lead.email,
+          role: 'investor',
+          status: lead.status === 'ACCEPTED' ? 'active' : 'inactive',
+          approvalStatus: lead.status === 'ACCEPTED' ? 'approved' : 'pending',
+          isInvitedLead: true,
+          inviteStatus: lead.status || 'INVITED',
+          signupDate: lead.createdAt || new Date().toISOString(),
+          lastLoginAt: null,
+          loginCount: 0,
+          mobile: lead.phone || '',
+          location: lead.location || '',
+          companyName: lead.companyName || '',
+          designation: lead.designation || '',
+          investorType: lead.investorType || 'Angel Investor',
+          experienceYears: lead.experienceYears || '',
+          linkedin: lead.linkedinUrl || '',
+          website: lead.website || '',
+          bio: lead.adminNotes || '',
+          investmentRange: lead.investmentRange || '',
+          preferredIndustries: lead.interestedIndustries || [],
+          investmentStages: lead.investmentStage || [],
+          inviteUrl: lead.inviteUrl || '',
+        };
+      });
+
+    setUsersList([...fetched, ...localInvestors, ...localInvited]);
   };
 
   useEffect(() => {
     loadUsers(true);
+    const handleStorageChange = () => loadUsers(true);
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('investor_invites_updated', handleStorageChange);
+
     if (getTokenRole() !== 'admin') return;
     const interval = setInterval(() => loadUsers(), 10000); // poll every 10s
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('investor_invites_updated', handleStorageChange);
+    };
   }, []);
 
   const filtered = usersList.filter(u =>
@@ -170,8 +217,13 @@ const AdminUsers: React.FC = () => {
   const handleDeleteUser = (id: string, name: string) => {
     if (window.confirm(`Are you sure you want to permanently delete ${name}?`)) {
       deleteUser(id);
+      deleteInvestorLead(id);
+      const storedApps = JSON.parse(localStorage.getItem('ai_startup_builder_investor_apps') || '[]');
+      const updatedApps = storedApps.filter((a: any) => a.id !== id && a.email?.toLowerCase() !== name.toLowerCase());
+      localStorage.setItem('ai_startup_builder_investor_apps', JSON.stringify(updatedApps));
+
       if (selectedUser?.id === id) setSelectedUser(null);
-      loadUsers();
+      loadUsers(true);
       showToast(`User "${name}" deleted successfully.`);
     }
   };
@@ -835,6 +887,30 @@ const AdminUsers: React.FC = () => {
                       )}
                     </div>
                   </div>
+
+                  {/* Invitation Details if Invited Lead */}
+                  {selectedUser.inviteUrl && (
+                    <div className="mt-4 p-4 bg-gray-900 text-white rounded-2xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-extrabold uppercase text-amber-400">Unique Investor Invitation Link</span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800">
+                          {selectedUser.inviteStatus || 'INVITED'}
+                        </span>
+                      </div>
+                      <div className="bg-gray-800 border border-gray-700 p-2.5 rounded-xl flex items-center justify-between gap-2">
+                        <span className="font-mono text-xs text-gray-200 truncate flex-1">{selectedUser.inviteUrl}</span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(selectedUser.inviteUrl);
+                            showToast('Invitation link copied!');
+                          }}
+                          className="px-3 py-1.5 bg-[#6C4CF1] hover:bg-[#5B21B6] text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1 shrink-0"
+                        >
+                          <Copy size={13} /> Copy Link
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Verification Documents */}
                   {(selectedUser.kycDocUrl || selectedUser.panTaxDocUrl || selectedUser.orgProofUrl || selectedUser.repProofUrl || selectedUser.supportingDocUrl) && (
