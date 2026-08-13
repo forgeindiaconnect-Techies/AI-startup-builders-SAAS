@@ -58,7 +58,7 @@ const INITIAL_INVESTOR_APPLICATIONS: InvestorApplication[] = [
     fullName: 'Dr. Vikramaditya Sen',
     email: 'vikram.sen@nexuscap.com',
     mobile: '+91 98200 11223',
-    investorType: 'Venture Capital Representative',
+    investorType: 'Investment Firm / VC',
     companyName: 'Nexus Capital India',
     designation: 'Senior Partner',
     experienceYears: '10+ years',
@@ -825,25 +825,15 @@ const AdminInvestorApproval: React.FC = () => {
                 </div>
                 <h3 className="text-2xl font-black text-gray-900">Investor Invitation Generated!</h3>
                 <p className="text-xs text-gray-500">
-                  Invitation created for <strong>{inviteResult.fullName}</strong> ({inviteResult.email}). Send them the link below:
+                  Invitation created for <strong>{inviteResult.fullName}</strong> ({inviteResult.email}).
                 </p>
-
-                <div className="bg-gray-50 border border-gray-200 p-3 rounded-2xl flex items-center justify-between gap-2 text-left">
-                  <span className="font-mono text-xs text-gray-800 truncate flex-1">{inviteResult.inviteUrl}</span>
-                  <button
-                    onClick={() => copyToClipboard(inviteResult.inviteUrl)}
-                    className="px-4 py-2 bg-[#6C4CF1] text-white font-bold text-xs rounded-xl hover:bg-[#5B21B6] transition-colors flex items-center gap-1 shrink-0"
-                  >
-                    {copiedLink ? <Check size={14} /> : <Copy size={14} />} {copiedLink ? 'Copied!' : 'Copy Link'}
-                  </button>
-                </div>
 
                 <div className="pt-4 flex justify-center">
                   <button
                     onClick={() => { setShowInviteModal(false); setInviteResult(null); setActiveTab('invited'); }}
                     className="px-6 py-2.5 bg-gray-900 text-white font-bold text-xs rounded-xl hover:bg-gray-800"
                   >
-                    Close & View Invitations
+                    Close
                   </button>
                 </div>
               </div>
