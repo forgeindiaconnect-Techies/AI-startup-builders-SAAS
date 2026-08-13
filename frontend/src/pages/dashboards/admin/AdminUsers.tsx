@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Eye, Trash2, Download, X, AlertCircle, CheckCircle, ChevronDown, ExternalLink, Pencil, Loader2, Copy } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { getMentorProfile, updateMentorProfileAdmin } from '../../../utils/mentorApi';
-import { getInvestorLeads, deleteInvestorLead } from '../../../utils/investorInvites';
+import { getInvestorLeads, deleteInvestorLead, getInvestorApplications } from '../../../utils/investorInvites';
 
 const WEEKDAYS: { label: string; value: number }[] = [
   { label: 'Mon', value: 1 },
@@ -103,30 +103,54 @@ const AdminUsers: React.FC = () => {
     refreshUsers();
     const fetched = getAllUsers() || [];
     
-    // Load local storage investor applications and invited leads
-    const storedApps = JSON.parse(localStorage.getItem('ai_startup_builder_investor_apps') || '[]');
+    // Load investor applications and invited leads
+    const storedApps = getInvestorApplications() || [];
     const storedLeads = getInvestorLeads() || [];
 
-    // Create maps by email for fast lookup & enrichment
+    // Create maps by email for fast lookup
     const appsByEmail = new Map<string, any>();
     storedApps.forEach((app: any) => {
-      if (app.email) appsByEmail.set(app.email.toLowerCase(), app);
+      if (app.email) appsByEmail.set(app.email.trim().toLowerCase(), app);
     });
 
     const leadsByEmail = new Map<string, any>();
     storedLeads.forEach((lead: any) => {
-      if (lead.email) leadsByEmail.set(lead.email.toLowerCase(), lead);
+      if (lead.email) leadsByEmail.set(lead.email.trim().toLowerCase(), lead);
     });
 
     const processedEmails = new Set<string>();
 
+    // Helper for fuzzy finding app or lead data
+    const findAppData = (emailKey: string, uName: string) => {
+      if (appsByEmail.has(emailKey)) return appsByEmail.get(emailKey);
+      return storedApps.find((a: any) => {
+        const aEmail = (a.email || '').trim().toLowerCase();
+        const aName = (a.fullName || a.name || '').trim().toLowerCase();
+        const targetName = (uName || '').trim().toLowerCase();
+        return (aEmail && (aEmail.includes(emailKey) || emailKey.includes(aEmail))) ||
+               (aName && targetName && (aName.includes(targetName) || targetName.includes(aName)));
+      }) || {};
+    };
+
+    const findLeadData = (emailKey: string, uName: string) => {
+      if (leadsByEmail.has(emailKey)) return leadsByEmail.get(emailKey);
+      return storedLeads.find((l: any) => {
+        const lEmail = (l.email || '').trim().toLowerCase();
+        const lName = (l.fullName || l.name || '').trim().toLowerCase();
+        const targetName = (uName || '').trim().toLowerCase();
+        return (lEmail && (lEmail.includes(emailKey) || emailKey.includes(lEmail))) ||
+               (lName && targetName && (lName.includes(targetName) || targetName.includes(lName)));
+      }) || {};
+    };
+
     // 1. Map & Enrich fetched users from backend
     const enrichedFetched = fetched.map((u: any) => {
-      const emailKey = (u.email || '').toLowerCase();
+      const emailKey = (u.email || '').trim().toLowerCase();
+      const userName = u.name || u.fullName || '';
       if (emailKey) processedEmails.add(emailKey);
 
-      const appData = appsByEmail.get(emailKey) || {};
-      const leadData = leadsByEmail.get(emailKey) || {};
+      const appData = findAppData(emailKey, userName);
+      const leadData = findLeadData(emailKey, userName);
 
       return {
         ...u,

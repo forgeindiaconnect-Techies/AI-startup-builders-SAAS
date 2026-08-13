@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { addNotification } from '../../../utils/localStorageHelper';
-import { getInvestorLeads, saveInvestorLead, deleteInvestorLead, type InvestorInviteLead } from '../../../utils/investorInvites';
+import { getInvestorLeads, saveInvestorLead, deleteInvestorLead, getInvestorApplications, type InvestorInviteLead } from '../../../utils/investorInvites';
 import { API_URL } from '../../../config/api';
 
 type TabType = 'all' | 'invited' | 'pending' | 'approved' | 'rejected' | 'suspended';
@@ -195,12 +195,8 @@ const AdminInvestorApproval: React.FC = () => {
   }, []);
 
   const loadData = () => {
-    // 1. Load Applications from Local Storage
-    const storedApps = localStorage.getItem('ai_startup_builder_investor_apps');
-    let loadedApps: InvestorApplication[] = [];
-    if (storedApps) {
-      try { loadedApps = JSON.parse(storedApps); } catch {}
-    }
+    // 1. Load Applications from Local Storage (using getInvestorApplications)
+    const loadedApps: InvestorApplication[] = getInvestorApplications();
 
     // 2. Load backend investor users
     const allBackendUsers = getAllUsers() || [];
