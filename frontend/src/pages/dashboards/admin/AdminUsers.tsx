@@ -540,8 +540,8 @@ const AdminUsers: React.FC = () => {
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Signup Date</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Last Login</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Login Count</th>
-                {!['admin', 'mentor'].includes(roleFilter) && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Trial Expiry</th>}
-                {!['admin', 'mentor'].includes(roleFilter) && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Subscription Expiry</th>}
+                {!['admin', 'mentor', 'investor'].includes(roleFilter) && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Trial Expiry</th>}
+                {!['admin', 'mentor', 'investor'].includes(roleFilter) && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Subscription Expiry</th>}
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Approval</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
@@ -569,7 +569,7 @@ const AdminUsers: React.FC = () => {
                   <td className="px-6 py-4 text-sm text-gray-500">{formatDate(u.signupDate)}</td>
                   <td className="px-6 py-4 text-sm text-gray-500">{u.lastLoginAt ? formatDate(u.lastLoginAt) : <span className="text-gray-400 italic">Never</span>}</td>
                   <td className="px-6 py-4 text-sm font-bold text-gray-700">{u.loginCount || 0}</td>
-                  {!['admin', 'mentor'].includes(roleFilter) && (
+                  {!['admin', 'mentor', 'investor'].includes(roleFilter) && (
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {u.trialEndDate ? (
                         <span className={`font-medium ${new Date(u.trialEndDate) < new Date() ? 'text-red-600' : 'text-gray-700'}`}>
@@ -579,7 +579,7 @@ const AdminUsers: React.FC = () => {
                       ) : <span className="text-gray-400 italic">—</span>}
                     </td>
                   )}
-                  {!['admin', 'mentor'].includes(roleFilter) && (
+                  {!['admin', 'mentor', 'investor'].includes(roleFilter) && (
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {u.subscriptionEndDate ? (
                         <span className={`font-medium ${new Date(u.subscriptionEndDate) < new Date() ? 'text-red-600' : 'text-gray-700'}`}>
