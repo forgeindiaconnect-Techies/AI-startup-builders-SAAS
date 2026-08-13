@@ -1,0 +1,749 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Search, Filter, ShieldCheck, Building2, Briefcase, MapPin,
+  TrendingUp, ExternalLink, Send, Eye, X, CheckCircle, AlertCircle, Sparkles, Award
+} from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
+import { getInvestorApplications, getInvestorLeads } from '../../../utils/investorInvites';
+import { getStartups } from '../../../utils/localStorageHelper';
+import {
+  saveInvestmentRequest, getStartupVisibilityMap, setStartupInvestorVisibility
+} from '../../../utils/investorModuleStorage';
+
+const CATEGORIES = ['All', 'Individual Investor', 'Angel Investor', 'Family Office', 'Investment Firm / VC', 'Micro VC'];
+const INDUSTRIES = ['All', 'Artificial Intelligence', 'SaaS', 'FinTech', 'HealthTech', 'DeepTech', 'EdTech', 'E-commerce'];
+const STAGES = ['All', 'Pre-Seed', 'Seed', 'Series A', 'Series B+'];
+const RANGES = ['All', '₹5 Lakhs – ₹25 Lakhs', '₹25 Lakhs – ₹1 Crore', '₹1 Crore – ₹5 Crores', '₹5 Crores+'];
+
+const FounderInvestorMarketplace: React.FC = () => {
+  const { user, getAllUsers } = useAuth();
+  const [investors, setInvestors] = useState<any[]>([]);
+  const [startups, setStartups] = useState<any[]>([]);
+  const [visibilityMap, setVisibilityMap] = useState<Record<string, boolean>>({});
+
+  // Search & Filter state
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedIndustry, setSelectedIndustry] = useState('All');
+  const [selectedStage, setSelectedStage] = useState('All');
+  const [selectedRange, setSelectedRange] = useState('All');
+  const [selectedLocation, setSelectedLocation] = useState('All');
+
+  // Modals state
+  const [viewingInvestor, setViewingInvestor] = useState<any | null>(null);
+  const [requestInvestor, setRequestInvestor] = useState<any | null>(null);
+
+  // Request form state
+  const [selectedStartupId, setSelectedStartupId] = useState('');
+  const [fundingAmount, setFundingAmount] = useState('₹50,00,000');
+  const [fundingStage, setFundingStage] = useState('Seed');
+  const [shortIntro, setShortIntro] = useState('');
+  const [whySeeking, setWhySeeking] = useState('');
+  const [optionalMessage, setOptionalMessage] = useState('');
+
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'warning' } | null>(null);
+
+  const showToast = (msg: string, type: 'success' | 'error' | 'warning' = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const loadData = async () => {
+    // 1. Fetch startups
+    const userStartups = await getStartups();
+    setStartups(userStartups);
+    if (userStartups.length > 0) {
+      setSelectedStartupId(userStartups[0].id || userStartups[0].startupId);
+    }
+    setVisibilityMap(getStartupVisibilityMap());
+
+    // 2. Fetch admin approved investors
+    const fetchedUsers = getAllUsers() || [];
+    const storedApps = getInvestorApplications() || [];
+    const storedLeads = getInvestorLeads() || [];
+
+    const approvedList: any[] = [];
+    const processedEmails = new Set<string>();
+
+    // Process fetched DB users with investor role
+    fetchedUsers.forEach((u: any) => {
+      const role = (u.role || '').toLowerCase();
+      if (role === 'investor' && (u.approvalStatus === 'approved' || u.status === 'active')) {
+        const emailKey = (u.email || '').trim().toLowerCase();
+        if (emailKey) processedEmails.add(emailKey);
+        approvedList.push({
+          id: u.id || u._id,
+          name: u.fullName || u.name || 'Approved Investor',
+          email: u.email,
+          companyName: u.companyName || u.organization || 'Independent Investor',
+          designation: u.designation || 'Angel Investor',
+          investorType: u.investorType || u.investorCategory || 'Angel Investor',
+          experienceYears: u.experienceYears || '5+ years',
+          location: u.location || 'India',
+          linkedinUrl: u.linkedin || u.linkedinUrl || '',
+          website: u.website || '',
+          bio: u.bio || 'Active investor supporting high-growth AI and B2B SaaS startups.',
+          preferredIndustries: u.preferredIndustries || ['Artificial Intelligence', 'SaaS', 'FinTech'],
+          investmentStages: u.investmentStages || ['Seed', 'Series A'],
+          investmentRange: u.investmentRange || '₹25 Lakhs – ₹1 Crore',
+          investmentFocus: u.investmentFocus || u.investmentThesis || 'Proprietary technology stack, strong market potential, and committed founders.',
+          portfolioCompanies: u.portfolioCompanies || 'CloudScale AI, DataPulse, PayFlow',
+          notableInvestments: u.notableInvestments || 'Early Seed lead in CloudScale AI',
+          areasOfExpertise: u.areasOfExpertise || 'GTM Strategy, Fundraising Advisory',
+          verificationStatus: 'APPROVED',
+          avatar: u.fullName ? u.fullName.charAt(0).toUpperCase() : 'I',
+        });
+      }
+    });
+
+    // Process stored investor applications with APPROVED status
+    storedApps.forEach((app: any) => {
+      const emailKey = (app.email || '').trim().toLowerCase();
+      if (app.status === 'APPROVED' && emailKey && !processedEmails.has(emailKey)) {
+        processedEmails.add(emailKey);
+        approvedList.push({
+          id: app.id,
+          name: app.fullName,
+          email: app.email,
+          companyName: app.companyName || 'Investment Syndicate',
+          designation: app.designation || 'Managing Director',
+          investorType: app.investorType || app.investorCategory || 'Angel Investor',
+          experienceYears: app.experienceYears || '5 - 10 years',
+          location: app.location || 'Bengaluru, India',
+          linkedinUrl: app.linkedinUrl || '',
+          website: app.website || '',
+          bio: app.bio || 'Ex-VP Product turned active angel investor backing AI and SaaS founders.',
+          preferredIndustries: app.preferredIndustries || ['FinTech', 'HealthTech', 'Artificial Intelligence'],
+          investmentStages: app.investmentStages || ['Pre-Seed', 'Seed'],
+          investmentRange: app.investmentRange || '₹25 Lakhs – ₹1 Crore',
+          investmentFocus: app.investmentFocus || app.investmentThesis || 'Backing mission-driven founders creating innovative products.',
+          portfolioCompanies: app.portfolioCompanies || 'PayFlow, MedPulse AI',
+          notableInvestments: app.notableInvestments || 'Seed Lead in PayFlow',
+          areasOfExpertise: app.areasOfExpertise || 'Product Strategy, Angel Syndicates',
+          verificationStatus: 'APPROVED',
+          avatar: app.fullName ? app.fullName.charAt(0).toUpperCase() : 'I',
+        });
+      }
+    });
+
+    // Process stored leads with ACCEPTED status
+    storedLeads.forEach((lead: any) => {
+      const emailKey = (lead.email || '').trim().toLowerCase();
+      if (lead.status === 'ACCEPTED' && emailKey && !processedEmails.has(emailKey)) {
+        processedEmails.add(emailKey);
+        approvedList.push({
+          id: lead.id,
+          name: lead.fullName,
+          email: lead.email,
+          companyName: lead.companyName || 'Angel Network',
+          designation: lead.designation || 'Angel Member',
+          investorType: lead.investorType || 'Angel Investor',
+          experienceYears: lead.experienceYears || '5+ years',
+          location: lead.location || 'Mumbai, India',
+          linkedinUrl: lead.linkedinUrl || '',
+          website: lead.website || '',
+          bio: lead.adminNotes || 'Active angel investor looking for scalable tech startups.',
+          preferredIndustries: lead.interestedIndustries || ['SaaS', 'EdTech', 'HealthTech'],
+          investmentStages: lead.investmentStage || ['Seed'],
+          investmentRange: lead.investmentRange || '₹10 Lakhs – ₹50 Lakhs',
+          investmentFocus: 'Early revenue traction and clean cap tables.',
+          portfolioCompanies: 'CareConnect, EduLabs',
+          verificationStatus: 'APPROVED',
+          avatar: lead.fullName ? lead.fullName.charAt(0).toUpperCase() : 'I',
+        });
+      }
+    });
+
+    setInvestors(approvedList);
+  };
+
+  useEffect(() => {
+    loadData();
+    window.addEventListener('storage', loadData);
+    window.addEventListener('investor_invites_updated', loadData);
+    window.addEventListener('startup_visibility_updated', loadData);
+    return () => {
+      window.removeEventListener('storage', loadData);
+      window.removeEventListener('investor_invites_updated', loadData);
+      window.removeEventListener('startup_visibility_updated', loadData);
+    };
+  }, []);
+
+  // Filtered Investors
+  const filteredInvestors = investors.filter((inv) => {
+    const matchesSearch =
+      inv.name.toLowerCase().includes(search.toLowerCase()) ||
+      inv.companyName.toLowerCase().includes(search.toLowerCase()) ||
+      inv.bio.toLowerCase().includes(search.toLowerCase());
+
+    const matchesCategory = selectedCategory === 'All' || inv.investorType.toLowerCase().includes(selectedCategory.toLowerCase());
+    const matchesIndustry = selectedIndustry === 'All' || (inv.preferredIndustries && inv.preferredIndustries.some((ind: string) => ind.toLowerCase().includes(selectedIndustry.toLowerCase())));
+    const matchesStage = selectedStage === 'All' || (inv.investmentStages && inv.investmentStages.some((stg: string) => stg.toLowerCase().includes(selectedStage.toLowerCase())));
+    const matchesRange = selectedRange === 'All' || inv.investmentRange === selectedRange;
+    const matchesLocation = selectedLocation === 'All' || inv.location.toLowerCase().includes(selectedLocation.toLowerCase());
+
+    return matchesSearch && matchesCategory && matchesIndustry && matchesStage && matchesRange && matchesLocation;
+  });
+
+  const handleOpenSendRequest = (investor: any) => {
+    setRequestInvestor(investor);
+    if (startups.length > 0) {
+      const currentId = selectedStartupId || startups[0].id;
+      const currentStartup = startups.find(s => (s.id === currentId || s.startupId === currentId));
+      if (currentStartup) {
+        setShortIntro(`Requesting investment for ${currentStartup.startupName || 'my startup'}. ${currentStartup.startupIdea || ''}`);
+        setWhySeeking(`Seeking investment from ${investor.companyName} due to your strong focus in ${Array.isArray(investor.preferredIndustries) ? investor.preferredIndustries.join(', ') : 'our sector'}.`);
+      }
+    }
+  };
+
+  const handleSendRequestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!requestInvestor) return;
+
+    const targetStartup = startups.find(s => (s.id === selectedStartupId || s.startupId === selectedStartupId));
+    if (!targetStartup) {
+      showToast('Please select a valid startup.', 'error');
+      return;
+    }
+
+    const isVisible = visibilityMap[targetStartup.id || targetStartup.startupId];
+    if (!isVisible) {
+      showToast(`Investor Visibility is currently OFF for ${targetStartup.startupName}. Please enable visibility below before sending request.`, 'warning');
+      return;
+    }
+
+    saveInvestmentRequest({
+      founderId: user?.id || 'f_1',
+      founderName: user?.fullName || 'Founder',
+      founderEmail: user?.email || 'founder@example.com',
+      investorId: requestInvestor.id,
+      investorName: requestInvestor.name,
+      investorEmail: requestInvestor.email,
+      investorFirm: requestInvestor.companyName,
+      startupId: targetStartup.id || targetStartup.startupId,
+      startupName: targetStartup.startupName || 'Startup',
+      fundingAmount,
+      fundingStage,
+      shortIntro,
+      whySeeking,
+      optionalMessage,
+    });
+
+    showToast(`Investment request sent successfully to ${requestInvestor.name}!`, 'success');
+    setRequestInvestor(null);
+    setOptionalMessage('');
+  };
+
+  const toggleVisibility = (startupId: string, currentVal: boolean) => {
+    setStartupInvestorVisibility(startupId, !currentVal);
+    setVisibilityMap(prev => ({ ...prev, [startupId]: !currentVal }));
+    showToast(`Investor Visibility for startup updated to ${!currentVal ? 'ON (Visible)' : 'OFF (Private)'}.`);
+  };
+
+  return (
+    <div className="animate-fade-in-up pb-12 font-sans">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-6 right-6 z-[200] px-5 py-3 rounded-xl shadow-xl font-semibold text-sm flex items-center gap-2 animate-in slide-in-from-top-2 ${
+          toast.type === 'success' ? 'bg-emerald-600 text-white' : toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-amber-600 text-white'
+        }`}>
+          {toast.type === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
+          {toast.msg}
+        </div>
+      )}
+
+      {/* Header Banner */}
+      <div className="mb-8 bg-gradient-to-r from-[#5B21B6] via-[#6C4CF1] to-[#4C1D95] rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 max-w-3xl">
+          <span className="px-3.5 py-1 bg-amber-400/20 text-amber-300 rounded-full text-xs font-black uppercase tracking-wider border border-amber-400/30 inline-flex items-center gap-1.5 mb-3">
+            <ShieldCheck size={14} /> Verified Investor Network
+          </span>
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Investor Marketplace</h1>
+          <p className="text-purple-100 mt-2 text-base leading-relaxed">
+            Discover and connect directly with Admin-verified Angel Investors, Venture Capitalists, and Family Offices actively seeking high-potential startups.
+          </p>
+        </div>
+      </div>
+
+      {/* Startup Visibility Control Strip */}
+      <div className="mb-8 bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <Sparkles size={16} className="text-[#5B21B6]" /> Startup Investor Visibility Settings
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Only startups marked as <span className="font-bold text-[#5B21B6]">Investor Visible</span> can send funding requests or be discovered by investors.
+            </p>
+          </div>
+          {startups.length === 0 ? (
+            <span className="text-xs font-medium text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+              No startups created yet.
+            </span>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              {startups.map((s) => {
+                const sId = s.id || s.startupId;
+                const isVis = !!visibilityMap[sId];
+                return (
+                  <div key={sId} className="flex items-center gap-2 bg-gray-50 px-3.5 py-1.5 rounded-xl border border-gray-200">
+                    <span className="text-xs font-bold text-gray-800">{s.startupName || 'Startup'}</span>
+                    <button
+                      onClick={() => toggleVisibility(sId, isVis)}
+                      className={`px-3 py-1 rounded-full text-[11px] font-black uppercase transition-all shadow-sm ${
+                        isVis
+                          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {isVis ? 'ON (Visible)' : 'OFF (Private)'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Search & Filters */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm mb-8 space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search investors by name, firm, thesis, or keyword..."
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#5B21B6] transition-all"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-gray-400" />
+            <span className="text-xs font-bold text-gray-600 uppercase tracking-wider">Filter By:</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-gray-100 text-xs">
+          <div>
+            <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Investor Category</label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#5B21B6]"
+            >
+              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Industry Focus</label>
+            <select
+              value={selectedIndustry}
+              onChange={(e) => setSelectedIndustry(e.target.value)}
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#5B21B6]"
+            >
+              {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Investment Stage</label>
+            <select
+              value={selectedStage}
+              onChange={(e) => setSelectedStage(e.target.value)}
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#5B21B6]"
+            >
+              {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Investment Range</label>
+            <select
+              value={selectedRange}
+              onChange={(e) => setSelectedRange(e.target.value)}
+              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#5B21B6]"
+            >
+              {RANGES.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Investors Grid */}
+      {filteredInvestors.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center">
+          <Building2 size={48} className="mx-auto text-gray-300 mb-3" />
+          <h3 className="text-lg font-bold text-gray-800">No Approved Investors Found</h3>
+          <p className="text-sm text-gray-500 mt-1">Try resetting your search query or filter criteria.</p>
+          <button
+            onClick={() => {
+              setSearch('');
+              setSelectedCategory('All');
+              setSelectedIndustry('All');
+              setSelectedStage('All');
+              setSelectedRange('All');
+            }}
+            className="mt-4 px-4 py-2 bg-[#5B21B6] text-white font-bold text-xs rounded-xl hover:bg-[#4C1D95] transition-colors"
+          >
+            Reset Filters
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredInvestors.map((inv) => (
+            <div key={inv.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between overflow-hidden group">
+              <div className="p-6">
+                {/* Header Profile Info */}
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-lg font-black shadow-md shrink-0">
+                      {inv.avatar}
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-base leading-tight group-hover:text-[#5B21B6] transition-colors">
+                        {inv.name}
+                      </h3>
+                      <p className="text-xs text-gray-500 font-medium">{inv.designation} • {inv.companyName}</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shrink-0">
+                    <ShieldCheck size={12} /> Verified
+                  </span>
+                </div>
+
+                {/* Category & Location */}
+                <div className="flex flex-wrap items-center gap-2 mb-4 text-xs font-semibold text-gray-600">
+                  <span className="px-2.5 py-0.5 bg-purple-50 text-[#5B21B6] rounded-md border border-purple-100">
+                    {inv.investorType}
+                  </span>
+                  <span className="flex items-center gap-1 text-gray-500 text-[11px]">
+                    <MapPin size={12} /> {inv.location}
+                  </span>
+                </div>
+
+                {/* Investment Range & Experience */}
+                <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-xl mb-4 text-xs">
+                  <div>
+                    <span className="text-[10px] font-black text-gray-400 uppercase block">Check Size</span>
+                    <span className="font-bold text-gray-900">{inv.investmentRange}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black text-gray-400 uppercase block">Experience</span>
+                    <span className="font-bold text-gray-900">{inv.experienceYears}</span>
+                  </div>
+                </div>
+
+                {/* Preferred Industries */}
+                <div className="mb-4">
+                  <span className="text-[10px] font-black text-gray-400 uppercase block mb-1.5">Preferred Sectors</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Array.isArray(inv.preferredIndustries) && inv.preferredIndustries.map((ind: string, idx: number) => (
+                      <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-[11px] font-semibold">
+                        {ind}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Investment Thesis Snippet */}
+                <p className="text-xs text-gray-600 line-clamp-2 italic mb-2">
+                  "{inv.investmentFocus || inv.bio}"
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center gap-2">
+                <button
+                  onClick={() => setViewingInvestor(inv)}
+                  className="flex-1 py-2 px-3 bg-white hover:bg-gray-100 text-gray-800 font-bold rounded-xl border border-gray-200 text-xs transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Eye size={14} /> View Profile
+                </button>
+                <button
+                  onClick={() => handleOpenSendRequest(inv)}
+                  className="flex-1 py-2 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <Send size={14} /> Send Request
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ─── INVESTOR PROFILE MODAL ─── */}
+      {viewingInvestor && (
+        <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setViewingInvestor(null)}
+              className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-2xl font-black shadow-lg shrink-0">
+                {viewingInvestor.avatar}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-black text-gray-900">{viewingInvestor.name}</h2>
+                  <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                    <ShieldCheck size={12} /> Verified
+                  </span>
+                </div>
+                <p className="text-sm font-semibold text-[#5B21B6]">{viewingInvestor.designation} at {viewingInvestor.companyName}</p>
+                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                  <MapPin size={13} /> {viewingInvestor.location}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-6 text-sm">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase block">Category</span>
+                  <span className="font-bold text-gray-900">{viewingInvestor.investorType}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase block">Investment Range</span>
+                  <span className="font-bold text-gray-900">{viewingInvestor.investmentRange}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase block">Experience</span>
+                  <span className="font-bold text-gray-900">{viewingInvestor.experienceYears}</span>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-1">About & Bio</h4>
+                <p className="text-gray-700 leading-relaxed font-medium">{viewingInvestor.bio}</p>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Preferred Industries</h4>
+                <div className="flex flex-wrap gap-2">
+                  {Array.isArray(viewingInvestor.preferredIndustries) && viewingInvestor.preferredIndustries.map((ind: string, i: number) => (
+                    <span key={i} className="px-3 py-1 bg-purple-50 text-[#5B21B6] border border-purple-100 rounded-lg text-xs font-bold">
+                      {ind}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Target Investment Stages</h4>
+                <div className="flex flex-wrap gap-2">
+                  {Array.isArray(viewingInvestor.investmentStages) && viewingInvestor.investmentStages.map((stg: string, i: number) => (
+                    <span key={i} className="px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-xs font-bold">
+                      {stg}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-1">Investment Focus & Thesis</h4>
+                <p className="text-gray-700 bg-purple-50/50 p-4 rounded-xl border border-purple-100/60 font-medium italic">
+                  "{viewingInvestor.investmentFocus || 'Focusing on early stage high-growth founders with proprietary IP.'}"
+                </p>
+              </div>
+
+              {viewingInvestor.portfolioCompanies && (
+                <div>
+                  <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-1">Notable Portfolio Highlights</h4>
+                  <p className="text-gray-800 font-semibold">{viewingInvestor.portfolioCompanies}</p>
+                </div>
+              )}
+
+              {/* Links */}
+              <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-gray-100">
+                {viewingInvestor.linkedinUrl && (
+                  <a
+                    href={viewingInvestor.linkedinUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-bold text-[#5B21B6] hover:underline flex items-center gap-1"
+                  >
+                    LinkedIn Profile <ExternalLink size={12} />
+                  </a>
+                )}
+                {viewingInvestor.website && (
+                  <a
+                    href={viewingInvestor.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-bold text-[#5B21B6] hover:underline flex items-center gap-1"
+                  >
+                    Official Website <ExternalLink size={12} />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-8 pt-4 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setViewingInvestor(null)}
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  const inv = viewingInvestor;
+                  setViewingInvestor(null);
+                  handleOpenSendRequest(inv);
+                }}
+                className="px-6 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
+              >
+                <Send size={14} /> Send Investment Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── SEND INVESTMENT REQUEST MODAL ─── */}
+      {requestInvestor && (
+        <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setRequestInvestor(null)}
+              className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="mb-6">
+              <span className="px-3 py-1 bg-purple-100 text-[#5B21B6] rounded-full text-xs font-black uppercase tracking-wider inline-block mb-2">
+                Investment Proposal
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-gray-900">Send Investment Request</h2>
+              <p className="text-xs text-gray-500 mt-1">
+                To: <span className="font-bold text-gray-800">{requestInvestor.name}</span> ({requestInvestor.companyName})
+              </p>
+            </div>
+
+            <form onSubmit={handleSendRequestSubmit} className="space-y-4 text-xs font-medium">
+              {/* Select Startup */}
+              <div>
+                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Select Startup *</label>
+                <select
+                  value={selectedStartupId}
+                  onChange={(e) => {
+                    setSelectedStartupId(e.target.value);
+                    const s = startups.find(st => (st.id === e.target.value || st.startupId === e.target.value));
+                    if (s) {
+                      setShortIntro(`Requesting investment for ${s.startupName || 'my startup'}. ${s.startupIdea || ''}`);
+                    }
+                  }}
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                  required
+                >
+                  {startups.map((s) => {
+                    const sId = s.id || s.startupId;
+                    const isVis = !!visibilityMap[sId];
+                    return (
+                      <option key={sId} value={sId}>
+                        {s.startupName || 'Startup'} {isVis ? '(Investor Visible)' : '(Private - Needs Visibility)'}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Funding Amount & Stage */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Funding Amount Required *</label>
+                  <input
+                    type="text"
+                    value={fundingAmount}
+                    onChange={(e) => setFundingAmount(e.target.value)}
+                    placeholder="e.g. ₹50,00,000"
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Funding Stage *</label>
+                  <select
+                    value={fundingStage}
+                    onChange={(e) => setFundingStage(e.target.value)}
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                    required
+                  >
+                    <option value="Pre-Seed">Pre-Seed</option>
+                    <option value="Seed">Seed</option>
+                    <option value="Pre-Series A">Pre-Series A</option>
+                    <option value="Series A">Series A</option>
+                    <option value="Series B+">Series B+</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Short Intro */}
+              <div>
+                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Short Elevator Intro *</label>
+                <textarea
+                  rows={3}
+                  value={shortIntro}
+                  onChange={(e) => setShortIntro(e.target.value)}
+                  placeholder="Briefly describe your product, target audience, and key traction..."
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-medium text-gray-900 outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                  required
+                />
+              </div>
+
+              {/* Why seeking this investor */}
+              <div>
+                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Why are you seeking this investor? *</label>
+                <textarea
+                  rows={2}
+                  value={whySeeking}
+                  onChange={(e) => setWhySeeking(e.target.value)}
+                  placeholder="Explain why their strategic background or firm focus aligns with your startup..."
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-medium text-gray-900 outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                  required
+                />
+              </div>
+
+              {/* Optional message */}
+              <div>
+                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Optional Personal Note</label>
+                <textarea
+                  rows={2}
+                  value={optionalMessage}
+                  onChange={(e) => setOptionalMessage(e.target.value)}
+                  placeholder="Any additional context, meeting availability, or pitch deck link..."
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-medium text-gray-900 outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRequestInvestor(null)}
+                  className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                >
+                  <Send size={14} /> Send Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default FounderInvestorMarketplace;

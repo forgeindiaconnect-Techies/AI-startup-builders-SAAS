@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, LayoutGrid, List, X, Rocket, Sparkles, RefreshCw, Trash2 } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List, X, Rocket, Sparkles, RefreshCw, Trash2, Eye, ShieldCheck } from 'lucide-react';
 import { createStartupDraft, getStartups, addNotification } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
+import { getStartupVisibilityMap, setStartupInvestorVisibility } from '../../../utils/investorModuleStorage';
 
 type Startup = {
   id: string;
@@ -48,6 +49,8 @@ const FounderStartups: React.FC = () => {
     s.description.toLowerCase().includes(search.toLowerCase())
   );
 
+  const [visibilityMap, setVisibilityMap] = useState<Record<string, boolean>>({});
+
   useEffect(() => {
     // Load startups from backend on mount
     const loadLocalStartups = async () => {
@@ -65,6 +68,7 @@ const FounderStartups: React.FC = () => {
         color: 'bg-gray-100 text-gray-600'
       }));
       setStartups([...filteredInitial, ...mappedStartups]);
+      setVisibilityMap(getStartupVisibilityMap());
     };
     loadLocalStartups();
   }, []);
@@ -193,11 +197,31 @@ const FounderStartups: React.FC = () => {
                   <div className="space-y-3 mb-6 bg-gray-50/50 p-3 rounded-lg border border-gray-100/50">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-gray-500 font-medium">AI Score</span>
-                      <span className={`font-black ${startup.score >= 90 ? 'text-green-600' : startup.score > 80 ? 'text-blue-600' : 'text-gray-900'}`}>{startup.score}/100</span>
+                      <span className={`font-black ${startup.score >= 90 ? 'text-green-600' : startup.score > 80 ? 'text-purple-600' : 'text-gray-900'}`}>{startup.score}/100</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-500 font-medium">Stage</span>
-                      <span className="font-bold text-gray-900">{startup.stage}</span>
+                      <span className="text-gray-500 font-medium">Readiness Stage</span>
+                      <span className="font-bold text-[#5B21B6] text-xs">
+                        {visibilityMap[startup.id] ? 'Investor Visible' : startup.score > 0 ? 'AI Analysis Complete' : 'Draft'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs pt-1 border-t border-gray-100">
+                      <span className="text-gray-500 font-bold">Investor Visibility</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const nextVal = !visibilityMap[startup.id];
+                          setStartupInvestorVisibility(startup.id, nextVal);
+                          setVisibilityMap(prev => ({ ...prev, [startup.id]: nextVal }));
+                        }}
+                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase transition-all shadow-2xs ${
+                          visibilityMap[startup.id]
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        {visibilityMap[startup.id] ? 'ON (Visible)' : 'OFF (Private)'}
+                      </button>
                     </div>
                   </div>
 

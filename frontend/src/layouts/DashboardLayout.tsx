@@ -26,6 +26,14 @@ import FounderOriginalityCheck from '../pages/dashboards/founder/FounderOriginal
 import FounderProfileBilling from '../pages/dashboards/founder/FounderProfileBilling';
 import SharedNotifications from '../pages/dashboards/founder/FounderNotifications';
 import SharedInbox from '../pages/dashboards/founder/SharedInbox';
+
+// Founder Investor Module Components
+import FounderInvestorMarketplace from '../pages/dashboards/founder/FounderInvestorMarketplace';
+import FounderInvestmentRequests from '../pages/dashboards/founder/FounderInvestmentRequests';
+import FounderInvestorMessages from '../pages/dashboards/founder/FounderInvestorMessages';
+import FounderInvestorMeetings from '../pages/dashboards/founder/FounderInvestorMeetings';
+import FounderFundingTransactions from '../pages/dashboards/founder/FounderFundingTransactions';
+
 import MentorDashboard from '../pages/dashboards/MentorDashboard';
 import MentorReviews from '../pages/dashboards/mentor/MentorReviews';
 import MentorSessions from '../pages/dashboards/mentor/MentorSessions';
@@ -65,9 +73,12 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/founder/plagiarism': FounderOriginalityCheck,
     '/dashboard/founder/mentors': FounderMentors,
     '/dashboard/founder/mentor-reviews': FounderMentorReviews,
-    '/dashboard/founder/funding': () => (
-      <PlanGate requiredPlans={['premium_startup_builder']}><FounderFunding /></PlanGate>
-    ),
+    '/dashboard/founder/investor-marketplace': FounderInvestorMarketplace,
+    '/dashboard/founder/investment-requests': FounderInvestmentRequests,
+    '/dashboard/founder/messages': FounderInvestorMessages,
+    '/dashboard/founder/meetings': FounderInvestorMeetings,
+    '/dashboard/founder/funding-transactions': FounderFundingTransactions,
+    '/dashboard/founder/funding': FounderFundingTransactions,
     '/dashboard/founder/billing': FounderBilling,
     '/dashboard/founder/documents': FounderDocuments,
     '/dashboard/founder/learning-videos': FounderLearningVideos,
@@ -128,7 +139,11 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Originality & Plagiarism', icon: ShieldCheck,     path: '/dashboard/founder/originality-check' },
         { name: 'Mentors',                  icon: GraduationCap,   path: '/dashboard/founder/mentors' },
         { name: 'Mentor Reviews',           icon: Star,            path: '/dashboard/founder/mentor-reviews' },
-        { name: 'Funding',                  icon: Wallet,          path: '/dashboard/founder/funding', plans: ['premium_startup_builder'] },
+        { name: 'Investor Marketplace',    icon: Building2,       path: '/dashboard/founder/investor-marketplace' },
+        { name: 'Investment Requests',     icon: ClipboardList,   path: '/dashboard/founder/investment-requests' },
+        { name: 'Messages',                 icon: Inbox,           path: '/dashboard/founder/messages' },
+        { name: 'Meetings',                 icon: CalendarClock,   path: '/dashboard/founder/meetings' },
+        { name: 'Funding & Transactions',   icon: Wallet,          path: '/dashboard/founder/funding-transactions' },
         { name: 'Subscription',             icon: CreditCard,      path: '/dashboard/founder/billing' },
         { name: 'Documents',                icon: File,            path: '/dashboard/founder/documents' },
         { name: 'Learning Videos',          icon: Film,            path: '/dashboard/founder/learning-videos' },
