@@ -38,6 +38,11 @@ import FounderLearningVideos from './pages/dashboards/founder/FounderLearningVid
 import FounderOriginalityCheck from './pages/dashboards/founder/FounderOriginalityCheck';
 import FounderMentors   from './pages/dashboards/founder/FounderMentors';
 import FounderMentorReviews from './pages/dashboards/founder/FounderMentorReviews';
+import FounderInvestorMarketplace from './pages/dashboards/founder/FounderInvestorMarketplace';
+import FounderInvestmentRequests  from './pages/dashboards/founder/FounderInvestmentRequests';
+import FounderInvestorMessages    from './pages/dashboards/founder/FounderInvestorMessages';
+import FounderInvestorMeetings    from './pages/dashboards/founder/FounderInvestorMeetings';
+import FounderFundingTransactions  from './pages/dashboards/founder/FounderFundingTransactions';
 
 // ── Mentor Pages ─────────────────────────────────────────────────
 import MentorDashboard from './pages/dashboards/MentorDashboard';
@@ -144,7 +149,12 @@ function App() {
                     <Route path="plagiarism"      element={<FounderOriginalityCheck />} />
                     <Route path="mentors"         element={<FounderMentors />} />
                     <Route path="mentor-reviews"  element={<FounderMentorReviews />} />
-                    <Route path="funding"         element={<PlanGate requiredPlans={['premium_startup_builder']}><FounderFunding /></PlanGate>} />
+                    <Route path="investor-marketplace" element={<FounderInvestorMarketplace />} />
+                    <Route path="investment-requests"  element={<FounderInvestmentRequests />} />
+                    <Route path="messages"             element={<FounderInvestorMessages />} />
+                    <Route path="meetings"             element={<FounderInvestorMeetings />} />
+                    <Route path="funding-transactions" element={<FounderFundingTransactions />} />
+                    <Route path="funding"         element={<FounderFundingTransactions />} />
                     <Route path="documents"           element={<FounderDocuments />} />
                     <Route path="learning-videos"    element={<FounderLearningVideos />} />
                     <Route path="inbox"               element={<SharedInbox />} />
