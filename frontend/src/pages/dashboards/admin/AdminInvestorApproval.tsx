@@ -5,6 +5,7 @@ import {
   Lock, Copy, Check, Search, Filter, Sparkles, AlertTriangle, ChevronRight,
   Shield, RefreshCw, X, ArrowUpRight, Trash2
 } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
 import { addNotification } from '../../../utils/localStorageHelper';
 import { getInvestorLeads, saveInvestorLead, deleteInvestorLead, type InvestorInviteLead } from '../../../utils/investorInvites';
 import { API_URL } from '../../../config/api';
@@ -37,8 +38,12 @@ export interface InvestorApplication {
   investmentThesis?: string;
   kycDocUrl?: string;
   kycDocName?: string;
+  panTaxDocUrl?: string;
+  panTaxDocName?: string;
   orgProofUrl?: string;
   orgProofName?: string;
+  repProofUrl?: string;
+  repProofName?: string;
   supportingDocUrl?: string;
   supportingDocName?: string;
   additionalDocUrl?: string;
@@ -146,6 +151,7 @@ const RANGE_LIST = [
 ];
 
 const AdminInvestorApproval: React.FC = () => {
+  const { getAllUsers } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('invited');
   const [applications, setApplications] = useState<InvestorApplication[]>([]);
   const [invitedLeads, setInvitedLeads] = useState<InvestorInviteLead[]>([]);
@@ -189,25 +195,74 @@ const AdminInvestorApproval: React.FC = () => {
   }, []);
 
   const loadData = () => {
-    // 1. Load Applications
+    // 1. Load Applications from Local Storage
     const storedApps = localStorage.getItem('ai_startup_builder_investor_apps');
     let loadedApps: InvestorApplication[] = [];
     if (storedApps) {
       try { loadedApps = JSON.parse(storedApps); } catch {}
     }
-    // Combine with demo apps if empty
-    if (loadedApps.length === 0) {
-      localStorage.setItem('ai_startup_builder_investor_apps', JSON.stringify(INITIAL_INVESTOR_APPLICATIONS));
-      loadedApps = INITIAL_INVESTOR_APPLICATIONS;
-    }
-    setApplications(loadedApps);
 
-    // 2. Load Invited Leads
+    // 2. Load backend investor users
+    const allBackendUsers = getAllUsers() || [];
+    const backendInvestors: InvestorApplication[] = allBackendUsers
+      .filter((u: any) => (u.role || '').toLowerCase() === 'investor')
+      .map((u: any) => ({
+        id: u.id || u._id || `INV-${u.email}`,
+        fullName: u.fullName || u.name || 'Investor',
+        email: u.email,
+        mobile: u.mobile || '',
+        investorType: u.investorType || u.investorCategory || 'Individual Investor',
+        companyName: u.companyName || '',
+        designation: u.designation || '',
+        experienceYears: u.experienceYears || '',
+        location: u.location || '',
+        linkedinUrl: u.linkedin || u.linkedinUrl || '',
+        website: u.website || '',
+        bio: u.bio || '',
+        preferredIndustries: Array.isArray(u.preferredIndustries) ? u.preferredIndustries : (u.preferredIndustry ? [u.preferredIndustry] : []),
+        investmentStages: Array.isArray(u.investmentStages) ? u.investmentStages : [],
+        investmentRange: u.investmentRange || (u.minInvestment ? `${u.minInvestment} - ${u.maxInvestment}` : ''),
+        preferredLocation: u.preferredLocation || '',
+        investmentFocus: u.investmentFocus || '',
+        previousExperience: u.previousExperience || '',
+        startupsInvestedCount: u.startupsInvestedCount || '',
+        portfolioCompanies: u.portfolioCompanies || '',
+        notableInvestments: u.notableInvestments || '',
+        areasOfExpertise: u.areasOfExpertise || '',
+        investmentThesis: u.investmentThesis || '',
+        kycDocUrl: u.kycDocUrl || '',
+        kycDocName: u.kycDocName || (u.kycDocUrl ? 'KYC_Document.pdf' : ''),
+        panTaxDocUrl: u.panTaxDocUrl || u.panDocUrl || '',
+        panTaxDocName: u.panTaxDocName || (u.panTaxDocUrl || u.panDocUrl ? 'PAN_Tax_ID.pdf' : ''),
+        orgProofUrl: u.orgProofUrl || '',
+        orgProofName: u.orgProofName || (u.orgProofUrl ? 'Org_Proof.pdf' : ''),
+        repProofUrl: u.repProofUrl || '',
+        repProofName: u.repProofName || (u.repProofUrl ? 'Rep_Proof.pdf' : ''),
+        supportingDocUrl: u.supportingDocUrl || u.otherDocUrl || '',
+        supportingDocName: u.supportingDocName || u.otherDocType || (u.supportingDocUrl ? 'Supporting_Doc.pdf' : ''),
+        status: u.approvalStatus === 'approved' ? 'APPROVED' : u.approvalStatus === 'rejected' ? 'REJECTED' : 'PENDING_VERIFICATION',
+        submittedAt: u.signupDate || u.createdAt || new Date().toISOString(),
+      }));
+
+    // Combine all apps without duplicating emails
+    const existingEmails = new Set<string>();
+    const mergedApps: InvestorApplication[] = [];
+
+    for (const app of [...loadedApps, ...backendInvestors, ...INITIAL_INVESTOR_APPLICATIONS]) {
+      if (app.email && !existingEmails.has(app.email.toLowerCase())) {
+        existingEmails.add(app.email.toLowerCase());
+        mergedApps.push(app);
+      }
+    }
+
+    setApplications(mergedApps);
+
+    // 3. Load Invited Leads
     const leads = getInvestorLeads();
     setInvitedLeads(leads);
 
     // Auto-select tab if pending is 0 and invited leads exist
-    const pendingCount = loadedApps.filter(a => a.status === 'PENDING_VERIFICATION').length;
+    const pendingCount = mergedApps.filter(a => a.status === 'PENDING_VERIFICATION').length;
     if (pendingCount > 0) {
       setActiveTab('pending');
     } else if (leads.length > 0) {
@@ -901,20 +956,69 @@ const AdminInvestorApproval: React.FC = () => {
               <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                 <h4 className="font-bold text-gray-900 mb-2 uppercase text-[11px] text-[#6C4CF1]">Submitted Verification Documents</h4>
                 <div className="grid sm:grid-cols-2 gap-3">
-                  {selectedApp.kycDocName && (
+                  {(selectedApp.kycDocName || selectedApp.kycDocUrl) && (
                     <div className="bg-white p-3 rounded-xl border border-gray-200 flex items-center justify-between">
-                      <span className="font-bold text-gray-800 truncate">{selectedApp.kycDocName}</span>
-                      <a href={selectedApp.kycDocUrl} target="_blank" rel="noreferrer" className="px-2 py-1 bg-purple-50 text-[#6C4CF1] rounded font-bold text-[10px]">
-                        View Doc
-                      </a>
+                      <div className="min-w-0 flex-1 pr-2">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase block">Govt ID / KYC</span>
+                        <span className="font-bold text-gray-800 truncate text-xs block">{selectedApp.kycDocName || 'KYC_Document.pdf'}</span>
+                      </div>
+                      {selectedApp.kycDocUrl && (
+                        <a href={selectedApp.kycDocUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-purple-50 text-[#6C4CF1] rounded-lg font-bold text-[10px] hover:bg-purple-100 shrink-0">
+                          View Doc
+                        </a>
+                      )}
                     </div>
                   )}
-                  {selectedApp.orgProofName && (
+                  {(selectedApp.panTaxDocName || selectedApp.panTaxDocUrl) && (
                     <div className="bg-white p-3 rounded-xl border border-gray-200 flex items-center justify-between">
-                      <span className="font-bold text-gray-800 truncate">{selectedApp.orgProofName}</span>
-                      <a href={selectedApp.orgProofUrl} target="_blank" rel="noreferrer" className="px-2 py-1 bg-purple-50 text-[#6C4CF1] rounded font-bold text-[10px]">
-                        View Doc
-                      </a>
+                      <div className="min-w-0 flex-1 pr-2">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase block">PAN / Tax ID</span>
+                        <span className="font-bold text-gray-800 truncate text-xs block">{selectedApp.panTaxDocName || 'PAN_Tax_ID.pdf'}</span>
+                      </div>
+                      {selectedApp.panTaxDocUrl && (
+                        <a href={selectedApp.panTaxDocUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-purple-50 text-[#6C4CF1] rounded-lg font-bold text-[10px] hover:bg-purple-100 shrink-0">
+                          View Doc
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {(selectedApp.orgProofName || selectedApp.orgProofUrl) && (
+                    <div className="bg-white p-3 rounded-xl border border-gray-200 flex items-center justify-between">
+                      <div className="min-w-0 flex-1 pr-2">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase block">Org / Fund Proof</span>
+                        <span className="font-bold text-gray-800 truncate text-xs block">{selectedApp.orgProofName || 'Org_Proof.pdf'}</span>
+                      </div>
+                      {selectedApp.orgProofUrl && (
+                        <a href={selectedApp.orgProofUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-purple-50 text-[#6C4CF1] rounded-lg font-bold text-[10px] hover:bg-purple-100 shrink-0">
+                          View Doc
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {(selectedApp.repProofName || selectedApp.repProofUrl) && (
+                    <div className="bg-white p-3 rounded-xl border border-gray-200 flex items-center justify-between">
+                      <div className="min-w-0 flex-1 pr-2">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase block">Authorized Rep Proof</span>
+                        <span className="font-bold text-gray-800 truncate text-xs block">{selectedApp.repProofName || 'Rep_Proof.pdf'}</span>
+                      </div>
+                      {selectedApp.repProofUrl && (
+                        <a href={selectedApp.repProofUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-purple-50 text-[#6C4CF1] rounded-lg font-bold text-[10px] hover:bg-purple-100 shrink-0">
+                          View Doc
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {(selectedApp.supportingDocName || selectedApp.supportingDocUrl) && (
+                    <div className="bg-white p-3 rounded-xl border border-gray-200 flex items-center justify-between">
+                      <div className="min-w-0 flex-1 pr-2">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase block">Supporting Document</span>
+                        <span className="font-bold text-gray-800 truncate text-xs block">{selectedApp.supportingDocName || 'Supporting_Doc.pdf'}</span>
+                      </div>
+                      {selectedApp.supportingDocUrl && (
+                        <a href={selectedApp.supportingDocUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-purple-50 text-[#6C4CF1] rounded-lg font-bold text-[10px] hover:bg-purple-100 shrink-0">
+                          View Doc
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>

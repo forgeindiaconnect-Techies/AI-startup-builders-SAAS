@@ -100,7 +100,57 @@ const AdminUsers: React.FC = () => {
   const loadUsers = (force = false) => {
     if (!force && Date.now() < lockUntilRef.current) return; // skip if locked
     refreshUsers();
-    setUsersList(getAllUsers());
+    const fetched = getAllUsers();
+    
+    // Merge investor applications from localStorage if present
+    const storedApps = JSON.parse(localStorage.getItem('ai_startup_builder_investor_apps') || '[]');
+    const existingEmails = new Set(fetched.map((u: any) => u.email?.toLowerCase()));
+    
+    const localInvestors = storedApps
+      .filter((app: any) => app.email && !existingEmails.has(app.email.toLowerCase()))
+      .map((app: any) => ({
+        id: app.id,
+        name: app.fullName,
+        fullName: app.fullName,
+        email: app.email,
+        role: 'investor',
+        status: app.status === 'APPROVED' ? 'active' : 'active',
+        approvalStatus: app.status === 'APPROVED' ? 'approved' : app.status === 'REJECTED' ? 'rejected' : 'pending',
+        signupDate: app.submittedAt || new Date().toISOString(),
+        lastLoginAt: null,
+        loginCount: 0,
+        mobile: app.mobile || '',
+        location: app.location || '',
+        companyName: app.companyName || '',
+        designation: app.designation || '',
+        investorType: app.investorType || app.investorCategory || 'Individual Investor',
+        experienceYears: app.experienceYears || '',
+        linkedin: app.linkedinUrl || app.linkedin || '',
+        website: app.website || '',
+        bio: app.bio || '',
+        preferredIndustries: app.preferredIndustries || [],
+        investmentStages: app.investmentStages || [],
+        investmentRange: app.investmentRange || '',
+        preferredLocation: app.preferredLocation || '',
+        investmentFocus: app.investmentFocus || '',
+        previousExperience: app.previousExperience || '',
+        startupsInvestedCount: app.startupsInvestedCount || '',
+        portfolioCompanies: app.portfolioCompanies || '',
+        notableInvestments: app.notableInvestments || '',
+        areasOfExpertise: app.areasOfExpertise || '',
+        kycDocUrl: app.kycDocUrl || '',
+        kycDocName: app.kycDocName || '',
+        panTaxDocUrl: app.panTaxDocUrl || '',
+        panTaxDocName: app.panTaxDocName || '',
+        orgProofUrl: app.orgProofUrl || '',
+        orgProofName: app.orgProofName || '',
+        repProofUrl: app.repProofUrl || '',
+        repProofName: app.repProofName || '',
+        supportingDocUrl: app.supportingDocUrl || '',
+        supportingDocName: app.supportingDocName || '',
+      }));
+
+    setUsersList([...fetched, ...localInvestors]);
   };
 
   useEffect(() => {
@@ -111,7 +161,7 @@ const AdminUsers: React.FC = () => {
   }, []);
 
   const filtered = usersList.filter(u =>
-    (roleFilter === 'All' || u.role === roleFilter) &&
+    (roleFilter === 'All' || (u.role || '').toLowerCase() === roleFilter.toLowerCase()) &&
     ((u.name || '').toLowerCase().includes(search.toLowerCase()) ||
      (u.email || '').toLowerCase().includes(search.toLowerCase()) ||
      (u.fullName || '').toLowerCase().includes(search.toLowerCase()))
@@ -718,33 +768,140 @@ const AdminUsers: React.FC = () => {
                 </>
               )}
 
-              {selectedUser.role === 'investor' && (
+              {(selectedUser.role || '').toLowerCase() === 'investor' && (
                 <>
                   <div>
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                      <span className="w-1 h-4 rounded-full bg-emerald-500"></span> Investor Details
+                      <span className="w-1 h-4 rounded-full bg-emerald-500"></span> Investor Profile & Details
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Company Name</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Company / Firm</span>
                         <span className="font-bold text-gray-900">{selectedUser.companyName || '—'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investor Type</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investor Type / Category</span>
                         <span className="font-bold text-gray-900">{selectedUser.investorType || '—'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Industry</span>
-                        <span className="font-bold text-gray-900">{selectedUser.preferredIndustry || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Designation</span>
+                        <span className="font-bold text-gray-900">{selectedUser.designation || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Experience</span>
+                        <span className="font-bold text-gray-900">{selectedUser.experienceYears || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile</span>
+                        <span className="font-bold text-gray-900">{selectedUser.mobile || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
+                        <span className="font-bold text-gray-900">{selectedUser.location || '—'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">LinkedIn</span>
+                        {selectedUser.linkedin ? (
+                          <a href={selectedUser.linkedin} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
+                            {selectedUser.linkedin}
+                          </a>
+                        ) : <span className="font-bold text-gray-900">—</span>}
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Range</span>
-                        <span className="font-bold text-gray-900">
-                          {selectedUser.minInvestment ? `₹${selectedUser.minInvestment}` : '—'} - {selectedUser.maxInvestment ? `₹${selectedUser.maxInvestment}` : '—'}
+                        <span className="font-bold text-[#5B21B6]">
+                          {selectedUser.investmentRange || (selectedUser.minInvestment ? `₹${selectedUser.minInvestment} - ₹${selectedUser.maxInvestment}` : '—')}
                         </span>
                       </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Industries</span>
+                        <span className="font-bold text-gray-900">
+                          {Array.isArray(selectedUser.preferredIndustries) && selectedUser.preferredIndustries.length > 0
+                            ? selectedUser.preferredIndustries.join(', ')
+                            : (selectedUser.preferredIndustry || '—')}
+                        </span>
+                      </div>
+                      {Array.isArray(selectedUser.investmentStages) && selectedUser.investmentStages.length > 0 && (
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Stages</span>
+                          <span className="font-bold text-gray-900">{selectedUser.investmentStages.join(', ')}</span>
+                        </div>
+                      )}
+                      {selectedUser.bio && (
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Bio / Overview</span>
+                          <p className="text-xs text-gray-700 italic">{selectedUser.bio}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* Verification Documents */}
+                  {(selectedUser.kycDocUrl || selectedUser.panTaxDocUrl || selectedUser.orgProofUrl || selectedUser.repProofUrl || selectedUser.supportingDocUrl) && (
+                    <div className="mt-4">
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                        <span className="w-1 h-4 rounded-full bg-purple-500"></span> Uploaded Verification Documents
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {selectedUser.kycDocUrl && (
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase block">Government ID / KYC</span>
+                              <span className="text-xs font-bold text-gray-800 truncate block">{selectedUser.kycDocName || 'KYC_Document'}</span>
+                            </div>
+                            <a href={selectedUser.kycDocUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-purple-100 text-[#5B21B6] font-bold text-[10px] rounded-lg hover:bg-purple-200">
+                              View
+                            </a>
+                          </div>
+                        )}
+                        {selectedUser.panTaxDocUrl && (
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase block">PAN / Tax ID</span>
+                              <span className="text-xs font-bold text-gray-800 truncate block">{selectedUser.panTaxDocName || 'PAN_Tax_ID'}</span>
+                            </div>
+                            <a href={selectedUser.panTaxDocUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-purple-100 text-[#5B21B6] font-bold text-[10px] rounded-lg hover:bg-purple-200">
+                              View
+                            </a>
+                          </div>
+                        )}
+                        {selectedUser.orgProofUrl && (
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase block">Org / Fund Proof</span>
+                              <span className="text-xs font-bold text-gray-800 truncate block">{selectedUser.orgProofName || 'Org_Proof'}</span>
+                            </div>
+                            <a href={selectedUser.orgProofUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-purple-100 text-[#5B21B6] font-bold text-[10px] rounded-lg hover:bg-purple-200">
+                              View
+                            </a>
+                          </div>
+                        )}
+                        {selectedUser.repProofUrl && (
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase block">Authorized Rep Proof</span>
+                              <span className="text-xs font-bold text-gray-800 truncate block">{selectedUser.repProofName || 'Rep_Proof'}</span>
+                            </div>
+                            <a href={selectedUser.repProofUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-purple-100 text-[#5B21B6] font-bold text-[10px] rounded-lg hover:bg-purple-200">
+                              View
+                            </a>
+                          </div>
+                        )}
+                        {selectedUser.supportingDocUrl && (
+                          <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase block">Supporting Doc</span>
+                              <span className="text-xs font-bold text-gray-800 truncate block">{selectedUser.supportingDocName || 'Supporting_Doc'}</span>
+                            </div>
+                            <a href={selectedUser.supportingDocUrl} target="_blank" rel="noreferrer" className="px-2.5 py-1 bg-purple-100 text-[#5B21B6] font-bold text-[10px] rounded-lg hover:bg-purple-200">
+                              View
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="my-4 border-t border-gray-100" />
                 </>
               )}
