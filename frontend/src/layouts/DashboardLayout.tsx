@@ -331,12 +331,6 @@ const DashboardLayout: React.FC = () => {
 
   // Preserve the founder subscription gate that ProtectedRoute applies on route change
   const resolveAllowed = (path: string): string => {
-    if (role === 'founder' && user?.subscriptionStatus !== 'active') {
-      const isAllowed =
-        ['/billing', '/profile', '/ai-builder', '/ai_builder', '/startups', '/documents', '/roadmap', '/notifications', '/funding', '/mentors', '/originality-check', '/originality_check', '/plagiarism', '/investor-marketplace', '/investment-requests', '/messages', '/meetings', '/funding-transactions']
-          .some((s) => path.includes(s)) || path.endsWith('/founder');
-      if (!isAllowed) return '/dashboard/founder/billing';
-    }
     return path;
   };
 

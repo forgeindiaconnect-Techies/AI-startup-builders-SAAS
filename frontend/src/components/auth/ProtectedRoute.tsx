@@ -27,12 +27,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     return <Navigate to={`/dashboard/${effectiveRole}`} replace />;
   }
 
-  if (effectiveRole === 'founder' && user.subscriptionStatus !== 'active') {
-    const isAllowedPath = location.pathname.includes('/billing') || location.pathname.includes('/profile') || location.pathname.includes('/ai-builder') || location.pathname.includes('/ai_builder') || location.pathname.includes('/startups') || location.pathname.includes('/documents') || location.pathname.includes('/roadmap') || location.pathname.includes('/notifications') || location.pathname.includes('/funding') || location.pathname.includes('/mentors') || location.pathname.includes('/originality-check') || location.pathname.includes('/originality_check') || location.pathname.includes('/plagiarism') || location.pathname.includes('/investor-marketplace') || location.pathname.includes('/investment-requests') || location.pathname.includes('/messages') || location.pathname.includes('/meetings') || location.pathname.includes('/funding-transactions');
-    if (!isAllowedPath && !location.pathname.endsWith('/founder')) {
-      return <Navigate to="/dashboard/founder/billing" replace state={{ expired: true }} />;
-    }
-  }
+  // Founder role check - allow access to founder dashboard pages
 
   if (effectiveRole === 'investor') {
     const isApproved = user.approvalStatus === 'approved' || user.approvalStatus === 'APPROVED';
