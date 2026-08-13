@@ -43,6 +43,7 @@ import FounderInvestmentRequests  from './pages/dashboards/founder/FounderInvest
 import FounderInvestorMessages    from './pages/dashboards/founder/FounderInvestorMessages';
 import FounderInvestorMeetings    from './pages/dashboards/founder/FounderInvestorMeetings';
 import FounderFundingTransactions  from './pages/dashboards/founder/FounderFundingTransactions';
+import FounderInvestorProfile     from './pages/dashboards/founder/FounderInvestorProfile';
 
 // ── Mentor Pages ─────────────────────────────────────────────────
 import MentorDashboard from './pages/dashboards/MentorDashboard';
@@ -149,12 +150,13 @@ function App() {
                     <Route path="plagiarism"      element={<FounderOriginalityCheck />} />
                     <Route path="mentors"         element={<FounderMentors />} />
                     <Route path="mentor-reviews"  element={<FounderMentorReviews />} />
-                    <Route path="investor-marketplace" element={<FounderInvestorMarketplace />} />
+                    <Route path="investors" element={<FounderInvestorMarketplace />} />
+                    <Route path="investors/:investorId" element={<FounderInvestorProfile />} />
                     <Route path="investment-requests"  element={<FounderInvestmentRequests />} />
                     <Route path="messages"             element={<FounderInvestorMessages />} />
                     <Route path="meetings"             element={<FounderInvestorMeetings />} />
                     <Route path="funding-transactions" element={<FounderFundingTransactions />} />
-                    <Route path="funding"         element={<FounderFundingTransactions />} />
+                    <Route path="funding"              element={<FounderFundingTransactions />} />
                     <Route path="documents"           element={<FounderDocuments />} />
                     <Route path="learning-videos"    element={<FounderLearningVideos />} />
                     <Route path="inbox"               element={<SharedInbox />} />
@@ -242,8 +244,19 @@ function App() {
                     <Route path="kyc"             element={<InvestorKYC />} />
                     <Route path="notifications"   element={<SharedNotifications />} />
                     <Route path="help"            element={<SharedHelp />} />
-                  </Route>
+                </Route>
+              </Route>
 
+              {/* Direct /founder routes mapped within DashboardLayout */}
+              <Route path="/founder" element={<ProtectedRoute allowedRoles={['founder']} />}>
+                <Route element={<DashboardLayout />}>
+                    <Route path="investors" element={<FounderInvestorMarketplace />} />
+                    <Route path="investors/:investorId" element={<FounderInvestorProfile />} />
+                    <Route path="investment-requests" element={<FounderInvestmentRequests />} />
+                    <Route path="messages" element={<FounderInvestorMessages />} />
+                    <Route path="meetings" element={<FounderInvestorMeetings />} />
+                    <Route path="funding-transactions" element={<FounderFundingTransactions />} />
+                  </Route>
                 </Route>
               </Route>
 

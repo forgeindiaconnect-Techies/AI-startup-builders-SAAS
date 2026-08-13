@@ -131,7 +131,7 @@ const FounderInvestmentRequests: React.FC = () => {
               <div>
                 <h3 className="text-sm font-bold text-emerald-950">Investor Accepted Your Request!</h3>
                 <p className="text-xs text-emerald-800 mt-0.5 leading-relaxed">
-                  An investor has expressed interest in your startup! Connection is now established. You can chat in <span className="font-bold underline cursor-pointer" onClick={() => navigate('/dashboard/founder/messages')}>Messages</span> or schedule a <span className="font-bold underline cursor-pointer" onClick={() => navigate('/dashboard/founder/meetings')}>Meeting</span>.
+                  An investor has expressed interest in your startup! Connection is now established. You can chat in <span className="font-bold underline cursor-pointer" onClick={() => navigate('/founder/messages')}>Messages</span> or schedule a <span className="font-bold underline cursor-pointer" onClick={() => navigate('/founder/meetings')}>Meeting</span>.
                   <br />
                   <span className="text-[11px] text-emerald-700 italic">* Acceptance means investor is interested to continue discussions. It does not automatically mark the startup as funded.</span>
                 </p>
@@ -139,13 +139,13 @@ const FounderInvestmentRequests: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
-                onClick={() => navigate('/dashboard/founder/messages')}
+                onClick={() => navigate('/founder/messages')}
                 className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-colors flex items-center gap-1"
               >
                 <MessageSquare size={13} /> Messages
               </button>
               <button
-                onClick={() => navigate('/dashboard/founder/meetings')}
+                onClick={() => navigate('/founder/meetings')}
                 className="px-3.5 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs rounded-xl shadow-sm transition-colors flex items-center gap-1"
               >
                 <Calendar size={13} /> Meetings
@@ -241,13 +241,13 @@ const FounderInvestmentRequests: React.FC = () => {
                   {req.status === 'ACCEPTED' && (
                     <>
                       <button
-                        onClick={() => navigate('/dashboard/founder/messages')}
+                        onClick={() => navigate('/founder/messages')}
                         className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5"
                       >
                         <MessageSquare size={14} /> Open Messages
                       </button>
                       <button
-                        onClick={() => navigate('/dashboard/founder/meetings')}
+                        onClick={() => navigate('/founder/meetings')}
                         className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5"
                       >
                         <Calendar size={14} /> Schedule Meeting

@@ -33,6 +33,7 @@ import FounderInvestmentRequests from '../pages/dashboards/founder/FounderInvest
 import FounderInvestorMessages from '../pages/dashboards/founder/FounderInvestorMessages';
 import FounderInvestorMeetings from '../pages/dashboards/founder/FounderInvestorMeetings';
 import FounderFundingTransactions from '../pages/dashboards/founder/FounderFundingTransactions';
+import FounderInvestorProfile from '../pages/dashboards/founder/FounderInvestorProfile';
 
 import MentorDashboard from '../pages/dashboards/MentorDashboard';
 import MentorReviews from '../pages/dashboards/mentor/MentorReviews';
@@ -73,12 +74,21 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/founder/plagiarism': FounderOriginalityCheck,
     '/dashboard/founder/mentors': FounderMentors,
     '/dashboard/founder/mentor-reviews': FounderMentorReviews,
-    '/dashboard/founder/investor-marketplace': FounderInvestorMarketplace,
+    '/dashboard/founder/investors': FounderInvestorMarketplace,
+    '/dashboard/founder/investors/:investorId': FounderInvestorProfile,
     '/dashboard/founder/investment-requests': FounderInvestmentRequests,
     '/dashboard/founder/messages': FounderInvestorMessages,
     '/dashboard/founder/meetings': FounderInvestorMeetings,
     '/dashboard/founder/funding-transactions': FounderFundingTransactions,
     '/dashboard/founder/funding': FounderFundingTransactions,
+
+    '/founder/investors': FounderInvestorMarketplace,
+    '/founder/investors/:investorId': FounderInvestorProfile,
+    '/founder/investment-requests': FounderInvestmentRequests,
+    '/founder/messages': FounderInvestorMessages,
+    '/founder/meetings': FounderInvestorMeetings,
+    '/founder/funding-transactions': FounderFundingTransactions,
+    '/founder/funding': FounderFundingTransactions,
     '/dashboard/founder/billing': FounderBilling,
     '/dashboard/founder/documents': FounderDocuments,
     '/dashboard/founder/learning-videos': FounderLearningVideos,
@@ -139,11 +149,11 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Originality & Plagiarism', icon: ShieldCheck,     path: '/dashboard/founder/originality-check' },
         { name: 'Mentors',                  icon: GraduationCap,   path: '/dashboard/founder/mentors' },
         { name: 'Mentor Reviews',           icon: Star,            path: '/dashboard/founder/mentor-reviews' },
-        { name: 'Investor Marketplace',    icon: Building2,       path: '/dashboard/founder/investor-marketplace' },
-        { name: 'Investment Requests',     icon: ClipboardList,   path: '/dashboard/founder/investment-requests' },
-        { name: 'Messages',                 icon: Inbox,           path: '/dashboard/founder/messages' },
-        { name: 'Meetings',                 icon: CalendarClock,   path: '/dashboard/founder/meetings' },
-        { name: 'Funding & Transactions',   icon: Wallet,          path: '/dashboard/founder/funding-transactions' },
+        { name: 'Investor Marketplace',    icon: Building2,       path: '/founder/investors' },
+        { name: 'Investment Requests',     icon: ClipboardList,   path: '/founder/investment-requests' },
+        { name: 'Messages',                 icon: Inbox,           path: '/founder/messages' },
+        { name: 'Meetings',                 icon: CalendarClock,   path: '/founder/meetings' },
+        { name: 'Funding & Transactions',   icon: Wallet,          path: '/founder/funding-transactions' },
         { name: 'Subscription',             icon: CreditCard,      path: '/dashboard/founder/billing' },
         { name: 'Documents',                icon: File,            path: '/dashboard/founder/documents' },
         { name: 'Learning Videos',          icon: Film,            path: '/dashboard/founder/learning-videos' },

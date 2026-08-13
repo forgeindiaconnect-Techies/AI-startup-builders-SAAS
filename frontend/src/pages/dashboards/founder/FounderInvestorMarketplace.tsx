@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Search, Filter, ShieldCheck, Building2, Briefcase, MapPin,
   TrendingUp, ExternalLink, Send, Eye, X, CheckCircle, AlertCircle, Sparkles, Award
@@ -16,6 +17,7 @@ const STAGES = ['All', 'Pre-Seed', 'Seed', 'Series A', 'Series B+'];
 const RANGES = ['All', '₹5 Lakhs – ₹25 Lakhs', '₹25 Lakhs – ₹1 Crore', '₹1 Crore – ₹5 Crores', '₹5 Crores+'];
 
 const FounderInvestorMarketplace: React.FC = () => {
+  const navigate = useNavigate();
   const { user, getAllUsers } = useAuth();
   const [investors, setInvestors] = useState<any[]>([]);
   const [startups, setStartups] = useState<any[]>([]);
@@ -456,7 +458,7 @@ const FounderInvestorMarketplace: React.FC = () => {
               {/* Action Buttons */}
               <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center gap-2">
                 <button
-                  onClick={() => setViewingInvestor(inv)}
+                  onClick={() => navigate(`/founder/investors/${inv.id}`)}
                   className="flex-1 py-2 px-3 bg-white hover:bg-gray-100 text-gray-800 font-bold rounded-xl border border-gray-200 text-xs transition-colors flex items-center justify-center gap-1.5"
                 >
                   <Eye size={14} /> View Profile
