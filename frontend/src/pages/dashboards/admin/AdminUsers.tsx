@@ -58,8 +58,34 @@ const approvalBgColors: Record<string, string> = {
   rejected: 'bg-red-50 text-red-600 border-red-200',
 };
 
+const USER_OVERRIDES_KEY = 'ai_startup_builder_user_overrides';
+
+const saveUserOverride = (email: string, updates: { status?: string; approvalStatus?: string }) => {
+  if (!email) return;
+  const cleanEmail = email.trim().toLowerCase();
+  try {
+    const stored = JSON.parse(localStorage.getItem(USER_OVERRIDES_KEY) || '{}');
+    stored[cleanEmail] = {
+      ...(stored[cleanEmail] || {}),
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(USER_OVERRIDES_KEY, JSON.stringify(stored));
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('investor_invites_updated'));
+  } catch {}
+};
+
+const getUserOverridesMap = (): Record<string, { status?: string; approvalStatus?: string }> => {
+  try {
+    return JSON.parse(localStorage.getItem(USER_OVERRIDES_KEY) || '{}');
+  } catch {
+    return {};
+  }
+};
+
 const AdminUsers: React.FC = () => {
-  const { user: currentUser, getAllUsers, deleteUser, approveUser, rejectUser, updateUserStatus, refreshUsers, getTokenRole } = useAuth();
+  const { user: currentUser, getAllUsers, deleteUser, approveUser, rejectUser, updateUserStatus, updateUserApproval, refreshUsers, getTokenRole } = useAuth();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   const [usersList, setUsersList] = useState<any[]>([]);
@@ -90,13 +116,12 @@ const AdminUsers: React.FC = () => {
     availableSlots: DEFAULT_AVAIL_SLOTS,
   });
 
+  const lockUntilRef = React.useRef<number>(0);
+
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
-
-  // Tracks when the next background refresh is allowed (locked after manual changes)
-  const lockUntilRef = React.useRef<number>(0);
 
   const loadUsers = (force = false) => {
     if (!force && Date.now() < lockUntilRef.current) return; // skip if locked
@@ -106,6 +131,7 @@ const AdminUsers: React.FC = () => {
     // Load investor applications and invited leads
     const storedApps = getInvestorApplications() || [];
     const storedLeads = getInvestorLeads() || [];
+    const overrides = getUserOverridesMap();
 
     // Create maps by email for fast lookup
     const appsByEmail = new Map<string, any>();
@@ -151,9 +177,15 @@ const AdminUsers: React.FC = () => {
 
       const appData = findAppData(emailKey, userName);
       const leadData = findLeadData(emailKey, userName);
+      const userOverride = overrides[emailKey] || {};
+
+      const initialStatus = u.status || 'active';
+      const initialApproval = u.approvalStatus || (appData.status === 'APPROVED' ? 'approved' : appData.status === 'REJECTED' ? 'rejected' : 'approved');
 
       return {
         ...u,
+        status: userOverride.status || initialStatus,
+        approvalStatus: userOverride.approvalStatus || initialApproval,
         mobile: u.mobile || appData.mobile || leadData.phone || '',
         location: u.location || appData.location || leadData.location || '',
         companyName: u.companyName || appData.companyName || leadData.companyName || '',
@@ -192,16 +224,21 @@ const AdminUsers: React.FC = () => {
     const localInvestors = storedApps
       .filter((app: any) => app.email && !processedEmails.has(app.email.toLowerCase()))
       .map((app: any) => {
-        processedEmails.add(app.email.toLowerCase());
-        const leadData = leadsByEmail.get(app.email.toLowerCase()) || {};
+        const emailKey = app.email.trim().toLowerCase();
+        processedEmails.add(emailKey);
+        const leadData = leadsByEmail.get(emailKey) || {};
+        const userOverride = overrides[emailKey] || {};
+
+        const defaultAppStatus = app.status === 'APPROVED' ? 'approved' : app.status === 'REJECTED' ? 'rejected' : 'pending';
+
         return {
           id: app.id,
           name: app.fullName,
           fullName: app.fullName,
           email: app.email,
           role: 'investor',
-          status: app.status === 'APPROVED' ? 'active' : 'active',
-          approvalStatus: app.status === 'APPROVED' ? 'approved' : app.status === 'REJECTED' ? 'rejected' : 'pending',
+          status: userOverride.status || 'active',
+          approvalStatus: userOverride.approvalStatus || defaultAppStatus,
           signupDate: app.submittedAt || new Date().toISOString(),
           lastLoginAt: null,
           loginCount: 0,
@@ -243,15 +280,20 @@ const AdminUsers: React.FC = () => {
     const localInvited = storedLeads
       .filter((lead: any) => lead.email && !processedEmails.has(lead.email.toLowerCase()))
       .map((lead: any) => {
-        processedEmails.add(lead.email.toLowerCase());
+        const emailKey = lead.email.trim().toLowerCase();
+        processedEmails.add(emailKey);
+        const userOverride = overrides[emailKey] || {};
+
+        const defaultLeadStatus = lead.status === 'ACCEPTED' ? 'approved' : 'pending';
+
         return {
           id: lead.id,
           name: lead.fullName,
           fullName: lead.fullName,
           email: lead.email,
           role: 'investor',
-          status: lead.status === 'ACCEPTED' ? 'active' : 'inactive',
-          approvalStatus: lead.status === 'ACCEPTED' ? 'approved' : 'pending',
+          status: userOverride.status || (lead.status === 'ACCEPTED' ? 'active' : 'inactive'),
+          approvalStatus: userOverride.approvalStatus || defaultLeadStatus,
           isInvitedLead: true,
           inviteStatus: lead.status || 'INVITED',
           signupDate: lead.createdAt || new Date().toISOString(),
@@ -313,39 +355,100 @@ const AdminUsers: React.FC = () => {
   };
 
   const handleStatusChange = (userId: string, userName: string, newStatus: string) => {
+    const targetUser = usersList.find(u => u.id === userId);
+    const uEmail = targetUser?.email || '';
+
     if (newStatus === 'inactive' || newStatus === 'suspended') {
       if (!window.confirm(`Set ${userName} to "${newStatus}"? They will not be able to access the dashboard.`)) {
-        loadUsers();
+        loadUsers(true);
         return;
       }
     }
-    updateUserStatus(userId, newStatus);
-    if (selectedUser?.id === userId) {
+
+    lockUntilRef.current = Date.now() + 15000;
+    setUsersList(prev => prev.map(u => (u.id === userId || (uEmail && u.email?.toLowerCase() === uEmail.toLowerCase())) ? { ...u, status: newStatus } : u));
+
+    if (selectedUser && (selectedUser.id === userId || (uEmail && selectedUser.email?.toLowerCase() === uEmail.toLowerCase()))) {
       setSelectedUser({ ...selectedUser, status: newStatus });
     }
-    loadUsers();
+
+    if (uEmail) {
+      saveUserOverride(uEmail, { status: newStatus });
+    }
+
+    updateUserStatus(userId, newStatus);
     showToast(`${userName}'s status updated to "${newStatus}".`);
   };
 
   const handleApprovalChange = (userId: string, userName: string, newApproval: string) => {
+    const targetUser = usersList.find(u => u.id === userId);
+    const uEmail = targetUser?.email || '';
+
     if (newApproval === 'rejected') {
       if (!window.confirm(`Reject ${userName}'s account? They will not be able to log in.`)) {
+        loadUsers(true);
         return;
       }
-      // Lock polling for 10s so background refresh doesn't overwrite this change
-      lockUntilRef.current = Date.now() + 10000;
-      setUsersList(prev => prev.map(u => u.id === userId ? { ...u, approvalStatus: 'rejected' } : u));
-      rejectUser(userId);
-      showToast(`${userName}'s account has been rejected.`);
-    } else if (newApproval === 'approved') {
-      // Lock polling for 10s so background refresh doesn't overwrite this change
-      lockUntilRef.current = Date.now() + 10000;
-      setUsersList(prev => prev.map(u => u.id === userId ? { ...u, approvalStatus: 'approved' } : u));
+    }
+
+    lockUntilRef.current = Date.now() + 15000;
+    setUsersList(prev => prev.map(u => (u.id === userId || (uEmail && u.email?.toLowerCase() === uEmail.toLowerCase())) ? { ...u, approvalStatus: newApproval } : u));
+
+    if (selectedUser && (selectedUser.id === userId || (uEmail && selectedUser.email?.toLowerCase() === uEmail.toLowerCase()))) {
+      setSelectedUser({ ...selectedUser, approvalStatus: newApproval });
+    }
+
+    if (uEmail) {
+      saveUserOverride(uEmail, { approvalStatus: newApproval });
+    }
+
+    if (uEmail) {
+      try {
+        const storedApps = getInvestorApplications();
+        let appUpdated = false;
+        const updatedApps = storedApps.map((app: any) => {
+          if (app.id === userId || (app.email && app.email.trim().toLowerCase() === uEmail.toLowerCase())) {
+            appUpdated = true;
+            return {
+              ...app,
+              status: newApproval === 'approved' ? 'APPROVED' : newApproval === 'rejected' ? 'REJECTED' : 'PENDING_VERIFICATION'
+            };
+          }
+          return app;
+        });
+        if (appUpdated) {
+          localStorage.setItem('ai_startup_builder_investor_apps', JSON.stringify(updatedApps));
+        }
+      } catch {}
+
+      try {
+        const storedLeads = getInvestorLeads();
+        let leadUpdated = false;
+        const updatedLeads = storedLeads.map((lead: any) => {
+          if (lead.id === userId || (lead.email && lead.email.trim().toLowerCase() === uEmail.toLowerCase())) {
+            leadUpdated = true;
+            return {
+              ...lead,
+              status: newApproval === 'approved' ? 'ACCEPTED' : newApproval === 'rejected' ? 'DISABLED' : 'INVITED'
+            };
+          }
+          return lead;
+        });
+        if (leadUpdated) {
+          localStorage.setItem('ai_startup_builder_investor_invite_leads', JSON.stringify(updatedLeads));
+        }
+      } catch {}
+    }
+
+    if (newApproval === 'approved') {
       approveUser(userId);
       showToast(`${userName}'s account has been approved.`);
-    }
-    if (selectedUser?.id === userId) {
-      setSelectedUser({ ...selectedUser, approvalStatus: newApproval });
+    } else if (newApproval === 'rejected') {
+      rejectUser(userId);
+      showToast(`${userName}'s account has been rejected.`);
+    } else {
+      if (updateUserApproval) updateUserApproval(userId, newApproval);
+      showToast(`${userName}'s approval status updated to "${newApproval}".`);
     }
   };
 
@@ -560,7 +663,7 @@ const AdminUsers: React.FC = () => {
             disabled ? 'opacity-60 cursor-not-allowed ' : ''
           }${approvalBgColors[currentApproval] || approvalBgColors.approved}`}
         >
-          <option value="pending" disabled>Pending</option>
+          <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
         </select>

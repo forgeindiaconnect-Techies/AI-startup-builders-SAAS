@@ -488,6 +488,10 @@ export const updateUserApproval = async (req: AuthRequest, res: Response) => {
       user.approvalStatus = 'approved';
     } else if (action === 'reject') {
       user.approvalStatus = 'rejected';
+    } else if (action === 'pending') {
+      user.approvalStatus = 'pending';
+    } else if (action === 'updateApproval') {
+      user.approvalStatus = req.body.approvalStatus || 'pending';
     } else if (action === 'updateStatus') {
       user.status = status || 'active';
     } else if (action === 'delete') {

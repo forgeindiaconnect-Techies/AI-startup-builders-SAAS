@@ -38,6 +38,7 @@ interface AuthContextType {
   getPendingApprovals: () => any[];
   approveUser: (userId: string) => void;
   rejectUser: (userId: string) => void;
+  updateUserApproval: (userId: string, approvalStatus: string) => void;
   getLoginLogs: () => any[];
   getAllUsers: () => any[];
   updateUserStatus: (userId: string, status: string) => void;
@@ -369,6 +370,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ userId, action: 'reject' })
+          });
+          fetchAllUsers();
+        } catch {}
+      },
+      updateUserApproval: async (userId: string, approvalStatus: string) => {
+        const token = getToken();
+        if (!token || (user?.role || '').toLowerCase() !== 'admin') return;
+        try {
+          await fetch(`${API_URL}/auth/admin/users/action`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ userId, action: 'updateApproval', approvalStatus })
           });
           fetchAllUsers();
         } catch {}
