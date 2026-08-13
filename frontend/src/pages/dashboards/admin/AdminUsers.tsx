@@ -101,16 +101,75 @@ const AdminUsers: React.FC = () => {
   const loadUsers = (force = false) => {
     if (!force && Date.now() < lockUntilRef.current) return; // skip if locked
     refreshUsers();
-    const fetched = getAllUsers();
+    const fetched = getAllUsers() || [];
     
-    const existingEmails = new Set(fetched.map((u: any) => u.email?.toLowerCase()));
-
-    // 1. Merge investor applications from localStorage if present
+    // Load local storage investor applications and invited leads
     const storedApps = JSON.parse(localStorage.getItem('ai_startup_builder_investor_apps') || '[]');
+    const storedLeads = getInvestorLeads() || [];
+
+    // Create maps by email for fast lookup & enrichment
+    const appsByEmail = new Map<string, any>();
+    storedApps.forEach((app: any) => {
+      if (app.email) appsByEmail.set(app.email.toLowerCase(), app);
+    });
+
+    const leadsByEmail = new Map<string, any>();
+    storedLeads.forEach((lead: any) => {
+      if (lead.email) leadsByEmail.set(lead.email.toLowerCase(), lead);
+    });
+
+    const processedEmails = new Set<string>();
+
+    // 1. Map & Enrich fetched users from backend
+    const enrichedFetched = fetched.map((u: any) => {
+      const emailKey = (u.email || '').toLowerCase();
+      if (emailKey) processedEmails.add(emailKey);
+
+      const appData = appsByEmail.get(emailKey) || {};
+      const leadData = leadsByEmail.get(emailKey) || {};
+
+      return {
+        ...u,
+        mobile: u.mobile || appData.mobile || leadData.phone || '',
+        location: u.location || appData.location || leadData.location || '',
+        companyName: u.companyName || appData.companyName || leadData.companyName || '',
+        designation: u.designation || appData.designation || leadData.designation || '',
+        investorType: u.investorType || appData.investorType || appData.investorCategory || leadData.investorType || '',
+        experienceYears: u.experienceYears || appData.experienceYears || leadData.experienceYears || '',
+        linkedin: u.linkedin || appData.linkedinUrl || appData.linkedin || leadData.linkedinUrl || '',
+        website: u.website || appData.website || leadData.website || '',
+        bio: u.bio || appData.bio || leadData.adminNotes || '',
+        preferredIndustries: (u.preferredIndustries && u.preferredIndustries.length > 0) ? u.preferredIndustries : (appData.preferredIndustries || leadData.interestedIndustries || []),
+        investmentStages: (u.investmentStages && u.investmentStages.length > 0) ? u.investmentStages : (appData.investmentStages || leadData.investmentStage || []),
+        investmentRange: u.investmentRange || appData.investmentRange || leadData.investmentRange || '',
+        preferredLocation: u.preferredLocation || appData.preferredLocation || '',
+        investmentFocus: u.investmentFocus || appData.investmentFocus || '',
+        previousExperience: u.previousExperience || appData.previousExperience || '',
+        startupsInvestedCount: u.startupsInvestedCount || appData.startupsInvestedCount || '',
+        portfolioCompanies: u.portfolioCompanies || appData.portfolioCompanies || '',
+        notableInvestments: u.notableInvestments || appData.notableInvestments || '',
+        areasOfExpertise: u.areasOfExpertise || appData.areasOfExpertise || '',
+        kycDocUrl: u.kycDocUrl || appData.kycDocUrl || '',
+        kycDocName: u.kycDocName || appData.kycDocName || '',
+        panTaxDocUrl: u.panTaxDocUrl || appData.panTaxDocUrl || '',
+        panTaxDocName: u.panTaxDocName || appData.panTaxDocName || '',
+        orgProofUrl: u.orgProofUrl || appData.orgProofUrl || '',
+        orgProofName: u.orgProofName || appData.orgProofName || '',
+        repProofUrl: u.repProofUrl || appData.repProofUrl || '',
+        repProofName: u.repProofName || appData.repProofName || '',
+        supportingDocUrl: u.supportingDocUrl || appData.supportingDocUrl || '',
+        supportingDocName: u.supportingDocName || appData.supportingDocName || '',
+        inviteUrl: u.inviteUrl || appData.inviteUrl || leadData.inviteUrl || '',
+        inviteStatus: leadData.status || appData.status || '',
+      };
+    });
+
+    // 2. Merge local investor applications not in fetched users
     const localInvestors = storedApps
-      .filter((app: any) => app.email && !existingEmails.has(app.email.toLowerCase()))
+      .filter((app: any) => app.email && !processedEmails.has(app.email.toLowerCase()))
       .map((app: any) => {
-        existingEmails.add(app.email.toLowerCase());
+        processedEmails.add(app.email.toLowerCase());
+        const leadData = leadsByEmail.get(app.email.toLowerCase()) || {};
         return {
           id: app.id,
           name: app.fullName,
@@ -122,18 +181,18 @@ const AdminUsers: React.FC = () => {
           signupDate: app.submittedAt || new Date().toISOString(),
           lastLoginAt: null,
           loginCount: 0,
-          mobile: app.mobile || '',
-          location: app.location || '',
-          companyName: app.companyName || '',
-          designation: app.designation || '',
-          investorType: app.investorType || app.investorCategory || 'Individual Investor',
+          mobile: app.mobile || leadData.phone || '',
+          location: app.location || leadData.location || '',
+          companyName: app.companyName || leadData.companyName || '',
+          designation: app.designation || leadData.designation || '',
+          investorType: app.investorType || app.investorCategory || leadData.investorType || 'Individual Investor',
           experienceYears: app.experienceYears || '',
-          linkedin: app.linkedinUrl || app.linkedin || '',
-          website: app.website || '',
-          bio: app.bio || '',
-          preferredIndustries: app.preferredIndustries || [],
-          investmentStages: app.investmentStages || [],
-          investmentRange: app.investmentRange || '',
+          linkedin: app.linkedinUrl || app.linkedin || leadData.linkedinUrl || '',
+          website: app.website || leadData.website || '',
+          bio: app.bio || leadData.adminNotes || '',
+          preferredIndustries: app.preferredIndustries || leadData.interestedIndustries || [],
+          investmentStages: app.investmentStages || leadData.investmentStage || [],
+          investmentRange: app.investmentRange || leadData.investmentRange || '',
           preferredLocation: app.preferredLocation || '',
           investmentFocus: app.investmentFocus || '',
           previousExperience: app.previousExperience || '',
@@ -151,15 +210,16 @@ const AdminUsers: React.FC = () => {
           repProofName: app.repProofName || '',
           supportingDocUrl: app.supportingDocUrl || '',
           supportingDocName: app.supportingDocName || '',
+          inviteUrl: app.inviteUrl || leadData.inviteUrl || '',
+          inviteStatus: app.status || leadData.status || '',
         };
       });
 
-    // 2. Merge invited investor leads (e.g. Rakesh)
-    const storedLeads = getInvestorLeads() || [];
+    // 3. Merge invited investor leads not in fetched or localInvestors
     const localInvited = storedLeads
-      .filter((lead: any) => lead.email && !existingEmails.has(lead.email.toLowerCase()))
+      .filter((lead: any) => lead.email && !processedEmails.has(lead.email.toLowerCase()))
       .map((lead: any) => {
-        existingEmails.add(lead.email.toLowerCase());
+        processedEmails.add(lead.email.toLowerCase());
         return {
           id: lead.id,
           name: lead.fullName,
@@ -189,7 +249,7 @@ const AdminUsers: React.FC = () => {
         };
       });
 
-    setUsersList([...fetched, ...localInvestors, ...localInvited]);
+    setUsersList([...enrichedFetched, ...localInvestors, ...localInvited]);
   };
 
   useEffect(() => {
@@ -686,11 +746,11 @@ const AdminUsers: React.FC = () => {
                   </div>
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile Number</span>
-                    <span className="font-bold text-gray-900">{selectedUser.mobile || '—'}</span>
+                    <span className="font-bold text-gray-900">{selectedUser.mobile || selectedUser.phone || '—'}</span>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
-                    <span className="font-bold text-gray-900">{selectedUser.location || '—'}</span>
+                    <span className="font-bold text-gray-900">{selectedUser.location || selectedUser.preferredLocation || '—'}</span>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Signup Date</span>
@@ -845,17 +905,17 @@ const AdminUsers: React.FC = () => {
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile</span>
-                        <span className="font-bold text-gray-900">{selectedUser.mobile || '—'}</span>
+                        <span className="font-bold text-gray-900">{selectedUser.mobile || selectedUser.phone || '—'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
-                        <span className="font-bold text-gray-900">{selectedUser.location || '—'}</span>
+                        <span className="font-bold text-gray-900">{selectedUser.location || selectedUser.preferredLocation || '—'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">LinkedIn</span>
-                        {selectedUser.linkedin ? (
-                          <a href={selectedUser.linkedin} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
-                            {selectedUser.linkedin}
+                        {(selectedUser.linkedin || selectedUser.linkedinUrl) ? (
+                          <a href={selectedUser.linkedin || selectedUser.linkedinUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
+                            {selectedUser.linkedin || selectedUser.linkedinUrl}
                           </a>
                         ) : <span className="font-bold text-gray-900">—</span>}
                       </div>
