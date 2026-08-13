@@ -252,11 +252,11 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 
     if (!user) {
-      return res.status(400).json({ success: false, error: 'Invalid email or password' });
+      return res.status(200).json({ success: false, error: 'Invalid email or password' });
     }
 
     if (!user.isVerified) {
-      return res.status(400).json({ success: false, error: 'Email not verified' });
+      return res.status(200).json({ success: false, error: 'Email not verified' });
     }
 
     if (user.status === 'suspended') {
@@ -280,7 +280,7 @@ export const loginUser = async (req: Request, res: Response) => {
         await user.save();
         isMatch = true;
       } else {
-        return res.status(400).json({ success: false, error: 'Invalid email or password' });
+        return res.status(200).json({ success: false, error: 'Invalid email or password' });
       }
     }
 
