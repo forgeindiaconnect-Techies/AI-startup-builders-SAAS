@@ -269,7 +269,7 @@ const DocumentUploadCard: React.FC<{
         </label>
         {doc && (
           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-            <CheckCircle2 size={11} /> Uploaded & Verified
+            <CheckCircle2 size={11} /> Uploaded
           </span>
         )}
       </div>
