@@ -7,7 +7,7 @@ import {
   File, Lightbulb, CalendarClock, Handshake, ClipboardList,
   Briefcase, Building2, UserCog, Inbox, CreditCard,
   BarChart2, Settings, CheckSquare, ShieldCheck,
-  IndianRupee, Film, Link2, Bell, GraduationCap, Star,
+  IndianRupee, Film, Link2, Bell, GraduationCap, Star, FolderLock,
 } from 'lucide-react';
 import NotificationDropdown from '../components/shared/NotificationDropdown';
 import PlanGate from '../components/shared/PlanGate';
@@ -63,6 +63,9 @@ import AdminPlatformSettings from '../pages/dashboards/admin/AdminPlatformSettin
 import AdminMentorEarnings from '../pages/dashboards/admin/AdminMentorEarnings';
 import AdminProfile from '../pages/dashboards/admin/AdminProfile';
 
+import FounderDataRoom from '../pages/dashboards/founder/FounderDataRoom';
+import AdminDataRooms from '../pages/dashboards/admin/AdminDataRooms';
+
 const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
   founder: {
     '/dashboard/founder': FounderDashboard,
@@ -91,6 +94,8 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/founder/funding': FounderFundingTransactions,
     '/dashboard/founder/billing': FounderBilling,
     '/dashboard/founder/documents': FounderDocuments,
+    '/dashboard/founder/data-room': FounderDataRoom,
+    '/dashboard/founder/dataroom': FounderDataRoom,
     '/dashboard/founder/learning-videos': FounderLearningVideos,
     '/dashboard/founder/notifications': SharedNotifications,
     '/dashboard/founder/profile-billing': FounderProfileBilling,
@@ -125,6 +130,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/admin/startups': AdminStartups,
     '/dashboard/admin/approvals-hub': AdminApprovalsHub,
     '/dashboard/admin/document-verification': AdminDocumentVerification,
+    '/dashboard/admin/data-rooms': AdminDataRooms,
     '/dashboard/admin/sub-payments': AdminSubPayments,
     '/dashboard/admin/analytics': AdminAnalytics,
     '/dashboard/admin/platform-settings': AdminPlatformSettings,
@@ -156,6 +162,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Funding & Transactions',   icon: Wallet,          path: '/founder/funding-transactions' },
         { name: 'Subscription',             icon: CreditCard,      path: '/dashboard/founder/billing' },
         { name: 'Documents',                icon: File,            path: '/dashboard/founder/documents' },
+        { name: 'Due Diligence Data Room',  icon: FolderLock,      path: '/dashboard/founder/data-room' },
         { name: 'Learning Videos',          icon: Film,            path: '/dashboard/founder/learning-videos' },
         { name: 'Notifications',            icon: Bell,            path: '/dashboard/founder/notifications' },
         { name: 'Profile',                  icon: UserCog,         path: '/dashboard/founder/profile-billing' },
@@ -204,6 +211,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Startup Ideas',           icon: Rocket,          path: '/dashboard/admin/startups' },
         { name: 'Approvals',               icon: ShieldCheck,     path: '/dashboard/admin/approvals-hub' },
         { name: 'Doc Verification',        icon: File,            path: '/dashboard/admin/document-verification' },
+        { name: 'Due Diligence Data Rooms',icon: FolderLock,      path: '/dashboard/admin/data-rooms' },
         { name: 'Subscriptions & Payments',icon: CreditCard,      path: '/dashboard/admin/sub-payments' },
         { name: 'AI Analytics',            icon: BarChart2,       path: '/dashboard/admin/analytics' },
         { name: 'Mentor Earnings',         icon: IndianRupee,     path: '/dashboard/admin/mentor-earnings' },

@@ -13,6 +13,7 @@ import mentorRoutes from './mentorRoutes.js';
 import plagiarismRoutes from './plagiarismRoutes.js';
 import originalityRoutes from './originalityRoutes.js';
 import analyticsRoutes from './analyticsRoutes.js';
+import dataroomRoutes from './dataroomRoutes.js';
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.use('/mentors', mentorRoutes);
 router.use('/plagiarism', plagiarismRoutes);
 router.use('/originality', originalityRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/dataroom', dataroomRoutes);
 
 // Health check endpoint
 router.get('/health', (_req: Request, res: Response) => {
