@@ -1137,20 +1137,18 @@ const AdminInvestorApproval: React.FC = () => {
                 <span className="px-3 py-0.5 rounded-full text-xs font-black uppercase bg-amber-100 text-amber-800 border border-amber-200">
                   Status: {selectedLead.status}
                 </span>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                  Status: {selectedLead.status}
-                </span>
-                <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-[#6C4CF1] border border-purple-100">
-                  {selectedLead.investorType || 'Angel Investor'}
-                </span>
+                {selectedLead.investorType && selectedLead.investorType !== 'Angel Investor' && (
+                  <span className="px-3 py-0.5 rounded-full text-xs font-bold bg-purple-50 text-[#6C4CF1] border border-purple-100">
+                    {selectedLead.investorType}
+                  </span>
+                )}
               </div>
               <h2 className="text-2xl font-black text-gray-900">{selectedLead.fullName}</h2>
               <p className="text-xs text-gray-500">{selectedLead.email}</p>
             </div>
 
             <div className="space-y-5 text-xs text-gray-700">
-              {/* Profile Details */}
+              {/* Profile Details (Name, Email, LinkedIn) */}
               <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 space-y-3">
                 <h4 className="font-bold text-gray-900 uppercase text-[11px] text-[#6C4CF1] flex items-center gap-1.5">
                   <Mail size={14} /> Invitation Profile Details
@@ -1168,66 +1166,70 @@ const AdminInvestorApproval: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
-                    <span className="text-gray-500 font-medium">Investor Category:</span>
+                    <span className="text-gray-500 font-medium">Investor Type / Category:</span>
                     <strong className="text-[#6C4CF1] font-bold">{selectedLead.investorType || 'Angel Investor'}</strong>
                   </div>
 
                   <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
-                    <span className="text-gray-500 font-medium">Phone / Mobile:</span>
-                    <strong className="text-gray-900 font-bold">{selectedLead.phone || 'N/A'}</strong>
-                  </div>
-
-                  <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
                     <span className="text-gray-500 font-medium">Firm / Company:</span>
-                    <strong className="text-gray-900 font-bold">{selectedLead.companyName || 'N/A'}</strong>
+                    <strong className="text-gray-900 font-bold">{selectedLead.companyName || '—'}</strong>
                   </div>
 
                   <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
-                    <span className="text-gray-500 font-medium">Designation:</span>
-                    <strong className="text-gray-900 font-bold">{selectedLead.designation || 'N/A'}</strong>
+                    <span className="text-gray-500 font-medium">Designation / Role:</span>
+                    <strong className="text-gray-900 font-bold">{selectedLead.designation || '—'}</strong>
+                  </div>
+
+                  <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
+                    <span className="text-gray-500 font-medium">Phone Number:</span>
+                    <strong className="text-gray-900 font-bold">{selectedLead.phone || '—'}</strong>
                   </div>
 
                   <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
                     <span className="text-gray-500 font-medium">Location:</span>
-                    <strong className="text-gray-900 font-bold">{selectedLead.location || 'N/A'}</strong>
+                    <strong className="text-gray-900 font-bold">{selectedLead.location || '—'}</strong>
                   </div>
 
-                  {selectedLead.linkedinUrl && (
-                    <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
-                      <span className="text-gray-500 font-medium">LinkedIn Profile:</span>
+                  <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
+                    <span className="text-gray-500 font-medium">LinkedIn Profile:</span>
+                    {selectedLead.linkedinUrl ? (
                       <a href={selectedLead.linkedinUrl} target="_blank" rel="noreferrer" className="text-[#6C4CF1] font-bold hover:underline inline-flex items-center gap-1">
                         LinkedIn Profile <ArrowUpRight size={13} />
                       </a>
-                    </div>
-                  )}
+                    ) : <strong className="text-gray-900 font-bold">—</strong>}
+                  </div>
 
-                  {selectedLead.website && (
-                    <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
-                      <span className="text-gray-500 font-medium">Website:</span>
+                  <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
+                    <span className="text-gray-500 font-medium">Website:</span>
+                    {selectedLead.website ? (
                       <a href={selectedLead.website} target="_blank" rel="noreferrer" className="text-[#6C4CF1] font-bold hover:underline inline-flex items-center gap-1">
                         {selectedLead.website} <ArrowUpRight size={13} />
                       </a>
-                    </div>
-                  )}
+                    ) : <strong className="text-gray-900 font-bold">—</strong>}
+                  </div>
 
                   <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
                     <span className="text-gray-500 font-medium">Investment Range:</span>
-                    <strong className="text-[#6C4CF1] font-bold">{selectedLead.investmentRange || 'N/A'}</strong>
+                    <strong className="text-[#6C4CF1] font-bold">{selectedLead.investmentRange || '—'}</strong>
                   </div>
 
-                  {Array.isArray(selectedLead.interestedIndustries) && selectedLead.interestedIndustries.length > 0 && (
-                    <div className="flex items-center justify-between border-b border-gray-200/60 pb-2">
-                      <span className="text-gray-500 font-medium">Interested Industries:</span>
-                      <strong className="text-gray-900 font-bold">{selectedLead.interestedIndustries.join(', ')}</strong>
-                    </div>
-                  )}
+                  <div className="flex items-start justify-between border-b border-gray-200/60 pb-2">
+                    <span className="text-gray-500 font-medium">Interested Industries:</span>
+                    <strong className="text-gray-900 font-bold text-right max-w-[60%]">
+                      {Array.isArray(selectedLead.interestedIndustries) && selectedLead.interestedIndustries.length > 0
+                        ? selectedLead.interestedIndustries.join(', ')
+                        : '—'}
+                    </strong>
+                  </div>
 
-                  {Array.isArray(selectedLead.investmentStage) && selectedLead.investmentStage.length > 0 && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-500 font-medium">Investment Stages:</span>
-                      <strong className="text-gray-900 font-bold">{selectedLead.investmentStage.join(', ')}</strong>
-                    </div>
-                  )}
+                  <div className="flex items-start justify-between pb-1">
+                    <span className="text-gray-500 font-medium">Investment Stages:</span>
+                    <strong className="text-gray-900 font-bold text-right max-w-[60%]">
+                      {Array.isArray(selectedLead.investmentStage) && selectedLead.investmentStage.length > 0
+                        ? selectedLead.investmentStage.join(', ')
+                        : '—'}
+                    </strong>
+                  </div>
                 </div>
               </div>
 
