@@ -40,6 +40,10 @@ export interface InvestorApplication {
   kycDocName?: string;
   panTaxDocUrl?: string;
   panTaxDocName?: string;
+  addressProofUrl?: string;
+  addressProofName?: string;
+  investorProofUrl?: string;
+  investorProofName?: string;
   orgProofUrl?: string;
   orgProofName?: string;
   repProofUrl?: string;
@@ -230,6 +234,10 @@ const AdminInvestorApproval: React.FC = () => {
         kycDocName: u.kycDocName || (u.kycDocUrl ? 'KYC_Document.pdf' : ''),
         panTaxDocUrl: u.panTaxDocUrl || u.panDocUrl || '',
         panTaxDocName: u.panTaxDocName || (u.panTaxDocUrl || u.panDocUrl ? 'PAN_Tax_ID.pdf' : ''),
+        addressProofUrl: u.addressProofUrl || '',
+        addressProofName: u.addressProofName || (u.addressProofUrl ? 'Address_Proof.pdf' : ''),
+        investorProofUrl: u.investorProofUrl || '',
+        investorProofName: u.investorProofName || (u.investorProofUrl ? 'Investor_Supporting_Doc.pdf' : ''),
         orgProofUrl: u.orgProofUrl || '',
         orgProofName: u.orgProofName || (u.orgProofUrl ? 'Org_Proof.pdf' : ''),
         repProofUrl: u.repProofUrl || '',
