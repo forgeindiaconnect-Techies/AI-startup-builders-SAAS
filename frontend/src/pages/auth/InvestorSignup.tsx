@@ -469,7 +469,7 @@ const InvestorSignup: React.FC = () => {
         body: JSON.stringify({ email: form.email.trim() }),
       });
       const json = await res.json();
-      if (res.ok && json.success) {
+      if (json.success) {
         setOtpSent(true);
         startCooldown();
       } else {

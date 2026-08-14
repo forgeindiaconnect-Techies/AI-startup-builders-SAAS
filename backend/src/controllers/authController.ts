@@ -23,13 +23,13 @@ const generateToken = (id: string, role: string) => {
 export const sendOTP = async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
+    if (!email) return res.status(200).json({ success: false, error: 'Email is required' });
 
     // Check if user already exists and is verified (best-effort DB check)
     try {
       const existingUser = await User.findOne({ email: email.toLowerCase() });
       if (existingUser && existingUser.isVerified) {
-        return res.status(400).json({ success: false, error: 'User already exists with this email' });
+        return res.status(200).json({ success: false, error: 'User already exists with this email' });
       }
     } catch (dbErr) {
       console.warn('⚠️ User lookup DB check failed:', (dbErr as Error).message);
@@ -95,7 +95,7 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
     } = req.body;
 
     if (!email || !otp || !password || !role || !fullName) {
-      return res.status(400).json({ success: false, error: 'Missing required fields' });
+      return res.status(200).json({ success: false, error: 'Missing required fields' });
     }
 
     // Find valid OTP (best-effort DB lookup, then in-memory fallback)
@@ -123,7 +123,7 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
     }
 
     if (!validOtp) {
-      return res.status(400).json({ success: false, error: 'Invalid or expired OTP' });
+      return res.status(200).json({ success: false, error: 'Invalid or expired OTP' });
     }
 
     // Hash Password
@@ -136,7 +136,7 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
     // Create User (or update if they started but didn't finish)
     let user = await User.findOne({ email: email.toLowerCase() });
     if (user && user.isVerified) {
-      return res.status(400).json({ success: false, error: 'User already exists with this email' });
+      return res.status(200).json({ success: false, error: 'User already exists with this email' });
     }
 
     const roleFields: Record<string, any> = {};
