@@ -282,9 +282,20 @@ const SidebarInner: React.FC<{
             {section.items
               .filter((item) => !item.plans || item.plans.includes(userPlan))
               .map((item) => {
-                const isActive = item.path === `/dashboard/${userRole}`
-                  ? activePath === item.path
-                  : (activePath === item.path || activePath.startsWith(item.path + '/'));
+                const isItemActive = (itemPath: string, currentActive: string) => {
+                  if (itemPath === `/dashboard/${userRole}`) return currentActive === itemPath;
+                  const altPath = itemPath.startsWith('/dashboard/founder/')
+                    ? itemPath.replace('/dashboard/founder/', '/founder/')
+                    : itemPath.replace('/founder/', '/dashboard/founder/');
+                  return (
+                    currentActive === itemPath ||
+                    currentActive === altPath ||
+                    currentActive.startsWith(itemPath + '/') ||
+                    currentActive.startsWith(altPath + '/')
+                  );
+                };
+
+                const isActive = isItemActive(item.path, activePath);
 
                 return (
                   <button
