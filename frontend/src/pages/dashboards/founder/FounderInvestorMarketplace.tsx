@@ -506,7 +506,7 @@ const FounderInvestorMarketplace: React.FC = () => {
                   onClick={() => handleOpenSendRequest(inv)}
                   className="flex-1 py-2 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
                 >
-                  <Send size={14} /> Send Request
+                  <Send size={14} /> Connect with Investor
                 </button>
               </div>
             </div>
@@ -776,7 +776,7 @@ const FounderInvestorMarketplace: React.FC = () => {
                   type="submit"
                   className="px-6 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                 >
-                  <Send size={14} /> Send Request
+                  <Send size={14} /> Connect with Investor
                 </button>
               </div>
             </form>

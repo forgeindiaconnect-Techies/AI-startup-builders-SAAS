@@ -345,7 +345,7 @@ const FounderInvestorProfile: React.FC = () => {
             onClick={handleOpenSendRequest}
             className="w-full sm:w-auto px-6 py-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 self-center sm:self-start"
           >
-            <Send size={14} /> Send Request
+            <Send size={14} /> Connect with Investor
           </button>
         </div>
       </div>
@@ -541,7 +541,7 @@ const FounderInvestorProfile: React.FC = () => {
                   type="submit"
                   className="px-6 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow-md"
                 >
-                  Send Request
+                  Connect with Investor
                 </button>
               </div>
             </form>
