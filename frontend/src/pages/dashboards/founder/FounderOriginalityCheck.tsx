@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck, AlertTriangle, CheckCircle, Info, Sparkles, HelpCircle,
-  FileText, ArrowRight, Trash2, Clock, Eye, RefreshCw, Layers, ShieldAlert, BookOpen
+  FileText, ArrowRight, Trash2, Clock, Eye, RefreshCw, Layers, ShieldAlert, BookOpen, ExternalLink, Globe
 } from 'lucide-react';
 import {
   analyzeOriginalityContent,
@@ -472,15 +472,13 @@ const FounderOriginalityCheck: React.FC = () => {
                   <span className="text-gray-500 font-semibold block mb-1">Idea / Concept Similarity</span>
                   <span className="text-base font-bold text-gray-900">{activeReport.conceptSimilarityScore}%</span>
                 </div>
-              </div>
-
-              {activeReport.matchingSources && activeReport.matchingSources.length > 0 ? (
+              </div>              {activeReport.matchingSources && activeReport.matchingSources.length > 0 ? (
                 <div className="space-y-3">
                   <span className="text-xs font-bold text-gray-700 block">Matched Concepts & Plagiarism Sources:</span>
                   {activeReport.matchingSources.map((match, idx) => (
-                    <div key={idx} className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-xs space-y-1.5">
-                      <div className="flex justify-between items-center font-bold text-gray-900">
-                        <span className="flex items-center gap-1.5 font-bold">
+                    <div key={idx} className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs space-y-2">
+                      <div className="flex flex-wrap justify-between items-center gap-2 font-bold text-gray-900">
+                        <span className="flex items-center gap-1.5 font-bold text-gray-900">
                           <Layers size={14} className="text-[#5B21B6]" />
                           {match.title}
                         </span>
@@ -496,7 +494,23 @@ const FounderOriginalityCheck: React.FC = () => {
                           {match.similarityPercentage}% Match
                         </span>
                       </div>
-                      <p className="text-gray-700 font-medium text-xs bg-white p-2 rounded-lg border border-gray-100 italic">
+
+                      {/* Source Website & Domain Link */}
+                      {(match.sourceUrl || match.domain) && (
+                        <div className="flex items-center gap-2 pt-0.5">
+                          <span className="text-gray-500 font-semibold text-[11px]">Matched Website / Source:</span>
+                          <a
+                            href={match.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(match.title)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#6C4CF1] hover:underline bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100 transition-colors"
+                          >
+                            <Globe size={12} /> {match.domain || 'View Source Website'} <ExternalLink size={11} />
+                          </a>
+                        </div>
+                      )}
+
+                      <p className="text-gray-700 font-medium text-xs bg-white p-2.5 rounded-lg border border-gray-100 italic">
                         "{match.matchingSnippet}"
                       </p>
                       <p className="text-gray-500 text-[11px] font-medium">{match.explanation}</p>
@@ -597,7 +611,7 @@ const FounderOriginalityCheck: React.FC = () => {
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                 <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm">
                   <ShieldAlert className="w-4 h-4 text-red-500" />
-                  5. Potential Copyright Risk
+                  5. Potential Copyright Risk & Source Websites
                 </h3>
                 <span
                   className={`text-xs font-bold px-3 py-1 rounded-full border ${getRiskBadgeColor(
@@ -608,10 +622,38 @@ const FounderOriginalityCheck: React.FC = () => {
                 </span>
               </div>
 
-              <div className="space-y-2 text-xs">
+              <div className="space-y-3 text-xs">
                 <p className="text-gray-700 leading-relaxed font-medium">
                   <strong>Reason:</strong> {activeReport.copyrightRiskReason}
                 </p>
+
+                {/* Top Matched Website Sources for Copyright */}
+                {activeReport.matchingSources && activeReport.matchingSources.length > 0 && (
+                  <div className="space-y-2 pt-1 border-t border-gray-100">
+                    <span className="text-gray-900 font-extrabold text-xs block">Matched Copyright Sources & Websites:</span>
+                    <div className="space-y-2">
+                      {activeReport.matchingSources.map((match, i) => (
+                        <div key={i} className="bg-gray-50 p-2.5 rounded-xl border border-gray-200 flex items-center justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <span className="font-bold text-gray-900 block truncate text-xs">{match.title}</span>
+                            <span className="text-gray-500 text-[11px] block">{match.similarityPercentage}% Copyright Match</span>
+                          </div>
+                          {match.sourceUrl && (
+                            <a
+                              href={match.sourceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-2.5 py-1 bg-purple-50 text-[#6C4CF1] hover:bg-purple-100 font-bold text-[11px] rounded-lg border border-purple-200 flex items-center gap-1 shrink-0"
+                            >
+                              <Globe size={11} /> Open Website <ExternalLink size={10} />
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-medium">
                   <em>Note:</em> Similarity scores reflect concept or phrasing overlap and do not constitute a legal determination of copyright infringement.
                 </div>

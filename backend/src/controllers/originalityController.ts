@@ -35,54 +35,74 @@ const CLAUDE_MARKERS = [
 // Pre-defined real world business models & popular startup concepts
 const REAL_WORLD_STARTUP_MODELS = [
   {
+    title: 'Dining Restaurant, Veg/Non-Veg Menu & Free Delivery (e.g., Zomato / Swiggy / Barbeque Nation)',
+    keywords: ['restaurant', 'resturant', 'veg', 'non-veg', 'chef', 'food', 'delivery', 'mutton', 'chicken', 'sea food', 'ac', 'non-ac', 'dining', 'varieties', 'menu', 'play station', 'free food'],
+    category: 'Dining & Food Services',
+    sourceUrl: 'https://www.zomato.com',
+    domain: 'zomato.com',
+  },
+  {
     title: 'On-Demand Rideshare & Mobility (e.g., Uber / Lyft)',
     keywords: ['cab', 'taxi', 'ride', 'driver', 'passenger', 'on-demand', 'fare', 'trip', 'gps', 'fleet', 'mobility', 'rideshare'],
     category: 'Logistics / Mobility',
+    sourceUrl: 'https://www.uber.com',
+    domain: 'uber.com',
   },
   {
     title: 'Short-Term Rental & Hospitality Marketplace (e.g., Airbnb / VRBO)',
     keywords: ['stay', 'host', 'guest', 'rental', 'property', 'apartment', 'booking', 'nightly', 'listing', 'vacation', 'hospitality'],
     category: 'Real Estate / Marketplace',
-  },
-  {
-    title: 'Hyperlocal Food & Grocery Delivery (e.g., DoorDash / Swiggy / Zomato)',
-    keywords: ['food', 'restaurant', 'meal', 'delivery', 'courier', 'kitchen', 'order', 'menu', 'grocery', 'hyperlocal', 'takeout'],
-    category: 'On-Demand Delivery',
+    sourceUrl: 'https://www.airbnb.com',
+    domain: 'airbnb.com',
   },
   {
     title: 'AI Content & Pitch Deck Generator (e.g., ChatGPT / Gemini AI Wrapper)',
     keywords: ['ai generator', 'pitch deck', 'prompt', 'llm', 'generate', 'gpt-4', 'ai writing', 'chatgpt', 'automated content', 'ai summary'],
     category: 'AI SaaS Wrapper',
+    sourceUrl: 'https://chat.openai.com',
+    domain: 'openai.com',
   },
   {
     title: 'Graphic & Video Automation Platform (e.g., Canva / Figma / Adobe)',
     keywords: ['template', 'design', 'canvas', 'graphic', 'video editor', 'banner', 'drag and drop', 'image creator', 'brand kit'],
     category: 'Creative SaaS',
+    sourceUrl: 'https://www.canva.com',
+    domain: 'canva.com',
   },
   {
     title: 'Multi-Vendor E-Commerce Marketplace (e.g., Shopify / Amazon / Etsy)',
     keywords: ['storefront', 'seller', 'merchant', 'cart', 'checkout', 'inventory', 'sku', 'shipping', 'multi-vendor', 'ecommerce'],
     category: 'E-Commerce',
+    sourceUrl: 'https://www.shopify.com',
+    domain: 'shopify.com',
   },
   {
     title: 'FinTech Payment Gateway & Micro-Lending (e.g., Stripe / Razorpay)',
     keywords: ['payment', 'gateway', 'transaction', 'payout', 'wallet', 'credit', 'loan', 'fintech', 'bank', 'interest', 'merchant account'],
     category: 'FinTech',
+    sourceUrl: 'https://stripe.com',
+    domain: 'stripe.com',
   },
   {
     title: 'Gamified EdTech LMS & Learning Portal (e.g., Duolingo / Coursera)',
     keywords: ['course', 'student', 'quiz', 'gamified', 'certificate', 'tutor', 'learning path', 'edtech', 'lesson', 'streak', 'assignment'],
     category: 'EdTech',
+    sourceUrl: 'https://www.coursera.org',
+    domain: 'coursera.org',
   },
   {
     title: 'HealthTech Telemedicine & Patient Portal (e.g., Practo / Teladoc)',
     keywords: ['doctor', 'patient', 'telemedicine', 'consultation', 'prescription', 'clinic', 'health record', 'symptom', 'appointment'],
     category: 'HealthTech',
+    sourceUrl: 'https://www.practo.com',
+    domain: 'practo.com',
   },
   {
     title: 'B2B SaaS CRM & Automated Sales Pipeline (e.g., HubSpot / Salesforce)',
     keywords: ['lead', 'crm', 'pipeline', 'sales funnel', 'deals', 'prospects', 'contact management', 'email automation', 'b2b saas'],
     category: 'Enterprise SaaS',
+    sourceUrl: 'https://www.hubspot.com',
+    domain: 'hubspot.com',
   }
 ];
 
@@ -206,8 +226,8 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
         }
       }
       const matchPct = Math.round((matchedCount / model.keywords.length) * 100);
-      if (matchPct >= 35) {
-        const calculatedSim = Math.min(90, Math.round(matchPct * 0.9));
+      if (matchPct >= 20) {
+        const calculatedSim = Math.min(90, Math.round(matchPct * 1.5));
         if (calculatedSim > maxSimilarity) maxSimilarity = calculatedSim;
         if (calculatedSim > highestConceptSimilarity) highestConceptSimilarity = calculatedSim;
 
@@ -215,8 +235,9 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
           title: `Existing Market Business Model: ${model.title}`,
           similarityPercentage: calculatedSim,
           matchingSnippet: `Concept shares key operational features with ${model.title} (${matchedCount} core domain terms matched).`,
-          explanation: `High feature overlap with existing market solution in ${model.category}.`,
-          domain: 'market-concept',
+          explanation: `High feature overlap with existing commercial solution in ${model.category}.`,
+          sourceUrl: model.sourceUrl,
+          domain: model.domain,
         });
       }
     }
