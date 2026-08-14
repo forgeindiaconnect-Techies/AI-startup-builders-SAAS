@@ -284,7 +284,7 @@ const SidebarInner: React.FC<{
               .map((item) => {
                 const isActive = item.path === `/dashboard/${userRole}`
                   ? activePath === item.path
-                  : activePath.startsWith(item.path);
+                  : (activePath === item.path || activePath.startsWith(item.path + '/'));
 
                 return (
                   <button
