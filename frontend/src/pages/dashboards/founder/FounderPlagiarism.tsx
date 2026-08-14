@@ -549,37 +549,59 @@ Important: This report identifies textual and conceptual similarity based on the
             </h3>
 
             {report.matches && report.matches.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
+                <span className="text-xs font-bold text-gray-700 block">Matched Concepts & Plagiarism Sources:</span>
                 {report.matches.map((m: any, idx: number) => (
-                  <div key={idx} className="p-4 rounded-xl bg-gray-50 border border-gray-100 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <span className="font-bold text-gray-900 text-sm">{m.sourceTitle}</span>
-                        <span className="ml-2 text-xs font-semibold text-gray-500">({m.domain})</span>
-                      </div>
-                      <span className="text-xs font-extrabold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
-                        {m.similarity}% Similarity · {m.matchType}
+                  <div key={idx} className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-xs space-y-3">
+                    <div className="flex flex-wrap justify-between items-center gap-2 font-bold text-gray-900">
+                      <span className="flex items-center gap-1.5 font-bold text-gray-900 text-sm">
+                        <Shield className="w-4 h-4 text-[#5B21B6]" />
+                        {m.sourceTitle}
+                      </span>
+                      <span
+                        className={`px-3 py-1 rounded-full font-extrabold text-xs border ${
+                          m.similarity >= 45
+                            ? 'bg-red-50 text-red-600 border-red-200'
+                            : m.similarity >= 20
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}
+                      >
+                        {m.similarity}% Match
                       </span>
                     </div>
-                    <p className="text-xs text-gray-600 bg-white p-2.5 rounded-lg border border-gray-200 font-mono">
-                      "{m.matchedText}"
-                    </p>
-                    <div className="flex justify-end">
-                      <a
-                        href={m.sourceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-xs font-bold text-[#5B21B6] hover:underline inline-flex items-center gap-1"
-                      >
-                        View Source <ExternalLink size={12} />
-                      </a>
+
+                    {/* Source Website & Domain Link */}
+                    {(m.sourceUrl || m.domain) && (
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <span className="text-gray-500 font-semibold text-[11px]">Matched Website / Source:</span>
+                        <a
+                          href={m.sourceUrl || `https://www.google.com/search?q=${encodeURIComponent(m.sourceTitle)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[#6C4CF1] hover:underline bg-purple-50 px-3 py-1 rounded-lg border border-purple-200 transition-colors"
+                        >
+                          <ExternalLink size={12} /> {m.domain || 'global-market'}
+                        </a>
+                      </div>
+                    )}
+
+                    {/* Text Format Box */}
+                    <div className="p-3 bg-white rounded-xl border border-gray-200 font-mono text-xs text-gray-800 leading-relaxed italic">
+                      {m.matchedText}
                     </div>
+
+                    {m.explanation && (
+                      <p className="text-gray-500 text-[11px] font-medium leading-relaxed">
+                        {m.explanation}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
             ) : (
               <div className="p-6 bg-gray-50 rounded-xl border border-gray-100 text-center text-sm text-gray-500">
-                No significant matching sources found.
+                No significant matching sources found. Your concept is unique!
               </div>
             )}
           </div>

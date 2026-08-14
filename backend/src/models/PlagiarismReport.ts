@@ -7,6 +7,7 @@ export interface IPlagiarismMatch {
   similarity: number;
   matchType: 'EXACT' | 'PARAPHRASED' | 'SIMILAR';
   matchedText: string;
+  explanation?: string;
 }
 
 export interface IPlagiarismReport extends Document {
@@ -82,6 +83,7 @@ const PlagiarismReportSchema: Schema = new Schema(
         similarity: { type: Number, required: true },
         matchType: { type: String, enum: ['EXACT', 'PARAPHRASED', 'SIMILAR'], default: 'SIMILAR' },
         matchedText: { type: String, required: true },
+        explanation: { type: String },
       },
     ],
     checkedAt: { type: Date, default: Date.now },
