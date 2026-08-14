@@ -300,16 +300,11 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(200).json({ success: false, error: 'Account suspended' });
     }
 
-    if (user.approvalStatus === 'pending') {
-      if (user.role === 'investor' || isKnownInvestorEmail) {
-        user.approvalStatus = 'approved';
-        await user.save();
-      } else {
-        return res.status(200).json({ success: false, error: 'Account pending admin approval' });
-      }
+    if ((user.approvalStatus as string) === 'pending' || (user.approvalStatus as string) === 'PENDING_VERIFICATION') {
+      return res.status(200).json({ success: false, error: 'Account pending admin approval' });
     }
 
-    if (user.approvalStatus === 'rejected') {
+    if ((user.approvalStatus as string) === 'rejected' || (user.approvalStatus as string) === 'REJECTED') {
       return res.status(200).json({ success: false, error: 'Account request rejected' });
     }
 
@@ -319,13 +314,6 @@ export const loginUser = async (req: Request, res: Response) => {
       if (cleanEmail === 'selva@gmail.com' && password === 'Selva@143') {
         const salt = await bcrypt.genSalt(10);
         user.passwordHash = await bcrypt.hash(password, salt);
-        await user.save();
-        isMatch = true;
-      } else if (user.role === 'investor' || isKnownInvestorEmail) {
-        const salt = await bcrypt.genSalt(10);
-        user.passwordHash = await bcrypt.hash(password, salt);
-        user.approvalStatus = 'approved';
-        user.status = 'active';
         await user.save();
         isMatch = true;
       } else {

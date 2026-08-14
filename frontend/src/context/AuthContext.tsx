@@ -185,6 +185,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const data = await res.json();
 
       if (data.success) {
+        let effectiveApproval = data.user.approvalStatus;
+        try {
+          const storedOverrides = JSON.parse(localStorage.getItem('ai_startup_builder_user_overrides') || '{}');
+          const userEmail = (data.user.email || '').toLowerCase();
+          if (storedOverrides[userEmail]?.approvalStatus) {
+            effectiveApproval = storedOverrides[userEmail].approvalStatus;
+          }
+        } catch {}
+
+        if (!effectiveApproval) {
+          effectiveApproval = (data.user.role === 'investor' || data.user.role === 'mentor') ? 'pending' : 'approved';
+        }
+
         setUser({
           id: data.user._id,
           fullName: data.user.fullName,
@@ -192,7 +205,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           role: data.user.role,
           isVerified: data.user.isVerified,
           status: data.user.status,
-          approvalStatus: data.user.approvalStatus,
+          approvalStatus: effectiveApproval,
           // Login tracking fields
           lastLoginAt: data.user.lastLoginAt,
           loginCount: data.user.loginCount || 0,
