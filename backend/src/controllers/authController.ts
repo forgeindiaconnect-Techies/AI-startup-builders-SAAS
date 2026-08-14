@@ -25,11 +25,11 @@ export const sendOTP = async (req: Request, res: Response) => {
     const { email } = req.body;
     if (!email) return res.status(200).json({ success: false, error: 'Email is required' });
 
-    // Check if user already exists and is verified (best-effort DB check)
+    // For demo/testing flexibility, we allow re-registering and updating existing users
     try {
       const existingUser = await User.findOne({ email: email.toLowerCase() });
       if (existingUser && existingUser.isVerified) {
-        return res.status(200).json({ success: false, error: 'User already exists with this email' });
+        console.log(`ℹ️ User ${email} already exists and is verified. Allowing OTP generation for re-registration test.`);
       }
     } catch (dbErr) {
       console.warn('⚠️ User lookup DB check failed:', (dbErr as Error).message);
@@ -135,9 +135,6 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
 
     // Create User (or update if they started but didn't finish)
     let user = await User.findOne({ email: email.toLowerCase() });
-    if (user && user.isVerified) {
-      return res.status(200).json({ success: false, error: 'User already exists with this email' });
-    }
 
     const roleFields: Record<string, any> = {};
     if (role === 'founder') {
