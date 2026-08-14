@@ -62,6 +62,8 @@ export interface InvestorFormData {
   // Step 5: Verification Documents
   kycDoc: UploadedDoc | null;          // Govt ID / KYC
   panTaxDoc: UploadedDoc | null;       // PAN / Tax ID
+  addressProofDoc: UploadedDoc | null; // Address Proof
+  investorProofDoc: UploadedDoc | null;// Investor / Professional Doc
   orgProofDoc: UploadedDoc | null;     // Org / Fund / Company Proof
   repProofDoc: UploadedDoc | null;     // Authorized Rep Proof
   supportingDoc: UploadedDoc | null;   // Additional Supporting Doc
@@ -106,6 +108,8 @@ const emptyFormData: InvestorFormData = {
 
   kycDoc: null,
   panTaxDoc: null,
+  addressProofDoc: null,
+  investorProofDoc: null,
   orgProofDoc: null,
   repProofDoc: null,
   supportingDoc: null,
@@ -381,6 +385,7 @@ const InvestorSignup: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [customCategory, setCustomCategory] = useState('');
+  const [customIndustry, setCustomIndustry] = useState('');
 
   // OTP state
   const [otpSent, setOtpSent] = useState(false);
@@ -441,6 +446,17 @@ const InvestorSignup: React.FC = () => {
       return { ...prev, [field]: next };
     });
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
+  };
+
+  const handleAddCustomIndustry = () => {
+    const trimmed = customIndustry.trim();
+    if (trimmed && !form.preferredIndustries.includes(trimmed)) {
+      setForm(prev => ({
+        ...prev,
+        preferredIndustries: [...prev.preferredIndustries.filter(i => i !== 'Other'), trimmed, 'Other'],
+      }));
+      setCustomIndustry('');
+    }
   };
 
   const startCooldown = () => {
@@ -557,26 +573,18 @@ const InvestorSignup: React.FC = () => {
 
   // ── Step 4 Validation ───────────────────────────────────────────────────────
   const validateStep4 = () => {
-    // Step 4 is optional, no strict block unless needed
-    return true;
+    const e: Record<string, string> = {};
+    if (!form.previousExperience.trim()) e.previousExperience = 'Previous investment experience is required';
+    if (!form.startupsInvestedCount) e.startupsInvestedCount = 'Number of startups invested in is required';
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   // ── Step 5 Validation ───────────────────────────────────────────────────────
   const validateStep5 = () => {
     const e: Record<string, string> = {};
-    const cat = form.investorCategory;
-
-    if (cat === 'Investment Firm / VC') {
-      if (!form.orgProofDoc) e.orgProofDoc = 'Organization / Fund Proof is required';
-      if (!form.repProofDoc) e.repProofDoc = 'Authorized Representative Proof is required';
-    } else if (cat === 'Corporate Investor') {
-      if (!form.orgProofDoc) e.orgProofDoc = 'Organization / Company Proof is required';
-      if (!form.repProofDoc) e.repProofDoc = 'Authorized Representative Proof is required';
-    } else {
-      // Individual / Angel / Family / Other
-      if (!form.kycDoc) e.kycDoc = 'Government ID / KYC Document is required';
-      if (!form.panTaxDoc) e.panTaxDoc = 'PAN / Applicable Tax Identification is required';
-    }
+    if (!form.kycDoc) e.kycDoc = 'Government ID / KYC Document is required';
+    if (!form.panTaxDoc) e.panTaxDoc = 'PAN / Applicable Tax Identification is required';
 
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -625,6 +633,10 @@ const InvestorSignup: React.FC = () => {
         kycDocName: form.kycDoc?.name || '',
         panTaxDocUrl: form.panTaxDoc?.url || '',
         panTaxDocName: form.panTaxDoc?.name || '',
+        addressProofUrl: form.addressProofDoc?.url || '',
+        addressProofName: form.addressProofDoc?.name || '',
+        investorProofUrl: form.investorProofDoc?.url || '',
+        investorProofName: form.investorProofDoc?.name || '',
         orgProofUrl: form.orgProofDoc?.url || '',
         orgProofName: form.orgProofDoc?.name || '',
         repProofUrl: form.repProofDoc?.url || '',
@@ -1070,38 +1082,7 @@ const InvestorSignup: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                {/* Organization / Firm Name (Optional) */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-1.5">
-                    Organization / Firm Name <span className="text-gray-400 font-normal text-xs">(Optional)</span>
-                  </label>
-                  <div className="relative">
-                    <Building2 size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="e.g. Nexus Capital India"
-                      value={form.companyName}
-                      onChange={e => update('companyName', e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-100 focus:border-[#7c3aed] rounded-xl text-sm font-medium bg-gray-50/50 hover:bg-white transition-all"
-                    />
-                  </div>
-                </div>
 
-                {/* Designation / Role (Optional) */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-1.5">
-                    Designation / Role <span className="text-gray-400 font-normal text-xs">(Optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Senior Partner / Angel Investor"
-                    value={form.designation}
-                    onChange={e => update('designation', e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-100 focus:border-[#7c3aed] rounded-xl text-sm font-medium bg-gray-50/50 hover:bg-white transition-all"
-                  />
-                </div>
-              </div>
 
               <div className="grid sm:grid-cols-2 gap-4">
                 {/* Location / Country * */}
@@ -1242,6 +1223,35 @@ const InvestorSignup: React.FC = () => {
                     );
                   })}
                 </div>
+                {form.preferredIndustries.includes('Other') && (
+                  <div className="mt-3.5 p-3.5 bg-purple-50/50 border border-purple-100 rounded-2xl animate-in fade-in">
+                    <label className="block text-xs font-bold text-[#7c3aed] mb-1.5 uppercase tracking-wider">
+                      Specify Custom Industry / Sector
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="e.g. BioTech, SpaceTech, Robotics"
+                        value={customIndustry}
+                        onChange={e => setCustomIndustry(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddCustomIndustry();
+                          }
+                        }}
+                        className="flex-1 px-3.5 py-2 border border-gray-200 rounded-xl text-xs bg-white font-medium focus:border-[#7c3aed] outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCustomIndustry}
+                        className="px-4 py-2 bg-[#7c3aed] text-white text-xs font-bold rounded-xl hover:bg-[#6d28d9] transition-all cursor-pointer"
+                      >
+                        Add Industry
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {errors.preferredIndustries && <p className="text-red-500 text-xs font-medium mt-2">{errors.preferredIndustries}</p>}
               </div>
 
@@ -1400,32 +1410,34 @@ const InvestorSignup: React.FC = () => {
             </div>
 
             <div className="space-y-5">
-              {/* Previous Investment Experience */}
+              {/* Previous Investment Experience * */}
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-1.5">
-                  Previous Investment Experience <span className="text-gray-400 font-normal text-xs">(Optional)</span>
+                  Previous Investment Experience <span className="text-[#d97706]">*</span>
                 </label>
                 <textarea
                   rows={3}
                   placeholder="5+ years investing in SaaS, AI and technology startups."
                   value={form.previousExperience}
                   onChange={e => update('previousExperience', e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-100 focus:border-[#7c3aed] rounded-xl text-sm font-medium bg-gray-50/50 hover:bg-white transition-all resize-none"
+                  className={`w-full px-4 py-3 border-2 ${errors.previousExperience ? 'border-red-300' : 'border-gray-100 focus:border-[#7c3aed]'} rounded-xl text-sm font-medium bg-gray-50/50 hover:bg-white transition-all resize-none`}
                 />
+                {errors.previousExperience && <p className="text-red-500 text-xs font-medium mt-1">{errors.previousExperience}</p>}
               </div>
 
-              {/* Number of Startups Invested In */}
+              {/* Number of Startups Invested In * */}
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-1.5">
-                  Number of Startups Invested In <span className="text-gray-400 font-normal text-xs">(Optional)</span>
+                  Number of Startups Invested In <span className="text-[#d97706]">*</span>
                 </label>
                 <input
                   type="number"
                   placeholder="e.g. 12"
                   value={form.startupsInvestedCount}
                   onChange={e => update('startupsInvestedCount', e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-100 focus:border-[#7c3aed] rounded-xl text-sm font-medium bg-gray-50/50 hover:bg-white transition-all"
+                  className={`w-full px-4 py-3 border-2 ${errors.startupsInvestedCount ? 'border-red-300' : 'border-gray-100 focus:border-[#7c3aed]'} rounded-xl text-sm font-medium bg-gray-50/50 hover:bg-white transition-all`}
                 />
+                {errors.startupsInvestedCount && <p className="text-red-500 text-xs font-medium mt-1">{errors.startupsInvestedCount}</p>}
               </div>
 
               {/* Portfolio Companies */}
@@ -1521,58 +1533,56 @@ const InvestorSignup: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {/* Dynamic docs based on category */}
-              {(form.investorCategory === 'Investment Firm / VC' || form.investorCategory === 'Corporate Investor') ? (
-                <>
-                  <DocumentUploadCard
-                    title={form.investorCategory === 'Corporate Investor' ? 'Organization / Company Proof' : 'Organization / Fund Proof'}
-                    required
-                    doc={form.orgProofDoc}
-                    onUpload={d => update('orgProofDoc', d)}
-                    onRemove={() => update('orgProofDoc', null)}
-                    error={errors.orgProofDoc}
-                  />
+              {/* Government ID / KYC Document * */}
+              <DocumentUploadCard
+                title="Government ID / KYC Document"
+                required
+                doc={form.kycDoc}
+                onUpload={d => update('kycDoc', d)}
+                onRemove={() => update('kycDoc', null)}
+                error={errors.kycDoc}
+              />
 
-                  <DocumentUploadCard
-                    title="Authorized Representative Proof"
-                    required
-                    doc={form.repProofDoc}
-                    onUpload={d => update('repProofDoc', d)}
-                    onRemove={() => update('repProofDoc', null)}
-                    error={errors.repProofDoc}
-                  />
+              {/* PAN / Applicable Tax Identification * */}
+              <DocumentUploadCard
+                title="PAN / Applicable Tax Identification"
+                required
+                doc={form.panTaxDoc}
+                onUpload={d => update('panTaxDoc', d)}
+                onRemove={() => update('panTaxDoc', null)}
+                error={errors.panTaxDoc}
+              />
 
-                  <DocumentUploadCard
-                    title="PAN / Applicable Tax Identification"
-                    doc={form.panTaxDoc}
-                    onUpload={d => update('panTaxDoc', d)}
-                    onRemove={() => update('panTaxDoc', null)}
-                    error={errors.panTaxDoc}
-                  />
-                </>
-              ) : (
-                <>
-                  <DocumentUploadCard
-                    title="Government ID / KYC Document"
-                    required
-                    doc={form.kycDoc}
-                    onUpload={d => update('kycDoc', d)}
-                    onRemove={() => update('kycDoc', null)}
-                    error={errors.kycDoc}
-                  />
+              {/* Address Proof */}
+              <DocumentUploadCard
+                title="Address Proof"
+                doc={form.addressProofDoc}
+                onUpload={d => update('addressProofDoc', d)}
+                onRemove={() => update('addressProofDoc', null)}
+                error={errors.addressProofDoc}
+              />
 
-                  <DocumentUploadCard
-                    title="PAN / Applicable Tax Identification"
-                    required
-                    doc={form.panTaxDoc}
-                    onUpload={d => update('panTaxDoc', d)}
-                    onRemove={() => update('panTaxDoc', null)}
-                    error={errors.panTaxDoc}
-                  />
-                </>
+              {/* Investor / Professional Supporting Document */}
+              <DocumentUploadCard
+                title="Investor / Professional Supporting Document"
+                doc={form.investorProofDoc}
+                onUpload={d => update('investorProofDoc', d)}
+                onRemove={() => update('investorProofDoc', null)}
+                error={errors.investorProofDoc}
+              />
+
+              {/* Company / Organization Documents (only if Firm / VC / Corporate) */}
+              {(form.investorCategory === 'Investment Firm / VC' || form.investorCategory === 'Corporate Investor') && (
+                <DocumentUploadCard
+                  title="Company / Organization Documents"
+                  doc={form.orgProofDoc}
+                  onUpload={d => update('orgProofDoc', d)}
+                  onRemove={() => update('orgProofDoc', null)}
+                  error={errors.orgProofDoc}
+                />
               )}
 
-              {/* Additional Supporting Document */}
+              {/* Additional Supporting Document (Optional) */}
               <DocumentUploadCard
                 title="Additional Supporting Document"
                 doc={form.supportingDoc}
