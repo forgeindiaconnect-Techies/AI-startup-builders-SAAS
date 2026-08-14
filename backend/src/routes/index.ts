@@ -40,10 +40,9 @@ router.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-// Placeholder routes for future implementation
-router.get('/investors', (_req: Request, res: Response) => {
-  res.json({ message: 'Investors endpoint - Coming soon' });
-});
+import { getApprovedInvestors } from '../controllers/investorController.js';
+
+router.get('/investors', getApprovedInvestors);
 
 router.get('/ai/analyze', (_req: Request, res: Response) => {
   res.json({ message: 'AI Analysis endpoint - Coming soon' });

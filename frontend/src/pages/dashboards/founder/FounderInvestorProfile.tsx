@@ -11,6 +11,8 @@ import {
   saveInvestmentRequest, getStartupVisibilityMap
 } from '../../../utils/investorModuleStorage';
 
+import { API_URL } from '../../../config/api';
+
 const FounderInvestorProfile: React.FC = () => {
   const { investorId } = useParams<{ investorId: string }>();
   const navigate = useNavigate();
@@ -47,13 +49,50 @@ const FounderInvestorProfile: React.FC = () => {
     }
     setVisibilityMap(getStartupVisibilityMap());
 
-    // 2. Load all investors
+    // 2. Load all investors (API + local fallback)
+    const approvedList: any[] = [];
+    const processedEmails = new Set<string>();
+
+    try {
+      const apiRes = await fetch(`${API_URL}/investors`);
+      if (apiRes.ok) {
+        const apiData = await apiRes.json();
+        if (apiData.success && Array.isArray(apiData.investors)) {
+          apiData.investors.forEach((u: any) => {
+            const emailKey = (u.email || '').trim().toLowerCase();
+            if (emailKey) processedEmails.add(emailKey);
+            approvedList.push({
+              id: u.id || u._id,
+              name: u.name || u.fullName || 'Approved Investor',
+              email: u.email,
+              companyName: u.companyName || u.organization || 'Independent Investor',
+              designation: u.designation || 'Angel Investor',
+              investorType: u.investorType || u.investorCategory || 'Angel Investor',
+              experienceYears: u.experienceYears || u.previousExperience || '5+ years',
+              location: u.location || 'India',
+              linkedinUrl: u.linkedinUrl || u.linkedin || '',
+              website: u.website || '',
+              bio: u.bio || 'Active investor supporting high-growth startups.',
+              preferredIndustries: Array.isArray(u.preferredIndustries) ? u.preferredIndustries : ['Artificial Intelligence', 'SaaS', 'FinTech'],
+              investmentStages: Array.isArray(u.investmentStages) ? u.investmentStages : ['Seed', 'Series A'],
+              investmentRange: u.investmentRange || '₹25 Lakhs – ₹1 Crore',
+              investmentFocus: u.investmentFocus || u.investmentThesis || 'Proprietary technology stack and strong market potential.',
+              portfolioCompanies: u.portfolioCompanies || '',
+              notableInvestments: u.notableInvestments || '',
+              areasOfExpertise: u.areasOfExpertise || '',
+              verificationStatus: 'APPROVED',
+              avatar: u.name ? u.name.charAt(0).toUpperCase() : 'I',
+            });
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch backend investors API:', err);
+    }
+
     const fetchedUsers = getAllUsers() || [];
     const storedApps = getInvestorApplications() || [];
     const storedLeads = getInvestorLeads() || [];
-
-    const approvedList: any[] = [];
-    const processedEmails = new Set<string>();
 
     fetchedUsers.forEach((u: any) => {
       const role = (u.role || '').toLowerCase();

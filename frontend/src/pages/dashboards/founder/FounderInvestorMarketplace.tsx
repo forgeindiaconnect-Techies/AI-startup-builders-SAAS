@@ -11,6 +11,8 @@ import {
   saveInvestmentRequest, getStartupVisibilityMap, setStartupInvestorVisibility
 } from '../../../utils/investorModuleStorage';
 
+import { API_URL } from '../../../config/api';
+
 const CATEGORIES = ['All', 'Individual Investor', 'Angel Investor', 'Family Office', 'Investment Firm / VC', 'Micro VC'];
 const INDUSTRIES = ['All', 'Artificial Intelligence', 'SaaS', 'FinTech', 'HealthTech', 'DeepTech', 'EdTech', 'E-commerce'];
 const STAGES = ['All', 'Pre-Seed', 'Seed', 'Series A', 'Series B+'];
@@ -59,13 +61,50 @@ const FounderInvestorMarketplace: React.FC = () => {
     }
     setVisibilityMap(getStartupVisibilityMap());
 
-    // 2. Fetch admin approved investors
+    // 2. Fetch admin approved investors (API + local storage fallback)
+    const approvedList: any[] = [];
+    const processedEmails = new Set<string>();
+
+    try {
+      const apiRes = await fetch(`${API_URL}/investors`);
+      if (apiRes.ok) {
+        const apiData = await apiRes.json();
+        if (apiData.success && Array.isArray(apiData.investors)) {
+          apiData.investors.forEach((u: any) => {
+            const emailKey = (u.email || '').trim().toLowerCase();
+            if (emailKey) processedEmails.add(emailKey);
+            approvedList.push({
+              id: u.id || u._id,
+              name: u.name || u.fullName || 'Approved Investor',
+              email: u.email,
+              companyName: u.companyName || u.organization || 'Independent Investor',
+              designation: u.designation || 'Angel Investor',
+              investorType: u.investorType || u.investorCategory || 'Angel Investor',
+              experienceYears: u.experienceYears || u.previousExperience || '5+ years',
+              location: u.location || 'India',
+              linkedinUrl: u.linkedinUrl || u.linkedin || '',
+              website: u.website || '',
+              bio: u.bio || 'Active investor supporting high-growth startups.',
+              preferredIndustries: Array.isArray(u.preferredIndustries) ? u.preferredIndustries : ['Artificial Intelligence', 'SaaS', 'FinTech'],
+              investmentStages: Array.isArray(u.investmentStages) ? u.investmentStages : ['Seed', 'Series A'],
+              investmentRange: u.investmentRange || '₹25 Lakhs – ₹1 Crore',
+              investmentFocus: u.investmentFocus || u.investmentThesis || 'Proprietary technology stack and strong market potential.',
+              portfolioCompanies: u.portfolioCompanies || '',
+              notableInvestments: u.notableInvestments || '',
+              areasOfExpertise: u.areasOfExpertise || '',
+              verificationStatus: 'APPROVED',
+              avatar: u.name ? u.name.charAt(0).toUpperCase() : 'I',
+            });
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch backend investors API:', err);
+    }
+
     const fetchedUsers = getAllUsers() || [];
     const storedApps = getInvestorApplications() || [];
     const storedLeads = getInvestorLeads() || [];
-
-    const approvedList: any[] = [];
-    const processedEmails = new Set<string>();
 
     // Process fetched DB users with investor role
     fetchedUsers.forEach((u: any) => {
