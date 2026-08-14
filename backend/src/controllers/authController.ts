@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import { User } from '../models/User.js';
 import { OTP } from '../models/OTP.js';
 import { Subscription } from '../models/Subscription.js';
@@ -175,8 +176,8 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
       });
     }
 
-    // Delete the used OTP (only if it was found in DB)
-    if (validOtp) {
+    // Delete the used OTP (only if it was found in DB and is a valid ObjectId)
+    if (validOtp && mongoose.Types.ObjectId.isValid(validOtp._id)) {
       await OTP.deleteOne({ _id: validOtp._id });
     }
 
