@@ -215,26 +215,31 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
     }
 
     // 2. Real-World Business Model Plagiarism Matching
+    const contentLower = trimmedContent.toLowerCase();
     const contentWords = cleanAndTokenize(trimmedContent).filter(w => !COMMON_BUSINESS_TERMS.has(w));
     const contentWordSet = new Set(contentWords);
 
     for (const model of REAL_WORLD_STARTUP_MODELS) {
       let matchedCount = 0;
+      const matchedTerms: string[] = [];
       for (const kw of model.keywords) {
-        if (contentWordSet.has(kw) || trimmedContent.toLowerCase().includes(kw)) {
+        if (contentWordSet.has(kw) || contentLower.includes(kw)) {
           matchedCount++;
+          matchedTerms.push(kw);
         }
       }
       const matchPct = Math.round((matchedCount / model.keywords.length) * 100);
-      if (matchPct >= 20) {
-        const calculatedSim = Math.min(90, Math.round(matchPct * 1.5));
+      if (matchedCount >= 2 || matchPct >= 12) {
+        const calculatedSim = Math.min(95, Math.max(30, Math.round(matchPct * 2.2 + matchedCount * 8)));
         if (calculatedSim > maxSimilarity) maxSimilarity = calculatedSim;
         if (calculatedSim > highestConceptSimilarity) highestConceptSimilarity = calculatedSim;
+
+        const matchedSnippetText = `Concept shares key operational features with ${model.title.split(' (e.g.')[0]} (${matchedCount} core domain terms matched: ${matchedTerms.slice(0, 6).join(', ')}).`;
 
         matchingSources.push({
           title: `Existing Market Business Model: ${model.title}`,
           similarityPercentage: calculatedSim,
-          matchingSnippet: `Concept shares key operational features with ${model.title} (${matchedCount} core domain terms matched).`,
+          matchingSnippet: `"${matchedSnippetText}"`,
           explanation: `High feature overlap with existing commercial solution in ${model.category}.`,
           sourceUrl: model.sourceUrl,
           domain: model.domain,

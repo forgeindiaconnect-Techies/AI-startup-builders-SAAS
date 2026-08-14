@@ -161,8 +161,8 @@ export const checkPlagiarism = async (req: Request, res: Response) => {
         }
       }
       const matchPct = Math.round((matchedCount / model.keywords.length) * 100);
-      if (matchPct >= 20 || matchedCount >= 3) {
-        const calculatedSim = Math.min(90, Math.max(30, Math.round(matchPct * 1.6)));
+      if (matchPct >= 12 || matchedCount >= 2) {
+        const calculatedSim = Math.min(95, Math.max(30, Math.round(matchPct * 2.2 + matchedCount * 8)));
         if (calculatedSim > maxWebSimilarity) maxWebSimilarity = calculatedSim;
 
         matches.push({
