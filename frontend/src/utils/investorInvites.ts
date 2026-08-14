@@ -198,10 +198,7 @@ export const INITIAL_INVESTOR_APPLICATIONS = [
 export const getInvestorApplications = (): any[] => {
   try {
     const stored = localStorage.getItem('ai_startup_builder_investor_apps');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
+    if (stored) return JSON.parse(stored);
   } catch {}
   localStorage.setItem('ai_startup_builder_investor_apps', JSON.stringify(INITIAL_INVESTOR_APPLICATIONS));
   return INITIAL_INVESTOR_APPLICATIONS;

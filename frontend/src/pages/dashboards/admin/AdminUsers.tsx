@@ -340,12 +340,16 @@ const AdminUsers: React.FC = () => {
      (u.fullName || '').toLowerCase().includes(search.toLowerCase()))
   );
 
-  const handleDeleteUser = (id: string, name: string) => {
+  const handleDeleteUser = (id: string, name: string, email?: string) => {
     if (window.confirm(`Are you sure you want to permanently delete ${name}?`)) {
       deleteUser(id);
       deleteInvestorLead(id);
       const storedApps = JSON.parse(localStorage.getItem('ai_startup_builder_investor_apps') || '[]');
-      const updatedApps = storedApps.filter((a: any) => a.id !== id && a.email?.toLowerCase() !== name.toLowerCase());
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const updatedApps = storedApps.filter((a: any) => {
+        const appEmail = (a.email || '').trim().toLowerCase();
+        return a.id !== id && (!cleanEmail || appEmail !== cleanEmail);
+      });
       localStorage.setItem('ai_startup_builder_investor_apps', JSON.stringify(updatedApps));
 
       if (selectedUser?.id === id) setSelectedUser(null);
@@ -802,7 +806,7 @@ const AdminUsers: React.FC = () => {
                       )}
                       {!isSelf(u) && (
                         <button
-                          onClick={() => handleDeleteUser(u.id, u.name || u.fullName)}
+                          onClick={() => handleDeleteUser(u.id, u.name || u.fullName, u.email)}
                           className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
                           title="Delete User"
                         >
@@ -1252,7 +1256,7 @@ const AdminUsers: React.FC = () => {
               <div className="flex flex-wrap items-center gap-2">
                 {!isSelf(selectedUser) && (
                   <button
-                    onClick={() => { handleDeleteUser(selectedUser.id, selectedUser.name || selectedUser.fullName); setSelectedUser(null); }}
+                    onClick={() => { handleDeleteUser(selectedUser.id, selectedUser.name || selectedUser.fullName, selectedUser.email); setSelectedUser(null); }}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-colors shadow-sm inline-flex items-center gap-1.5"
                   >
                     <Trash2 size={14} /> Delete User

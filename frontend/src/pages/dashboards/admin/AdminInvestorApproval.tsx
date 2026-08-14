@@ -244,7 +244,7 @@ const AdminInvestorApproval: React.FC = () => {
     const existingEmails = new Set<string>();
     const mergedApps: InvestorApplication[] = [];
 
-    for (const app of [...loadedApps, ...backendInvestors, ...INITIAL_INVESTOR_APPLICATIONS]) {
+    for (const app of [...loadedApps, ...backendInvestors]) {
       if (app.email && !existingEmails.has(app.email.toLowerCase())) {
         existingEmails.add(app.email.toLowerCase());
         mergedApps.push(app);
@@ -447,7 +447,7 @@ const AdminInvestorApproval: React.FC = () => {
   const handleDeleteApp = async (app: InvestorApplication) => {
     if (!window.confirm(`Are you sure you want to delete investor application for ${app.fullName} (${app.email})?`)) return;
 
-    const updated = applications.filter(a => a.id !== app.id);
+    const updated = applications.filter(a => a.id !== app.id && a.email?.toLowerCase() !== app.email?.toLowerCase());
     handleSaveApplications(updated);
 
     try {
