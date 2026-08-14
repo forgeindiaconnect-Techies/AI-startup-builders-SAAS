@@ -253,15 +253,55 @@ const AdminInvestorApproval: React.FC = () => {
 
     setApplications(mergedApps);
 
-    // 3. Load Invited Leads
-    const leads = getInvestorLeads();
-    setInvitedLeads(leads);
+    // 3. Load Invited Leads (from localStorage + backend API)
+    const localLeads = getInvestorLeads();
+    setInvitedLeads(localLeads);
+
+    try {
+      fetch(`${API_URL}/invites`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.investorInvites)) {
+            const backendLeads: InvestorInviteLead[] = data.investorInvites.map((inv: any) => ({
+              id: inv.id,
+              fullName: inv.fullName,
+              email: inv.email,
+              phone: inv.phone || '',
+              companyName: inv.companyName || '',
+              designation: inv.designation || '',
+              investorType: inv.investorType || 'Angel Investor',
+              linkedinUrl: inv.linkedinUrl || '',
+              website: inv.website || '',
+              location: inv.location || '',
+              interestedIndustries: inv.interestedIndustries || [],
+              investmentStage: inv.investmentStage || [],
+              investmentRange: inv.investmentRange || '',
+              adminNotes: inv.adminNotes || '',
+              invitationToken: inv.invitationToken || '',
+              inviteUrl: inv.inviteUrl || '',
+              status: inv.status || 'INVITED',
+              createdAt: inv.createdAt || new Date().toISOString(),
+              expiryDate: inv.expiryDate || '',
+            }));
+
+            const mergedMap = new Map<string, InvestorInviteLead>();
+            [...backendLeads, ...localLeads].forEach(l => {
+              if (l.email && !mergedMap.has(l.email.toLowerCase())) {
+                mergedMap.set(l.email.toLowerCase(), l);
+              }
+            });
+            const finalLeads = Array.from(mergedMap.values());
+            setInvitedLeads(finalLeads);
+          }
+        })
+        .catch(() => {});
+    } catch {}
 
     // Auto-select tab if pending is 0 and invited leads exist
     const pendingCount = mergedApps.filter(a => a.status === 'PENDING_VERIFICATION').length;
     if (pendingCount > 0) {
       setActiveTab('pending');
-    } else if (leads.length > 0) {
+    } else if (localLeads.length > 0) {
       setActiveTab('invited');
     }
   };

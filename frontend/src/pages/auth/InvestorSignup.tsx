@@ -402,35 +402,92 @@ const InvestorSignup: React.FC = () => {
 
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto pre-fill name, email, and linkedinUrl from invitation link
+  // Auto pre-fill all investor details from invitation link or API
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('invitationToken') || params.get('token');
     const nameParam = params.get('fullName') || params.get('name');
     const emailParam = params.get('email');
     const linkedinParam = params.get('linkedinUrl') || params.get('linkedin');
+    const phoneParam = params.get('mobile') || params.get('phone');
+    const companyParam = params.get('companyName') || params.get('company');
+    const designationParam = params.get('designation') || params.get('role');
+    const typeParam = params.get('investorType') || params.get('investorCategory') || params.get('type');
+    const locationParam = params.get('location');
+    const websiteParam = params.get('website');
+    const rangeParam = params.get('investmentRange');
+    const industriesParam = params.get('interestedIndustries') || params.get('preferredIndustries');
+    const stagesParam = params.get('investmentStage') || params.get('investmentStages');
 
     let name = nameParam || '';
     let email = emailParam || '';
     let linkedin = linkedinParam || '';
+    let mobile = phoneParam || '';
+    let companyName = companyParam || '';
+    let designation = designationParam || '';
+    let investorCategory = typeParam || '';
+    let location = locationParam || '';
+    let website = websiteParam || '';
+    let investmentRange = rangeParam || '';
+    let preferredIndustries: string[] = industriesParam ? industriesParam.split(',').filter(Boolean) : [];
+    let investmentStages: string[] = stagesParam ? stagesParam.split(',').filter(Boolean) : [];
 
-    if (token) {
-      const lead = getLeadByToken(token);
-      if (lead) {
-        if (lead.fullName) name = lead.fullName;
-        if (lead.email) email = lead.email;
-        if (lead.linkedinUrl) linkedin = lead.linkedinUrl;
+    const applyLeadData = (leadData: any) => {
+      if (leadData) {
+        if (leadData.fullName && !name) name = leadData.fullName;
+        if (leadData.email && !email) email = leadData.email;
+        if (leadData.linkedinUrl && !linkedin) linkedin = leadData.linkedinUrl;
+        if (leadData.phone && !mobile) mobile = leadData.phone;
+        if (leadData.companyName && !companyName) companyName = leadData.companyName;
+        if (leadData.designation && !designation) designation = leadData.designation;
+        if (leadData.investorType && !investorCategory) investorCategory = leadData.investorType;
+        if (leadData.location && !location) location = leadData.location;
+        if (leadData.website && !website) website = leadData.website;
+        if (leadData.investmentRange && !investmentRange) investmentRange = leadData.investmentRange;
+        if (Array.isArray(leadData.interestedIndustries) && leadData.interestedIndustries.length > 0 && preferredIndustries.length === 0) {
+          preferredIndustries = leadData.interestedIndustries;
+        }
+        if (Array.isArray(leadData.investmentStage) && leadData.investmentStage.length > 0 && investmentStages.length === 0) {
+          investmentStages = leadData.investmentStage;
+        }
       }
-    }
 
-    if (name || email || linkedin || token) {
       setIsInvited(true);
       setForm(prev => ({
         ...prev,
         fullName: name || prev.fullName,
         email: email || prev.email,
+        mobile: mobile || prev.mobile,
         linkedin: linkedin || prev.linkedin,
+        companyName: companyName || prev.companyName,
+        designation: designation || prev.designation,
+        investorCategory: investorCategory || prev.investorCategory,
+        location: location || prev.location,
+        website: website || prev.website,
+        investmentRange: investmentRange || prev.investmentRange,
+        preferredIndustries: preferredIndustries.length > 0 ? preferredIndustries : prev.preferredIndustries,
+        investmentStages: investmentStages.length > 0 ? investmentStages : prev.investmentStages,
       }));
+    };
+
+    if (token) {
+      const localLead = getLeadByToken(token);
+      if (localLead) {
+        applyLeadData(localLead);
+      } else {
+        fetch(`${API_URL}/invites/${token}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.invite) {
+              applyLeadData(data.invite);
+            } else {
+              applyLeadData(null);
+            }
+          })
+          .catch(() => applyLeadData(null));
+      }
+    } else if (name || email || linkedin || companyName || location) {
+      applyLeadData(null);
     }
   }, []);
 
