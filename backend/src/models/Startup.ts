@@ -18,8 +18,8 @@ export interface IStartup extends Document {
     financialPlan?: any;
     gtmStrategy?: any;
   };
-  logo?: any;
   isSavedToMyStartups: boolean;
+  investorVisible?: boolean;
   mentorFeedback?: string;
   mentorReview?: any;
   createdAt: Date;
@@ -64,6 +64,10 @@ const StartupSchema: Schema = new Schema(
       default: null,
     },
     isSavedToMyStartups: {
+      type: Boolean,
+      default: false,
+    },
+    investorVisible: {
       type: Boolean,
       default: false,
     },

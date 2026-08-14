@@ -1,3 +1,5 @@
+import { API_URL } from '../config/api';
+
 export interface InvestmentRequest {
   id: string;
   founderId: string;
@@ -351,6 +353,29 @@ export const setStartupInvestorVisibility = (startupId: string, isVisible: boole
   const map = getStartupVisibilityMap();
   map[startupId] = isVisible;
   localStorage.setItem(STORAGE_KEYS.VISIBILITY, JSON.stringify(map));
+
+  // Sync with local storage startup item if available
+  try {
+    const sKey = startupId.startsWith('startup_') ? startupId : `startup_${startupId}`;
+    const raw = localStorage.getItem(sKey) || localStorage.getItem(startupId);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      parsed.investorVisible = isVisible;
+      parsed.isInvestorVisible = isVisible;
+      localStorage.setItem(sKey, JSON.stringify(parsed));
+    }
+  } catch {}
+
+  // Sync to backend MongoDB if valid ObjectId
+  const cleanId = startupId.replace(/^startup_/, '');
+  if (cleanId && cleanId.match(/^[0-9a-fA-F]{24}$/)) {
+    fetch(`${API_URL}/startups/${cleanId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ investorVisible: isVisible }),
+    }).catch(err => console.warn('Could not sync startup visibility to backend:', err));
+  }
+
   window.dispatchEvent(new Event('storage'));
   window.dispatchEvent(new Event('startup_visibility_updated'));
 };

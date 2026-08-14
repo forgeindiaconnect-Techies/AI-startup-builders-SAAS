@@ -4,6 +4,8 @@ import { Search, Cpu, ArrowRight, Bookmark, Target, X, Briefcase, ArrowLeft, Ind
 import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDetailsTabs';
 import { useAuth } from '../../../context/AuthContext';
 import { useFunding } from '../../../context/FundingContext';
+import { API_URL } from '../../../config/api';
+import { getStartupVisibilityMap } from '../../../utils/investorModuleStorage';
 
 const InvestorMarketplace: React.FC = () => {
   const { user } = useAuth();
@@ -60,18 +62,64 @@ const InvestorMarketplace: React.FC = () => {
     investorMessage: ''
   });
 
-  React.useEffect(() => {
+  const loadVisibleStartups = async () => {
+    const visibilityMap = getStartupVisibilityMap();
+    const allStartupsMap = new Map<string, any>();
+
+    // 1. Fetch from backend API
+    try {
+      const apiRes = await fetch(`${API_URL}/startups`);
+      if (apiRes.ok) {
+        const apiData = await apiRes.json();
+        if (apiData.success && Array.isArray(apiData.data)) {
+          apiData.data.forEach((s: any) => {
+            const sId = s.id || s._id || s.startupId;
+            if (sId) allStartupsMap.set(String(sId), s);
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch backend startups for investor marketplace:', err);
+    }
+
+    // 2. Fetch from localStorage
     const keys = Object.keys(localStorage);
-    const locals: any[] = [];
     keys.forEach(key => {
       if (key.startsWith('startup_')) {
         try {
-          locals.push(JSON.parse(localStorage.getItem(key) || ''));
+          const item = JSON.parse(localStorage.getItem(key) || '');
+          if (item) {
+            const sId = item.id || item.startupId || key;
+            if (sId && !allStartupsMap.has(String(sId))) {
+              allStartupsMap.set(String(sId), item);
+            }
+          }
         } catch (e) {}
       }
     });
-    locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    setStartups(locals);
+
+    const combined = Array.from(allStartupsMap.values());
+
+    // 3. Filter ONLY startups where Investor Visibility is ON
+    const visibleOnly = combined.filter(s => {
+      const sId = String(s.id || s._id || s.startupId || '');
+      const isVisibleInObj = s.investorVisible === true || s.isInvestorVisible === true;
+      const isVisibleInMap = !!visibilityMap[sId] || !!visibilityMap[`startup_${sId}`] || !!visibilityMap[sId.replace(/^startup_/, '')];
+      return isVisibleInObj || isVisibleInMap;
+    });
+
+    visibleOnly.sort((a, b) => new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime());
+    setStartups(visibleOnly);
+  };
+
+  React.useEffect(() => {
+    loadVisibleStartups();
+    window.addEventListener('storage', loadVisibleStartups);
+    window.addEventListener('startup_visibility_updated', loadVisibleStartups);
+    return () => {
+      window.removeEventListener('storage', loadVisibleStartups);
+      window.removeEventListener('startup_visibility_updated', loadVisibleStartups);
+    };
   }, []);
 
   const handleSendOffer = () => {

@@ -499,10 +499,13 @@ export const getStartup = async (req: Request, res: Response) => {
 
 export const getAllStartups = async (req: Request, res: Response) => {
   try {
-    // Optionally filter by founderId if passed in query
+    // Filter by founderId or investorVisible if passed in query
     const filter: any = {};
     if (req.query.founderId) {
       filter.founderId = req.query.founderId;
+    }
+    if (req.query.investorVisible === 'true' || req.query.public === 'true') {
+      filter.investorVisible = true;
     }
     const startups = await Startup.find(filter).sort({ createdAt: -1 });
     res.status(200).json({ success: true, data: startups });
