@@ -3,6 +3,7 @@ import { Search, Eye, Trash2, Download, X, AlertCircle, CheckCircle, ChevronDown
 import { useAuth } from '../../../context/AuthContext';
 import { getMentorProfile, updateMentorProfileAdmin } from '../../../utils/mentorApi';
 import { getInvestorLeads, deleteInvestorLead, getInvestorApplications } from '../../../utils/investorInvites';
+import { API_URL } from '../../../config/api';
 
 const WEEKDAYS: { label: string; value: number }[] = [
   { label: 'Mon', value: 1 },
@@ -276,65 +277,46 @@ const AdminUsers: React.FC = () => {
         };
       });
 
-    // 3. Merge invited investor leads (localStorage + backend API) not in fetched or localInvestors
-    let allLeads = [...storedLeads];
+    // 3. Merge invited investor leads not in fetched or localInvestors
+    const localInvited = storedLeads
+      .filter((lead: any) => lead.email && !processedEmails.has(lead.email.toLowerCase()))
+      .map((lead: any) => {
+        const emailKey = lead.email.trim().toLowerCase();
+        processedEmails.add(emailKey);
+        const userOverride = overrides[emailKey] || {};
 
-    const initialUsersList = [...enrichedFetched, ...localInvestors];
+        const defaultLeadStatus = lead.status === 'ACCEPTED' ? 'approved' : 'pending';
 
-    const mapLeadToUser = (lead: any) => {
-      const emailKey = (lead.email || '').trim().toLowerCase();
-      if (!emailKey || processedEmails.has(emailKey)) return null;
-      processedEmails.add(emailKey);
-      const userOverride = overrides[emailKey] || {};
+        return {
+          id: lead.id,
+          name: lead.fullName,
+          fullName: lead.fullName,
+          email: lead.email,
+          role: 'investor',
+          status: userOverride.status || (lead.status === 'ACCEPTED' ? 'active' : 'inactive'),
+          approvalStatus: userOverride.approvalStatus || defaultLeadStatus,
+          isInvitedLead: true,
+          inviteStatus: lead.status || 'INVITED',
+          signupDate: lead.createdAt || new Date().toISOString(),
+          lastLoginAt: null,
+          loginCount: 0,
+          mobile: lead.phone || '',
+          location: lead.location || '',
+          companyName: lead.companyName || '',
+          designation: lead.designation || '',
+          investorType: lead.investorType || 'Angel Investor',
+          experienceYears: lead.experienceYears || '',
+          linkedin: lead.linkedinUrl || '',
+          website: lead.website || '',
+          bio: lead.adminNotes || '',
+          investmentRange: lead.investmentRange || '',
+          preferredIndustries: lead.interestedIndustries || [],
+          investmentStages: lead.investmentStage || [],
+          inviteUrl: lead.inviteUrl || '',
+        };
+      });
 
-      const defaultLeadStatus = lead.status === 'ACCEPTED' ? 'approved' : 'pending';
-
-      return {
-        id: lead.id || `inv_lead_${emailKey}`,
-        name: lead.fullName,
-        fullName: lead.fullName,
-        email: lead.email,
-        role: 'investor',
-        status: userOverride.status || (lead.status === 'ACCEPTED' ? 'active' : 'inactive'),
-        approvalStatus: userOverride.approvalStatus || defaultLeadStatus,
-        isInvitedLead: true,
-        inviteStatus: lead.status || 'INVITED',
-        signupDate: lead.createdAt || new Date().toISOString(),
-        lastLoginAt: null,
-        loginCount: 0,
-        mobile: lead.phone || '',
-        location: lead.location || '',
-        companyName: lead.companyName || '',
-        designation: lead.designation || '',
-        investorType: lead.investorType || 'Angel Investor',
-        experienceYears: lead.experienceYears || '',
-        linkedin: lead.linkedinUrl || '',
-        website: lead.website || '',
-        bio: lead.adminNotes || '',
-        investmentRange: lead.investmentRange || '',
-        preferredIndustries: lead.interestedIndustries || [],
-        investmentStages: lead.investmentStage || [],
-        inviteUrl: lead.inviteUrl || '',
-      };
-    };
-
-    const localInvited = allLeads.map(mapLeadToUser).filter(Boolean);
-    setUsersList([...initialUsersList, ...localInvited]);
-
-    // Async fetch backend invites to ensure remote invited leads (like Madhu) appear in Manage Users table
-    try {
-      fetch(`${API_URL}/invites`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success && Array.isArray(data.investorInvites)) {
-            const backendInvited = data.investorInvites.map(mapLeadToUser).filter(Boolean);
-            if (backendInvited.length > 0) {
-              setUsersList(prev => [...prev, ...backendInvited]);
-            }
-          }
-        })
-        .catch(() => {});
-    } catch {}
+    setUsersList([...enrichedFetched, ...localInvestors, ...localInvited]);
   };
 
   useEffect(() => {
