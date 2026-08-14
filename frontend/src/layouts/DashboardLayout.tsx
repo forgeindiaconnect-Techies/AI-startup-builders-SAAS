@@ -28,6 +28,7 @@ import SharedNotifications from '../pages/dashboards/founder/FounderNotification
 import SharedInbox from '../pages/dashboards/founder/SharedInbox';
 
 // Founder Investor Module Components
+import FounderInvestorHub from '../pages/dashboards/founder/FounderInvestorHub';
 import FounderInvestorMarketplace from '../pages/dashboards/founder/FounderInvestorMarketplace';
 import FounderInvestmentRequests from '../pages/dashboards/founder/FounderInvestmentRequests';
 import FounderInvestorMessages from '../pages/dashboards/founder/FounderInvestorMessages';
@@ -77,21 +78,21 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/founder/plagiarism': FounderOriginalityCheck,
     '/dashboard/founder/mentors': FounderMentors,
     '/dashboard/founder/mentor-reviews': FounderMentorReviews,
-    '/dashboard/founder/investors': FounderInvestorMarketplace,
+    '/dashboard/founder/investors': FounderInvestorHub,
     '/dashboard/founder/investors/:investorId': FounderInvestorProfile,
-    '/dashboard/founder/investment-requests': FounderInvestmentRequests,
-    '/dashboard/founder/messages': FounderInvestorMessages,
-    '/dashboard/founder/meetings': FounderInvestorMeetings,
-    '/dashboard/founder/funding-transactions': FounderFundingTransactions,
-    '/dashboard/founder/funding': FounderFundingTransactions,
+    '/dashboard/founder/investment-requests': FounderInvestorHub,
+    '/dashboard/founder/messages': FounderInvestorHub,
+    '/dashboard/founder/meetings': FounderInvestorHub,
+    '/dashboard/founder/funding-transactions': FounderInvestorHub,
+    '/dashboard/founder/funding': FounderInvestorHub,
 
-    '/founder/investors': FounderInvestorMarketplace,
+    '/founder/investors': FounderInvestorHub,
     '/founder/investors/:investorId': FounderInvestorProfile,
-    '/founder/investment-requests': FounderInvestmentRequests,
-    '/founder/messages': FounderInvestorMessages,
-    '/founder/meetings': FounderInvestorMeetings,
-    '/founder/funding-transactions': FounderFundingTransactions,
-    '/founder/funding': FounderFundingTransactions,
+    '/founder/investment-requests': FounderInvestorHub,
+    '/founder/messages': FounderInvestorHub,
+    '/founder/meetings': FounderInvestorHub,
+    '/founder/funding-transactions': FounderInvestorHub,
+    '/founder/funding': FounderInvestorHub,
     '/dashboard/founder/billing': FounderBilling,
     '/dashboard/founder/documents': FounderDocuments,
     '/dashboard/founder/data-room': FounderDataRoom,
