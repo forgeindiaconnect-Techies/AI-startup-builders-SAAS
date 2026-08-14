@@ -302,18 +302,20 @@ const SidebarInner: React.FC<{
                     key={item.path}
                     onClick={() => { onNavigate(item.path); onLinkClick(); }}
                     title={isCollapsed ? item.name : undefined}
-                    className={`relative group flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                    className={`relative group flex items-center gap-3 w-full px-3.5 py-3 rounded-2xl text-sm font-bold transition-all duration-200 ${
                       isActive
-                        ? 'bg-gradient-to-r from-[#4C1D95] to-[#6D28D9] text-white shadow-lg shadow-purple-900/30'
+                        ? 'bg-[#6C4CF1] text-white shadow-lg shadow-purple-900/40'
                         : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
                     } ${isCollapsed ? 'justify-center' : ''}`}
                   >
+                    {isActive && (
+                      <span className="absolute -left-1 top-2.5 bottom-2.5 w-1.5 rounded-r-full bg-[#FBBF24] shadow-sm" />
+                    )}
                     <item.icon
-                      size={17}
-                      className={`flex-shrink-0 transition-colors ${isActive ? 'text-[#FBBF24]' : 'text-gray-500 group-hover:text-gray-300'}`}
+                      size={18}
+                      className={`flex-shrink-0 transition-colors ${isActive ? 'text-[#FBBF24]' : 'text-gray-400 group-hover:text-gray-200'}`}
                     />
-                    {!isCollapsed && <span className="truncate text-[13px]">{item.name}</span>}
-                    {isActive && <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full bg-[#FBBF24]" />}
+                    {!isCollapsed && <span className="truncate text-[13px] font-bold tracking-wide">{item.name}</span>}
                     {isCollapsed && (
                       <span className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1f2e] border border-white/10 text-white text-xs font-semibold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">
                         {item.name}
