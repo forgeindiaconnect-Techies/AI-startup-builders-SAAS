@@ -380,6 +380,7 @@ const InvestorSignup: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [customCategory, setCustomCategory] = useState('');
 
   // OTP state
   const [otpSent, setOtpSent] = useState(false);
@@ -524,8 +525,18 @@ const InvestorSignup: React.FC = () => {
   // ── Step 2 Validation ───────────────────────────────────────────────────────
   const validateStep2 = () => {
     const e: Record<string, string> = {};
+    if (!form.investorCategory) {
+      e.investorCategory = 'Investor Category is required';
+    } else if (form.investorCategory === 'Other' && !customCategory.trim()) {
+      e.customCategory = 'Please specify your investor category';
+    }
     if (!form.experienceYears) e.experienceYears = 'Investment experience is required';
     if (!form.location.trim()) e.location = 'Location / Country is required';
+    if (!form.bio.trim()) {
+      e.bio = 'Short Investor Bio is required';
+    } else if (form.bio.trim().length < 50) {
+      e.bio = 'Short bio must be at least 50 characters';
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -589,8 +600,8 @@ const InvestorSignup: React.FC = () => {
         role: 'investor',
         otp: code,
         location: form.location.trim(),
-        investorType: form.investorCategory || 'Individual Investor',
-        investorCategory: form.investorCategory || 'Individual Investor',
+        investorType: form.investorCategory === 'Other' ? customCategory.trim() : form.investorCategory || 'Individual Investor',
+        investorCategory: form.investorCategory === 'Other' ? customCategory.trim() : form.investorCategory || 'Individual Investor',
         companyName: form.companyName.trim(),
         designation: form.designation.trim(),
         experienceYears: form.experienceYears,
@@ -1003,21 +1014,41 @@ const InvestorSignup: React.FC = () => {
 
             <div className="space-y-5">
               <div className="grid sm:grid-cols-2 gap-4">
-                {/* Investor Category (Optional) */}
+                {/* Investor Category * */}
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-1.5">
-                    Investor Category <span className="text-gray-400 font-normal text-xs">(Optional)</span>
+                    Investor Category <span className="text-[#d97706]">*</span>
                   </label>
                   <select
                     value={form.investorCategory}
                     onChange={e => update('investorCategory', e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-100 focus:border-[#7c3aed] rounded-xl text-sm font-medium bg-gray-50/50 hover:bg-white transition-all"
+                    className={`w-full px-4 py-3 border-2 ${errors.investorCategory ? 'border-red-300' : 'border-gray-100 focus:border-[#7c3aed]'} rounded-xl text-sm font-medium bg-gray-50/50 hover:bg-white transition-all`}
                   >
                     <option value="">Select Investor Category</option>
                     {INVESTOR_CATEGORIES.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
+                  {errors.investorCategory && <p className="text-red-500 text-xs font-medium mt-1">{errors.investorCategory}</p>}
+
+                  {form.investorCategory === 'Other' && (
+                    <div className="mt-3.5 animate-in slide-in-from-top-2 duration-200">
+                      <label className="block text-xs font-bold text-[#7c3aed] mb-1.5 uppercase tracking-wider">
+                        Specify Category <span className="text-[#d97706]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Venture Debt / Syndicate"
+                        value={customCategory}
+                        onChange={e => {
+                          setCustomCategory(e.target.value);
+                          if (errors.customCategory) setErrors(prev => ({ ...prev, customCategory: '' }));
+                        }}
+                        className={`w-full px-4 py-3 border-2 ${errors.customCategory ? 'border-red-300' : 'border-gray-100 focus:border-[#7c3aed]'} rounded-xl text-sm font-medium bg-gray-50/50 hover:bg-white transition-all`}
+                      />
+                      {errors.customCategory && <p className="text-red-500 text-xs font-medium mt-1">{errors.customCategory}</p>}
+                    </div>
+                  )}
                 </div>
 
                 {/* Investment Experience * */}
@@ -1126,11 +1157,11 @@ const InvestorSignup: React.FC = () => {
                 </div>
               </div>
 
-              {/* Short Investor Bio (Optional) */}
+              {/* Short Investor Bio * */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-sm font-bold text-gray-900">
-                    Short Investor Bio <span className="text-gray-400 font-normal text-xs">(Optional)</span>
+                    Short Investor Bio <span className="text-[#d97706]">*</span>
                   </label>
                   <span className={`text-xs font-bold ${form.bio.length > 0 ? 'text-[#7c3aed]' : 'text-gray-400'}`}>
                     {form.bio.length}/500 chars
@@ -1142,8 +1173,9 @@ const InvestorSignup: React.FC = () => {
                   placeholder="Share a short bio (300-500 characters)..."
                   value={form.bio}
                   onChange={e => update('bio', e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-100 focus:border-[#7c3aed] rounded-xl text-sm font-medium bg-gray-50/50 hover:bg-white transition-all resize-none"
+                  className={`w-full px-4 py-3 border-2 ${errors.bio ? 'border-red-300' : 'border-gray-100 focus:border-[#7c3aed]'} rounded-xl text-sm font-medium bg-gray-50/50 hover:bg-white transition-all resize-none`}
                 />
+                {errors.bio && <p className="text-red-500 text-xs font-medium mt-1">{errors.bio}</p>}
               </div>
             </div>
 
@@ -1608,7 +1640,7 @@ const InvestorSignup: React.FC = () => {
                   </button>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                  <div><span className="text-gray-500 font-medium">Category:</span> <strong className="text-gray-900 block">{form.investorCategory || 'Not Specified'}</strong></div>
+                  <div><span className="text-gray-500 font-medium">Category:</span> <strong className="text-gray-900 block">{(form.investorCategory === 'Other' ? customCategory : form.investorCategory) || 'Not Specified'}</strong></div>
                   <div><span className="text-gray-500 font-medium">Experience:</span> <strong className="text-gray-900 block">{form.experienceYears}</strong></div>
                   <div><span className="text-gray-500 font-medium">Organization:</span> <strong className="text-gray-900 block">{form.companyName || 'N/A'}</strong></div>
                   <div><span className="text-gray-500 font-medium">Location:</span> <strong className="text-gray-900 block">{form.location}</strong></div>
