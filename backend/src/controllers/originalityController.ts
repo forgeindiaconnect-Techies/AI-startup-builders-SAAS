@@ -12,27 +12,78 @@ const COMMON_BUSINESS_TERMS = new Set([
   'work', 'place', 'location', 'desk', 'internet', 'wifi', 'computer', 'laptop', 'coffee', 'tea'
 ]);
 
-// AI stylistic markers
-const AI_MARKERS = [
-  "in today's fast-paced world",
-  "in the digital age",
-  "it is worth noting",
-  "furthermore",
-  "in conclusion",
-  "tapestry",
-  "testament",
-  "seamlessly",
-  "beacon",
-  "game-changer",
-  "paradigm shift",
-  "delve into",
-  "crucial role",
-  "pave the way",
-  "realm of",
-  "leverage the power",
-  "cutting-edge",
-  "holistic approach",
-  "foster a culture"
+// AI stylistic markers for ChatGPT, Gemini, and Claude
+const CHATGPT_MARKERS = [
+  "in today's fast-paced world", "in today's fast-paced digital landscape", "in the digital age",
+  "it is worth noting", "furthermore", "in conclusion", "tapestry", "testament",
+  "seamlessly", "beacon", "game-changer", "paradigm shift", "delve into", "crucial role",
+  "pave the way", "realm of", "leverage the power", "cutting-edge", "holistic approach",
+  "foster a culture", "spearhead", "unwavering commitment", "synergy", "pivotal role"
+];
+
+const GEMINI_MARKERS = [
+  "here's a breakdown", "here is a comprehensive breakdown", "key takeaways",
+  "tapestry of innovation", "in essence", "holistic framework", "it is essential to note",
+  "broadly speaking", "let's dive into", "foundational pillar", "nuanced ecosystem"
+];
+
+const CLAUDE_MARKERS = [
+  "i would structure this concept by", "in analyzing this startup idea", "considerations for implementation",
+  "nuanced approach", "strategic imperative", "valuable perspective", "thoughtful approach"
+];
+
+// Pre-defined real world business models & popular startup concepts
+const REAL_WORLD_STARTUP_MODELS = [
+  {
+    title: 'On-Demand Rideshare & Mobility (e.g., Uber / Lyft)',
+    keywords: ['cab', 'taxi', 'ride', 'driver', 'passenger', 'on-demand', 'fare', 'trip', 'gps', 'fleet', 'mobility', 'rideshare'],
+    category: 'Logistics / Mobility',
+  },
+  {
+    title: 'Short-Term Rental & Hospitality Marketplace (e.g., Airbnb / VRBO)',
+    keywords: ['stay', 'host', 'guest', 'rental', 'property', 'apartment', 'booking', 'nightly', 'listing', 'vacation', 'hospitality'],
+    category: 'Real Estate / Marketplace',
+  },
+  {
+    title: 'Hyperlocal Food & Grocery Delivery (e.g., DoorDash / Swiggy / Zomato)',
+    keywords: ['food', 'restaurant', 'meal', 'delivery', 'courier', 'kitchen', 'order', 'menu', 'grocery', 'hyperlocal', 'takeout'],
+    category: 'On-Demand Delivery',
+  },
+  {
+    title: 'AI Content & Pitch Deck Generator (e.g., ChatGPT / Gemini AI Wrapper)',
+    keywords: ['ai generator', 'pitch deck', 'prompt', 'llm', 'generate', 'gpt-4', 'ai writing', 'chatgpt', 'automated content', 'ai summary'],
+    category: 'AI SaaS Wrapper',
+  },
+  {
+    title: 'Graphic & Video Automation Platform (e.g., Canva / Figma / Adobe)',
+    keywords: ['template', 'design', 'canvas', 'graphic', 'video editor', 'banner', 'drag and drop', 'image creator', 'brand kit'],
+    category: 'Creative SaaS',
+  },
+  {
+    title: 'Multi-Vendor E-Commerce Marketplace (e.g., Shopify / Amazon / Etsy)',
+    keywords: ['storefront', 'seller', 'merchant', 'cart', 'checkout', 'inventory', 'sku', 'shipping', 'multi-vendor', 'ecommerce'],
+    category: 'E-Commerce',
+  },
+  {
+    title: 'FinTech Payment Gateway & Micro-Lending (e.g., Stripe / Razorpay)',
+    keywords: ['payment', 'gateway', 'transaction', 'payout', 'wallet', 'credit', 'loan', 'fintech', 'bank', 'interest', 'merchant account'],
+    category: 'FinTech',
+  },
+  {
+    title: 'Gamified EdTech LMS & Learning Portal (e.g., Duolingo / Coursera)',
+    keywords: ['course', 'student', 'quiz', 'gamified', 'certificate', 'tutor', 'learning path', 'edtech', 'lesson', 'streak', 'assignment'],
+    category: 'EdTech',
+  },
+  {
+    title: 'HealthTech Telemedicine & Patient Portal (e.g., Practo / Teladoc)',
+    keywords: ['doctor', 'patient', 'telemedicine', 'consultation', 'prescription', 'clinic', 'health record', 'symptom', 'appointment'],
+    category: 'HealthTech',
+  },
+  {
+    title: 'B2B SaaS CRM & Automated Sales Pipeline (e.g., HubSpot / Salesforce)',
+    keywords: ['lead', 'crm', 'pipeline', 'sales funnel', 'deals', 'prospects', 'contact management', 'email automation', 'b2b saas'],
+    category: 'Enterprise SaaS',
+  }
 ];
 
 function cleanAndTokenize(text: string): string[] {
@@ -49,7 +100,6 @@ function getFilteredNGrams(text: string, n: number = 3): Set<string> {
 
   for (let i = 0; i <= words.length - n; i++) {
     const gram = words.slice(i, i + n).join(' ');
-    // Exclude n-grams that consist purely of common generic business terms
     const isGeneric = gram.split(' ').every(w => COMMON_BUSINESS_TERMS.has(w));
     if (!isGeneric) {
       nGrams.add(gram);
@@ -123,7 +173,6 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
         maxSimilarity = similarityPct;
       }
 
-      // Concept-level keyword overlap
       const targetWords = new Set(cleanAndTokenize(trimmedContent).filter(w => !COMMON_BUSINESS_TERMS.has(w)));
       const otherWords = new Set(cleanAndTokenize(startupText).filter(w => !COMMON_BUSINESS_TERMS.has(w)));
       const conceptSim = calculateSimilarity(targetWords, otherWords);
@@ -145,21 +194,57 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
       }
     }
 
+    // 2. Real-World Business Model Plagiarism Matching
+    const contentWords = cleanAndTokenize(trimmedContent).filter(w => !COMMON_BUSINESS_TERMS.has(w));
+    const contentWordSet = new Set(contentWords);
+
+    for (const model of REAL_WORLD_STARTUP_MODELS) {
+      let matchedCount = 0;
+      for (const kw of model.keywords) {
+        if (contentWordSet.has(kw) || trimmedContent.toLowerCase().includes(kw)) {
+          matchedCount++;
+        }
+      }
+      const matchPct = Math.round((matchedCount / model.keywords.length) * 100);
+      if (matchPct >= 35) {
+        const calculatedSim = Math.min(90, Math.round(matchPct * 0.9));
+        if (calculatedSim > maxSimilarity) maxSimilarity = calculatedSim;
+        if (calculatedSim > highestConceptSimilarity) highestConceptSimilarity = calculatedSim;
+
+        matchingSources.push({
+          title: `Existing Market Business Model: ${model.title}`,
+          similarityPercentage: calculatedSim,
+          matchingSnippet: `Concept shares key operational features with ${model.title} (${matchedCount} core domain terms matched).`,
+          explanation: `High feature overlap with existing market solution in ${model.category}.`,
+          domain: 'market-concept',
+        });
+      }
+    }
+
     const textSimilarityScore = maxSimilarity;
     const conceptSimilarityScore = highestConceptSimilarity;
-    const similarityScore = Math.min(100, Math.max(textSimilarityScore, Math.round(conceptSimilarityScore * 0.7)));
+    const similarityScore = Math.min(100, Math.max(textSimilarityScore, Math.round(conceptSimilarityScore * 0.8)));
 
     let similarityRisk: 'Low' | 'Medium' | 'High' = 'Low';
     if (similarityScore >= 45) similarityRisk = 'High';
     else if (similarityScore >= 20) similarityRisk = 'Medium';
 
-    // 2. AI Content Detection
+    // 3. AI Stylistic & Model Signature Detection (ChatGPT vs Gemini vs Claude)
     const lowerContent = trimmedContent.toLowerCase();
-    let aiMarkerCount = 0;
-    for (const marker of AI_MARKERS) {
-      if (lowerContent.includes(marker)) {
-        aiMarkerCount++;
-      }
+    let chatgptScore = 0;
+    let geminiScore = 0;
+    let claudeScore = 0;
+
+    for (const marker of CHATGPT_MARKERS) {
+      if (lowerContent.includes(marker)) chatgptScore += 20;
+    }
+
+    for (const marker of GEMINI_MARKERS) {
+      if (lowerContent.includes(marker)) geminiScore += 25;
+    }
+
+    for (const marker of CLAUDE_MARKERS) {
+      if (lowerContent.includes(marker)) claudeScore += 25;
     }
 
     // Sentence structure uniformity check
@@ -169,92 +254,179 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
     const variance = sentenceLengths.reduce((a, b) => a + Math.pow(b - avgLen, 2), 0) / (sentences.length || 1);
     const stdDev = Math.sqrt(variance);
 
-    // AI probability heuristic calculation based on markers & sentence variance
-    let rawAiProb = 15;
-    if (aiMarkerCount > 0) rawAiProb += aiMarkerCount * 18;
-    if (sentences.length >= 3 && stdDev < 4) rawAiProb += 25; // uniform sentence length
+    let rawAiProb = 10;
+    if (chatgptScore > 0 || geminiScore > 0 || claudeScore > 0) {
+      rawAiProb += Math.max(chatgptScore, geminiScore, claudeScore);
+    }
+    if (sentences.length >= 3 && stdDev < 4) rawAiProb += 25;
     if (trimmedContent.includes("1.") && trimmedContent.includes("2.") && trimmedContent.includes("3.")) rawAiProb += 15;
 
-    // Adjust according to user declared source if provided
     const sourceLower = (declaredSource || '').toLowerCase();
     if (sourceLower.includes('chatgpt') || sourceLower.includes('gemini') || sourceLower.includes('claude') || sourceLower.includes('ai')) {
-      rawAiProb = Math.max(rawAiProb, 65);
+      rawAiProb = Math.max(rawAiProb, 70);
     }
 
-    const aiProbability = Math.min(95, Math.max(5, Math.round(rawAiProb)));
-    const humanProbability = 100 - aiProbability;
+    // 4. Try Real-Time Groq AI Plagiarism & Origin Analysis if API key present
+    let groqSuccess = false;
+    let groqAiProb: number | null = null;
+    let groqAiSource: string | null = null;
+    let groqContentOrigin: string | null = null;
+    let groqContentOriginExplanation: string | null = null;
+    let groqCopyrightRisk: 'Low' | 'Medium' | 'High' | null = null;
+    let groqCopyrightReason: string | null = null;
+    let groqMatchedMarketIdea: string | null = null;
+    let groqMatchedPercentage: number | null = null;
+
+    const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_API_kEY;
+    if (groqKey) {
+      try {
+        const aiPrompt = `Analyze the following startup idea text for plagiarism, AI-generation origin (ChatGPT vs Gemini vs Claude vs Human), market idea similarity, and copyright risk.
+Text: "${trimmedContent.slice(0, 2000)}"
+
+Return ONLY valid JSON matching this format:
+{
+  "isAiGenerated": boolean,
+  "aiProbability": number, // 0-100
+  "detectedAiSource": "ChatGPT (OpenAI)" | "Google Gemini" | "Anthropic Claude" | "None (Human Founder)",
+  "contentOrigin": "Original Founder Idea" | "Copied / Adapted from ChatGPT" | "Copied / Adapted from Gemini" | "Copied / Adapted from Claude" | "Existing Market Idea / Copyrighted Model",
+  "contentOriginExplanation": "detailed breakdown of origin",
+  "matchedMarketIdea": "Name of existing startup/company or 'None'",
+  "matchedPercentage": number, // 0-100
+  "copyrightRisk": "Low" | "Medium" | "High",
+  "copyrightRiskReason": "detailed copyright assessment reason"
+}`;
+
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [{ role: 'user', content: aiPrompt }],
+            response_format: { type: 'json_object' },
+            temperature: 0.2,
+          }),
+        });
+
+        if (groqRes.ok) {
+          const groqData = await groqRes.json();
+          const parsed = JSON.parse(groqData?.choices?.[0]?.message?.content || '{}');
+          if (parsed && typeof parsed.aiProbability === 'number') {
+            groqSuccess = true;
+            groqAiProb = parsed.aiProbability;
+            groqAiSource = parsed.detectedAiSource || null;
+            groqContentOrigin = parsed.contentOrigin || null;
+            groqContentOriginExplanation = parsed.contentOriginExplanation || null;
+            groqCopyrightRisk = parsed.copyrightRisk || null;
+            groqCopyrightReason = parsed.copyrightRiskReason || null;
+            groqMatchedMarketIdea = parsed.matchedMarketIdea || null;
+            groqMatchedPercentage = typeof parsed.matchedPercentage === 'number' ? parsed.matchedPercentage : null;
+          }
+        }
+      } catch (groqErr) {
+        console.error('Groq originality analysis failover error:', groqErr);
+      }
+    }
+
+    // Combine Groq AI findings with heuristic scores
+    const finalAiProb = groqSuccess && groqAiProb !== null
+      ? Math.min(98, Math.max(5, Math.round((rawAiProb + groqAiProb) / 2)))
+      : Math.min(95, Math.max(5, Math.round(rawAiProb)));
+
+    const humanProbability = 100 - finalAiProb;
 
     let aiClassification: 'Likely Human-written' | 'Possibly AI-assisted' | 'Likely AI-generated' | 'Inconclusive' = 'Likely Human-written';
-    if (aiProbability >= 70) aiClassification = 'Likely AI-generated';
-    else if (aiProbability >= 40) aiClassification = 'Possibly AI-assisted';
-    else if (aiProbability <= 25) aiClassification = 'Likely Human-written';
+    if (finalAiProb >= 70) aiClassification = 'Likely AI-generated';
+    else if (finalAiProb >= 40) aiClassification = 'Possibly AI-assisted';
+    else if (finalAiProb <= 25) aiClassification = 'Likely Human-written';
     else aiClassification = 'Inconclusive';
 
-    // 3. Possible AI Source Analysis (Non-conclusive probabilistic indicators)
-    let aiSourceDetermined = false;
-    let aiSourceExplanation = 'AI source cannot be reliably determined.';
-    let possibleAISources: any = undefined;
+    // AI Source Attribution Likelihoods
+    let chatgptLikelihood = Math.min(95, Math.max(10, chatgptScore + (finalAiProb >= 50 ? 40 : 10)));
+    let geminiLikelihood = Math.min(95, Math.max(10, geminiScore + (finalAiProb >= 50 ? 25 : 10)));
+    let claudeLikelihood = Math.min(95, Math.max(10, claudeScore + (finalAiProb >= 50 ? 20 : 10)));
 
-    if (sourceLower.includes('chatgpt') || lowerContent.includes('as an ai language model') || lowerContent.includes('chatgpt')) {
-      aiSourceDetermined = true;
-      aiSourceExplanation = 'Text contains characteristics consistent with OpenAI model outputs. Source attribution is not conclusive from text alone.';
-      possibleAISources = { chatgptLikelihood: 75, geminiLikelihood: 15, claudeLikelihood: 10, otherLikelihood: 0, explanation: 'Possible AI source characteristics.' };
-    } else if (sourceLower.includes('gemini') || lowerContent.includes('gemini')) {
-      aiSourceDetermined = true;
-      aiSourceExplanation = 'Text contains characteristics consistent with Google Gemini model outputs. Source attribution is not conclusive from text alone.';
-      possibleAISources = { chatgptLikelihood: 20, geminiLikelihood: 70, claudeLikelihood: 10, otherLikelihood: 0, explanation: 'Possible AI source characteristics.' };
-    } else if (sourceLower.includes('claude') || lowerContent.includes('claude')) {
-      aiSourceDetermined = true;
-      aiSourceExplanation = 'Text contains characteristics consistent with Anthropic Claude model outputs. Source attribution is not conclusive from text alone.';
-      possibleAISources = { chatgptLikelihood: 15, geminiLikelihood: 15, claudeLikelihood: 70, otherLikelihood: 0, explanation: 'Possible AI source characteristics.' };
-    } else if (aiProbability >= 50) {
-      aiSourceExplanation = 'General AI characteristics detected, but specific AI source cannot be reliably determined. Source attribution is not conclusive from text alone.';
+    if (groqSuccess && groqAiSource) {
+      if (groqAiSource.includes('ChatGPT')) {
+        chatgptLikelihood = Math.max(80, chatgptLikelihood);
+      } else if (groqAiSource.includes('Gemini')) {
+        geminiLikelihood = Math.max(80, geminiLikelihood);
+      } else if (groqAiSource.includes('Claude')) {
+        claudeLikelihood = Math.max(80, claudeLikelihood);
+      }
     }
 
-    // Content Origin & Source Attribution Analysis
-    let contentOrigin = 'Original Founder Idea';
-    let contentOriginExplanation = 'Analysis indicates an authentic, human-written founder pitch with high semantic uniqueness.';
+    let aiSourceDetermined = finalAiProb >= 40;
+    let aiSourceExplanation = 'Analysis evaluates stylistic markers, sentence variance, and AI language model signature patterns.';
 
-    if (lowerContent.includes('as an ai language model') || lowerContent.includes('chatgpt') || (aiMarkerCount >= 2 && lowerContent.includes('furthermore'))) {
-      contentOrigin = 'Copied / Adapted from ChatGPT';
-      contentOriginExplanation = 'Analysis detected stylistic transition markers, structured numbering patterns, and clause distributions characteristic of ChatGPT / OpenAI model outputs.';
-    } else if (lowerContent.includes('gemini') || (lowerContent.includes('tapestry') && aiMarkerCount >= 2)) {
-      contentOrigin = 'Copied / Adapted from Gemini';
-      contentOriginExplanation = 'Analysis detected reasoning structures, vocabulary patterns, and tone characteristics consistent with Google Gemini model outputs.';
-    } else if (lowerContent.includes('claude')) {
-      contentOrigin = 'Copied / Adapted from Claude';
-      contentOriginExplanation = 'Analysis detected structural features and clause framing consistent with Anthropic Claude model outputs.';
-    } else if (aiProbability >= 65) {
-      contentOrigin = 'Copied / Adapted from AI Tool';
-      contentOriginExplanation = 'Text exhibits strong synthetic markers, uniform sentence length distributions, and common AI buzzwords.';
-    } else if (similarityScore >= 40) {
-      contentOrigin = 'Adapted from Existing Online / Platform Source';
-      contentOriginExplanation = 'Content shares significant structural and phrasing overlap with existing online business plans or platform project databases.';
-    } else if (aiProbability >= 35) {
-      contentOrigin = 'AI-Assisted Hybrid Concept';
-      contentOriginExplanation = 'Content appears to combine authentic founder domain ideas with AI-generated phrasing or formatting assistance.';
+    if (chatgptLikelihood >= 70) {
+      aiSourceExplanation = 'Text exhibits strong characteristics of OpenAI ChatGPT model responses (e.g. structured headers, transition phrases, and list formatting).';
+    } else if (geminiLikelihood >= 70) {
+      aiSourceExplanation = 'Text exhibits strong characteristics of Google Gemini model outputs (e.g. key takeaways, bullet point framing, and synthesis style).';
+    } else if (claudeLikelihood >= 70) {
+      aiSourceExplanation = 'Text exhibits characteristics consistent with Anthropic Claude model outputs.';
     }
 
-    // 4. Copyright Risk Analysis
-    let copyrightRisk: 'Low' | 'Medium' | 'High' = 'Low';
-    let copyrightRiskReason = 'The submitted content shows low overlap with registered platform projects. Common business terminology was excluded from calculation.';
+    // Content Origin & Source Attribution
+    let contentOrigin = groqContentOrigin || 'Original Founder Idea';
+    let contentOriginExplanation = groqContentOriginExplanation || 'Analysis indicates an authentic founder pitch with high semantic uniqueness.';
 
-    if (similarityScore >= 45) {
-      copyrightRisk = 'High';
-      copyrightRiskReason = 'Potential Copyright Risk: The submitted content contains substantial similarity to an existing source and should be manually reviewed.';
-    } else if (similarityScore >= 20) {
-      copyrightRisk = 'Medium';
-      copyrightRiskReason = 'Potential Copyright Risk: Moderate similarity to existing concepts detected. Review specific unique value propositions.';
+    if (!groqSuccess) {
+      if (lowerContent.includes('as an ai language model') || lowerContent.includes('chatgpt') || chatgptScore >= 40) {
+        contentOrigin = 'Copied / Adapted from ChatGPT';
+        contentOriginExplanation = 'Analysis detected stylistic transition markers, structured numbering patterns, and prompt responses characteristic of ChatGPT / OpenAI.';
+      } else if (lowerContent.includes('gemini') || geminiScore >= 40) {
+        contentOrigin = 'Copied / Adapted from Gemini';
+        contentOriginExplanation = 'Analysis detected reasoning structures, vocabulary patterns, and tone characteristics consistent with Google Gemini model outputs.';
+      } else if (lowerContent.includes('claude') || claudeScore >= 40) {
+        contentOrigin = 'Copied / Adapted from Claude';
+        contentOriginExplanation = 'Analysis detected structural features and clause framing consistent with Anthropic Claude model outputs.';
+      } else if (finalAiProb >= 65) {
+        contentOrigin = 'Copied / Adapted from AI Tool';
+        contentOriginExplanation = 'Text exhibits strong synthetic markers, uniform sentence length distributions, and standard AI generated templates.';
+      } else if (similarityScore >= 40) {
+        contentOrigin = 'Existing Market Idea / Copyrighted Model';
+        contentOriginExplanation = 'Content shares significant structural and business framing overlap with existing online business plans or platform projects.';
+      }
     }
 
-    // 5. Originality Score & Explanation
-    const originalityScore = Math.max(0, Math.min(100, Math.round(100 - similarityScore)));
+    // Append Groq AI matched market idea if found
+    if (groqSuccess && groqMatchedMarketIdea && groqMatchedMarketIdea !== 'None' && groqMatchedPercentage && groqMatchedPercentage > 20) {
+      matchingSources.unshift({
+        title: `Market Matched Solution: ${groqMatchedMarketIdea}`,
+        similarityPercentage: groqMatchedPercentage,
+        matchingSnippet: `Semantic and functional concept alignment with ${groqMatchedMarketIdea} (${groqMatchedPercentage}% market similarity).`,
+        explanation: `Idea shares core value proposition and workflow with existing commercial platform ${groqMatchedMarketIdea}.`,
+        domain: 'global-market',
+      });
+    }
+
+    // 5. Copyright Risk Analysis & Originality Score Calculation
+    let copyrightRisk: 'Low' | 'Medium' | 'High' = groqCopyrightRisk || 'Low';
+    let copyrightRiskReason = groqCopyrightReason || 'The submitted content shows low overlap with registered platform projects. Generic business terminology was excluded from calculation.';
+
+    const maxMatchedPct = matchingSources.reduce((max, s) => Math.max(max, s.similarityPercentage), similarityScore);
+    const finalSimilarityScore = Math.min(100, Math.max(similarityScore, maxMatchedPct));
+
+    if (!groqSuccess) {
+      if (finalSimilarityScore >= 45) {
+        copyrightRisk = 'High';
+        copyrightRiskReason = 'Potential Copyright Risk: The submitted content contains substantial structural & feature similarity to an existing business model or startup idea.';
+      } else if (finalSimilarityScore >= 20) {
+        copyrightRisk = 'Medium';
+        copyrightRiskReason = 'Potential Copyright Risk: Moderate similarity to existing market concepts detected. Unique value proposition needs refinement.';
+      }
+    }
+
+    const originalityScore = Math.max(0, Math.min(100, Math.round(100 - finalSimilarityScore)));
     let originalityLevel: 'High Originality' | 'Moderate Originality' | 'Low Originality' = 'High Originality';
     let originalityExplanation = 'Your content demonstrates high semantic uniqueness with distinct conceptual elements.';
 
     if (originalityScore < 50) {
       originalityLevel = 'Low Originality';
-      originalityExplanation = 'The submitted content shares extensive similarity with existing business ideas or standard frameworks.';
+      originalityExplanation = 'The submitted content shares extensive similarity with existing business ideas, standard templates, or AI generated outputs.';
     } else if (originalityScore < 80) {
       originalityLevel = 'Moderate Originality';
       originalityExplanation = 'Your idea presents solid core concepts with moderate overlap in industry-standard approaches.';
@@ -262,8 +434,8 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
 
     // 6. Overall Risk & Overall Classification
     let overallRisk: 'Low' | 'Medium' | 'High' = 'Low';
-    if (copyrightRisk === 'High' || similarityScore >= 45) overallRisk = 'High';
-    else if (copyrightRisk === 'Medium' || similarityScore >= 20) overallRisk = 'Medium';
+    if (copyrightRisk === 'High' || finalSimilarityScore >= 45 || finalAiProb >= 75) overallRisk = 'High';
+    else if (copyrightRisk === 'Medium' || finalSimilarityScore >= 20 || finalAiProb >= 40) overallRisk = 'Medium';
 
     let overallClassification = 'Likely Original / Low Risk';
     if (overallRisk === 'High') {
@@ -272,21 +444,21 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
       overallClassification = 'Moderate Originality / Review Suggested';
     }
 
-    // 7. Actionable Recommendations
+    // 7. Strategic Recommendations
     const recommendations: string[] = [];
     if (originalityScore >= 80) {
       recommendations.push('Your idea appears highly original. Focus on validating market demand with real target users.');
       recommendations.push('Document your unique proprietary processes, brand elements, or tech architecture to protect your IP.');
     } else {
-      recommendations.push('Consider defining a unique customer niche or underserving market segment to differentiate your offering.');
+      recommendations.push('Consider defining a unique customer niche or underserving market segment to differentiate your offering from existing platforms.');
       recommendations.push('Incorporate innovative pricing models, workflow automation, or proprietary data advantages.');
     }
 
-    if (aiProbability >= 50) {
-      recommendations.push('Add personal founder insights, case studies, or specific operational details to make your pitch more human and authentic.');
+    if (finalAiProb >= 50) {
+      recommendations.push('Rewrite pitch content to include personal founder insights, case studies, or specific operational metrics to reduce AI detection markers.');
     }
 
-    if (similarityScore >= 20) {
+    if (finalSimilarityScore >= 20) {
       recommendations.push('Review highlighted similar concepts to ensure your value proposition clearly stands out from existing market solutions.');
     }
 
@@ -299,14 +471,20 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
       originalityScore,
       originalityLevel,
       originalityExplanation,
-      similarityScore,
+      similarityScore: finalSimilarityScore,
       textSimilarityScore,
       conceptSimilarityScore,
       similarityRisk,
       humanProbability,
-      aiProbability,
+      aiProbability: finalAiProb,
       aiClassification,
-      possibleAISources,
+      possibleAISources: {
+        chatgptLikelihood,
+        geminiLikelihood,
+        claudeLikelihood,
+        otherLikelihood: Math.max(0, 100 - (chatgptLikelihood + geminiLikelihood + claudeLikelihood) / 3),
+        explanation: aiSourceExplanation,
+      },
       aiSourceDetermined,
       aiSourceExplanation,
       copyrightRisk,
@@ -321,13 +499,14 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
 
     return res.status(201).json({
       success: true,
+      message: 'Originality & Plagiarism check completed successfully.',
       report: newReport,
     });
   } catch (error: any) {
-    console.error('Error analyzing originality:', error);
+    console.error('Originality analysis error:', error);
     return res.status(500).json({
       success: false,
-      error: 'An internal error occurred while processing your request. Please try again.',
+      error: error.message || 'An error occurred during originality analysis.',
     });
   }
 };

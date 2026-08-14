@@ -391,7 +391,19 @@ const FounderOriginalityCheck: React.FC = () => {
                 <HelpCircle className="w-4 h-4 text-[#5B21B6]" />
                 Content Origin & Source Attribution
               </h3>
-              <span className="text-xs font-extrabold text-[#5B21B6] bg-purple-50 px-3 py-1 rounded-full border border-purple-200">
+              <span
+                className={`text-xs font-extrabold px-3.5 py-1.2 rounded-full border ${
+                  activeReport.contentOrigin?.includes('ChatGPT')
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : activeReport.contentOrigin?.includes('Gemini')
+                    ? 'bg-blue-50 text-blue-800 border-blue-200'
+                    : activeReport.contentOrigin?.includes('Claude')
+                    ? 'bg-amber-50 text-amber-800 border-amber-200'
+                    : activeReport.contentOrigin?.includes('Copyright') || activeReport.contentOrigin?.includes('Existing')
+                    ? 'bg-red-50 text-red-800 border-red-200'
+                    : 'bg-purple-50 text-[#5B21B6] border-purple-200'
+                }`}
+              >
                 {activeReport.contentOrigin || 'Original Founder Idea'}
               </span>
             </div>
@@ -399,7 +411,7 @@ const FounderOriginalityCheck: React.FC = () => {
             <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 space-y-2 text-xs">
               <div className="flex items-center gap-2 text-gray-900 font-bold">
                 <span>Detected Origin:</span>
-                <span className="text-[#5B21B6]">{activeReport.contentOrigin || 'Original Founder Idea'}</span>
+                <span className="text-[#5B21B6] font-extrabold">{activeReport.contentOrigin || 'Original Founder Idea'}</span>
               </div>
               <p className="text-gray-600 leading-relaxed font-medium">
                 {activeReport.contentOriginExplanation || 'Analysis indicates an authentic, human-written founder pitch with high semantic uniqueness.'}
@@ -463,14 +475,30 @@ const FounderOriginalityCheck: React.FC = () => {
               </div>
 
               {activeReport.matchingSources && activeReport.matchingSources.length > 0 ? (
-                <div className="space-y-2">
-                  <span className="text-xs font-bold text-gray-700 block">Matched References:</span>
+                <div className="space-y-3">
+                  <span className="text-xs font-bold text-gray-700 block">Matched Concepts & Plagiarism Sources:</span>
                   {activeReport.matchingSources.map((match, idx) => (
-                    <div key={idx} className="bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs space-y-1">
-                      <div className="flex justify-between font-bold text-gray-900">
-                        <span>{match.title}</span>
-                        <span className="text-amber-600">{match.similarityPercentage}% Match</span>
+                    <div key={idx} className="bg-gray-50 p-3.5 rounded-xl border border-gray-200 text-xs space-y-1.5">
+                      <div className="flex justify-between items-center font-bold text-gray-900">
+                        <span className="flex items-center gap-1.5 font-bold">
+                          <Layers size={14} className="text-[#5B21B6]" />
+                          {match.title}
+                        </span>
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full font-extrabold text-[11px] border ${
+                            match.similarityPercentage >= 45
+                              ? 'bg-red-50 text-red-600 border-red-200'
+                              : match.similarityPercentage >= 20
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          }`}
+                        >
+                          {match.similarityPercentage}% Match
+                        </span>
                       </div>
+                      <p className="text-gray-700 font-medium text-xs bg-white p-2 rounded-lg border border-gray-100 italic">
+                        "{match.matchingSnippet}"
+                      </p>
                       <p className="text-gray-500 text-[11px] font-medium">{match.explanation}</p>
                     </div>
                   ))}
@@ -478,7 +506,7 @@ const FounderOriginalityCheck: React.FC = () => {
               ) : (
                 <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2 font-medium">
                   <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span>No matching source was verified against standard startup corpora.</span>
+                  <span>No matching source or copyright conflict was found against standard startup corpora. Your idea is unique!</span>
                 </div>
               )}
             </div>
