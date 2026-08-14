@@ -135,6 +135,9 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
 
     // Create User (or update if they started but didn't finish)
     let user = await User.findOne({ email: email.toLowerCase() });
+    if (user && user.isVerified) {
+      return res.status(400).json({ success: false, error: 'User already exists with this email' });
+    }
 
     const roleFields: Record<string, any> = {};
     if (role === 'founder') {

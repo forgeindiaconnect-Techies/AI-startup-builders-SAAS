@@ -460,6 +460,8 @@ const InvestorSignup: React.FC = () => {
     }
     setOtpLoading(true);
     setOtpError('');
+    // Clear any previous email errors
+    setErrors(prev => ({ ...prev, email: '' }));
     try {
       const res = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
@@ -467,17 +469,14 @@ const InvestorSignup: React.FC = () => {
         body: JSON.stringify({ email: form.email.trim() }),
       });
       const json = await res.json();
-      if (json.success || res.ok) {
+      if (res.ok && json.success) {
         setOtpSent(true);
         startCooldown();
       } else {
-        setOtpSent(true);
-        startCooldown();
+        setErrors(prev => ({ ...prev, email: json.error || 'Failed to send OTP. Please try again.' }));
       }
     } catch {
-      // Fallback for demonstration / local testing
-      setOtpSent(true);
-      startCooldown();
+      setErrors(prev => ({ ...prev, email: 'Network error. Please try again.' }));
     } finally {
       setOtpLoading(false);
     }
