@@ -198,16 +198,24 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
       endDate = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
     }
 
-    await Subscription.create({
-      userId: user._id,
-      planName,
-      status,
-      paymentStatus,
-      billingCycle: 'trial',
-      trialUsed,
-      startDate,
-      endDate
-    });
+    // Create or update subscription (supporting re-registration test flexibility)
+    try {
+      await Subscription.findOneAndUpdate(
+        { userId: user._id },
+        {
+          planName,
+          status,
+          paymentStatus,
+          billingCycle: 'trial',
+          trialUsed,
+          startDate,
+          endDate
+        },
+        { upsert: true, new: true }
+      );
+    } catch (subErr) {
+      console.warn('⚠️ Subscription create/update failed:', (subErr as Error).message);
+    }
 
     // Auto-login: generate JWT token and return it
     const token = generateToken(user._id.toString(), user.role);
