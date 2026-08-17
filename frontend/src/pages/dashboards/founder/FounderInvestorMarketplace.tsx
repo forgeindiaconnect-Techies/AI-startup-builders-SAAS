@@ -316,46 +316,7 @@ const FounderInvestorMarketplace: React.FC = () => {
         </div>
       </div>
 
-      {/* Startup Visibility Control Strip */}
-      <div className="mb-8 bg-white rounded-2xl border border-gray-200 p-5 shadow-sm">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <Sparkles size={16} className="text-[#5B21B6]" /> Startup Investor Visibility Settings
-            </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Only startups marked as <span className="font-bold text-[#5B21B6]">Investor Visible</span> can send funding requests or be discovered by investors.
-            </p>
-          </div>
-          {startups.length === 0 ? (
-            <span className="text-xs font-medium text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
-              No startups created yet.
-            </span>
-          ) : (
-            <div className="flex flex-wrap items-center gap-3">
-              {startups.map((s) => {
-                const sId = s.id || s.startupId;
-                const isVis = !!visibilityMap[sId];
-                return (
-                  <div key={sId} className="flex items-center gap-2 bg-gray-50 px-3.5 py-1.5 rounded-xl border border-gray-200">
-                    <span className="text-xs font-bold text-gray-800">{s.startupName || 'Startup'}</span>
-                    <button
-                      onClick={() => toggleVisibility(sId, isVis)}
-                      className={`px-3 py-1 rounded-full text-[11px] font-black uppercase transition-all shadow-sm ${
-                        isVis
-                          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
-                    >
-                      {isVis ? 'ON (Visible)' : 'OFF (Private)'}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
+
 
       {/* Search & Filters */}
       <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm mb-8 space-y-4">
