@@ -19,6 +19,7 @@ type Notif = {
   read: boolean;
   type?: string;
   actionUrl?: string;
+  targetRole?: string;
 };
 
 const initialNotifs: Notif[] = [];
