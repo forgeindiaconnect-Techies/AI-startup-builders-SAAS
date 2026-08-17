@@ -27,7 +27,27 @@ const FounderInvestmentRequests: React.FC = () => {
 
   const loadRequests = () => {
     const all = getInvestmentRequests();
-    setRequests(all);
+    if (!user) {
+      setRequests(all);
+      return;
+    }
+    const currentUserId = (user.id || user._id || '').toLowerCase();
+    const currentUserEmail = (user.email || '').toLowerCase();
+    const currentUserName = (user.fullName || user.name || '').toLowerCase();
+
+    const founderOnly = all.filter(r => {
+      const fId = (r.founderId || '').toLowerCase();
+      const fEmail = (r.founderEmail || '').toLowerCase();
+      const fName = (r.founderName || '').toLowerCase();
+
+      if (fId && currentUserId && fId === currentUserId) return true;
+      if (fEmail && currentUserEmail && fEmail === currentUserEmail) return true;
+      if (fName && currentUserName && (fName.includes(currentUserName) || currentUserName.includes(fName))) return true;
+
+      return false;
+    });
+
+    setRequests(founderOnly);
   };
 
   useEffect(() => {
@@ -38,7 +58,7 @@ const FounderInvestmentRequests: React.FC = () => {
       window.removeEventListener('storage', loadRequests);
       window.removeEventListener('investment_requests_updated', loadRequests);
     };
-  }, []);
+  }, [user]);
 
   const filteredRequests = requests.filter(r => r.status === activeTab);
 
