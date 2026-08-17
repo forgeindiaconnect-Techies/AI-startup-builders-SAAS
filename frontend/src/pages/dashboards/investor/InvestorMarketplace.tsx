@@ -100,11 +100,11 @@ const InvestorMarketplace: React.FC = () => {
 
     const combined = Array.from(allStartupsMap.values());
 
-    // 3. Filter ONLY startups where Investor Visibility is ON
+    // 3. Filter ONLY startups where Investor Visibility is explicitly toggled ON
     const visibleOnly = combined.filter(s => {
       const sId = String(s.id || s._id || s.startupId || '');
       const isVisibleInObj = s.investorVisible === true || s.isInvestorVisible === true;
-      const isVisibleInMap = !!visibilityMap[sId] || !!visibilityMap[`startup_${sId}`] || !!visibilityMap[sId.replace(/^startup_/, '')];
+      const isVisibleInMap = visibilityMap[sId] === true || visibilityMap[`startup_${sId}`] === true || visibilityMap[sId.replace(/^startup_/, '')] === true;
       return isVisibleInObj || isVisibleInMap;
     });
 
