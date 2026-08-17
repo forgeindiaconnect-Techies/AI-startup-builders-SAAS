@@ -19,7 +19,7 @@ const NotificationSchema: Schema = new Schema(
     userEmail: { type: String, default: '' },
     targetRole: { type: String, default: 'founder', index: true },
     title: { type: String, required: true },
-    message: { type: String, required: true },
+    message: { type: String, default: 'Notification update' },
     type: { type: String, default: 'general' },
     actionUrl: { type: String, default: '' },
     isRead: { type: Boolean, default: false },

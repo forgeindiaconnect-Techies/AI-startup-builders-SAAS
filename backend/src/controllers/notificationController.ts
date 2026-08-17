@@ -29,12 +29,17 @@ export const getNotifications = async (req: Request, res: Response) => {
 // POST /api/notifications - create a notification
 export const createNotification = async (req: Request, res: Response) => {
   try {
-    const notif = new NotificationModel(req.body);
+    const payload = {
+      ...req.body,
+      message: req.body.message || req.body.title || 'Notification update',
+      title: req.body.title || 'System Notification',
+    };
+    const notif = new NotificationModel(payload);
     await notif.save();
     return res.json({ success: true, data: notif });
   } catch (err) {
     console.error('Error creating notification:', err);
-    return res.status(500).json({ success: false, message: 'Server error' });
+    return res.status(500).json({ success: false, message: (err as Error).message || 'Server error' });
   }
 };
 
