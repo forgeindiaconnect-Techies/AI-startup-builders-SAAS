@@ -738,9 +738,9 @@ const FounderInvestorMarketplace: React.FC = () => {
               </div>
 
               {/* Funding Required & Stage */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                 <div>
-                  <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Funding Required (Auto-filled / Adjustable) *</label>
+                  <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Funding Required *</label>
                   <input
                     type="text"
                     value={fundingAmount}
@@ -793,23 +793,11 @@ const FounderInvestorMarketplace: React.FC = () => {
                 />
               </div>
 
-              {/* Connection Message */}
-              <div>
-                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Personal Connection Message</label>
-                <textarea
-                  rows={2}
-                  value={optionalMessage}
-                  onChange={(e) => setOptionalMessage(e.target.value)}
-                  placeholder="Hi! I'd love to connect and share high-level insights about our progress..."
-                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-medium text-gray-900 outline-none focus:ring-2 focus:ring-[#5B21B6]"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
+              <div className="pt-4 border-t border-gray-100 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
                 <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80">
                   Status after sending: <span className="font-black">Pending</span>
                 </span>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setRequestInvestor(null)}
