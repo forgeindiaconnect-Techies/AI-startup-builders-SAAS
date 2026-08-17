@@ -31,7 +31,7 @@ const InvestorRequests: React.FC = () => {
     const currentUserEmail = (user.email || '').toLowerCase();
     const currentUserName = (user.fullName || user.name || '').toLowerCase();
 
-    // Check if requests match the logged in investor or include all for investor/admin dashboards
+    // Strict investor filtering: show requests matching investor ID, Email, or Name
     const filtered = all.filter(r => {
       const rId = (r.investorId || '').toLowerCase();
       const rEmail = (r.investorEmail || '').toLowerCase();
@@ -41,10 +41,9 @@ const InvestorRequests: React.FC = () => {
       if (rEmail && currentUserEmail && rEmail === currentUserEmail) return true;
       if (rName && currentUserName && (rName.includes(currentUserName) || currentUserName.includes(rName))) return true;
 
-      // Always show for investors and admin users
-      if (user.role === 'investor' || user.role === 'admin' || currentUserEmail.includes('investor')) {
-        return true;
-      }
+      // Admin or demo investors view full list for review
+      if (user.role === 'admin' || currentUserEmail.includes('investor')) return true;
+
       return false;
     });
 
