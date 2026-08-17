@@ -113,10 +113,10 @@ const FounderNotifications: React.FC = () => {
           if (n.userId && (n.userId.toLowerCase() === userId || n.userId.toLowerCase() === userEmail)) return true;
           if (n.userEmail && n.userEmail.toLowerCase() === userEmail) return true;
 
-          // If general broadcast or matches user role
+          // If matching user role or generic role target
           const target = getTargetRole(n);
-          if (!n.userId || n.userId === 'all') return target === userRole;
           if (target === userRole) return true;
+          if (!n.userId || n.userId === 'all') return true;
 
           return false;
         })
