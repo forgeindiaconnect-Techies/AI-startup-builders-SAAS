@@ -805,19 +805,6 @@ const FounderInvestorMarketplace: React.FC = () => {
                 />
               </div>
 
-              {/* Next Steps Roadmap */}
-              <div className="pt-2">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Next Steps After Investor Accepts:</p>
-                <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-gray-600">
-                  <span className="px-2 py-0.5 bg-gray-100 rounded-md">1. Chat</span> →
-                  <span className="px-2 py-0.5 bg-gray-100 rounded-md">2. Share Details</span> →
-                  <span className="px-2 py-0.5 bg-gray-100 rounded-md">3. Interest</span> →
-                  <span className="px-2 py-0.5 bg-gray-100 rounded-md">4. Meeting</span> →
-                  <span className="px-2 py-0.5 bg-gray-100 rounded-md">5. Due Diligence</span> →
-                  <span className="px-2 py-0.5 bg-purple-100 text-[#5B21B6] rounded-md">6. Deal</span>
-                </div>
-              </div>
-
               <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
                 <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80">
                   Status after sending: <span className="font-black">Pending</span>
