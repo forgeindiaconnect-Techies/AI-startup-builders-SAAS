@@ -8,7 +8,7 @@ import FounderInvestorMeetings from './FounderInvestorMeetings';
 import FounderFundingTransactions from './FounderFundingTransactions';
 
 const INVESTOR_TABS = [
-  { id: 'investors', label: 'Investor Marketplace', path: '/dashboard/founder/investors', icon: Building2, component: FounderInvestorMarketplace },
+  { id: 'marketplace', label: 'Investor Marketplace', path: '/dashboard/founder/investors', icon: Building2, component: FounderInvestorMarketplace },
   { id: 'investment-requests', label: 'Investment Requests', path: '/dashboard/founder/investment-requests', icon: ClipboardList, component: FounderInvestmentRequests },
   { id: 'messages', label: 'Messages', path: '/dashboard/founder/messages', icon: Inbox, component: FounderInvestorMessages },
   { id: 'meetings', label: 'Meetings', path: '/dashboard/founder/meetings', icon: CalendarClock, component: FounderInvestorMeetings },
@@ -25,7 +25,7 @@ const FounderInvestorHub: React.FC = () => {
   const currentTab = INVESTOR_TABS.find(t => 
     currentPath === t.path || 
     currentPath.startsWith(t.path + '/') ||
-    (t.id === 'investors' && currentPath.includes('/founder/investors')) ||
+    (t.id === 'marketplace' && (currentPath.includes('/founder/investors') || currentPath.endsWith('/founder/investors'))) ||
     (t.id === 'investment-requests' && currentPath.includes('/founder/investment-requests')) ||
     (t.id === 'messages' && currentPath.includes('/founder/messages')) ||
     (t.id === 'meetings' && currentPath.includes('/founder/meetings')) ||
