@@ -47,7 +47,7 @@ const InvestorRequests: React.FC = () => {
       return false;
     });
 
-    setRequests(filtered.length > 0 ? filtered : all);
+    setRequests(filtered);
   };
 
   useEffect(() => {

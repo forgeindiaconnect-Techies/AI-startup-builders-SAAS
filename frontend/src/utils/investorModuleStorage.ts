@@ -80,49 +80,7 @@ const STORAGE_KEYS = {
 
 // ─── Initial Seed Data ───
 
-const INITIAL_REQUESTS: InvestmentRequest[] = [
-  {
-    id: 'req_inv_101',
-    founderId: 'f_1',
-    founderName: 'Renu',
-    founderEmail: 'renugopal24022000@gmail.com',
-    investorId: 'inv_1',
-    investorName: 'Priya Nambiar',
-    investorEmail: 'priya@nambiarfamily.in',
-    investorFirm: 'Nambiar Capital',
-    startupId: 'startup_mock_1',
-    startupName: 'Tourists Platform AI',
-    fundingAmount: '₹50,00,000',
-    fundingStage: 'Seed',
-    shortIntro: 'An AI-powered travel & itinerary booking engine for modern urban travelers.',
-    whySeeking: 'Priya has deep expertise in FinTech/HealthTech and angel syndicates in India.',
-    optionalMessage: 'We would love to share our pitch deck and early metrics with you.',
-    status: 'ACCEPTED',
-    responseNote: 'Great proposal! We are very interested in AI-driven travel & booking apps. Let us connect in messages and schedule an intro call.',
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 'req_inv_102',
-    founderId: 'f_1',
-    founderName: 'Renu',
-    founderEmail: 'renugopal24022000@gmail.com',
-    investorId: 'inv_2',
-    investorName: 'Dr. Vikramaditya Sen',
-    investorEmail: 'vikram.sen@nexuscap.com',
-    investorFirm: 'Nexus Capital India',
-    startupId: 'startup_mock_1',
-    startupName: 'Tourists Platform AI',
-    fundingAmount: '₹1,50,00,000',
-    fundingStage: 'Pre-Series A',
-    shortIntro: 'AI agent platform automating regional corporate travel bookings.',
-    whySeeking: 'Nexus Capital leads B2B SaaS and AI infrastructure investments across India.',
-    optionalMessage: 'Looking for VC participation in our upcoming seed extension round.',
-    status: 'PENDING',
-    createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-  }
-];
+const INITIAL_REQUESTS: InvestmentRequest[] = [];
 
 const INITIAL_MESSAGES: InvestorMessage[] = [
   {
