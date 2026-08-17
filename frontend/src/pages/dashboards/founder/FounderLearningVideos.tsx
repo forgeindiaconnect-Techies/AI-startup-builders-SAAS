@@ -223,7 +223,14 @@ const FounderLearningVideos: React.FC = () => {
                   src={v.thumbnailUrl}
                   alt={v.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onError={(e) => { (e.target as HTMLImageElement).src = `https://placehold.co/480x360/1F2937/9CA3AF?text=${v.language === 'tamil' ? 'Tamil' : 'English'}+Video`; }}
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    if (img.src.includes('hqdefault.jpg')) {
+                      img.src = `https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg`;
+                    } else if (!img.src.includes('placehold.co')) {
+                      img.src = `https://placehold.co/480x360/1F2937/9CA3AF?text=${v.language === 'tamil' ? 'Tamil' : 'English'}+Video`;
+                    }
+                  }}
                 />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
