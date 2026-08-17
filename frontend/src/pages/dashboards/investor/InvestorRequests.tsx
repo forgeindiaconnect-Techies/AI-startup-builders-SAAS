@@ -129,8 +129,8 @@ const InvestorRequests: React.FC = () => {
                       "{r.shortIntro}"
                     </p>
 
-                    <p className="text-[11px] text-gray-500">
-                      <span className="font-bold text-gray-700">Why Connecting:</span> {r.whySeeking}
+                    <p className="text-xs text-gray-700 font-medium">
+                      <span className="font-bold text-gray-900">Why Connecting:</span> {r.whySeeking}
                     </p>
                   </div>
 
