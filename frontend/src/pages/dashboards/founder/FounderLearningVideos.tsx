@@ -220,13 +220,13 @@ const FounderLearningVideos: React.FC = () => {
             <div key={v.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg transition-all group">
               <div className="relative aspect-video bg-gray-100 overflow-hidden">
                 <img
-                  src={v.thumbnailUrl}
+                  src={`https://i.ytimg.com/vi_webp/${v.videoId}/mqdefault.webp`}
                   alt={v.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   onError={(e) => {
                     const img = e.target as HTMLImageElement;
-                    if (img.src.includes('hqdefault.jpg')) {
-                      img.src = `https://img.youtube.com/vi/${v.videoId}/mqdefault.jpg`;
+                    if (img.src.includes('vi_webp')) {
+                      img.src = `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`;
                     } else if (!img.src.includes('placehold.co')) {
                       img.src = `https://placehold.co/480x360/1F2937/9CA3AF?text=${v.language === 'tamil' ? 'Tamil' : 'English'}+Video`;
                     }
