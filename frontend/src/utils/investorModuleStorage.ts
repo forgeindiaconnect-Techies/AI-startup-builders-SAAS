@@ -280,20 +280,70 @@ export const saveInvestmentRequest = (reqData: Omit<InvestmentRequest, 'id' | 'c
 
 export const updateInvestmentRequestStatus = (requestId: string, newStatus: InvestmentRequest['status'], responseNote?: string): void => {
   const requests = getInvestmentRequests();
+  let targetReq: InvestmentRequest | null = null;
   const updated = requests.map(r => {
     if (r.id === requestId) {
-      return {
+      targetReq = {
         ...r,
         status: newStatus,
         responseNote: responseNote || r.responseNote,
         updatedAt: new Date().toISOString(),
       };
+      return targetReq;
     }
     return r;
   });
   localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(updated));
+
+  // Generate notifications for Founder and Admin when Investor accepts/declines proposal
+  if (targetReq) {
+    try {
+      const nowIso = new Date().toISOString();
+      const isAccepted = newStatus === 'ACCEPTED';
+      const isRejected = newStatus === 'REJECTED';
+
+      if (isAccepted || isRejected) {
+        // Notification for Founder
+        const founderNotif = {
+          id: `notif_resp_fnd_${Date.now()}`,
+          userId: targetReq.founderId || targetReq.founderEmail,
+          userEmail: targetReq.founderEmail,
+          targetRole: 'founder',
+          title: isAccepted ? `Connection Accepted by ${targetReq.investorName}` : `Request Update from ${targetReq.investorName}`,
+          message: isAccepted
+            ? `${targetReq.investorName} (${targetReq.investorFirm}) accepted your connection request for ${targetReq.startupName}! You can now start messaging or schedule a meeting.`
+            : `${targetReq.investorName} (${targetReq.investorFirm}) declined your investment request for ${targetReq.startupName}.`,
+          type: 'funding',
+          isRead: false,
+          actionUrl: '/dashboard/founder/investment-requests',
+          createdAt: nowIso,
+        };
+
+        // Notification for Admin
+        const adminNotif = {
+          id: `notif_resp_adm_${Date.now()}`,
+          userId: 'admin',
+          targetRole: 'investor',
+          title: `Connection Request ${isAccepted ? 'Accepted' : 'Declined'}`,
+          message: `${targetReq.investorName} (${targetReq.investorFirm}) ${isAccepted ? 'accepted' : 'declined'} the connection request from ${targetReq.founderName} for ${targetReq.startupName}.`,
+          type: 'funding',
+          isRead: false,
+          actionUrl: '/dashboard/admin/investors',
+          createdAt: nowIso,
+        };
+
+        const storedNotifs = localStorage.getItem('ai_startup_builder_notifications');
+        const parsedNotifs = storedNotifs ? JSON.parse(storedNotifs) : [];
+        localStorage.setItem('ai_startup_builder_notifications', JSON.stringify([founderNotif, adminNotif, ...parsedNotifs]));
+      }
+    } catch (err) {
+      console.warn('Could not save status update notifications:', err);
+    }
+  }
+
   window.dispatchEvent(new Event('storage'));
   window.dispatchEvent(new Event('investment_requests_updated'));
+  window.dispatchEvent(new Event('notifications_updated'));
 };
 
 // ─── Messages Helpers ───
