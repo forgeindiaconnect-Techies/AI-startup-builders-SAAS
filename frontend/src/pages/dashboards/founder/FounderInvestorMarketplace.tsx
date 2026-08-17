@@ -262,9 +262,9 @@ const FounderInvestorMarketplace: React.FC = () => {
     }
 
     saveInvestmentRequest({
-      founderId: user?.id || 'f_1',
-      founderName: user?.fullName || 'Founder',
-      founderEmail: user?.email || 'founder@example.com',
+      founderId: user?.id || user?._id || 'f_1',
+      founderName: user?.fullName || user?.name || 'Renu',
+      founderEmail: user?.email || 'renugopal24022000@gmail.com',
       investorId: requestInvestor.id,
       investorName: requestInvestor.name,
       investorEmail: requestInvestor.email,
