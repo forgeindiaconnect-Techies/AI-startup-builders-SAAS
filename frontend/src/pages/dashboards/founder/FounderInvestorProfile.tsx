@@ -219,9 +219,6 @@ const FounderInvestorProfile: React.FC = () => {
     const isVisible = visibilityMap[currentStartup.id || currentStartup.startupId];
     const isReady = currentStartup.aiGenerated?.aiReport?.investmentReadinessScore >= 70;
 
-    const targetSId = currentStartup.id || currentStartup.startupId;
-    setStartupInvestorVisibility(targetSId, true);
-
     saveInvestmentRequest({
       startupId: currentStartup.id || currentStartup.startupId,
       startupName: currentStartup.startupName || 'My Startup',

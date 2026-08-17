@@ -255,9 +255,6 @@ const FounderInvestorMarketplace: React.FC = () => {
       return;
     }
 
-    const sId = targetStartup.id || targetStartup.startupId;
-    setStartupInvestorVisibility(sId, true);
-
     saveInvestmentRequest({
       founderId: user?.id || user?._id || 'f_1',
       founderName: user?.fullName || user?.name || 'Renu',
