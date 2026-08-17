@@ -1,14 +1,23 @@
 import { Request, Response } from 'express';
 import NotificationModel from '../models/Notification.js';
 
-// GET /api/notifications?userId=...
+// GET /api/notifications?userId=...&role=...&email=...
 export const getNotifications = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.query;
+    const { userId, role, email } = req.query;
     const filter: any = {};
-    if (userId) {
+    
+    if (role && role !== 'admin') {
+      filter.$or = [
+        { userId },
+        { userEmail: email },
+        { targetRole: role, userId: 'all' },
+        { userId: 'all' }
+      ];
+    } else if (userId) {
       filter.$or = [{ userId }, { userId: 'all' }];
     }
+
     const notifications = await NotificationModel.find(filter).sort({ createdAt: -1 }).limit(100);
     return res.json({ success: true, data: notifications });
   } catch (err) {
