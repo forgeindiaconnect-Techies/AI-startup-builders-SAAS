@@ -26,28 +26,8 @@ const FounderInvestmentRequests: React.FC = () => {
   };
 
   const loadRequests = () => {
-    const all = getInvestmentRequests();
-    if (!user) {
-      setRequests(all);
-      return;
-    }
-    const currentUserId = (user.id || user._id || '').toLowerCase();
-    const currentUserEmail = (user.email || '').toLowerCase();
-    const currentUserName = (user.fullName || user.name || '').toLowerCase();
-
-    const founderOnly = all.filter(r => {
-      const fId = (r.founderId || '').toLowerCase();
-      const fEmail = (r.founderEmail || '').toLowerCase();
-      const fName = (r.founderName || '').toLowerCase();
-
-      if (fId && currentUserId && fId === currentUserId) return true;
-      if (fEmail && currentUserEmail && fEmail === currentUserEmail) return true;
-      if (fName && currentUserName && (fName.includes(currentUserName) || currentUserName.includes(fName))) return true;
-
-      return false;
-    });
-
-    setRequests(founderOnly);
+    // Requirements: Do NOT show the submitted request under the Founder Dashboard -> Founder Requests page.
+    setRequests([]);
   };
 
   useEffect(() => {
