@@ -188,7 +188,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Overview',           icon: LayoutDashboard, path: '/dashboard/investor' },
         { name: 'Startup Marketplace',icon: Building2,       path: '/dashboard/investor/marketplace' },
         { name: 'Portfolio',          icon: Briefcase,       path: '/dashboard/investor/portfolio-hub' },
-        { name: 'Founder Requests',   icon: Handshake,       path: '/dashboard/investor/requests' },
+        { name: 'Investment Requests',icon: Handshake,       path: '/dashboard/investor/requests' },
         { name: 'Due Diligence',      icon: ClipboardList,   path: '/dashboard/investor/due-diligence' },
         { name: 'Meetings',           icon: CalendarClock,   path: '/dashboard/investor/meetings' },
         { name: 'Transactions',       icon: IndianRupee,     path: '/dashboard/investor/transactions' },

@@ -9,7 +9,7 @@ import FounderFundingTransactions from './FounderFundingTransactions';
 
 const INVESTOR_TABS = [
   { id: 'marketplace', label: 'Investor Marketplace', path: '/dashboard/founder/investors', icon: Building2, component: FounderInvestorMarketplace },
-  { id: 'investment-requests', label: 'Investment Requests', path: '/dashboard/founder/investment-requests', icon: ClipboardList, component: FounderInvestmentRequests },
+  { id: 'investment-requests', label: 'Founder Requests', path: '/dashboard/founder/investment-requests', icon: ClipboardList, component: FounderInvestmentRequests },
   { id: 'messages', label: 'Messages', path: '/dashboard/founder/messages', icon: Inbox, component: FounderInvestorMessages },
   { id: 'meetings', label: 'Meetings', path: '/dashboard/founder/meetings', icon: CalendarClock, component: FounderInvestorMeetings },
   { id: 'funding-transactions', label: 'Funding & Transactions', path: '/dashboard/founder/funding-transactions', icon: Wallet, component: FounderFundingTransactions },
