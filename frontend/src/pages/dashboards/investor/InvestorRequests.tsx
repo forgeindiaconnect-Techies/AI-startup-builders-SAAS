@@ -95,11 +95,19 @@ const InvestorRequests: React.FC = () => {
 
                     <p className="text-xs text-gray-500 font-semibold mb-2">
                       From Founder: <span className="text-gray-900 font-bold">{r.founderName}</span> ({r.founderEmail})
+                      {r.investorName && <span className="text-gray-400 font-normal"> • Addressed To: <strong className="text-gray-700">{r.investorName}</strong> ({r.investorFirm || 'Angel Investor'})</span>}
                     </p>
 
-                    <p className="text-xs text-gray-700 font-medium line-clamp-2 bg-gray-50 p-3 rounded-xl border border-gray-100 mb-2">
-                      "{r.shortIntro}"
-                    </p>
+                    <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100 mb-2 space-y-1">
+                      <p className="text-xs text-gray-800 font-medium">
+                        "{r.shortIntro}"
+                      </p>
+                      {r.optionalMessage && (
+                        <p className="text-xs text-purple-900 font-medium italic pt-1 border-t border-gray-200/60">
+                          <span className="font-bold non-italic text-purple-700">Note:</span> "{r.optionalMessage}"
+                        </p>
+                      )}
+                    </div>
 
                     <p className="text-xs text-gray-700 font-medium">
                       <span className="font-bold text-gray-900">Why Connecting:</span> {r.whySeeking}
