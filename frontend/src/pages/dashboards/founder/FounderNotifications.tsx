@@ -176,67 +176,69 @@ const FounderNotifications: React.FC = () => {
         )}
       </div>
 
-      {/* ── Role Filter Tabs (Founder, Mentor, Investor) ── */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-2 mb-6 flex flex-wrap gap-2 shadow-xs">
-        <button
-          onClick={() => setActiveTab('all')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-            activeTab === 'all'
-              ? 'bg-[#5B21B6] text-white shadow-md'
-              : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <span>All Notifications</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'}`}>
-            {notifs.length}
-          </span>
-        </button>
+      {/* ── Role Filter Tabs (Founder, Mentor, Investor) - ADMIN ONLY ── */}
+      {authUser?.role === 'admin' && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-2 mb-6 flex flex-wrap gap-2 shadow-xs">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'all'
+                ? 'bg-[#5B21B6] text-white shadow-md'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+          >
+            <span>All Notifications</span>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-700'}`}>
+              {notifs.length}
+            </span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('founder')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-            activeTab === 'founder'
-              ? 'bg-[#5B21B6] text-white shadow-md'
-              : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <Rocket size={14} />
-          <span>Founder Notifications</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'founder' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-700'}`}>
-            {founderCount}
-          </span>
-        </button>
+          <button
+            onClick={() => setActiveTab('founder')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'founder'
+                ? 'bg-[#5B21B6] text-white shadow-md'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+          >
+            <Rocket size={14} />
+            <span>Founder Notifications</span>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'founder' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-700'}`}>
+              {founderCount}
+            </span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('mentor')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-            activeTab === 'mentor'
-              ? 'bg-[#5B21B6] text-white shadow-md'
-              : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <User size={14} />
-          <span>Mentor Notifications</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'mentor' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'}`}>
-            {mentorCount}
-          </span>
-        </button>
+          <button
+            onClick={() => setActiveTab('mentor')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'mentor'
+                ? 'bg-[#5B21B6] text-white shadow-md'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+          >
+            <User size={14} />
+            <span>Mentor Notifications</span>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'mentor' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'}`}>
+              {mentorCount}
+            </span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('investor')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-            activeTab === 'investor'
-              ? 'bg-[#5B21B6] text-white shadow-md'
-              : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <IndianRupee size={14} />
-          <span>Investor Notifications</span>
-          <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'investor' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'}`}>
-            {investorCount}
-          </span>
-        </button>
-      </div>
+          <button
+            onClick={() => setActiveTab('investor')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'investor'
+                ? 'bg-[#5B21B6] text-white shadow-md'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+          >
+            <IndianRupee size={14} />
+            <span>Investor Notifications</span>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'investor' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'}`}>
+              {investorCount}
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* ── Unread Banner ── */}
       {unread > 0 && (
