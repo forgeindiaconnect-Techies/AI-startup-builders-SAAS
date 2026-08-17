@@ -1,16 +1,28 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Cpu, ArrowRight, Bookmark, Target, X, Briefcase, ArrowLeft, IndianRupee } from 'lucide-react';
+import { Search, Cpu, ArrowRight, Bookmark, Target, X, Briefcase, ArrowLeft, IndianRupee, Trash2 } from 'lucide-react';
 import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDetailsTabs';
 import { useAuth } from '../../../context/AuthContext';
 import { useFunding } from '../../../context/FundingContext';
 import { API_URL } from '../../../config/api';
-import { getStartupVisibilityMap } from '../../../utils/investorModuleStorage';
+import { getStartupVisibilityMap, setStartupInvestorVisibility } from '../../../utils/investorModuleStorage';
 
 const InvestorMarketplace: React.FC = () => {
   const { user } = useAuth();
   const { sendOffer } = useFunding();
   const navigate = useNavigate();
+
+  const handleDeleteStartup = (startup: any) => {
+    const sId = String(startup.id || startup._id || startup.startupId || '');
+    if (!sId) return;
+
+    if (window.confirm(`Are you sure you want to remove "${startup.startupName || 'this startup'}" from the Startup Marketplace?`)) {
+      setStartupInvestorVisibility(sId, false);
+      setStartupInvestorVisibility(`startup_${sId}`, false);
+      setStartupInvestorVisibility(sId.replace(/^startup_/, ''), false);
+      loadVisibleStartups();
+    }
+  };
 
   const handleSaveStartup = (startup: any) => {
     const savedKey = 'investor_saved_startups';
@@ -284,7 +296,7 @@ const InvestorMarketplace: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button 
                   onClick={() => setSelectedStartup(startup)}
                   className="flex-1 py-3 text-white rounded-xl font-bold text-sm transition-all shadow-md flex items-center justify-center group-hover:shadow-lg bg-[#5B21B6] hover:bg-[#7C3AED]"
@@ -294,10 +306,17 @@ const InvestorMarketplace: React.FC = () => {
                 </button>
                 <button 
                   onClick={() => handleSaveStartup(startup)}
-                  className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center border border-gray-200"
+                  className="px-3.5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm rounded-xl transition-all flex items-center justify-center border border-gray-200"
                   title="Save Startup"
                 >
                   <Bookmark size={18} />
+                </button>
+                <button 
+                  onClick={() => handleDeleteStartup(startup)}
+                  className="px-3.5 py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-sm rounded-xl transition-all flex items-center justify-center border border-red-200"
+                  title="Delete Startup from Marketplace"
+                >
+                  <Trash2 size={18} />
                 </button>
               </div>
             </div>

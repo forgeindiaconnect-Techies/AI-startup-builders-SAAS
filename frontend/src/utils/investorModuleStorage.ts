@@ -400,8 +400,8 @@ export const getStartupVisibilityMap = (): Record<string, boolean> => {
     const stored = localStorage.getItem(STORAGE_KEYS.VISIBILITY);
     if (stored) return JSON.parse(stored);
   } catch {}
-  // By default, set startup_mock_1 to true for demo
-  const defaults = { startup_mock_1: true };
+  // By default, set empty map
+  const defaults = {};
   localStorage.setItem(STORAGE_KEYS.VISIBILITY, JSON.stringify(defaults));
   return defaults;
 };
