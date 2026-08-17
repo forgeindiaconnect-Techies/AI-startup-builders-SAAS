@@ -715,10 +715,9 @@ const FounderInvestorMarketplace: React.FC = () => {
                 >
                   {startups.map((s) => {
                     const sId = s.id || s.startupId;
-                    const isVis = !!visibilityMap[sId];
                     return (
                       <option key={sId} value={sId}>
-                        {s.startupName || 'Startup'} {isVis ? '(Investor Visible)' : '(Private - Needs Visibility)'}
+                        {s.startupName || 'Startup'}
                       </option>
                     );
                   })}
