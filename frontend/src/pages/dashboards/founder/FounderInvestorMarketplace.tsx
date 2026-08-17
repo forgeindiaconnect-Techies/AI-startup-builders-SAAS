@@ -46,6 +46,7 @@ const FounderInvestorMarketplace: React.FC = () => {
   const [optionalMessage, setOptionalMessage] = useState('');
 
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'warning' } | null>(null);
+  const [confirmSuccessModal, setConfirmSuccessModal] = useState<{ investorName: string; investorFirm: string; startupName: string } | null>(null);
 
   const showToast = (msg: string, type: 'success' | 'error' | 'warning' = 'success') => {
     setToast({ msg, type });
@@ -277,7 +278,11 @@ const FounderInvestorMarketplace: React.FC = () => {
       optionalMessage,
     });
 
-    showToast(`Investment request sent successfully to ${requestInvestor.name}!`, 'success');
+    setConfirmSuccessModal({
+      investorName: requestInvestor.name,
+      investorFirm: requestInvestor.companyName || 'Verified Investor',
+      startupName: targetStartup.startupName || 'Startup'
+    });
     setRequestInvestor(null);
     setOptionalMessage('');
   };
@@ -820,6 +825,45 @@ const FounderInvestorMarketplace: React.FC = () => {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── SUCCESS POPUP CONFIRMATION MODAL ─── */}
+      {confirmSuccessModal && (
+        <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-sans">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <CheckCircle size={36} />
+            </div>
+
+            <h3 className="text-xl font-black text-gray-900 mb-2">Request Sent Successfully!</h3>
+            
+            <p className="text-xs text-gray-600 leading-relaxed mb-6 bg-purple-50/60 p-4 rounded-2xl border border-purple-100">
+              Your connection proposal for <span className="font-bold text-[#5B21B6]">{confirmSuccessModal.startupName}</span> has been sent. These details have been forwarded to:
+              <br /><br />
+              • <span className="font-bold text-gray-900">{confirmSuccessModal.investorName}</span> ({confirmSuccessModal.investorFirm}) on their Investor Dashboard
+              <br />
+              • <span className="font-bold text-gray-900">Admin Dashboard</span> Notifications Page
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmSuccessModal(null)}
+                className="flex-1 py-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow-md transition-all"
+              >
+                Got It
+              </button>
+              <button
+                onClick={() => {
+                  setConfirmSuccessModal(null);
+                  navigate('/dashboard/founder/investment-requests');
+                }}
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl transition-colors"
+              >
+                Track Status
+              </button>
+            </div>
           </div>
         </div>
       )}
