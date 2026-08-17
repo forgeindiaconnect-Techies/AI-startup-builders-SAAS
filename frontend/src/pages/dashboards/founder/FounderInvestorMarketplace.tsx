@@ -653,10 +653,10 @@ const FounderInvestorMarketplace: React.FC = () => {
         </div>
       )}
 
-      {/* ─── SEND INVESTMENT REQUEST MODAL ─── */}
+      {/* ─── SEND CONNECTION REQUEST MODAL ─── */}
       {requestInvestor && (
         <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto font-sans">
             <button
               onClick={() => setRequestInvestor(null)}
               className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
@@ -665,26 +665,41 @@ const FounderInvestorMarketplace: React.FC = () => {
             </button>
 
             <div className="mb-6">
-              <span className="px-3 py-1 bg-purple-100 text-[#5B21B6] rounded-full text-xs font-black uppercase tracking-wider inline-block mb-2">
-                Investment Proposal
+              <span className="px-3.5 py-1 bg-purple-100 text-[#5B21B6] rounded-full text-xs font-black uppercase tracking-wider inline-flex items-center gap-1 mb-2">
+                <Send size={12} /> Connection Request
               </span>
-              <h2 className="text-xl sm:text-2xl font-black text-gray-900">Send Investment Request</h2>
-              <p className="text-xs text-gray-500 mt-1">
-                To: <span className="font-bold text-gray-800">{requestInvestor.name}</span> ({requestInvestor.companyName})
+              <h2 className="text-xl sm:text-2xl font-black text-gray-900">Send Connection Request</h2>
+              <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                Initiate a direct line of communication with <span className="font-bold text-gray-800">{requestInvestor.name}</span> ({requestInvestor.companyName || 'Verified Investor'}).
               </p>
+            </div>
+
+            {/* Privacy notice banner */}
+            <div className="mb-5 p-3.5 bg-blue-50/80 border border-blue-100 rounded-2xl flex items-start gap-2.5 text-xs text-blue-900">
+              <ShieldCheck size={18} className="text-[#5B21B6] shrink-0 mt-0.5" />
+              <div className="leading-normal">
+                <p className="font-bold text-[#5B21B6]">Non-Confidential Introduction</p>
+                <p className="text-[11px] text-gray-600 mt-0.5">
+                  Only high-level non-confidential details are shared. Detailed business plans, pitch decks, financials, and KYC documents are protected and only shared after connection acceptance.
+                </p>
+              </div>
             </div>
 
             <form onSubmit={handleSendRequestSubmit} className="space-y-4 text-xs font-medium">
               {/* Select Startup */}
               <div>
-                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Select Startup *</label>
+                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Select Your Startup *</label>
                 <select
                   value={selectedStartupId}
                   onChange={(e) => {
                     setSelectedStartupId(e.target.value);
                     const s = startups.find(st => (st.id === e.target.value || st.startupId === e.target.value));
                     if (s) {
-                      setShortIntro(`Requesting investment for ${s.startupName || 'my startup'}. ${s.startupIdea || ''}`);
+                      const ind = s.aiGenerated?.branding?.logoStyle || s.aiGenerated?.ideaAnalysis?.businessModel || 'Tech & AI';
+                      const stg = s.status === 'generated' ? 'Seed' : 'Pre-Seed';
+                      setFundingStage(stg);
+                      setSelectedIndustry(ind);
+                      setShortIntro(s.startupIdea || `${s.startupName || 'Our startup'} is building innovative solutions for high market growth.`);
                     }
                   }}
                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#5B21B6]"
@@ -702,10 +717,30 @@ const FounderInvestorMarketplace: React.FC = () => {
                 </select>
               </div>
 
-              {/* Funding Amount & Stage */}
+              {/* Auto-filled Readonly Profile Context */}
+              <div className="grid grid-cols-2 gap-3 bg-gray-50/80 p-3.5 rounded-2xl border border-gray-100 text-xs">
+                <div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase block">Investor Name</span>
+                  <span className="font-bold text-gray-900 truncate block">{requestInvestor.name}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase block">Founder Name</span>
+                  <span className="font-bold text-gray-900 truncate block">{user?.fullName || 'Founder'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase block">Industry Sector</span>
+                  <span className="font-bold text-purple-700 truncate block">{selectedIndustry !== 'All' ? selectedIndustry : 'Tech & Innovation'}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase block">Startup Stage</span>
+                  <span className="font-bold text-purple-700 truncate block">{fundingStage}</span>
+                </div>
+              </div>
+
+              {/* Funding Required & Stage */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Funding Amount Required *</label>
+                  <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Funding Required (Auto-filled / Adjustable) *</label>
                   <input
                     type="text"
                     value={fundingAmount}
@@ -732,58 +767,76 @@ const FounderInvestorMarketplace: React.FC = () => {
                 </div>
               </div>
 
-              {/* Short Intro */}
+              {/* Startup Summary */}
               <div>
-                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Short Elevator Intro *</label>
+                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Short Startup Summary *</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={shortIntro}
                   onChange={(e) => setShortIntro(e.target.value)}
-                  placeholder="Briefly describe your product, target audience, and key traction..."
+                  placeholder="Brief non-confidential elevator summary of your product and value prop..."
                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-medium text-gray-900 outline-none focus:ring-2 focus:ring-[#5B21B6]"
                   required
                 />
               </div>
 
-              {/* Why seeking this investor */}
+              {/* Why I'm Connecting */}
               <div>
-                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Why are you seeking this investor? *</label>
+                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Why I'm Connecting *</label>
                 <textarea
                   rows={2}
                   value={whySeeking}
                   onChange={(e) => setWhySeeking(e.target.value)}
-                  placeholder="Explain why their strategic background or firm focus aligns with your startup..."
+                  placeholder="Short reason why their thesis or background aligns with your startup..."
                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-medium text-gray-900 outline-none focus:ring-2 focus:ring-[#5B21B6]"
                   required
                 />
               </div>
 
-              {/* Optional message */}
+              {/* Connection Message */}
               <div>
-                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Optional Personal Note</label>
+                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Personal Connection Message</label>
                 <textarea
                   rows={2}
                   value={optionalMessage}
                   onChange={(e) => setOptionalMessage(e.target.value)}
-                  placeholder="Any additional context, meeting availability, or pitch deck link..."
+                  placeholder="Hi! I'd love to connect and share high-level insights about our progress..."
                   className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-medium text-gray-900 outline-none focus:ring-2 focus:ring-[#5B21B6]"
                 />
               </div>
 
-              <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRequestInvestor(null)}
-                  className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
-                >
-                  <Send size={14} /> Connect with Investor
-                </button>
+              {/* Next Steps Roadmap */}
+              <div className="pt-2">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Next Steps After Investor Accepts:</p>
+                <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-gray-600">
+                  <span className="px-2 py-0.5 bg-gray-100 rounded-md">1. Chat</span> →
+                  <span className="px-2 py-0.5 bg-gray-100 rounded-md">2. Share Details</span> →
+                  <span className="px-2 py-0.5 bg-gray-100 rounded-md">3. Interest</span> →
+                  <span className="px-2 py-0.5 bg-gray-100 rounded-md">4. Meeting</span> →
+                  <span className="px-2 py-0.5 bg-gray-100 rounded-md">5. Due Diligence</span> →
+                  <span className="px-2 py-0.5 bg-purple-100 text-[#5B21B6] rounded-md">6. Deal</span>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
+                <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80">
+                  Status after sending: <span className="font-black">Pending</span>
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRequestInvestor(null)}
+                    className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                  >
+                    <Send size={13} /> Send Request
+                  </button>
+                </div>
               </div>
             </form>
           </div>
