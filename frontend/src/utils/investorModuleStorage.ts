@@ -223,6 +223,27 @@ export const saveInvestmentRequest = (reqData: Omit<InvestmentRequest, 'id' | 'c
   const requests = getInvestmentRequests();
   const updated = [newReq, ...requests];
   localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(updated));
+
+  // Push notification to Admin & Investor
+  try {
+    const notif = {
+      id: `notif_conn_${Date.now()}`,
+      userId: 'admin',
+      targetRole: 'investor',
+      title: 'New Connection Request Sent',
+      message: `${reqData.founderName} sent a connection request to ${reqData.investorName} (${reqData.investorFirm}) for ${reqData.startupName}.`,
+      type: 'funding',
+      isRead: false,
+      actionUrl: '/dashboard/admin/investors',
+      createdAt: new Date().toISOString(),
+    };
+    const storedNotifs = localStorage.getItem('ai_startup_builder_notifications');
+    const parsedNotifs = storedNotifs ? JSON.parse(storedNotifs) : [];
+    localStorage.setItem('ai_startup_builder_notifications', JSON.stringify([notif, ...parsedNotifs]));
+  } catch (err) {
+    console.warn('Could not save notification:', err);
+  }
+
   window.dispatchEvent(new Event('storage'));
   window.dispatchEvent(new Event('investment_requests_updated'));
   return newReq;

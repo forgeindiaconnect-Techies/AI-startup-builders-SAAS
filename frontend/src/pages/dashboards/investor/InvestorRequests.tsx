@@ -1,59 +1,232 @@
-import React from 'react';
-import { Handshake, Clock, CheckCircle2, XCircle } from 'lucide-react';
-
-const requests: any[] = [];
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Handshake, Clock, CheckCircle2, XCircle, Eye, MessageSquare, Ban, ShieldCheck, X } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
+import {
+  getInvestmentRequests, updateInvestmentRequestStatus
+} from '../../../utils/investorModuleStorage';
+import type { InvestmentRequest } from '../../../utils/investorModuleStorage';
 
 const statusStyles: Record<string, { icon: React.ElementType, color: string, bg: string }> = {
-  Pending: { icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100' },
-  Accepted: { icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100' },
-  Declined: { icon: XCircle, color: 'text-red-600', bg: 'bg-red-50 border-red-100' },
+  PENDING: { icon: Clock, color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
+  ACCEPTED: { icon: CheckCircle2, color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200' },
+  REJECTED: { icon: XCircle, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
+  WITHDRAWN: { icon: Ban, color: 'text-gray-600', bg: 'bg-gray-50 border-gray-200' },
 };
 
-const InvestorRequests: React.FC = () => (
-  <div className="animate-fade-in-up pb-10">
-    <div className="mb-8">
-      <h1 className="text-2xl font-bold text-gray-900">Investment Requests</h1>
-      <p className="text-gray-500 mt-1">Track outreach, pitch deck requests, and term sheets sent to founders.</p>
-    </div>
+const InvestorRequests: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [requests, setRequests] = useState<InvestmentRequest[]>([]);
+  const [selectedReq, setSelectedReq] = useState<InvestmentRequest | null>(null);
 
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-        <h2 className="font-bold text-gray-900 flex items-center gap-2"><Handshake size={18} className="text-[#5B21B6]" /> Active Requests</h2>
+  const loadRequests = () => {
+    const all = getInvestmentRequests();
+    setRequests(all);
+  };
+
+  useEffect(() => {
+    loadRequests();
+    window.addEventListener('storage', loadRequests);
+    window.addEventListener('investment_requests_updated', loadRequests);
+    return () => {
+      window.removeEventListener('storage', loadRequests);
+      window.removeEventListener('investment_requests_updated', loadRequests);
+    };
+  }, []);
+
+  const handleUpdateStatus = (reqId: string, status: InvestmentRequest['status'], note?: string) => {
+    updateInvestmentRequestStatus(reqId, status, note);
+    loadRequests();
+    if (selectedReq?.id === reqId) setSelectedReq(null);
+  };
+
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  return (
+    <div className="animate-fade-in-up pb-10 font-sans">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <Handshake size={28} className="text-[#5B21B6]" /> Investment Requests
+        </h1>
+        <p className="text-gray-500 mt-1 text-sm">
+          Review incoming connection proposals and investment requests submitted by founders.
+        </p>
       </div>
-      <div className="divide-y divide-gray-50">
-        {requests.map(r => {
-          const StatusIcon = statusStyles[r.status].icon;
-          return (
-            <div key={r.id} className="p-6 hover:bg-gray-50 transition-colors flex flex-col sm:flex-row gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="font-bold text-gray-900">{r.startup}</h3>
-                  <span className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${statusStyles[r.status].bg} ${statusStyles[r.status].color}`}>
-                    <StatusIcon size={12} /> {r.status}
-                  </span>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="font-bold text-gray-900 text-base flex items-center gap-2">
+            Received Founder Requests ({requests.length})
+          </h2>
+        </div>
+
+        {requests.length === 0 ? (
+          <div className="p-12 text-center text-gray-400">
+            <Handshake size={40} className="mx-auto mb-3 text-gray-300" />
+            <p className="font-bold text-gray-700">No Connection Requests Received</p>
+            <p className="text-xs text-gray-400 mt-1">Founders can reach out directly via the Investor Marketplace.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {requests.map(r => {
+              const style = statusStyles[r.status] || statusStyles.PENDING;
+              const StatusIcon = style.icon;
+              return (
+                <div key={r.id} className="p-6 hover:bg-gray-50/80 transition-colors flex flex-col md:flex-row gap-6 items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2.5 mb-2">
+                      <h3 className="font-bold text-gray-900 text-base">{r.startupName}</h3>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase border flex items-center gap-1 ${style.bg} ${style.color}`}>
+                        <StatusIcon size={12} /> {r.status}
+                      </span>
+                      <span className="px-2.5 py-0.5 bg-purple-50 text-[#5B21B6] border border-purple-100 rounded-full text-xs font-bold">
+                        {r.fundingStage} • {r.fundingAmount}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-gray-500 font-semibold mb-2">
+                      From Founder: <span className="text-gray-900 font-bold">{r.founderName}</span> ({r.founderEmail})
+                    </p>
+
+                    <p className="text-xs text-gray-700 font-medium line-clamp-2 bg-gray-50 p-3 rounded-xl border border-gray-100 mb-2">
+                      "{r.shortIntro}"
+                    </p>
+
+                    <p className="text-[11px] text-gray-500">
+                      <span className="font-bold text-gray-700">Why Connecting:</span> {r.whySeeking}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col sm:items-end justify-between border-t md:border-t-0 pt-4 md:pt-0 w-full md:w-auto shrink-0 gap-3">
+                    <span className="text-[11px] font-medium text-gray-400">Submitted {formatDate(r.createdAt)}</span>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => setSelectedReq(r)}
+                        className="px-3 py-2 bg-white hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl border border-gray-200 transition-colors flex items-center gap-1"
+                      >
+                        <Eye size={13} /> View Details
+                      </button>
+
+                      {r.status === 'PENDING' && (
+                        <>
+                          <button
+                            onClick={() => handleUpdateStatus(r.id, 'REJECTED')}
+                            className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl border border-red-200 transition-colors flex items-center gap-1"
+                          >
+                            <XCircle size={13} /> Decline
+                          </button>
+                          <button
+                            onClick={() => handleUpdateStatus(r.id, 'ACCEPTED', 'Interested in connection! Let us start discussing details.')}
+                            className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1"
+                          >
+                            <CheckCircle2 size={13} /> Accept Connection
+                          </button>
+                        </>
+                      )}
+
+                      {r.status === 'ACCEPTED' && (
+                        <button
+                          onClick={() => navigate('/dashboard/investor/inbox')}
+                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1"
+                        >
+                          <MessageSquare size={13} /> Chat with Founder
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <p className="text-sm text-[#5B21B6] font-semibold mb-2">{r.type}</p>
-                <p className="text-sm text-gray-600 italic">"{r.note}"</p>
-              </div>
-              <div className="flex flex-col sm:items-end justify-between border-t sm:border-t-0 pt-4 sm:pt-0">
-                <span className="text-xs font-medium text-gray-400">Sent on {r.date}</span>
-                {r.status === 'Pending' && (
-                  <button className="mt-3 sm:mt-0 text-sm font-bold text-red-500 hover:text-red-600 transition-colors">
-                    Cancel Request
-                  </button>
-                )}
-                {r.status === 'Accepted' && (
-                  <button className="mt-3 sm:mt-0 px-4 py-2 bg-[#5B21B6] text-white text-sm font-bold rounded-lg hover:bg-[#7C3AED] transition-colors shadow">
-                    View Next Steps
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
       </div>
+
+      {/* Detail Modal */}
+      {selectedReq && (
+        <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in font-sans">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative">
+            <button
+              onClick={() => setSelectedReq(null)}
+              className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="mb-6">
+              <span className="px-3.5 py-1 bg-purple-100 text-[#5B21B6] rounded-full text-xs font-black uppercase tracking-wider inline-block mb-2">
+                Proposal Request Details
+              </span>
+              <h2 className="text-xl font-black text-gray-900">{selectedReq.startupName}</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Submitted by {selectedReq.founderName} ({selectedReq.founderEmail})</p>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
+                <div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase block">Funding Stage</span>
+                  <span className="font-bold text-gray-900">{selectedReq.fundingStage}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase block">Funding Required</span>
+                  <span className="font-bold text-purple-700">{selectedReq.fundingAmount}</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">Short Startup Summary</span>
+                <p className="text-gray-800 bg-gray-50 p-3 rounded-xl border border-gray-100 font-medium leading-relaxed">
+                  {selectedReq.shortIntro}
+                </p>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">Why Connecting With You</span>
+                <p className="text-gray-800 bg-gray-50 p-3 rounded-xl border border-gray-100 font-medium leading-relaxed">
+                  {selectedReq.whySeeking}
+                </p>
+              </div>
+
+              {selectedReq.optionalMessage && (
+                <div>
+                  <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">Personal Note</span>
+                  <p className="text-gray-800 bg-purple-50/60 p-3 rounded-xl border border-purple-100 font-medium italic">
+                    "{selectedReq.optionalMessage}"
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end gap-2">
+              <button
+                onClick={() => setSelectedReq(null)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl"
+              >
+                Close
+              </button>
+              {selectedReq.status === 'PENDING' && (
+                <button
+                  onClick={() => handleUpdateStatus(selectedReq.id, 'ACCEPTED', 'Interested in connection! Let us start discussing details.')}
+                  className="px-5 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow"
+                >
+                  Accept Request
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 export default InvestorRequests;
