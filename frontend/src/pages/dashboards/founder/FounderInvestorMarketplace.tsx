@@ -255,11 +255,8 @@ const FounderInvestorMarketplace: React.FC = () => {
       return;
     }
 
-    const isVisible = visibilityMap[targetStartup.id || targetStartup.startupId];
-    if (!isVisible) {
-      showToast(`Investor Visibility is currently OFF for ${targetStartup.startupName}. Please enable visibility below before sending request.`, 'warning');
-      return;
-    }
+    const sId = targetStartup.id || targetStartup.startupId;
+    setStartupInvestorVisibility(sId, true);
 
     saveInvestmentRequest({
       founderId: user?.id || user?._id || 'f_1',

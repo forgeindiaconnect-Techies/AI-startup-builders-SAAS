@@ -8,7 +8,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { getInvestorApplications, getInvestorLeads } from '../../../utils/investorInvites';
 import { getStartups } from '../../../utils/localStorageHelper';
 import {
-  saveInvestmentRequest, getStartupVisibilityMap
+  saveInvestmentRequest, getStartupVisibilityMap, setStartupInvestorVisibility
 } from '../../../utils/investorModuleStorage';
 
 import { API_URL } from '../../../config/api';
@@ -219,10 +219,8 @@ const FounderInvestorProfile: React.FC = () => {
     const isVisible = visibilityMap[currentStartup.id || currentStartup.startupId];
     const isReady = currentStartup.aiGenerated?.aiReport?.investmentReadinessScore >= 70;
 
-    if (!isVisible) {
-      showToast(`Cannot connect: "${currentStartup.startupName || 'Startup'}" must be set to "Investor Visible" (ON) in Startup details.`, 'warning');
-      return;
-    }
+    const targetSId = currentStartup.id || currentStartup.startupId;
+    setStartupInvestorVisibility(targetSId, true);
 
     saveInvestmentRequest({
       startupId: currentStartup.id || currentStartup.startupId,
