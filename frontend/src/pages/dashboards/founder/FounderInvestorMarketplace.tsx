@@ -467,15 +467,15 @@ const FounderInvestorMarketplace: React.FC = () => {
               <div className="p-3.5 bg-gray-50 border-t border-gray-100 flex items-center gap-2 text-xs font-bold">
                 <button
                   onClick={() => navigate(`/founder/investors/${inv.id}`)}
-                  className="flex-1 py-2 px-3 bg-white hover:bg-gray-100 text-gray-800 rounded-xl border border-gray-200 transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 px-3 bg-white hover:bg-gray-100 text-gray-800 rounded-xl border border-gray-200 transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <Eye size={14} /> View Profile
+                  <Eye size={13} /> View Profile
                 </button>
                 <button
                   onClick={() => handleOpenSendRequest(inv)}
-                  className="flex-1 py-2 px-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5"
+                  className="flex-1 py-2.5 px-3.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5"
                 >
-                  <Send size={14} /> Connect with Investor
+                  <Send size={13} /> Connect with Investor
                 </button>
               </div>
             </div>
