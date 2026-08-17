@@ -228,12 +228,18 @@ const FounderInvestorMarketplace: React.FC = () => {
 
   const handleOpenSendRequest = (investor: any) => {
     setRequestInvestor(investor);
-    if (startups.length > 0) {
-      const currentId = selectedStartupId || startups[0].id;
-      const currentStartup = startups.find(s => (s.id === currentId || s.startupId === currentId));
+    const activeStartupsList = startups.length > 0 ? startups : [];
+    if (activeStartupsList.length > 0) {
+      const currentId = selectedStartupId || activeStartupsList[0].id || activeStartupsList[0].startupId;
+      setSelectedStartupId(currentId);
+      const currentStartup = activeStartupsList.find(s => (s.id === currentId || s.startupId === currentId)) || activeStartupsList[0];
       if (currentStartup) {
+        const ind = currentStartup.aiGenerated?.branding?.logoStyle || currentStartup.aiGenerated?.ideaAnalysis?.businessModel || 'Tech & AI';
+        const stg = currentStartup.status === 'generated' ? 'Seed' : 'Pre-Seed';
+        setFundingStage(stg);
+        setSelectedIndustry(ind);
         setShortIntro(`Requesting investment for ${currentStartup.startupName || 'my startup'}. ${currentStartup.startupIdea || ''}`);
-        setWhySeeking(`Seeking investment from ${investor.companyName} due to your strong focus in ${Array.isArray(investor.preferredIndustries) ? investor.preferredIndustries.join(', ') : 'our sector'}.`);
+        setWhySeeking(`Seeking investment from ${investor.companyName || 'Independent Investor'} due to your strong focus in ${Array.isArray(investor.preferredIndustries) ? investor.preferredIndustries.join(', ') : 'our sector'}.`);
       }
     }
   };
@@ -655,8 +661,8 @@ const FounderInvestorMarketplace: React.FC = () => {
 
       {/* ─── SEND CONNECTION REQUEST MODAL ─── */}
       {requestInvestor && (
-        <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto font-sans">
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto font-sans my-auto">
             <button
               onClick={() => setRequestInvestor(null)}
               className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
