@@ -100,14 +100,26 @@ const FounderNotifications: React.FC = () => {
     if (!authUser) return;
 
     const load = async () => {
+      const userRole = (authUser.role || 'founder').toLowerCase();
+      const userId = (authUser.id || authUser._id || '').toLowerCase();
+      const userEmail = (authUser.email || '').toLowerCase();
+
       const local = (await getNotifications())
-        .filter((n: any) =>
-          !n.userId ||
-          n.userId === authUser.id ||
-          n.userId === 'all' ||
-          n.userId === 'founder_demo_user' ||
-          (authUser.role === 'admin' && n.userId === 'admin')
-        )
+        .filter((n: any) => {
+          // If explicitly addressed to admin
+          if (userRole === 'admin') return true;
+
+          // If addressed specifically by userId or userEmail
+          if (n.userId && (n.userId.toLowerCase() === userId || n.userId.toLowerCase() === userEmail)) return true;
+          if (n.userEmail && n.userEmail.toLowerCase() === userEmail) return true;
+
+          // If general broadcast or matches user role
+          const target = getTargetRole(n);
+          if (!n.userId || n.userId === 'all') return target === userRole;
+          if (target === userRole) return true;
+
+          return false;
+        })
         .map((n: any) => ({
           id: n.id || Date.now(),
           title: n.title,
@@ -135,7 +147,11 @@ const FounderNotifications: React.FC = () => {
 
     load();
     window.addEventListener('storage', load);
-    return () => window.removeEventListener('storage', load);
+    window.addEventListener('notifications_updated', load);
+    return () => {
+      window.removeEventListener('storage', load);
+      window.removeEventListener('notifications_updated', load);
+    };
   }, [authUser]);
 
   const markAll = () => {
@@ -153,6 +169,7 @@ const FounderNotifications: React.FC = () => {
   const investorCount = notifs.filter(n => (n.targetRole || getTargetRole(n)) === 'investor').length;
 
   const filteredNotifs = notifs.filter(n => {
+    if (authUser?.role !== 'admin') return true;
     if (activeTab === 'all') return true;
     return (n.targetRole || getTargetRole(n)) === activeTab;
   });

@@ -224,10 +224,11 @@ export const saveInvestmentRequest = (reqData: Omit<InvestmentRequest, 'id' | 'c
   const updated = [newReq, ...requests];
   localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(updated));
 
-  // Push notification to Admin & Investor
+  // Push notifications to Admin, Investor, and Founder
   try {
-    const notif = {
-      id: `notif_conn_${Date.now()}`,
+    const nowIso = new Date().toISOString();
+    const adminNotif = {
+      id: `notif_conn_admin_${Date.now()}`,
       userId: 'admin',
       targetRole: 'investor',
       title: 'New Connection Request Sent',
@@ -235,17 +236,45 @@ export const saveInvestmentRequest = (reqData: Omit<InvestmentRequest, 'id' | 'c
       type: 'funding',
       isRead: false,
       actionUrl: '/dashboard/admin/investors',
-      createdAt: new Date().toISOString(),
+      createdAt: nowIso,
     };
+
+    const investorNotif = {
+      id: `notif_conn_inv_${Date.now()}`,
+      userId: reqData.investorId || reqData.investorEmail,
+      userEmail: reqData.investorEmail,
+      targetRole: 'investor',
+      title: `New Proposal from ${reqData.founderName}`,
+      message: `${reqData.founderName} submitted an investment request (${reqData.fundingStage} • ${reqData.fundingAmount}) for ${reqData.startupName}.`,
+      type: 'funding',
+      isRead: false,
+      actionUrl: '/dashboard/investor/requests',
+      createdAt: nowIso,
+    };
+
+    const founderNotif = {
+      id: `notif_conn_fnd_${Date.now()}`,
+      userId: reqData.founderId || reqData.founderEmail,
+      userEmail: reqData.founderEmail,
+      targetRole: 'founder',
+      title: `Connection Request Sent to ${reqData.investorName}`,
+      message: `Your investment connection request for ${reqData.startupName} was successfully sent to ${reqData.investorName} (${reqData.investorFirm}).`,
+      type: 'funding',
+      isRead: false,
+      actionUrl: '/dashboard/founder/investment-requests',
+      createdAt: nowIso,
+    };
+
     const storedNotifs = localStorage.getItem('ai_startup_builder_notifications');
     const parsedNotifs = storedNotifs ? JSON.parse(storedNotifs) : [];
-    localStorage.setItem('ai_startup_builder_notifications', JSON.stringify([notif, ...parsedNotifs]));
+    localStorage.setItem('ai_startup_builder_notifications', JSON.stringify([adminNotif, investorNotif, founderNotif, ...parsedNotifs]));
   } catch (err) {
-    console.warn('Could not save notification:', err);
+    console.warn('Could not save notifications:', err);
   }
 
   window.dispatchEvent(new Event('storage'));
   window.dispatchEvent(new Event('investment_requests_updated'));
+  window.dispatchEvent(new Event('notifications_updated'));
   return newReq;
 };
 

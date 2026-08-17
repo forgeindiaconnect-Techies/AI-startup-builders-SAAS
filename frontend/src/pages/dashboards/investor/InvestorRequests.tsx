@@ -22,7 +22,35 @@ const InvestorRequests: React.FC = () => {
 
   const loadRequests = () => {
     const all = getInvestmentRequests();
-    setRequests(all);
+    if (!user) {
+      setRequests(all);
+      return;
+    }
+    const currentUserId = (user.id || user._id || '').toLowerCase();
+    const currentUserEmail = (user.email || '').toLowerCase();
+    const currentUserName = (user.fullName || user.name || '').toLowerCase();
+
+    // Check if matching specific investor or fallback to all for demo/preview investor users
+    const filtered = all.filter(r => {
+      if (!r.investorId && !r.investorEmail && !r.investorName) return true;
+      const rId = (r.investorId || '').toLowerCase();
+      const rEmail = (r.investorEmail || '').toLowerCase();
+      const rName = (r.investorName || '').toLowerCase();
+
+      // If exact user ID/Email/Name match
+      if (rId && currentUserId && rId === currentUserId) return true;
+      if (rEmail && currentUserEmail && rEmail === currentUserEmail) return true;
+      if (rName && currentUserName && rName.includes(currentUserName)) return true;
+
+      // Demo/generic investor users view demo requests
+      if (currentUserEmail.includes('investor') || currentUserId.includes('investor') || user.role === 'investor' || user.role === 'admin') {
+        return true;
+      }
+
+      return false;
+    });
+
+    setRequests(filtered.length > 0 ? filtered : all);
   };
 
   useEffect(() => {
@@ -33,7 +61,7 @@ const InvestorRequests: React.FC = () => {
       window.removeEventListener('storage', loadRequests);
       window.removeEventListener('investment_requests_updated', loadRequests);
     };
-  }, []);
+  }, [user]);
 
   const handleUpdateStatus = (reqId: string, status: InvestmentRequest['status'], note?: string) => {
     updateInvestmentRequestStatus(reqId, status, note);
