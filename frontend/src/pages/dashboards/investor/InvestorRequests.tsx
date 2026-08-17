@@ -55,7 +55,7 @@ const InvestorRequests: React.FC = () => {
     <div className="animate-fade-in-up pb-10 font-sans">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Handshake size={28} className="text-[#5B21B6]" /> Investment Requests
+          <Handshake size={28} className="text-[#5B21B6]" /> Founder Requests
         </h1>
         <p className="text-gray-500 mt-1 text-sm">
           Review incoming connection proposals and investment requests submitted by founders.
