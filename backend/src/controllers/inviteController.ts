@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { MentorInvite, IMentorInvite } from '../models/Invite.js';
 import { InvestorInvite } from '../models/InvestorInvite.js';
 import { sendMentorInviteEmail } from '../utils/sendMentorInviteEmail.js';
-import { sendInvestorInviteEmail } from '../utils/emailService.js';
+import { sendInvestorInviteEmail, sendMeetingInviteEmail } from '../utils/emailService.js';
 
 const DEFAULT_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -398,6 +398,41 @@ export const createInvestorInvite = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       error: error.message || 'Failed to create investor invitation'
+    });
+  }
+};
+
+export const sendMeetingInvite = async (req: Request, res: Response) => {
+  try {
+    const { email, fullName, meetingDate, meetingTime, videoUrl, passcode } = req.body;
+
+    if (!email || !fullName || !meetingDate || !meetingTime || !videoUrl || !passcode) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields for meeting invite email'
+      });
+    }
+
+    const emailSent = await sendMeetingInviteEmail({
+      to: email.toLowerCase().trim(),
+      fullName,
+      meetingDate,
+      meetingTime,
+      videoUrl,
+      passcode
+    });
+
+    return res.json({
+      success: emailSent,
+      message: emailSent
+        ? 'Meeting invite email sent via Brevo successfully!'
+        : 'Failed to send meeting invite email via Brevo.'
+    });
+  } catch (error: any) {
+    console.error('Send meeting invite controller error:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Internal server error'
     });
   }
 };

@@ -222,3 +222,118 @@ export const sendInvestorInviteEmail = async (
     return false;
   }
 };
+
+export const sendMeetingInviteEmail = async ({
+  to,
+  fullName,
+  meetingDate,
+  meetingTime,
+  videoUrl,
+  passcode
+}: {
+  to: string;
+  fullName: string;
+  meetingDate: string;
+  meetingTime: string;
+  videoUrl: string;
+  passcode: string;
+}) => {
+  if (!BREVO_API_KEY) {
+    console.warn('\n⚠️ BREVO_API_KEY not configured in .env');
+    console.warn(`📧 WOULD HAVE SENT MEETING INVITE EMAIL TO: ${to}`);
+    return true;
+  }
+
+  const subject = "Investor Accreditation & Meeting Invitation - AI Startup Builder";
+  const htmlContent = `
+    <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; border: 1px solid #E5E7EB; border-radius: 16px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 28px;">
+        <h1 style="color: #6C4CF1; font-size: 26px; margin: 0; font-weight: 800; tracking-tight: -0.5px;">AI Startup Builder</h1>
+        <p style="color: #D97706; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-top: 4px; margin-bottom: 0;">Investor Accreditation & Interview Meeting</p>
+      </div>
+
+      <p style="font-size: 16px; color: #111827; font-weight: 700; margin-bottom: 12px;">Dear ${fullName},</p>
+
+      <p style="font-size: 14px; color: #374151; line-height: 1.6; margin-bottom: 16px;">
+        An administrator from <strong>AI Startup Builder</strong> has scheduled or updated your virtual accreditation interview. Below are the meeting details and video connection link:
+      </p>
+
+      <div style="background-color: #FAFAFA; border: 1px solid #E5E7EB; border-radius: 12px; padding: 24px; margin: 28px 0;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: #374151;">
+          <tr>
+            <td style="padding: 8px 0; font-weight: 600; color: #6B7280; width: 140px; border-bottom: 1px solid #E5E7EB;">Meeting Date:</td>
+            <td style="padding: 8px 0; font-weight: 700; border-bottom: 1px solid #E5E7EB;">${meetingDate}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: 600; color: #6B7280; border-bottom: 1px solid #E5E7EB;">Meeting Time:</td>
+            <td style="padding: 8px 0; font-weight: 700; color: #6C4CF1; border-bottom: 1px solid #E5E7EB;">${meetingTime} IST (UTC+05:30)</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: 600; color: #6B7280; border-bottom: 1px solid #E5E7EB;">Duration:</td>
+            <td style="padding: 8px 0; font-weight: 700; border-bottom: 1px solid #E5E7EB;">45 Minutes</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: 600; color: #6B7280; border-bottom: 1px solid #E5E7EB;">Video Call Link:</td>
+            <td style="padding: 8px 0; font-weight: 700; border-bottom: 1px solid #E5E7EB;">
+              <a href="${videoUrl}" target="_blank" style="color: #6C4CF1; text-decoration: underline;">
+                Join Video Call
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; font-weight: 600; color: #6B7280;">Passcode:</td>
+            <td style="padding: 8px 0; font-weight: 700; font-family: monospace;">${passcode}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 28px;">
+        <a href="${videoUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #6C4CF1 0%, #5B21B6 100%); color: #ffffff; font-weight: 800; font-size: 14px; padding: 14px 32px; text-decoration: none; border-radius: 12px; box-shadow: 0 4px 14px rgba(108, 76, 241, 0.35);">
+          Join Meeting &rarr;
+        </a>
+      </div>
+
+      <p style="font-size: 12px; color: #6B7280; line-height: 1.6; margin-bottom: 24px;">
+        If you have any conflict with the scheduled time, please contact our support team or administrator as soon as possible to request a reschedule.
+      </p>
+
+      <hr style="border: 0; border-top: 1px solid #E5E7EB; margin: 28px 0;" />
+      <p style="font-size: 11px; color: #9CA3AF; text-align: center; margin: 0;">
+        © ${new Date().getFullYear()} AI Startup Builder. All rights reserved.<br />
+        Sent to <strong>${to}</strong> as part of the investor accreditation process.
+      </p>
+    </div>
+  `;
+
+  try {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        sender: {
+          name: BREVO_SENDER_NAME,
+          email: BREVO_SENDER_EMAIL
+        },
+        to: [{ email: to, name: fullName }],
+        subject: subject,
+        htmlContent: htmlContent
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Brevo API Error: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log(`✉️ Meeting Invite Email sent via Brevo to ${to}: ${data.messageId || 'Success'}`);
+    return true;
+  } catch (error) {
+    console.error(`❌ Failed to send meeting invite email to ${to}:`, error);
+    return false;
+  }
+};

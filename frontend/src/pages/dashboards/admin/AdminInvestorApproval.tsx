@@ -199,7 +199,27 @@ const AdminInvestorApproval: React.FC = () => {
     const videoUrl = `https://meet.jit.si/ai-startup-builder-investor-${meetingModalApp.id.replace(/[^a-zA-Z0-9]/g, '')}`;
     const passcode = `INV-${meetingModalApp.id.slice(-4)}`;
 
-    await new Promise(res => setTimeout(res, 850));
+    let apiSentSuccess = false;
+    try {
+      const response = await fetch(`${API_URL}/invites/send-meeting-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: meetingModalApp.email,
+          fullName: meetingModalApp.fullName,
+          meetingDate: meetingDateVal,
+          meetingTime: meetingTimeVal,
+          videoUrl,
+          passcode
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        apiSentSuccess = true;
+      }
+    } catch (err) {
+      console.error('Failed to send meeting invite via Brevo API:', err);
+    }
 
     const newInvite: InvestorMeetingInvite = {
       id: existingInvite?.id || `mtg_${Date.now()}`,
@@ -230,24 +250,28 @@ const AdminInvestorApproval: React.FC = () => {
       type: 'system',
     });
 
-    // Trigger native email composer with pre-filled details
-    const emailSubject = encodeURIComponent(`Investor Accreditation & Meeting Invitation - AI Startup Builder`);
-    const emailBody = encodeURIComponent(
-      `Hello ${meetingModalApp.fullName},\n\n` +
-      `We would like to invite you for a virtual interview and accreditation review meeting.\n\n` +
-      `Meeting Schedule Details:\n` +
-      `- Date: ${meetingDateVal}\n` +
-      `- Time: ${meetingTimeVal} IST (UTC+05:30)\n` +
-      `- Duration: 45 Mins\n\n` +
-      `Video Call Connection:\n` +
-      `- Link: ${videoUrl}\n` +
-      `- Passcode: ${passcode}\n\n` +
-      `Please let us know if you have any questions or require adjustments to the schedule.\n\n` +
-      `Best regards,\n` +
-      `Admin Team`
-    );
-
-    window.location.href = `mailto:${meetingModalApp.email}?subject=${emailSubject}&body=${emailBody}`;
+    if (apiSentSuccess) {
+      alert(`Meeting invitation email successfully sent via Brevo to ${meetingModalApp.email}!`);
+    } else {
+      // Fallback to mailto link if API delivery fails
+      alert(`Direct Brevo dispatch failed. Opening default email application as fallback...`);
+      const emailSubject = encodeURIComponent(`Investor Accreditation & Meeting Invitation - AI Startup Builder`);
+      const emailBody = encodeURIComponent(
+        `Hello ${meetingModalApp.fullName},\n\n` +
+        `We would like to invite you for a virtual interview and accreditation review meeting.\n\n` +
+        `Meeting Schedule Details:\n` +
+        `- Date: ${meetingDateVal}\n` +
+        `- Time: ${meetingTimeVal} IST (UTC+05:30)\n` +
+        `- Duration: 45 Mins\n\n` +
+        `Video Call Connection:\n` +
+        `- Link: ${videoUrl}\n` +
+        `- Passcode: ${passcode}\n\n` +
+        `Please let us know if you have any questions or require adjustments to the schedule.\n\n` +
+        `Best regards,\n` +
+        `Admin Team`
+      );
+      window.location.href = `mailto:${meetingModalApp.email}?subject=${emailSubject}&body=${emailBody}`;
+    }
   };
 
   // 2. Action: Send Invite Link to BOTH Founder & Investor Dashboard Meetings pages

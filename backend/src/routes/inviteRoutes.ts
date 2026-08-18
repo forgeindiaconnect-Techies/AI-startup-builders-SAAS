@@ -8,12 +8,14 @@ import {
   listInvites,
   updateInvite,
   deleteInvite,
+  sendMeetingInvite,
 } from '../controllers/inviteController.js';
 
 const router = Router();
 
 router.post('/mentor', createMentorInvite);
 router.post('/investor', createInvestorInvite);
+router.post('/send-meeting-email', sendMeetingInvite);
 router.get('/', listInvites);
 router.get('/:token', getInviteByToken);
 router.post('/:token/use', markInviteUsed);
