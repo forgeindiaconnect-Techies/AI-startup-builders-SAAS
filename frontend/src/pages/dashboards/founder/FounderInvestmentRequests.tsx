@@ -265,7 +265,14 @@ const FounderInvestmentRequests: React.FC = () => {
                     <Eye size={14} /> View Details
                   </button>
                   <button
-                    onClick={() => navigate('/dashboard/founder/messages')}
+                    onClick={() => navigate('/dashboard/founder/messages', {
+                      state: {
+                        investorEmail: req.investorEmail,
+                        investorName: req.investorName,
+                        startupName: req.startupName,
+                        founderName: user?.fullName || user?.name || req.founderName || 'Renu',
+                      }
+                    })}
                     className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
                   >
                     <MessageSquare size={14} /> Message
@@ -363,8 +370,16 @@ const FounderInvestmentRequests: React.FC = () => {
             <div className="mt-8 pt-4 border-t border-gray-100 flex justify-end gap-3">
               <button
                 onClick={() => {
+                  const req = viewingRequest;
                   setViewingRequest(null);
-                  navigate('/dashboard/founder/messages');
+                  navigate('/dashboard/founder/messages', {
+                    state: {
+                      investorEmail: req.investorEmail,
+                      investorName: req.investorName,
+                      startupName: req.startupName,
+                      founderName: user?.fullName || user?.name || req.founderName || 'Renu',
+                    }
+                  });
                 }}
                 className="px-4 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
               >

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   MessageSquare, Send, Paperclip, CheckCircle2, User, Building2,
   FileText, ShieldCheck, Search, Image as ImageIcon, X, Sparkles
@@ -11,10 +12,17 @@ import type { InvestorMessage, InvestmentRequest } from '../../../utils/investor
 
 const FounderInvestorMessages: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const stateEmail = location.state?.investorEmail;
+  const stateName = location.state?.investorName;
+  const stateStartup = location.state?.startupName;
+  const stateFounderName = location.state?.founderName || user?.fullName || user?.name || 'Renu';
+
   const founderEmail = user?.email || 'renugopal24022000@gmail.com';
+  const founderDisplayName = user?.fullName || user?.name || stateFounderName || 'Renu';
 
   const [connectedRequests, setConnectedRequests] = useState<InvestmentRequest[]>([]);
-  const [activeInvestorEmail, setActiveInvestorEmail] = useState<string>('');
+  const [activeInvestorEmail, setActiveInvestorEmail] = useState<string>(stateEmail || '');
   const [messages, setMessages] = useState<InvestorMessage[]>([]);
 
   const [textInput, setTextInput] = useState('');
@@ -23,16 +31,15 @@ const FounderInvestorMessages: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const loadData = () => {
-    // Load accepted requests to get authorized messaging channels
     const allReqs = getInvestmentRequests();
-    const accepted = allReqs.filter(r => r.status === 'ACCEPTED');
-    setConnectedRequests(accepted);
+    setConnectedRequests(allReqs);
 
-    if (accepted.length > 0 && !activeInvestorEmail) {
-      setActiveInvestorEmail(accepted[0].investorEmail);
+    if (stateEmail) {
+      setActiveInvestorEmail(stateEmail);
+    } else if (allReqs.length > 0 && !activeInvestorEmail) {
+      setActiveInvestorEmail(allReqs[0].investorEmail);
     }
 
-    // Load messages
     const allMsgs = getInvestorMessages();
     setMessages(allMsgs);
   };
@@ -51,7 +58,20 @@ const FounderInvestorMessages: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, activeInvestorEmail]);
 
-  const activeRequest = connectedRequests.find(r => r.investorEmail === activeInvestorEmail);
+  const activeRequest = connectedRequests.find(
+    r => (activeInvestorEmail && r.investorEmail === activeInvestorEmail) ||
+         (stateName && r.investorName && r.investorName.toLowerCase() === stateName.toLowerCase())
+  ) || (stateName || activeInvestorEmail ? {
+    id: 'req_active_state',
+    investorEmail: activeInvestorEmail || stateEmail || 'rakesh@investor.com',
+    investorName: stateName || 'Rakesh',
+    investorFirm: 'Independent Investor',
+    startupName: stateStartup || 'Startup IT',
+    founderName: founderDisplayName,
+    founderEmail: founderEmail,
+    status: 'ACCEPTED',
+    createdAt: new Date().toISOString(),
+  } : connectedRequests[0]);
 
   // Filter messages for active conversation
   const currentConversation = messages.filter(
@@ -190,7 +210,7 @@ const FounderInvestorMessages: React.FC = () => {
                         </span>
                       </h3>
                       <p className="text-xs text-gray-500 font-medium">
-                        {activeRequest.investorFirm} • Discussing <span className="font-bold text-[#5B21B6]">{activeRequest.startupName}</span>
+                        From Founder: <span className="font-bold text-gray-900">{founderDisplayName}</span> • Investor: <span className="font-bold text-gray-900">{activeRequest.investorName}</span> ({activeRequest.investorFirm}) • Startup: <span className="font-bold text-[#5B21B6]">{activeRequest.startupName}</span>
                       </p>
                     </div>
                   </div>
