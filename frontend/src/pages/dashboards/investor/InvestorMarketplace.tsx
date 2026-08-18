@@ -5,7 +5,7 @@ import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDe
 import { useAuth } from '../../../context/AuthContext';
 import { useFunding } from '../../../context/FundingContext';
 import { API_URL } from '../../../config/api';
-import { getStartupVisibilityMap, setStartupInvestorVisibility } from '../../../utils/investorModuleStorage';
+import { getStartupVisibilityMap, setStartupInvestorVisibility, getInvestmentRequests } from '../../../utils/investorModuleStorage';
 
 const InvestorMarketplace: React.FC = () => {
   const { user } = useAuth();
@@ -78,15 +78,79 @@ const InvestorMarketplace: React.FC = () => {
     const visibilityMap = getStartupVisibilityMap();
     const allStartupsMap = new Map<string, any>();
 
-    // 1. Fetch from backend API
+    // 1. Default Startup Ideas created across platform
+    const defaultIdeas = [
+      {
+        id: 'idea_breaktime',
+        startupId: 'idea_breaktime',
+        startupName: 'Breaktime',
+        founderName: 'Renu',
+        founderEmail: 'renu@gmail.com',
+        fundingStage: 'Pre-Seed',
+        fundingAmount: '₹500,000',
+        shortIntro: 'AI-driven smart break & workplace productivity management platform.',
+        startupIdea: 'AI-driven smart break & workplace productivity management platform.',
+        whySeeking: 'Product development and market expansion.',
+        status: 'generated',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'idea_bakery',
+        startupId: 'idea_bakery',
+        startupName: 'Bakery',
+        founderName: 'Renu',
+        founderEmail: 'renu@gmail.com',
+        fundingStage: 'Seed',
+        fundingAmount: '₹1,000,000',
+        shortIntro: 'Artisanal organic bakery delivery chain with AI demand forecasting.',
+        startupIdea: 'Artisanal organic bakery delivery chain with AI demand forecasting.',
+        whySeeking: 'Kitchen automation and outlet expansion.',
+        status: 'generated',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'idea_startup_it',
+        startupId: 'idea_startup_it',
+        startupName: 'Startup IT',
+        founderName: 'Renu',
+        founderEmail: 'renu@gmail.com',
+        fundingStage: 'Seed',
+        fundingAmount: '₹2,500,000',
+        shortIntro: 'Enterprise cloud & AI infrastructure deployment platform for startups.',
+        startupIdea: 'Enterprise cloud & AI infrastructure deployment platform for startups.',
+        whySeeking: 'Scaling server capacity and engineering team.',
+        status: 'generated',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'idea_tourists_ai',
+        startupId: 'idea_tourists_ai',
+        startupName: 'Tourists Platform AI',
+        founderName: 'Renu',
+        founderEmail: 'renu@gmail.com',
+        fundingStage: 'Seed',
+        fundingAmount: '₹1,500,000',
+        shortIntro: 'Personalized AI travel companion & itinerary generator for global tourists.',
+        startupIdea: 'Personalized AI travel companion & itinerary generator for global tourists.',
+        whySeeking: 'API integrations and marketing.',
+        status: 'generated',
+        createdAt: new Date().toISOString()
+      }
+    ];
+
+    defaultIdeas.forEach(idea => {
+      allStartupsMap.set(idea.startupId, idea);
+    });
+
+    // 2. Fetch from backend API
     try {
       const apiRes = await fetch(`${API_URL}/startups`);
       if (apiRes.ok) {
         const apiData = await apiRes.json();
         if (apiData.success && Array.isArray(apiData.data)) {
           apiData.data.forEach((s: any) => {
-            const sId = s.id || s._id || s.startupId;
-            if (sId) allStartupsMap.set(String(sId), s);
+            const sId = String(s.id || s._id || s.startupId || '');
+            if (sId) allStartupsMap.set(sId, s);
           });
         }
       }
@@ -94,30 +158,53 @@ const InvestorMarketplace: React.FC = () => {
       console.warn('Could not fetch backend startups for investor marketplace:', err);
     }
 
-    // 2. Fetch from localStorage
+    // 3. Fetch from localStorage
     const keys = Object.keys(localStorage);
     keys.forEach(key => {
       if (key.startsWith('startup_')) {
         try {
           const item = JSON.parse(localStorage.getItem(key) || '');
           if (item) {
-            const sId = item.id || item.startupId || key;
-            if (sId && !allStartupsMap.has(String(sId))) {
-              allStartupsMap.set(String(sId), item);
+            const sId = String(item.id || item.startupId || key);
+            if (sId) {
+              allStartupsMap.set(sId, item);
             }
           }
         } catch (e) {}
       }
     });
 
+    // 4. Fetch from Investment Requests submitted by founders
+    try {
+      const requests = getInvestmentRequests();
+      requests.forEach((req: any) => {
+        const sName = req.startupName || 'Startup Idea';
+        const sId = req.startupId || `req_startup_${sName.replace(/\s+/g, '_')}`;
+        allStartupsMap.set(String(sId), {
+          id: sId,
+          startupId: sId,
+          startupName: sName,
+          founderName: req.founderName || 'Renu',
+          founderEmail: req.founderEmail || 'renu@gmail.com',
+          fundingStage: req.fundingStage || 'Seed',
+          fundingAmount: req.fundingAmount || '₹500,000',
+          shortIntro: req.shortIntro || 'Innovative AI startup idea looking for investment.',
+          startupIdea: req.shortIntro || req.whySeeking || 'Innovative AI startup idea looking for investment.',
+          whySeeking: req.whySeeking || 'Scaling production and expansion.',
+          status: 'generated',
+          createdAt: req.createdAt || new Date().toISOString()
+        });
+      });
+    } catch (e) {}
+
     const combined = Array.from(allStartupsMap.values());
 
-    // 3. Filter ONLY startups where Investor Visibility is explicitly toggled ON
+    // 5. Exclude ONLY startups where Investor Visibility is explicitly toggled OFF (deleted/hidden)
     const visibleOnly = combined.filter(s => {
       const sId = String(s.id || s._id || s.startupId || '');
-      const isVisibleInObj = s.investorVisible === true || s.isInvestorVisible === true;
-      const isVisibleInMap = visibilityMap[sId] === true || visibilityMap[`startup_${sId}`] === true || visibilityMap[sId.replace(/^startup_/, '')] === true;
-      return isVisibleInObj || isVisibleInMap;
+      const isExplicitlyHiddenInObj = s.investorVisible === false || s.isInvestorVisible === false;
+      const isExplicitlyHiddenInMap = visibilityMap[sId] === false || visibilityMap[`startup_${sId}`] === false || visibilityMap[sId.replace(/^startup_/, '')] === false;
+      return !isExplicitlyHiddenInObj && !isExplicitlyHiddenInMap;
     });
 
     visibleOnly.sort((a, b) => new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime());
@@ -274,7 +361,7 @@ const InvestorMarketplace: React.FC = () => {
               </div>
               
               <p className="text-gray-600 text-sm mb-6 leading-relaxed flex-grow line-clamp-3">
-                {startup.startupIdea}
+                {startup.startupIdea || startup.shortIntro || startup.whySeeking || 'Innovative AI startup idea seeking investment.'}
               </p>
               
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 mb-6">
