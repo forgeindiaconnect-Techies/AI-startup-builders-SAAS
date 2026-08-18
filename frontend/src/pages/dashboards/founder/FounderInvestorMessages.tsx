@@ -10,6 +10,13 @@ import {
 } from '../../../utils/investorModuleStorage';
 import type { InvestorMessage, InvestmentRequest } from '../../../utils/investorModuleStorage';
 
+// Safe property getters for snake_case and camelCase compatibility
+const getInvName = (r: any): string => r?.investorName || r?.investor_name || r?.name || 'Investor';
+const getInvEmail = (r: any): string => r?.investorEmail || r?.investor_email || r?.email || r?.investorId || r?.investor_id || r?.id || 'investor@example.com';
+const getInvFirm = (r: any): string => r?.investorFirm || r?.investor_firm || r?.companyName || 'Independent Investor';
+const getStartupName = (r: any): string => r?.startupName || r?.startup_name || 'Startup IT';
+const getFounderName = (r: any, fallback?: string): string => r?.founderName || r?.founder_name || fallback || 'Founder';
+
 const FounderInvestorMessages: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
@@ -22,8 +29,10 @@ const FounderInvestorMessages: React.FC = () => {
   const founderDisplayName = user?.fullName || user?.name || stateFounderName || 'Renu';
 
   const [connectedRequests, setConnectedRequests] = useState<InvestmentRequest[]>([]);
+  const [activeRequestId, setActiveRequestId] = useState<string>('');
   const [activeInvestorEmail, setActiveInvestorEmail] = useState<string>(stateEmail || '');
   const [messages, setMessages] = useState<InvestorMessage[]>([]);
+  const [searchFilter, setSearchFilter] = useState('');
 
   const [textInput, setTextInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<{ name: string; url: string } | null>(null);
@@ -34,10 +43,13 @@ const FounderInvestorMessages: React.FC = () => {
     const allReqs = getInvestmentRequests();
     setConnectedRequests(allReqs);
 
-    if (stateEmail) {
-      setActiveInvestorEmail(stateEmail);
-    } else if (allReqs.length > 0 && !activeInvestorEmail) {
-      setActiveInvestorEmail(allReqs[0].investorEmail);
+    if (allReqs.length > 0 && !activeRequestId) {
+      const targetReq = stateEmail
+        ? allReqs.find(r => getInvEmail(r) === stateEmail || r.investorEmail === stateEmail)
+        : allReqs[0];
+      const firstId = String(targetReq?.id || (targetReq as any)?._id || allReqs[0]?.id || (allReqs[0] as any)?._id || '');
+      setActiveRequestId(firstId);
+      setActiveInvestorEmail(stateEmail || getInvEmail(targetReq || allReqs[0]));
     }
 
     const allMsgs = getInvestorMessages();
@@ -56,13 +68,17 @@ const FounderInvestorMessages: React.FC = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, activeInvestorEmail]);
+  }, [messages, activeRequestId, activeInvestorEmail]);
 
-  const activeRequest = connectedRequests.find(
-    r => (activeInvestorEmail && r.investorEmail === activeInvestorEmail) ||
-         (stateName && r.investorName && r.investorName.toLowerCase() === stateName.toLowerCase())
-  ) || (stateName || activeInvestorEmail ? {
-    id: 'req_active_state',
+  // Resolve active request item
+  const activeRequest = connectedRequests.find(r => {
+    const rId = String(r.id || (r as any)._id || '');
+    return rId && rId === activeRequestId;
+  }) || connectedRequests.find(r => {
+    const rEmail = getInvEmail(r);
+    return rEmail && rEmail === activeInvestorEmail;
+  }) || (connectedRequests.length > 0 ? connectedRequests[0] : (stateName || activeInvestorEmail ? {
+    id: 'req_active_fallback',
     investorEmail: activeInvestorEmail || stateEmail || 'rakesh@investor.com',
     investorName: stateName || 'Rakesh',
     investorFirm: 'Independent Investor',
@@ -71,13 +87,18 @@ const FounderInvestorMessages: React.FC = () => {
     founderEmail: founderEmail,
     status: 'ACCEPTED',
     createdAt: new Date().toISOString(),
-  } : connectedRequests[0]);
+  } as any : null));
+
+  const currentInvEmail = activeRequest ? getInvEmail(activeRequest) : activeInvestorEmail;
+  const currentInvName = activeRequest ? getInvName(activeRequest) : stateName || 'Investor';
 
   // Filter messages for active conversation
   const currentConversation = messages.filter(
     m =>
-      (m.senderEmail === founderEmail && m.receiverEmail === activeInvestorEmail) ||
-      (m.senderEmail === activeInvestorEmail && m.receiverEmail === founderEmail)
+      (m.senderEmail === founderEmail && (m.receiverEmail === currentInvEmail || m.receiverEmail === activeInvestorEmail)) ||
+      ((m.senderEmail === currentInvEmail || m.senderEmail === activeInvestorEmail) && m.receiverEmail === founderEmail) ||
+      (m.receiverName && currentInvName && m.receiverName.toLowerCase() === currentInvName.toLowerCase()) ||
+      (m.senderName && currentInvName && m.senderName.toLowerCase() === currentInvName.toLowerCase())
   );
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -86,11 +107,11 @@ const FounderInvestorMessages: React.FC = () => {
 
     sendInvestorMessage({
       senderEmail: founderEmail,
-      senderName: user?.fullName || 'Founder',
+      senderName: founderDisplayName,
       senderRole: 'founder',
-      receiverEmail: activeRequest.investorEmail,
-      receiverName: activeRequest.investorName,
-      startupName: activeRequest.startupName,
+      receiverEmail: currentInvEmail,
+      receiverName: currentInvName,
+      startupName: getStartupName(activeRequest),
       text: textInput.trim(),
       attachmentUrl: selectedFile?.url,
       attachmentName: selectedFile?.name,
@@ -118,6 +139,16 @@ const FounderInvestorMessages: React.FC = () => {
       return dateStr;
     }
   };
+
+  const filteredRequests = connectedRequests.filter(req => {
+    if (!searchFilter.trim()) return true;
+    const term = searchFilter.toLowerCase();
+    return (
+      getInvName(req).toLowerCase().includes(term) ||
+      getInvFirm(req).toLowerCase().includes(term) ||
+      getStartupName(req).toLowerCase().includes(term)
+    );
+  });
 
   return (
     <div className="animate-fade-in-up pb-12 font-sans">
@@ -148,6 +179,8 @@ const FounderInvestorMessages: React.FC = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                 <input
                   type="text"
+                  value={searchFilter}
+                  onChange={(e) => setSearchFilter(e.target.value)}
                   placeholder="Filter conversations..."
                   className="w-full pl-8 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-[#5B21B6]"
                 />
@@ -155,35 +188,45 @@ const FounderInvestorMessages: React.FC = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
-              {connectedRequests.map((req) => {
-                const isSelected = req.investorEmail === activeInvestorEmail;
+              {filteredRequests.map((req, idx) => {
+                const reqId = String(req.id || (req as any)._id || `req_${idx}`);
+                const invName = getInvName(req);
+                const invEmail = getInvEmail(req);
+                const invFirm = getInvFirm(req);
+                const startupName = getStartupName(req);
+
+                const isSelected = activeRequest ? String(activeRequest.id || (activeRequest as any)._id || '') === reqId : idx === 0;
+
                 const unreadCount = messages.filter(
-                  m => m.senderEmail === req.investorEmail && m.receiverEmail === founderEmail && !m.isRead
+                  m => (m.senderEmail === invEmail || m.senderName === invName) && m.receiverEmail === founderEmail && !m.isRead
                 ).length;
 
                 return (
                   <button
-                    key={req.id}
-                    onClick={() => setActiveInvestorEmail(req.investorEmail)}
-                    className={`w-full p-4 text-left transition-all flex items-start gap-3 relative ${
+                    key={reqId}
+                    onClick={() => {
+                      setActiveRequestId(reqId);
+                      setActiveInvestorEmail(invEmail);
+                    }}
+                    className={`w-full p-4 text-left transition-all flex items-start gap-3 relative cursor-pointer ${
                       isSelected ? 'bg-purple-50/70 border-l-4 border-[#5B21B6]' : 'hover:bg-gray-100/60'
                     }`}
                   >
                     <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-sm font-black shadow shrink-0">
-                      {req.investorName ? req.investorName.charAt(0).toUpperCase() : 'I'}
+                      {(invName || 'I').charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-bold text-gray-900 text-xs truncate">{req.investorName}</h4>
+                        <h4 className="font-bold text-gray-900 text-xs truncate">{invName}</h4>
                         {unreadCount > 0 && (
                           <span className="w-4 h-4 bg-[#5B21B6] text-white text-[10px] font-black rounded-full flex items-center justify-center">
                             {unreadCount}
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-gray-500 truncate">{req.investorFirm}</p>
+                      <p className="text-[11px] text-gray-500 truncate">{invFirm}</p>
                       <span className="inline-block mt-1 px-2 py-0.5 bg-purple-100/70 text-[#5B21B6] rounded text-[10px] font-bold">
-                        {req.startupName}
+                        {startupName}
                       </span>
                     </div>
                   </button>
@@ -200,17 +243,17 @@ const FounderInvestorMessages: React.FC = () => {
                 <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white shadow-2xs">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-sm font-black shadow shrink-0">
-                      {activeRequest.investorName.charAt(0).toUpperCase()}
+                      {(getInvName(activeRequest) || 'I').charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <h3 className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
-                        {activeRequest.investorName}
+                        {getInvName(activeRequest)}
                         <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded-full border border-emerald-200">
                           Verified Investor
                         </span>
                       </h3>
                       <p className="text-xs text-gray-500 font-medium">
-                        From Founder: <span className="font-bold text-gray-900">{founderDisplayName}</span> • Investor: <span className="font-bold text-gray-900">{activeRequest.investorName}</span> ({activeRequest.investorFirm}) • Startup: <span className="font-bold text-[#5B21B6]">{activeRequest.startupName}</span>
+                        From Founder: <span className="font-bold text-gray-900">{founderDisplayName}</span> • Investor: <span className="font-bold text-gray-900">{getInvName(activeRequest)}</span> ({getInvFirm(activeRequest)}) • Startup: <span className="font-bold text-[#5B21B6]">{getStartupName(activeRequest)}</span>
                       </p>
                     </div>
                   </div>
@@ -221,7 +264,7 @@ const FounderInvestorMessages: React.FC = () => {
                   {currentConversation.length === 0 ? (
                     <div className="text-center py-12 text-gray-400 text-xs">
                       <Sparkles size={24} className="mx-auto mb-2 text-purple-300" />
-                      No messages yet. Send a message to start discussing your proposal!
+                      No messages yet. Send a message to start discussing your proposal with {getInvName(activeRequest)}!
                     </div>
                   ) : (
                     currentConversation.map((msg) => {
@@ -281,14 +324,14 @@ const FounderInvestorMessages: React.FC = () => {
                       type="text"
                       value={textInput}
                       onChange={(e) => setTextInput(e.target.value)}
-                      placeholder={`Message ${activeRequest.investorName}...`}
+                      placeholder={`Message ${getInvName(activeRequest)}...`}
                       className="flex-1 py-2.5 px-4 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-[#5B21B6] transition-all"
                     />
 
                     <button
                       type="submit"
                       disabled={!textInput.trim() && !selectedFile}
-                      className="p-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white rounded-xl shadow-md transition-all shrink-0"
+                      className="p-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] disabled:opacity-50 text-white rounded-xl shadow-md transition-all shrink-0 cursor-pointer"
                     >
                       <Send size={18} />
                     </button>
@@ -296,8 +339,10 @@ const FounderInvestorMessages: React.FC = () => {
                 </form>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center p-8 text-center text-gray-400 text-xs">
-                Select a conversation from the sidebar to view messages.
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400 text-xs">
+                <MessageSquare size={44} className="mb-2 text-purple-300" />
+                <p className="font-bold text-gray-700 text-sm">Select a Conversation</p>
+                <p className="text-gray-400 mt-1">Choose an investor from the sidebar to view messages.</p>
               </div>
             )}
           </div>
