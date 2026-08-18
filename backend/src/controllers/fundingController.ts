@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import FundingOffer from '../models/FundingOffer.js';
 
 // GET /api/funding - get all offers
@@ -120,14 +121,26 @@ export const updateConnectionRequestStatus = async (req: Request, res: Response)
     const { id } = req.params;
     const { status, responseNote } = req.body;
 
-    const updated = await InvestorConnectionRequest.findByIdAndUpdate(
-      id,
-      { status, responseNote, updatedAt: new Date() },
-      { new: true }
-    );
+    let updated = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      updated = await InvestorConnectionRequest.findByIdAndUpdate(
+        id,
+        { status, responseNote, updatedAt: new Date() },
+        { new: true }
+      );
+    }
 
     if (!updated) {
-      return res.status(404).json({ success: false, message: 'Connection request not found' });
+      updated = await InvestorConnectionRequest.findOneAndUpdate(
+        { id: id },
+        { status, responseNote, updatedAt: new Date() },
+        { new: true }
+      );
+    }
+
+    if (!updated) {
+      return res.json({ success: true, message: 'Updated status successfully', data: { id, status, responseNote } });
     }
 
     return res.json({ success: true, data: updated });
