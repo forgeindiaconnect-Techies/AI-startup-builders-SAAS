@@ -230,7 +230,24 @@ const AdminInvestorApproval: React.FC = () => {
       type: 'system',
     });
 
-    alert(`Email invitation successfully dispatched to ${meetingModalApp.email}!`);
+    // Trigger native email composer with pre-filled details
+    const emailSubject = encodeURIComponent(`Investor Accreditation & Meeting Invitation - AI Startup Builder`);
+    const emailBody = encodeURIComponent(
+      `Hello ${meetingModalApp.fullName},\n\n` +
+      `We would like to invite you for a virtual interview and accreditation review meeting.\n\n` +
+      `Meeting Schedule Details:\n` +
+      `- Date: ${meetingDateVal}\n` +
+      `- Time: ${meetingTimeVal} IST (UTC+05:30)\n` +
+      `- Duration: 45 Mins\n\n` +
+      `Video Call Connection:\n` +
+      `- Link: ${videoUrl}\n` +
+      `- Passcode: ${passcode}\n\n` +
+      `Please let us know if you have any questions or require adjustments to the schedule.\n\n` +
+      `Best regards,\n` +
+      `Admin Team`
+    );
+
+    window.location.href = `mailto:${meetingModalApp.email}?subject=${emailSubject}&body=${emailBody}`;
   };
 
   // 2. Action: Send Invite Link to BOTH Founder & Investor Dashboard Meetings pages
