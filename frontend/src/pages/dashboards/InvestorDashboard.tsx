@@ -26,7 +26,11 @@ const InvestorDashboard: React.FC = () => {
       }
     });
     locals.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    setStartups(locals);
+    const bakeryOnly = locals.filter(startup => 
+      (startup.startupName || '').toLowerCase().includes('bakery') ||
+      (startup.startupIdea || '').toLowerCase().includes('bakery')
+    );
+    setStartups(bakeryOnly);
   }, []);
 
   return (
