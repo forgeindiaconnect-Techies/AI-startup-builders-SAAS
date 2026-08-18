@@ -109,12 +109,33 @@ const FounderInvestorMessages: React.FC = () => {
 
   // Filter messages for active conversation
   const currentConversation = messages.filter(
-    m =>
-      (m.senderEmail === userEmail && (m.receiverEmail === currentInvEmail || m.receiverEmail === currentFounderEmail)) ||
-      (m.senderEmail === currentInvEmail && (m.receiverEmail === userEmail || m.receiverEmail === currentFounderEmail)) ||
-      (m.senderEmail === currentFounderEmail && (m.receiverEmail === userEmail || m.receiverEmail === currentInvEmail)) ||
-      (m.receiverName && (currentInvName.toLowerCase() === m.receiverName.toLowerCase() || currentFounderName.toLowerCase() === m.receiverName.toLowerCase())) ||
-      (m.senderName && (currentInvName.toLowerCase() === m.senderName.toLowerCase() || currentFounderName.toLowerCase() === m.senderName.toLowerCase()))
+    m => {
+      const isUserMatch = m.senderEmail === userEmail || m.receiverEmail === userEmail;
+      const targetEmail = isInvestorUser ? currentFounderEmail : currentInvEmail;
+      const isTargetMatch = m.senderEmail === targetEmail || m.receiverEmail === targetEmail;
+
+      if (isUserMatch && isTargetMatch) return true;
+
+      // Fallback matching by startup name and role pair
+      if (
+        m.startupName &&
+        currentStartupName &&
+        m.startupName.toLowerCase() === currentStartupName.toLowerCase()
+      ) {
+        if (isInvestorUser) {
+          return (
+            (m.senderRole === 'investor' && m.receiverName?.toLowerCase() === currentFounderName.toLowerCase()) ||
+            (m.senderRole === 'founder' && m.senderName?.toLowerCase() === currentFounderName.toLowerCase())
+          );
+        } else {
+          return (
+            (m.senderRole === 'founder' && m.receiverName?.toLowerCase() === currentInvName.toLowerCase()) ||
+            (m.senderRole === 'investor' && m.senderName?.toLowerCase() === currentInvName.toLowerCase())
+          );
+        }
+      }
+      return false;
+    }
   );
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -298,11 +319,11 @@ const FounderInvestorMessages: React.FC = () => {
                   {currentConversation.length === 0 ? (
                     <div className="text-center py-12 text-gray-400 text-xs">
                       <Sparkles size={24} className="mx-auto mb-2 text-purple-300" />
-                      No messages yet. Send a message to start discussing your proposal with {getInvName(activeRequest)}!
+                      No messages yet. Send a message to start discussing your proposal with {isInvestorUser ? currentFounderName : currentInvName}!
                     </div>
                   ) : (
                     currentConversation.map((msg) => {
-                      const isMe = msg.senderRole === 'founder';
+                      const isMe = msg.senderRole === (isInvestorUser ? 'investor' : 'founder') || msg.senderEmail === userEmail;
                       return (
                         <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                           <div
@@ -358,7 +379,7 @@ const FounderInvestorMessages: React.FC = () => {
                       type="text"
                       value={textInput}
                       onChange={(e) => setTextInput(e.target.value)}
-                      placeholder={`Message ${getInvName(activeRequest)}...`}
+                      placeholder={`Message ${isInvestorUser ? currentFounderName : currentInvName}...`}
                       className="flex-1 py-2.5 px-4 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-[#5B21B6] transition-all"
                     />
 
