@@ -234,15 +234,15 @@ function App() {
                   {/* ───────────── INVESTOR ───────────── */}
                   <Route path="investor" element={<ProtectedRoute allowedRoles={['investor']} />}>
                     <Route index                  element={<InvestorDashboard />} />
-                    <Route path="marketplace"     element={<InvestorHub />} />
+                    <Route path="marketplace"     element={<InvestorMarketplace />} />
                     <Route path="portfolio-hub"   element={<InvestorPortfolioHub />} />
-                    <Route path="requests"        element={<InvestorHub />} />
+                    <Route path="requests"        element={<InvestorRequests />} />
                     <Route path="due-diligence"   element={<InvestorDueDiligence />} />
-                    <Route path="meetings"        element={<InvestorHub />} />
-                    <Route path="transactions"    element={<InvestorHub />} />
+                    <Route path="meetings"        element={<InvestorMeetings />} />
+                    <Route path="transactions"    element={<InvestorTransactions />} />
                     <Route path="learning-center" element={<InvestorLearningCenter />} />
                     <Route path="inbox"           element={<SharedNotifications />} />
-                    <Route path="messages"        element={<InvestorHub />} />
+                    <Route path="messages"        element={<FounderInvestorMessages />} />
                     <Route path="profile-kyc"     element={<InvestorProfileKYC />} />
                     {/* Legacy / Direct paths */}
                     <Route path="saved"           element={<InvestorSaved />} />
