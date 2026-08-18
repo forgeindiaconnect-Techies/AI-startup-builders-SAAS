@@ -5,7 +5,7 @@ import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDe
 import { useAuth } from '../../../context/AuthContext';
 import { useFunding } from '../../../context/FundingContext';
 import { API_URL } from '../../../config/api';
-import { getStartupVisibilityMap, setStartupInvestorVisibility, getInvestmentRequests } from '../../../utils/investorModuleStorage';
+import { getStartupVisibilityMap, setStartupInvestorVisibility, getInvestmentRequests, getInvestorMessages } from '../../../utils/investorModuleStorage';
 
 const InvestorMarketplace: React.FC = () => {
   const { user } = useAuth();
@@ -76,6 +76,8 @@ const InvestorMarketplace: React.FC = () => {
 
   const loadVisibleStartups = async () => {
     const visibilityMap = getStartupVisibilityMap();
+    const allMessages = getInvestorMessages();
+    const allRequests = getInvestmentRequests();
     const allStartupsMap = new Map<string, any>();
 
     // 1. Default Startup Ideas created across platform
@@ -176,8 +178,7 @@ const InvestorMarketplace: React.FC = () => {
 
     // 4. Fetch from Investment Requests submitted by founders
     try {
-      const requests = getInvestmentRequests();
-      requests.forEach((req: any) => {
+      allRequests.forEach((req: any) => {
         const sName = req.startupName || 'Startup Idea';
         const sId = req.startupId || `req_startup_${sName.replace(/\s+/g, '_')}`;
         allStartupsMap.set(String(sId), {
@@ -199,12 +200,41 @@ const InvestorMarketplace: React.FC = () => {
 
     const combined = Array.from(allStartupsMap.values());
 
-    // 5. Exclude ONLY startups where Investor Visibility is explicitly toggled OFF (deleted/hidden)
+    // Helper: Check if messages exist for a startup idea
+    const hasMessagesForStartup = (sName: string) => {
+      if (!sName) return false;
+      const targetName = sName.trim().toLowerCase();
+      return allMessages.some(m => {
+        const msgStartup = (m.startupName || '').trim().toLowerCase();
+        return msgStartup && (msgStartup === targetName || msgStartup.includes(targetName) || targetName.includes(msgStartup));
+      });
+    };
+
+    // Helper: Check if an accepted connection request exists for a startup idea
+    const isAcceptedForStartup = (sName: string, sId: string) => {
+      return allRequests.some(r => {
+        const rStatus = (r.status || '').toUpperCase();
+        const matchesName = (r.startupName || '').trim().toLowerCase() === (sName || '').trim().toLowerCase();
+        const matchesId = String(r.startupId || '') === String(sId || '');
+        return (matchesName || matchesId) && (rStatus === 'ACCEPTED' || rStatus === 'COMPLETED');
+      });
+    };
+
+    // 5. Show ONLY startups where Founder and Investor have exchanged messages OR request is accepted/messaged
     const visibleOnly = combined.filter(s => {
       const sId = String(s.id || s._id || s.startupId || '');
+      const sName = String(s.startupName || s.name || '');
+
       const isExplicitlyHiddenInObj = s.investorVisible === false || s.isInvestorVisible === false;
       const isExplicitlyHiddenInMap = visibilityMap[sId] === false || visibilityMap[`startup_${sId}`] === false || visibilityMap[sId.replace(/^startup_/, '')] === false;
-      return !isExplicitlyHiddenInObj && !isExplicitlyHiddenInMap;
+      if (isExplicitlyHiddenInObj || isExplicitlyHiddenInMap) return false;
+
+      const isVisibleInObj = s.investorVisible === true || s.isInvestorVisible === true;
+      const isVisibleInMap = visibilityMap[sId] === true || visibilityMap[`startup_${sId}`] === true || visibilityMap[sId.replace(/^startup_/, '')] === true;
+      const hasMsg = hasMessagesForStartup(sName);
+      const isAccepted = isAcceptedForStartup(sName, sId);
+
+      return hasMsg || isAccepted || isVisibleInObj || isVisibleInMap;
     });
 
     visibleOnly.sort((a, b) => new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime());
@@ -215,9 +245,11 @@ const InvestorMarketplace: React.FC = () => {
     loadVisibleStartups();
     window.addEventListener('storage', loadVisibleStartups);
     window.addEventListener('startup_visibility_updated', loadVisibleStartups);
+    window.addEventListener('investor_messages_updated', loadVisibleStartups);
     return () => {
       window.removeEventListener('storage', loadVisibleStartups);
       window.removeEventListener('startup_visibility_updated', loadVisibleStartups);
+      window.removeEventListener('investor_messages_updated', loadVisibleStartups);
     };
   }, []);
 
