@@ -9,6 +9,7 @@ import {
   getInvestmentRequests, getInvestorMessages, sendInvestorMessage
 } from '../../../utils/investorModuleStorage';
 import type { InvestorMessage, InvestmentRequest } from '../../../utils/investorModuleStorage';
+import InvestorSubNav from '../../../components/shared/InvestorSubNav';
 
 // Safe property getters for snake_case and camelCase compatibility
 const getInvName = (r: any): string => r?.investorName || r?.investor_name || r?.name || 'Investor';
@@ -224,6 +225,8 @@ const FounderInvestorMessages: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up pb-12 font-sans">
+      {isInvestorUser && <InvestorSubNav activeTab="messages" />}
+
       <div className="mb-6">
         <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
           <MessageSquare className="text-[#5B21B6]" size={28} /> {isInvestorUser ? 'Founder Messages' : 'Investor Messages'}

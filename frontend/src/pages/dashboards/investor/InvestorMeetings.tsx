@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { Calendar, Video, Clock, Link, CheckCircle2 } from 'lucide-react';
+import InvestorSubNav from '../../../components/shared/InvestorSubNav';
 
 const meetings: any[] = [];
 
@@ -9,6 +10,7 @@ const InvestorMeetings: React.FC = () => {
 
   return (
   <div className="animate-fade-in-up pb-10">
+    <InvestorSubNav activeTab="meetings" />
     <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Meetings</h1>

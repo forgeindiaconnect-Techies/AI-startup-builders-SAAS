@@ -7,6 +7,8 @@ import {
 } from '../../../utils/investorModuleStorage';
 import type { InvestmentRequest } from '../../../utils/investorModuleStorage';
 
+import InvestorSubNav from '../../../components/shared/InvestorSubNav';
+
 const statusStyles: Record<string, { icon: React.ElementType, color: string, bg: string }> = {
   PENDING: { icon: Clock, color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
   ACCEPTED: { icon: CheckCircle2, color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200' },
@@ -43,9 +45,7 @@ const InvestorRequests: React.FC = () => {
 
   const formatDate = (dateStr: string) => {
     try {
-      return new Date(dateStr).toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
-      });
+      return new Date(dateStr).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
     } catch {
       return dateStr;
     }
@@ -53,6 +53,9 @@ const InvestorRequests: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up pb-10 font-sans">
+      {/* Top Sub-Nav Bar (Founder Requests, Messages, Meetings, Funding & Transactions) */}
+      <InvestorSubNav activeTab="requests" />
+
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <Handshake size={28} className="text-[#5B21B6]" /> Investment Requests
