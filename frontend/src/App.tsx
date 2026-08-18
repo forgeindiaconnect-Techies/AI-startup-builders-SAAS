@@ -153,6 +153,7 @@ function App() {
                     <Route path="mentors"         element={<FounderMentors />} />
                     <Route path="mentor-reviews"  element={<FounderMentorReviews />} />
                     <Route path="investors" element={<FounderInvestorMarketplace />} />
+                    <Route path="investor-marketplace" element={<FounderInvestorMarketplace />} />
                     <Route path="investors/:investorId" element={<FounderInvestorProfile />} />
                     <Route path="investment-requests"  element={<FounderInvestmentRequests />} />
                     <Route path="messages"             element={<FounderInvestorMessages />} />

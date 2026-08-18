@@ -79,6 +79,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/founder/mentors': FounderMentors,
     '/dashboard/founder/mentor-reviews': FounderMentorReviews,
     '/dashboard/founder/investors': FounderInvestorHub,
+    '/dashboard/founder/investor-marketplace': FounderInvestorHub,
     '/dashboard/founder/investors/:investorId': FounderInvestorProfile,
     '/dashboard/founder/investment-requests': FounderInvestorHub,
     '/dashboard/founder/messages': FounderInvestorHub,
@@ -87,6 +88,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/founder/funding': FounderInvestorHub,
 
     '/founder/investors': FounderInvestorHub,
+    '/founder/investor-marketplace': FounderInvestorHub,
     '/founder/investors/:investorId': FounderInvestorProfile,
     '/founder/investment-requests': FounderInvestorHub,
     '/founder/messages': FounderInvestorHub,

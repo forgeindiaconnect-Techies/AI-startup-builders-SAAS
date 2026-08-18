@@ -113,8 +113,8 @@ const FounderInvestmentRequests: React.FC = () => {
           </p>
         </div>
         <button
-          onClick={() => navigate('/dashboard/founder/investor-marketplace')}
-          className="px-5 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto"
+          onClick={() => navigate('/dashboard/founder/investors')}
+          className="px-5 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
         >
           Explore Marketplace <ArrowRight size={14} />
         </button>
