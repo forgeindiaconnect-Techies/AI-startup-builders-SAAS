@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, Video, Clock, Link, CheckCircle2, ArrowUpRight, ShieldCheck, Mail } from 'lucide-react';
 import InvestorSubNav from '../../../components/shared/InvestorSubNav';
-import { getInvestorMeetingInvites, type InvestorMeetingInvite } from '../../../utils/investorModuleStorage';
+import { getInvestorMeetingInvites, updateMeetingStatus, type InvestorMeetingInvite } from '../../../utils/investorModuleStorage';
+import { addNotification } from '../../../utils/localStorageHelper';
+import { useAuth } from '../../../context/AuthContext';
 
 const InvestorMeetings: React.FC = () => {
+  const { user } = useAuth();
   const syncDateRef = useRef<HTMLInputElement>(null);
   const rescheduleDateRef = useRef<HTMLInputElement>(null);
   const [meetingInvites, setMeetingInvites] = useState<InvestorMeetingInvite[]>([]);
@@ -11,6 +14,49 @@ const InvestorMeetings: React.FC = () => {
   const loadMeetings = () => {
     const invites = getInvestorMeetingInvites();
     setMeetingInvites(invites);
+  };
+
+  const handleJoinCall = async (m: InvestorMeetingInvite) => {
+    window.open(m.videoUrl, '_blank');
+    
+    // Automatically update meeting status to Completed
+    updateMeetingStatus(m.id, 'Completed');
+    
+    // Trigger Notifications
+    const fid = 'renu@gmail.com'; // fallback founder
+    const iid = user?.id || user?._id || m.investorId || 'investor';
+    
+    // 1. Notify Founder
+    await addNotification({
+      userId: fid,
+      title: 'Investor Meeting Completed',
+      message: `Your accreditation meeting with investor "${m.investorName || 'Investor'}" has been completed.`,
+      type: 'meeting_completed',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+
+    // 2. Notify Investor
+    await addNotification({
+      userId: iid,
+      title: 'Accreditation Meeting Completed',
+      message: `Your accreditation meeting with founder "Renu" has been completed.`,
+      type: 'meeting_completed',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+
+    // 3. Notify Admin
+    await addNotification({
+      userId: 'admin',
+      title: 'Accreditation Meeting Completed',
+      message: `Accreditation meeting between founder "Renu" and investor "${m.investorName || 'Investor'}" was completed.`,
+      type: 'meeting_completed',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+
+    loadMeetings();
   };
 
   useEffect(() => {
@@ -98,14 +144,12 @@ const InvestorMeetings: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2.5 shrink-0 self-end lg:self-center">
-                  <a
-                    href={m.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold text-xs rounded-xl shadow transition-colors flex items-center gap-1.5"
+                  <button
+                    onClick={() => handleJoinCall(m)}
+                    className="px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold text-xs rounded-xl shadow transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <Video size={15} /> Join Call <ArrowUpRight size={14} />
-                  </a>
+                  </button>
                 </div>
               </div>
             ))}

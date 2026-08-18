@@ -259,14 +259,15 @@ const FounderInvestorMeetings: React.FC = () => {
 
               <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2">
                 {m.status === 'Scheduled' && m.meetingLink ? (
-                  <a
-                    href={m.meetingLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                  <button
+                    onClick={() => {
+                      window.open(m.meetingLink, '_blank');
+                      handleStatusChange(m.id, 'Completed');
+                    }}
+                    className="py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <Video size={14} /> Join Video Meeting
-                  </a>
+                  </button>
                 ) : (
                   <span className="text-xs text-gray-400 italic">No active link</span>
                 )}
