@@ -24,6 +24,7 @@ export interface IInvestorConnectionRequest extends Document {
 
 const InvestorConnectionRequestSchema = new Schema<IInvestorConnectionRequest>(
   {
+    id: { type: String },
     founderId: { type: String, required: true },
     founderName: { type: String, required: true },
     founderEmail: { type: String, required: true },
