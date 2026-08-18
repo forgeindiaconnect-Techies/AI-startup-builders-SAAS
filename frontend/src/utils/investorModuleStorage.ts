@@ -438,13 +438,17 @@ export const saveInvestmentRequest = (reqData: {
 export const updateInvestmentRequestStatus = (requestId: string, newStatus: InvestmentRequest['status'], responseNote?: string): void => {
   const requests = getInvestmentRequests();
   let targetReq: InvestmentRequest | null = null;
-  const normalizedStatus = (newStatus || 'pending').toLowerCase() as InvestmentRequest['status'];
+  const upperStatus = (newStatus || 'PENDING').toUpperCase() as InvestmentRequest['status'];
+  const lowerStatus = (newStatus || 'pending').toLowerCase() as InvestmentRequest['status'];
+
+  const reqIdStr = String(requestId || '');
 
   const updated = requests.map(r => {
-    if (r.id === requestId) {
+    const rId = String(r.id || (r as any)._id || '');
+    if (rId && reqIdStr && (rId === reqIdStr || r.id === requestId)) {
       targetReq = {
         ...r,
-        status: normalizedStatus,
+        status: lowerStatus,
         responseNote: responseNote || r.responseNote,
         updatedAt: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -453,29 +457,40 @@ export const updateInvestmentRequestStatus = (requestId: string, newStatus: Inve
     }
     return r;
   });
+
   localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(updated));
   try {
     localStorage.setItem('ai_startup_builder_investment_requests', JSON.stringify(updated));
   } catch (e) {}
 
+  // Sync PATCH to backend API
+  try {
+    fetch(`${API_URL}/funding/connection-requests/${requestId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: lowerStatus, responseNote }),
+    }).catch(err => console.warn('Could not sync status patch to backend:', err));
+  } catch (e) {}
+
   // Generate notifications for Founder and Admin when Investor accepts/declines proposal
-  if (targetReq) {
+  const reqObj = targetReq || requests.find(r => String(r.id || (r as any)._id) === reqIdStr);
+  if (reqObj) {
     try {
       const nowIso = new Date().toISOString();
-      const isAccepted = newStatus === 'ACCEPTED';
-      const isRejected = newStatus === 'REJECTED';
+      const isAccepted = upperStatus === 'ACCEPTED' || lowerStatus === 'accepted';
+      const isRejected = upperStatus === 'REJECTED' || lowerStatus === 'rejected';
 
       if (isAccepted || isRejected) {
         // Notification for Founder
         const founderNotif = {
           id: `notif_resp_fnd_${Date.now()}`,
-          userId: targetReq.founderId || targetReq.founderEmail,
-          userEmail: targetReq.founderEmail,
+          userId: reqObj.founderId || reqObj.founder_id || reqObj.founderEmail,
+          userEmail: reqObj.founderEmail,
           targetRole: 'founder',
-          title: isAccepted ? `Connection Accepted by ${targetReq.investorName}` : `Request Update from ${targetReq.investorName}`,
+          title: isAccepted ? `Connection Accepted by ${reqObj.investorName}` : `Request Update from ${reqObj.investorName}`,
           message: isAccepted
-            ? `${targetReq.investorName} (${targetReq.investorFirm}) accepted your connection request for ${targetReq.startupName}! You can now start messaging or schedule a meeting.`
-            : `${targetReq.investorName} (${targetReq.investorFirm}) declined your investment request for ${targetReq.startupName}.`,
+            ? `${reqObj.investorName} (${reqObj.investorFirm || 'Investor'}) accepted your connection request for ${reqObj.startupName}! You can now view your accepted request in Founder Requests.`
+            : `${reqObj.investorName} (${reqObj.investorFirm || 'Investor'}) declined your investment request for ${reqObj.startupName}.`,
           type: 'funding',
           isRead: false,
           actionUrl: '/dashboard/founder/investment-requests',
@@ -488,8 +503,8 @@ export const updateInvestmentRequestStatus = (requestId: string, newStatus: Inve
           userId: 'admin',
           targetRole: 'investor',
           title: `Connection Request ${isAccepted ? 'Accepted' : 'Declined'}`,
-          message: `${targetReq.investorName} (${targetReq.investorFirm}) ${isAccepted ? 'accepted' : 'declined'} the connection request from ${targetReq.founderName} for ${targetReq.startupName}.`,
-          type: 'funding',
+          message: `${reqObj.investorName} (${reqObj.investorFirm || 'Investor'}) ${isAccepted ? 'accepted' : 'declined'} the connection request from ${reqObj.founderName} for ${reqObj.startupName}.`,
+          type: 'investor',
           isRead: false,
           actionUrl: '/dashboard/admin/investors',
           createdAt: nowIso,
@@ -498,6 +513,18 @@ export const updateInvestmentRequestStatus = (requestId: string, newStatus: Inve
         const storedNotifs = localStorage.getItem('ai_startup_builder_notifications');
         const parsedNotifs = storedNotifs ? JSON.parse(storedNotifs) : [];
         localStorage.setItem('ai_startup_builder_notifications', JSON.stringify([founderNotif, adminNotif, ...parsedNotifs]));
+
+        fetch(`${API_URL}/notifications`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(founderNotif),
+        }).catch(() => {});
+
+        fetch(`${API_URL}/notifications`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(adminNotif),
+        }).catch(() => {});
       }
     } catch (err) {
       console.warn('Could not save status update notifications:', err);

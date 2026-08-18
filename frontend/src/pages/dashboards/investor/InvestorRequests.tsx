@@ -95,7 +95,7 @@ const InvestorRequests: React.FC = () => {
               const isAccepted = upperStatus === 'ACCEPTED';
 
               return (
-                <div key={r.id} className="p-6 hover:bg-gray-50/80 transition-colors flex flex-col md:flex-row gap-6 items-start justify-between">
+                <div key={r.id || (r as any)._id} className="p-6 hover:bg-gray-50/80 transition-colors flex flex-col md:flex-row gap-6 items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2.5 mb-2">
                       <h3 className="font-bold text-gray-900 text-base">{fData.startupName || r.startupName}</h3>
@@ -142,14 +142,14 @@ const InvestorRequests: React.FC = () => {
                       {isPending && (
                         <>
                           <button
-                            onClick={() => handleUpdateStatus(r.id, 'REJECTED')}
+                            onClick={() => handleUpdateStatus(r.id || (r as any)._id, 'REJECTED')}
                             className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl border border-red-200 transition-colors flex items-center gap-1"
                           >
                             <XCircle size={13} /> Decline
                           </button>
                           <button
-                            onClick={() => handleUpdateStatus(r.id, 'ACCEPTED', 'Interested in connection! Let us start discussing details.')}
-                            className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1"
+                            onClick={() => handleUpdateStatus(r.id || (r as any)._id, 'ACCEPTED', 'Interested in connection! Let us start discussing details.')}
+                            className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1 cursor-pointer"
                           >
                             <CheckCircle2 size={13} /> Accept Connection
                           </button>
