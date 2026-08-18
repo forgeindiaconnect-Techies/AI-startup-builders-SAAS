@@ -36,8 +36,6 @@ import FounderProfile   from './pages/dashboards/founder/FounderProfile';
 import FounderBilling   from './pages/dashboards/founder/FounderBilling';
 import FounderLearningVideos from './pages/dashboards/founder/FounderLearningVideos';
 import FounderOriginalityCheck from './pages/dashboards/founder/FounderOriginalityCheck';
-import FounderDataRoom from './pages/dashboards/founder/FounderDataRoom';
-import AdminDataRooms from './pages/dashboards/admin/AdminDataRooms';
 import FounderMentors   from './pages/dashboards/founder/FounderMentors';
 import FounderMentorReviews from './pages/dashboards/founder/FounderMentorReviews';
 import FounderInvestorMarketplace from './pages/dashboards/founder/FounderInvestorMarketplace';
@@ -65,7 +63,6 @@ import InvestorMarketplace from './pages/dashboards/investor/InvestorMarketplace
 import InvestorPortfolio   from './pages/dashboards/investor/InvestorPortfolio';
 import InvestorSaved       from './pages/dashboards/investor/InvestorSaved';
 import InvestorRequests    from './pages/dashboards/investor/InvestorRequests';
-import InvestorDueDiligence from './pages/dashboards/investor/InvestorDueDiligence';
 import InvestorMeetings    from './pages/dashboards/investor/InvestorMeetings';
 import InvestorTransactions from './pages/dashboards/investor/InvestorTransactions';
 import InvestorReports     from './pages/dashboards/investor/InvestorReports';
@@ -163,8 +160,6 @@ function App() {
                     <Route path="funding-transactions" element={<FounderFundingTransactions />} />
                     <Route path="funding"              element={<FounderFundingTransactions />} />
                     <Route path="documents"           element={<FounderDocuments />} />
-                    <Route path="data-room"           element={<FounderDataRoom />} />
-                    <Route path="dataroom"            element={<FounderDataRoom />} />
                     <Route path="learning-videos"    element={<FounderLearningVideos />} />
                     <Route path="inbox"               element={<SharedInbox />} />
                     <Route path="profile-billing" element={<FounderProfileBilling />} />
@@ -193,7 +188,6 @@ function App() {
                     <Route path="analytics"          element={<AdminAnalytics />} />
                     <Route path="platform-settings"  element={<AdminPlatformSettings />} />
                     <Route path="document-verification" element={<AdminDocumentVerification />} />
-                    <Route path="data-rooms"          element={<AdminDataRooms />} />
                     <Route path="invite-links"          element={<AdminInviteLinks />} />
                     <Route path="inbox"              element={<SharedInbox />} />
                     {/* Legacy / Direct paths */}
@@ -239,7 +233,6 @@ function App() {
                     <Route path="marketplace"     element={<InvestorMarketplace />} />
                     <Route path="portfolio-hub"   element={<InvestorPortfolioHub />} />
                     <Route path="requests"        element={<InvestorRequests />} />
-                    <Route path="due-diligence"   element={<InvestorDueDiligence />} />
                     <Route path="meetings"        element={<InvestorMeetings />} />
                     <Route path="transactions"    element={<InvestorTransactions />} />
                     <Route path="learning-center" element={<InvestorLearningCenter />} />

@@ -47,7 +47,6 @@ import InvestorHub from '../pages/dashboards/investor/InvestorHub';
 import InvestorMarketplace from '../pages/dashboards/investor/InvestorMarketplace';
 import InvestorPortfolioHub from '../pages/dashboards/investor/InvestorPortfolioHub';
 import InvestorRequests from '../pages/dashboards/investor/InvestorRequests';
-import InvestorDueDiligence from '../pages/dashboards/investor/InvestorDueDiligence';
 import InvestorMeetings from '../pages/dashboards/investor/InvestorMeetings';
 import InvestorTransactions from '../pages/dashboards/investor/InvestorTransactions';
 import InvestorLearningCenter from '../pages/dashboards/investor/InvestorLearningCenter';
@@ -65,9 +64,6 @@ import AdminPlatformSettings from '../pages/dashboards/admin/AdminPlatformSettin
 import AdminMentorEarnings from '../pages/dashboards/admin/AdminMentorEarnings';
 import AdminInvestorFunding from '../pages/dashboards/admin/AdminInvestorFunding';
 import AdminProfile from '../pages/dashboards/admin/AdminProfile';
-
-import FounderDataRoom from '../pages/dashboards/founder/FounderDataRoom';
-import AdminDataRooms from '../pages/dashboards/admin/AdminDataRooms';
 
 const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
   founder: {
@@ -99,8 +95,6 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/founder/funding': FounderInvestorHub,
     '/dashboard/founder/billing': FounderBilling,
     '/dashboard/founder/documents': FounderDocuments,
-    '/dashboard/founder/data-room': FounderDataRoom,
-    '/dashboard/founder/dataroom': FounderDataRoom,
     '/dashboard/founder/learning-videos': FounderLearningVideos,
     '/dashboard/founder/notifications': SharedNotifications,
     '/dashboard/founder/profile-billing': FounderProfileBilling,
@@ -120,7 +114,6 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/investor/marketplace': InvestorMarketplace,
     '/dashboard/investor/portfolio-hub': InvestorPortfolioHub,
     '/dashboard/investor/requests': InvestorRequests,
-    '/dashboard/investor/due-diligence': InvestorDueDiligence,
     '/dashboard/investor/meetings': InvestorMeetings,
     '/dashboard/investor/transactions': InvestorTransactions,
     '/dashboard/investor/learning-center': InvestorLearningCenter,
@@ -138,7 +131,6 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/admin/startups': AdminStartups,
     '/dashboard/admin/approvals-hub': AdminApprovalsHub,
     '/dashboard/admin/document-verification': AdminDocumentVerification,
-    '/dashboard/admin/data-rooms': AdminDataRooms,
     '/dashboard/admin/sub-payments': AdminSubPayments,
     '/dashboard/admin/analytics': AdminAnalytics,
     '/dashboard/admin/platform-settings': AdminPlatformSettings,
@@ -168,7 +160,6 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Investor Marketplace',    icon: Building2,       path: '/dashboard/founder/investors' },
         { name: 'Subscription',             icon: CreditCard,      path: '/dashboard/founder/billing' },
         { name: 'Documents',                icon: File,            path: '/dashboard/founder/documents' },
-        { name: 'Due Diligence Data Room',  icon: FolderLock,      path: '/dashboard/founder/data-room' },
         { name: 'Learning Videos',          icon: Film,            path: '/dashboard/founder/learning-videos' },
         { name: 'Notifications',            icon: Bell,            path: '/dashboard/founder/notifications' },
         { name: 'Profile',                  icon: UserCog,         path: '/dashboard/founder/profile-billing' },
@@ -197,7 +188,6 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Startup Marketplace',icon: Building2,       path: '/dashboard/investor/marketplace' },
         { name: 'Portfolio',          icon: Briefcase,       path: '/dashboard/investor/portfolio-hub' },
         { name: 'Investment Requests',icon: Handshake,       path: '/dashboard/investor/requests' },
-        { name: 'Due Diligence',      icon: ClipboardList,   path: '/dashboard/investor/due-diligence' },
         { name: 'Meetings',           icon: CalendarClock,   path: '/dashboard/investor/meetings' },
         { name: 'Transactions',       icon: IndianRupee,     path: '/dashboard/investor/transactions' },
         { name: 'Learning Center',   icon: Film,             path: '/dashboard/investor/learning-center' },
@@ -217,7 +207,6 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Startup Ideas',           icon: Rocket,          path: '/dashboard/admin/startups' },
         { name: 'Approvals',               icon: ShieldCheck,     path: '/dashboard/admin/approvals-hub' },
         { name: 'Doc Verification',        icon: File,            path: '/dashboard/admin/document-verification' },
-        { name: 'Due Diligence Data Rooms',icon: FolderLock,      path: '/dashboard/admin/data-rooms' },
         { name: 'Subscriptions & Payments',icon: CreditCard,      path: '/dashboard/admin/sub-payments' },
         { name: 'AI Analytics',            icon: BarChart2,       path: '/dashboard/admin/analytics' },
         { name: 'Mentor Earnings',         icon: IndianRupee,     path: '/dashboard/admin/mentor-earnings' },
