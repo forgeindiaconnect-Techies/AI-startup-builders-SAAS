@@ -199,19 +199,19 @@ const FounderInvestorMeetings: React.FC = () => {
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-lg font-black shadow shrink-0">
-                      {m.investorName ? m.investorName.charAt(0).toUpperCase() : 'I'}
+                      {m.founderName ? m.founderName.charAt(0).toUpperCase() : 'F'}
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 text-base">{m.investorName}</h3>
-                      <p className="text-xs text-gray-500 font-medium">{m.investorFirm}</p>
+                      <h3 className="font-bold text-gray-900 text-base">{m.founderName || 'Founder'}</h3>
+                      <p className="text-xs text-gray-500 font-medium">{m.founderEmail || 'renugopal24022000@gmail.com'}</p>
                     </div>
                   </div>
                   {getStatusBadge(m.status)}
                 </div>
 
                 <div className="bg-purple-50/60 p-4 rounded-xl border border-purple-100 mb-4 space-y-2 text-xs">
-                  <div className="flex items-center justify-between font-bold text-gray-900">
-                    <span className="text-[#5B21B6]">{m.startupName}</span>
+                  <div className="flex items-center justify-between font-bold text-gray-900 flex-wrap gap-2">
+                    <span className="text-[#5B21B6]">Meeting with: {m.investorName} ({m.investorFirm || 'Investor'})</span>
                     <span className="text-gray-700">{m.proposedDate} at {m.proposedTime}</span>
                   </div>
                   <p className="text-gray-600 text-xs italic">Agenda: "{m.agenda}"</p>
