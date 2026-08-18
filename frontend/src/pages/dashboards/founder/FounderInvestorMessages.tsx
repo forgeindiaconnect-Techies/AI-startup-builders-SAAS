@@ -85,7 +85,12 @@ const FounderInvestorMessages: React.FC = () => {
     }
 
     const allMsgs = getInvestorMessages();
-    setMessages(allMsgs);
+    setMessages(prev => {
+      if (prev.length === allMsgs.length && JSON.stringify(prev) === JSON.stringify(allMsgs)) {
+        return prev;
+      }
+      return allMsgs;
+    });
   };
 
   useEffect(() => {
@@ -101,10 +106,6 @@ const FounderInvestorMessages: React.FC = () => {
       clearInterval(interval);
     };
   }, [activeRequestId, activeInvestorEmail]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, activeRequestId, activeInvestorEmail]);
 
   // Resolve active request item
   const activeRequest = connectedRequests.find(r => {
@@ -155,6 +156,21 @@ const FounderInvestorMessages: React.FC = () => {
 
     return (isFounderSender && isInvestorReceiver) || (isInvestorSender && isFounderReceiver);
   });
+
+  const prevMsgCountRef = useRef<number>(0);
+  const prevActiveReqRef = useRef<string>('');
+
+  useEffect(() => {
+    const isNewMessage = currentConversation.length > prevMsgCountRef.current;
+    const isNewReq = activeRequestId !== prevActiveReqRef.current;
+
+    if (isNewMessage || isNewReq) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    prevMsgCountRef.current = currentConversation.length;
+    prevActiveReqRef.current = activeRequestId;
+  }, [currentConversation.length, activeRequestId]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
