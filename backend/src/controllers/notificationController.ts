@@ -30,6 +30,7 @@ export const getNotifications = async (req: Request, res: Response) => {
 export const createNotification = async (req: Request, res: Response) => {
   try {
     const payload = {
+      userId: req.body.userId || 'admin',
       ...req.body,
       message: req.body.message || req.body.title || 'Notification update',
       title: req.body.title || 'System Notification',

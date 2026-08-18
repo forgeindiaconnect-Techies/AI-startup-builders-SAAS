@@ -245,6 +245,7 @@ const AdminInvestorApproval: React.FC = () => {
 
     // Add email notification record for Investor
     addNotification({
+      userId: 'admin',
       title: 'Meeting Email Notification Dispatched',
       message: `Official accreditation meeting invitation sent to ${meetingModalApp.fullName} (${meetingModalApp.email}) for ${meetingDateVal} at ${meetingTimeVal} IST`,
       type: 'system',
@@ -322,6 +323,7 @@ const AdminInvestorApproval: React.FC = () => {
     setIsSendingLink(false);
 
     addNotification({
+      userId: 'admin',
       title: 'Meeting Link Published to Dashboards',
       message: `Meeting invite for ${meetingModalApp.fullName} successfully sent to BOTH Founder and Investor Dashboard Meetings pages.`,
       type: 'system',
