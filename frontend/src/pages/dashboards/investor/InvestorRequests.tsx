@@ -143,9 +143,9 @@ const InvestorRequests: React.FC = () => {
                         <>
                           <button
                             onClick={() => handleUpdateStatus(r.id || (r as any)._id, 'REJECTED')}
-                            className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl border border-red-200 transition-colors flex items-center gap-1"
+                            className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl border border-red-200 transition-colors flex items-center gap-1 cursor-pointer"
                           >
-                            <XCircle size={13} /> Decline
+                            <XCircle size={13} /> Reject Request
                           </button>
                           <button
                             onClick={() => handleUpdateStatus(r.id || (r as any)._id, 'ACCEPTED', 'Interested in connection! Let us start discussing details.')}
@@ -157,11 +157,28 @@ const InvestorRequests: React.FC = () => {
                       )}
 
                       {isAccepted && (
+                        <>
+                          <button
+                            onClick={() => navigate('/dashboard/investor/inbox')}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1 cursor-pointer"
+                          >
+                            <MessageSquare size={13} /> Chat with Founder
+                          </button>
+                          <button
+                            onClick={() => handleUpdateStatus(r.id || (r as any)._id, 'REJECTED')}
+                            className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl border border-red-200 transition-colors flex items-center gap-1 cursor-pointer"
+                          >
+                            <XCircle size={13} /> Reject
+                          </button>
+                        </>
+                      )}
+
+                      {upperStatus === 'REJECTED' && (
                         <button
-                          onClick={() => navigate('/dashboard/investor/inbox')}
-                          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1"
+                          onClick={() => handleUpdateStatus(r.id || (r as any)._id, 'ACCEPTED', 'Interested in connection! Let us start discussing details.')}
+                          className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1 cursor-pointer"
                         >
-                          <MessageSquare size={13} /> Chat with Founder
+                          <CheckCircle2 size={13} /> Accept Connection
                         </button>
                       )}
                     </div>
@@ -231,16 +248,26 @@ const InvestorRequests: React.FC = () => {
             <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end gap-2">
               <button
                 onClick={() => setSelectedReq(null)}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl cursor-pointer"
               >
                 Close
               </button>
-              {selectedReq.status === 'PENDING' && (
+
+              {(selectedReq.status || 'PENDING').toUpperCase() !== 'REJECTED' && (
                 <button
-                  onClick={() => handleUpdateStatus(selectedReq.id, 'ACCEPTED', 'Interested in connection! Let us start discussing details.')}
-                  className="px-5 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow"
+                  onClick={() => handleUpdateStatus(selectedReq.id || (selectedReq as any)._id, 'REJECTED')}
+                  className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl border border-red-200 transition-colors flex items-center gap-1 cursor-pointer"
                 >
-                  Accept Request
+                  <XCircle size={13} /> Reject Request
+                </button>
+              )}
+
+              {(selectedReq.status || 'PENDING').toUpperCase() !== 'ACCEPTED' && (
+                <button
+                  onClick={() => handleUpdateStatus(selectedReq.id || (selectedReq as any)._id, 'ACCEPTED', 'Interested in connection! Let us start discussing details.')}
+                  className="px-5 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow cursor-pointer flex items-center gap-1"
+                >
+                  <CheckCircle2 size={13} /> Accept Request
                 </button>
               )}
             </div>
