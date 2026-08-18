@@ -317,6 +317,12 @@ const AdminInvestorApproval: React.FC = () => {
       proposedDate: meetingDateVal,
       proposedTime: meetingTimeVal,
       agenda: `Investor Accreditation & Pitch Review - Passcode: ${passcode}`,
+      meetingLink: videoUrl,
+      passcode,
+      timezone: 'IST (UTC+05:30)',
+      duration: '45 Mins',
+      investorId: meetingModalApp.id,
+      investorType: meetingModalApp.investorType
     });
 
     setExistingInvite(newInvite);

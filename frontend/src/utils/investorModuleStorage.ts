@@ -584,7 +584,119 @@ export const sendInvestorMessage = (msgData: Omit<InvestorMessage, 'id' | 'creat
 
 // ─── Meetings Helpers ───
 
+let isSyncingMeetings = false;
+export const syncInvestorMeetingsWithBackend = async (): Promise<void> => {
+  if (isSyncingMeetings) return;
+  isSyncingMeetings = true;
+  try {
+    const res = await fetch(`${API_URL}/investor-meetings`);
+    const json = await res.json();
+    if (json.success && Array.isArray(json.data)) {
+      const localMeetings = getInvestorMeetings();
+      const localMeetingsIds = new Set(localMeetings.map(m => m.id || (m as any)._id));
+      let hasNewMeetings = false;
+      const mergedMeetings = [...localMeetings];
+
+      const localInvites = getInvestorMeetingInvites();
+      const localInvitesIds = new Set(localInvites.map(i => i.id || (i as any)._id));
+      let hasNewInvites = false;
+      const mergedInvites = [...localInvites];
+
+      json.data.forEach((remote: any) => {
+        const remoteId = String(remote._id || remote.id || '');
+        if (!remoteId) return;
+
+        // A. Update or insert into Founder list
+        const mIdx = mergedMeetings.findIndex(m => m.id === remoteId || m.id === remote.id);
+        if (mIdx >= 0) {
+          if (mergedMeetings[mIdx].status !== remote.status || mergedMeetings[mIdx].meetingLink !== remote.meetingLink) {
+            mergedMeetings[mIdx] = {
+              ...mergedMeetings[mIdx],
+              status: remote.status,
+              meetingLink: remote.meetingLink || mergedMeetings[mIdx].meetingLink,
+              proposedDate: remote.proposedDate || mergedMeetings[mIdx].proposedDate,
+              proposedTime: remote.proposedTime || mergedMeetings[mIdx].proposedTime,
+              updatedAt: remote.updatedAt || new Date().toISOString()
+            };
+            hasNewMeetings = true;
+          }
+        } else {
+          mergedMeetings.push({
+            id: remoteId,
+            founderEmail: remote.founderEmail,
+            founderName: remote.founderName,
+            investorEmail: remote.investorEmail,
+            investorName: remote.investorName,
+            investorFirm: remote.investorFirm,
+            startupId: remote.startupId,
+            startupName: remote.startupName,
+            proposedDate: remote.proposedDate,
+            proposedTime: remote.proposedTime,
+            agenda: remote.agenda,
+            status: remote.status,
+            meetingLink: remote.meetingLink || `https://meet.jit.si/ai-startup-builder-meeting-${remoteId}`,
+            createdAt: remote.createdAt,
+            updatedAt: remote.updatedAt
+          });
+          hasNewMeetings = true;
+        }
+
+        // B. Update or insert into Investor invites list
+        const iIdx = mergedInvites.findIndex(i => i.id === remoteId || i.id === remote.id);
+        if (iIdx >= 0) {
+          const mappedStatus = remote.status === 'Scheduled' ? 'SENT' : (remote.status === 'Cancelled' ? 'PENDING' : remote.status);
+          if (mergedInvites[iIdx].status !== mappedStatus || mergedInvites[iIdx].videoUrl !== remote.meetingLink) {
+            mergedInvites[iIdx] = {
+              ...mergedInvites[iIdx],
+              status: mappedStatus as any,
+              videoUrl: remote.meetingLink || mergedInvites[iIdx].videoUrl,
+              meetingDate: remote.proposedDate || mergedInvites[iIdx].meetingDate,
+              meetingTime: remote.proposedTime || mergedInvites[iIdx].meetingTime,
+            };
+            hasNewInvites = true;
+          }
+        } else {
+          mergedInvites.push({
+            id: remoteId,
+            investorId: remote.investorId || 'generic',
+            investorName: remote.investorName,
+            investorEmail: remote.investorEmail,
+            investorType: remote.investorType || 'Angel Investor',
+            firmName: remote.investorFirm,
+            meetingDate: remote.proposedDate,
+            meetingTime: remote.proposedTime,
+            timezone: remote.timezone || 'IST (UTC+05:30)',
+            duration: remote.duration || '45 Mins',
+            videoUrl: remote.meetingLink || `https://meet.jit.si/ai-startup-builder-meeting-${remoteId}`,
+            passcode: remote.passcode || `INV-${remoteId.slice(-4)}`,
+            status: (remote.status === 'Scheduled' ? 'SENT' : remote.status) as any,
+            createdAt: remote.createdAt
+          });
+          hasNewInvites = true;
+        }
+      });
+
+      if (hasNewMeetings) {
+        localStorage.setItem(STORAGE_KEYS.MEETINGS, JSON.stringify(mergedMeetings));
+      }
+      if (hasNewInvites) {
+        localStorage.setItem(STORAGE_KEYS_MEETINGS, JSON.stringify(mergedInvites));
+      }
+
+      if (hasNewMeetings || hasNewInvites) {
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new Event('investor_meetings_updated'));
+      }
+    }
+  } catch (err) {
+    console.error('Failed to sync investor meetings:', err);
+  } finally {
+    isSyncingMeetings = false;
+  }
+};
+
 export const getInvestorMeetings = (): InvestorMeeting[] => {
+  syncInvestorMeetingsWithBackend();
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.MEETINGS);
     if (stored) return JSON.parse(stored);
@@ -593,13 +705,13 @@ export const getInvestorMeetings = (): InvestorMeeting[] => {
   return INITIAL_MEETINGS;
 };
 
-export const createInvestorMeeting = (meetingData: Omit<InvestorMeeting, 'id' | 'createdAt' | 'updatedAt' | 'meetingLink' | 'status'>): InvestorMeeting => {
+export const createInvestorMeeting = (meetingData: Omit<InvestorMeeting, 'id' | 'createdAt' | 'updatedAt' | 'meetingLink' | 'status'> & { meetingLink?: string; passcode?: string; timezone?: string; duration?: string; investorId?: string; investorType?: string; }): InvestorMeeting => {
   const meetingId = `meet_${Date.now()}`;
   const newMeeting: InvestorMeeting = {
     id: meetingId,
     ...meetingData,
     status: 'Scheduled',
-    meetingLink: `https://meet.jit.si/ai-startup-builder-meeting-${meetingId}`,
+    meetingLink: meetingData.meetingLink || `https://meet.jit.si/ai-startup-builder-meeting-${meetingId}`,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -608,6 +720,33 @@ export const createInvestorMeeting = (meetingData: Omit<InvestorMeeting, 'id' | 
   localStorage.setItem(STORAGE_KEYS.MEETINGS, JSON.stringify(updated));
   window.dispatchEvent(new Event('storage'));
   window.dispatchEvent(new Event('investor_meetings_updated'));
+
+  // Sync to backend database
+  fetch(`${API_URL}/investor-meetings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: meetingId,
+      founderEmail: meetingData.founderEmail,
+      founderName: meetingData.founderName,
+      investorEmail: meetingData.investorEmail,
+      investorName: meetingData.investorName,
+      investorFirm: meetingData.investorFirm,
+      startupId: meetingData.startupId,
+      startupName: meetingData.startupName,
+      proposedDate: meetingData.proposedDate,
+      proposedTime: meetingData.proposedTime,
+      agenda: meetingData.agenda,
+      status: 'Scheduled',
+      meetingLink: meetingData.meetingLink || `https://meet.jit.si/ai-startup-builder-meeting-${meetingId}`,
+      passcode: meetingData.passcode || `INV-${meetingId.slice(-4)}`,
+      timezone: meetingData.timezone || 'IST (UTC+05:30)',
+      duration: meetingData.duration || '45 Mins',
+      investorId: meetingData.investorId || 'generic',
+      investorType: meetingData.investorType || 'Angel Investor',
+    })
+  }).then(() => syncInvestorMeetingsWithBackend()).catch(e => console.error('Error uploading meeting:', e));
+
   return newMeeting;
 };
 
@@ -617,6 +756,13 @@ export const updateMeetingStatus = (meetingId: string, newStatus: InvestorMeetin
   localStorage.setItem(STORAGE_KEYS.MEETINGS, JSON.stringify(updated));
   window.dispatchEvent(new Event('storage'));
   window.dispatchEvent(new Event('investor_meetings_updated'));
+
+  // Sync PATCH update to backend database
+  fetch(`${API_URL}/investor-meetings/${meetingId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: newStatus })
+  }).then(() => syncInvestorMeetingsWithBackend()).catch(e => console.error('Error updating meeting status:', e));
 };
 
 // ─── Transactions Helpers ───
@@ -711,6 +857,7 @@ export interface InvestorMeetingInvite {
 export const STORAGE_KEYS_MEETINGS = 'admin_investor_meeting_invites';
 
 export const getInvestorMeetingInvites = (): InvestorMeetingInvite[] => {
+  syncInvestorMeetingsWithBackend();
   try {
     const raw = localStorage.getItem(STORAGE_KEYS_MEETINGS);
     if (raw) return JSON.parse(raw);
@@ -729,5 +876,31 @@ export const saveInvestorMeetingInvite = (invite: InvestorMeetingInvite): void =
   localStorage.setItem(STORAGE_KEYS_MEETINGS, JSON.stringify(existing));
   window.dispatchEvent(new Event('storage'));
   window.dispatchEvent(new Event('investor_meetings_updated'));
+
+  // Sync POST update to backend database
+  fetch(`${API_URL}/investor-meetings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: invite.id,
+      founderEmail: 'renugopal24022000@gmail.com', // fallback founder email
+      founderName: 'Renu',
+      investorEmail: invite.investorEmail,
+      investorName: invite.investorName,
+      investorFirm: invite.firmName || 'Independent Investor',
+      startupId: 'startup_general',
+      startupName: 'Startup IT / Platform',
+      proposedDate: invite.meetingDate,
+      proposedTime: invite.meetingTime,
+      agenda: `Investor Accreditation & Pitch Review - Passcode: ${invite.passcode}`,
+      status: invite.status === 'SENT' ? 'Scheduled' : invite.status,
+      meetingLink: invite.videoUrl,
+      passcode: invite.passcode,
+      timezone: invite.timezone,
+      duration: invite.duration,
+      investorId: invite.investorId,
+      investorType: invite.investorType
+    })
+  }).then(() => syncInvestorMeetingsWithBackend()).catch(e => console.error('Error uploading meeting invite:', e));
 };
 
