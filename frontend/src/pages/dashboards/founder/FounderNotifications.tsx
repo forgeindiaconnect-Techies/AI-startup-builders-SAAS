@@ -383,7 +383,7 @@ const FounderNotifications: React.FC = () => {
 
               <div className="bg-gray-50/80 rounded-xl p-4 border border-gray-100">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Full Message</p>
-                <p className="text-sm text-gray-700 leading-relaxed font-medium">{selectedNotif.desc}</p>
+                <p className="text-sm text-gray-700 leading-relaxed font-medium whitespace-pre-line">{selectedNotif.desc}</p>
               </div>
 
               {/* Context Breakdown */}

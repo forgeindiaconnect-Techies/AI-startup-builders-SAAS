@@ -33,9 +33,9 @@ const InvestorRequests: React.FC = () => {
 
     // Strict investor filtering: show requests matching investor ID, Email, or Name
     const filtered = all.filter(r => {
-      const rId = (r.investorId || '').toLowerCase();
+      const rId = (r.investorId || r.investor_id || '').toLowerCase();
       const rEmail = (r.investorEmail || '').toLowerCase();
-      const rName = (r.investorName || '').toLowerCase();
+      const rName = (r.investorName || r.investor_name || '').toLowerCase();
 
       if (rId && currentUserId && rId === currentUserId) return true;
       if (rEmail && currentUserEmail && rEmail === currentUserEmail) return true;
@@ -103,44 +103,58 @@ const InvestorRequests: React.FC = () => {
         ) : (
           <div className="divide-y divide-gray-100">
             {requests.map(r => {
-              const style = statusStyles[r.status] || statusStyles.PENDING;
+              const upperStatus = (r.status || 'PENDING').toUpperCase();
+              const style = statusStyles[upperStatus] || statusStyles.PENDING;
               const StatusIcon = style.icon;
+              const fData = r.form_data || {
+                startupName: r.startupName,
+                fundingStage: r.fundingStage,
+                fundingAmount: r.fundingAmount,
+                shortIntro: r.shortIntro,
+                whySeeking: r.whySeeking,
+                optionalMessage: r.optionalMessage,
+                founderEmail: r.founderEmail,
+              };
+
+              const isPending = upperStatus === 'PENDING';
+              const isAccepted = upperStatus === 'ACCEPTED';
+
               return (
                 <div key={r.id} className="p-6 hover:bg-gray-50/80 transition-colors flex flex-col md:flex-row gap-6 items-start justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2.5 mb-2">
-                      <h3 className="font-bold text-gray-900 text-base">{r.startupName}</h3>
+                      <h3 className="font-bold text-gray-900 text-base">{fData.startupName || r.startupName}</h3>
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase border flex items-center gap-1 ${style.bg} ${style.color}`}>
                         <StatusIcon size={12} /> {r.status}
                       </span>
                       <span className="px-2.5 py-0.5 bg-purple-50 text-[#5B21B6] border border-purple-100 rounded-full text-xs font-bold">
-                        {r.fundingStage} • {r.fundingAmount}
+                        {fData.fundingStage || r.fundingStage} • {fData.fundingAmount || r.fundingAmount}
                       </span>
                     </div>
 
                     <p className="text-xs text-gray-500 font-semibold mb-2">
-                      From Founder: <span className="text-gray-900 font-bold">{r.founderName}</span> ({r.founderEmail})
-                      {r.investorName && <span className="text-gray-400 font-normal"> • Addressed To: <strong className="text-gray-700">{r.investorName}</strong> ({r.investorFirm || 'Angel Investor'})</span>}
+                      From Founder: <span className="text-gray-900 font-bold">{r.founderName || r.founder_name}</span> ({fData.founderEmail || r.founderEmail})
+                      {(r.investorName || r.investor_name) && <span className="text-gray-400 font-normal"> • Addressed To: <strong className="text-gray-700">{r.investorName || r.investor_name}</strong> ({r.investorFirm || 'Angel Investor'})</span>}
                     </p>
 
                     <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100 mb-2 space-y-1">
                       <p className="text-xs text-gray-800 font-medium">
-                        "{r.shortIntro}"
+                        "{fData.shortIntro || r.shortIntro}"
                       </p>
-                      {r.optionalMessage && (
+                      {(fData.optionalMessage || r.optionalMessage) && (
                         <p className="text-xs text-purple-900 font-medium italic pt-1 border-t border-gray-200/60">
-                          <span className="font-bold non-italic text-purple-700">Note:</span> "{r.optionalMessage}"
+                          <span className="font-bold non-italic text-purple-700">Note:</span> "{fData.optionalMessage || r.optionalMessage}"
                         </p>
                       )}
                     </div>
 
                     <p className="text-xs text-gray-700 font-medium">
-                      <span className="font-bold text-gray-900">Why Connecting:</span> {r.whySeeking}
+                      <span className="font-bold text-gray-900">Why Connecting:</span> {fData.whySeeking || r.whySeeking}
                     </p>
                   </div>
 
                   <div className="flex flex-col sm:items-end justify-between border-t md:border-t-0 pt-4 md:pt-0 w-full md:w-auto shrink-0 gap-3">
-                    <span className="text-[11px] font-medium text-gray-400">Submitted {formatDate(r.createdAt)}</span>
+                    <span className="text-[11px] font-medium text-gray-400">Submitted {formatDate(r.createdAt || r.created_at || '')}</span>
 
                     <div className="flex flex-wrap items-center gap-2">
                       <button
@@ -150,7 +164,7 @@ const InvestorRequests: React.FC = () => {
                         <Eye size={13} /> View Details
                       </button>
 
-                      {r.status === 'PENDING' && (
+                      {isPending && (
                         <>
                           <button
                             onClick={() => handleUpdateStatus(r.id, 'REJECTED')}
@@ -167,7 +181,7 @@ const InvestorRequests: React.FC = () => {
                         </>
                       )}
 
-                      {r.status === 'ACCEPTED' && (
+                      {isAccepted && (
                         <button
                           onClick={() => navigate('/dashboard/investor/inbox')}
                           className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1"

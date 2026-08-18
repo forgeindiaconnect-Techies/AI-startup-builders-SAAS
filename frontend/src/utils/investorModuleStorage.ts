@@ -1,12 +1,29 @@
 import { API_URL } from '../config/api';
 
+export interface InvestorConnectionFormData {
+  startupId: string;
+  startupName: string;
+  fundingAmount: string;
+  fundingStage: string;
+  shortIntro: string;
+  whySeeking: string;
+  optionalMessage?: string;
+  founderEmail?: string;
+  investorEmail?: string;
+  investorFirm?: string;
+}
+
 export interface InvestmentRequest {
   id: string;
   founderId: string;
-  founderName: string;
-  founderEmail: string;
+  founder_id?: string;
   investorId: string;
+  investor_id?: string;
+  founderName: string;
+  founder_name?: string;
   investorName: string;
+  investor_name?: string;
+  founderEmail: string;
   investorEmail: string;
   investorFirm: string;
   startupId: string;
@@ -16,10 +33,13 @@ export interface InvestmentRequest {
   shortIntro: string;
   whySeeking: string;
   optionalMessage?: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
+  form_data: InvestorConnectionFormData;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN' | 'COMPLETED' | 'pending' | 'accepted' | 'rejected' | 'withdrawn' | 'completed';
   responseNote?: string;
   createdAt: string;
+  created_at?: string;
   updatedAt: string;
+  updated_at?: string;
 }
 
 export interface InvestorMessage {
@@ -71,7 +91,7 @@ export interface FundingTransaction {
 }
 
 const STORAGE_KEYS = {
-  REQUESTS: 'ai_startup_builder_investment_requests',
+  REQUESTS: 'investor_connection_requests',
   MESSAGES: 'ai_startup_builder_investor_messages',
   MEETINGS: 'ai_startup_builder_investor_meetings',
   TRANSACTIONS: 'ai_startup_builder_funding_transactions',
@@ -169,65 +189,120 @@ export const getInvestmentRequests = (): InvestmentRequest[] => {
   return INITIAL_REQUESTS;
 };
 
-export const saveInvestmentRequest = (reqData: Omit<InvestmentRequest, 'id' | 'createdAt' | 'updatedAt' | 'status'>): InvestmentRequest => {
-  const newReq: InvestmentRequest = {
-    id: `req_inv_${Date.now()}`,
-    ...reqData,
-    status: 'PENDING',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+export const saveInvestmentRequest = (reqData: {
+  founderId: string;
+  founderName: string;
+  founderEmail: string;
+  investorId: string;
+  investorName: string;
+  investorEmail: string;
+  investorFirm: string;
+  startupId: string;
+  startupName: string;
+  fundingAmount: string;
+  fundingStage: string;
+  shortIntro: string;
+  whySeeking: string;
+  optionalMessage?: string;
+}): InvestmentRequest => {
+  const nowIso = new Date().toISOString();
+  const reqId = `req_conn_${Date.now()}`;
+
+  const formData: InvestorConnectionFormData = {
+    startupId: reqData.startupId,
+    startupName: reqData.startupName,
+    fundingAmount: reqData.fundingAmount,
+    fundingStage: reqData.fundingStage,
+    shortIntro: reqData.shortIntro,
+    whySeeking: reqData.whySeeking,
+    optionalMessage: reqData.optionalMessage || '',
+    founderEmail: reqData.founderEmail,
+    investorEmail: reqData.investorEmail,
+    investorFirm: reqData.investorFirm,
   };
 
+  const newReq: InvestmentRequest = {
+    id: reqId,
+    founderId: reqData.founderId,
+    founder_id: reqData.founderId,
+    investorId: reqData.investorId,
+    investor_id: reqData.investorId,
+    founderName: reqData.founderName,
+    founder_name: reqData.founderName,
+    investorName: reqData.investorName,
+    investor_name: reqData.investorName,
+    founderEmail: reqData.founderEmail,
+    investorEmail: reqData.investorEmail,
+    investorFirm: reqData.investorFirm,
+    startupId: reqData.startupId,
+    startupName: reqData.startupName,
+    fundingAmount: reqData.fundingAmount,
+    fundingStage: reqData.fundingStage,
+    shortIntro: reqData.shortIntro,
+    whySeeking: reqData.whySeeking,
+    optionalMessage: reqData.optionalMessage,
+    form_data: formData,
+    status: 'pending',
+    createdAt: nowIso,
+    created_at: nowIso,
+    updatedAt: nowIso,
+    updated_at: nowIso,
+  };
+
+  // 1. Create single source of truth Investor Connection Request record
   const requests = getInvestmentRequests();
   const updated = [newReq, ...requests];
   localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(updated));
 
-  // Push notifications to Admin, Investor, and Founder
+  // Also sync to legacy key for backwards compatibility
   try {
-    const nowIso = new Date().toISOString();
+    localStorage.setItem('ai_startup_builder_investment_requests', JSON.stringify(updated));
+  } catch (e) {}
+
+  // 2. Transactionally create notifications for Investor and Admin
+  try {
+    const formattedDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const reqDetailsText = [
+      `Startup: ${reqData.startupName}`,
+      `Funding Stage: ${reqData.fundingStage}`,
+      `Funding Requirement: ${reqData.fundingAmount}`,
+      `Short Intro: ${reqData.shortIntro}`,
+      `Why Seeking: ${reqData.whySeeking}`,
+      reqData.optionalMessage ? `Optional Note: ${reqData.optionalMessage}` : ''
+    ].filter(Boolean).join('\n');
+
+    // Admin Investor Notification
     const adminNotif = {
       id: `notif_conn_admin_${Date.now()}`,
       userId: 'admin',
       targetRole: 'investor',
-      title: 'New Connection Request Sent',
-      message: `${reqData.founderName} sent a connection request to ${reqData.investorName} (${reqData.investorFirm}) for ${reqData.startupName}.`,
-      type: 'funding',
-      isRead: false,
-      actionUrl: '/dashboard/admin/investors',
-      createdAt: nowIso,
-    };
-
-    const investorNotif = {
-      id: `notif_conn_inv_${Date.now()}`,
-      userId: reqData.investorId || reqData.investorEmail,
-      userEmail: reqData.investorEmail,
-      targetRole: 'investor',
-      title: `New Proposal from ${reqData.founderName}`,
-      message: `${reqData.founderName} submitted an investment request (${reqData.fundingStage} • ${reqData.fundingAmount}) for ${reqData.startupName}.`,
-      type: 'funding',
+      title: 'New Investor Connection Request',
+      message: `Founder: ${reqData.founderName}\nInvestor: ${reqData.investorName}\nRequest Date: ${formattedDate}\n\nRequest Details:\n${reqDetailsText}\n\nStatus:\nPending`,
+      type: 'investor',
       isRead: false,
       actionUrl: '/dashboard/investor/requests',
       createdAt: nowIso,
     };
 
-    const founderNotif = {
-      id: `notif_conn_fnd_${Date.now()}`,
-      userId: reqData.founderId || reqData.founderEmail,
-      userEmail: reqData.founderEmail,
-      targetRole: 'founder',
-      title: `Connection Request Sent to ${reqData.investorName}`,
-      message: `Your investment connection request for ${reqData.startupName} was successfully sent to ${reqData.investorName} (${reqData.investorFirm}).`,
-      type: 'funding',
+    // Investor Notification
+    const investorNotif = {
+      id: `notif_conn_inv_${Date.now()}`,
+      userId: reqData.investorId || reqData.investorEmail,
+      userEmail: reqData.investorEmail,
+      targetRole: 'investor',
+      title: `New Investor Connection Request from ${reqData.founderName}`,
+      message: `${reqData.founderName} sent a connection request for ${reqData.startupName} (${reqData.fundingStage} • ${reqData.fundingAmount}).`,
+      type: 'investor',
       isRead: false,
-      actionUrl: '/dashboard/founder/investment-requests',
+      actionUrl: '/dashboard/investor/requests',
       createdAt: nowIso,
     };
 
     const storedNotifs = localStorage.getItem('ai_startup_builder_notifications');
     const parsedNotifs = storedNotifs ? JSON.parse(storedNotifs) : [];
-    localStorage.setItem('ai_startup_builder_notifications', JSON.stringify([adminNotif, investorNotif, founderNotif, ...parsedNotifs]));
+    localStorage.setItem('ai_startup_builder_notifications', JSON.stringify([adminNotif, investorNotif, ...parsedNotifs]));
   } catch (err) {
-    console.warn('Could not save notifications:', err);
+    console.warn('Could not save connection request notifications:', err);
   }
 
   window.dispatchEvent(new Event('storage'));
@@ -239,19 +314,25 @@ export const saveInvestmentRequest = (reqData: Omit<InvestmentRequest, 'id' | 'c
 export const updateInvestmentRequestStatus = (requestId: string, newStatus: InvestmentRequest['status'], responseNote?: string): void => {
   const requests = getInvestmentRequests();
   let targetReq: InvestmentRequest | null = null;
+  const normalizedStatus = (newStatus || 'pending').toLowerCase() as InvestmentRequest['status'];
+
   const updated = requests.map(r => {
     if (r.id === requestId) {
       targetReq = {
         ...r,
-        status: newStatus,
+        status: normalizedStatus,
         responseNote: responseNote || r.responseNote,
         updatedAt: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
       return targetReq;
     }
     return r;
   });
   localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(updated));
+  try {
+    localStorage.setItem('ai_startup_builder_investment_requests', JSON.stringify(updated));
+  } catch (e) {}
 
   // Generate notifications for Founder and Admin when Investor accepts/declines proposal
   if (targetReq) {
