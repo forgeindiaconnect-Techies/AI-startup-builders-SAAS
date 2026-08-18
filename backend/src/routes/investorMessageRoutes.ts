@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getInvestorMessages, createInvestorMessage } from '../controllers/investorMessageController';
+import { getInvestorMessages, createInvestorMessage } from '../controllers/investorMessageController.js';
 
 const router = Router();
 

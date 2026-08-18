@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import InvestorMessage from '../models/InvestorMessage';
+import InvestorMessage from '../models/InvestorMessage.js';
 
 export const getInvestorMessages = async (req: Request, res: Response) => {
   try {
