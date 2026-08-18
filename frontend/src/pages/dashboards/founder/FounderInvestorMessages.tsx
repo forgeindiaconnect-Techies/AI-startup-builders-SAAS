@@ -92,11 +92,15 @@ const FounderInvestorMessages: React.FC = () => {
     loadData();
     window.addEventListener('storage', loadData);
     window.addEventListener('investor_messages_updated', loadData);
+    window.addEventListener('focus', loadData);
+    const interval = setInterval(loadData, 2000);
     return () => {
       window.removeEventListener('storage', loadData);
       window.removeEventListener('investor_messages_updated', loadData);
+      window.removeEventListener('focus', loadData);
+      clearInterval(interval);
     };
-  }, []);
+  }, [activeRequestId, activeInvestorEmail]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -134,35 +138,23 @@ const FounderInvestorMessages: React.FC = () => {
     const targetStartup = (currentStartupName || '').trim().toLowerCase();
 
     // 1. Match by startup name (e.g. "Bakery" or "Startup IT")
-    if (
-      msgStartup &&
-      targetStartup &&
-      (msgStartup === targetStartup || msgStartup.includes(targetStartup) || targetStartup.includes(msgStartup))
-    ) {
-      return true;
-    }
+    const isSameStartup = msgStartup && targetStartup && (
+      msgStartup === targetStartup ||
+      msgStartup.includes(targetStartup) ||
+      targetStartup.includes(msgStartup)
+    );
 
-    // 2. Email matching between sender/receiver
-    if (
-      emailsMatch(m.senderEmail, userEmail) ||
-      emailsMatch(m.receiverEmail, userEmail) ||
-      emailsMatch(m.senderEmail, currentFounderEmail) ||
-      emailsMatch(m.receiverEmail, currentFounderEmail) ||
-      emailsMatch(m.senderEmail, currentInvEmail) ||
-      emailsMatch(m.receiverEmail, currentInvEmail)
-    ) {
-      return true;
-    }
+    // 2. Sender / Receiver participant matching
+    const isFounderSender = m.senderRole === 'founder' || emailsMatch(m.senderEmail, currentFounderEmail) || namesMatch(m.senderName, currentFounderName);
+    const isInvestorSender = m.senderRole === 'investor' || emailsMatch(m.senderEmail, currentInvEmail) || namesMatch(m.senderName, currentInvName);
 
-    // 3. Name matching between sender/receiver
-    if (
-      namesMatch(m.senderName, currentFounderName) ||
-      namesMatch(m.receiverName, currentFounderName) ||
-      namesMatch(m.senderName, currentInvName) ||
-      namesMatch(m.receiverName, currentInvName)
-    ) {
-      return true;
-    }
+    const isFounderReceiver = emailsMatch(m.receiverEmail, currentFounderEmail) || namesMatch(m.receiverName, currentFounderName);
+    const isInvestorReceiver = emailsMatch(m.receiverEmail, currentInvEmail) || namesMatch(m.receiverName, currentInvName);
+
+    const isValidPair = (isFounderSender && (isInvestorReceiver || isInvestorUser)) || (isInvestorSender && (isFounderReceiver || !isInvestorUser));
+
+    if (isSameStartup) return true;
+    if (isValidPair) return true;
 
     return false;
   });
