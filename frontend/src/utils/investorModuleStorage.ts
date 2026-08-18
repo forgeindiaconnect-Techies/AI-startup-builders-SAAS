@@ -44,6 +44,7 @@ export interface InvestmentRequest {
 
 export interface InvestorMessage {
   id: string;
+  reqId?: string;
   senderEmail: string;
   senderName: string;
   senderRole: 'founder' | 'investor';
@@ -499,9 +500,57 @@ export const updateInvestmentRequestStatus = (requestId: string, newStatus: Inve
   window.dispatchEvent(new Event('notifications_updated'));
 };
 
-// ─── Messages Helpers ───
+// Async fetch background sync for Messages
+let isFetchingMessages = false;
+export const syncInvestorMessagesWithBackend = async (): Promise<void> => {
+  if (isFetchingMessages) return;
+  isFetchingMessages = true;
+  try {
+    const res = await fetch(`${API_URL}/investor-messages`);
+    const json = await res.json();
+    if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+      const localMsgs = getInvestorMessages();
+      const localIds = new Set(localMsgs.map((m: any) => m.id || m._id));
+      let hasNew = false;
+      const merged = [...localMsgs];
+
+      json.data.forEach((remote: any) => {
+        const rId = String(remote._id || remote.id || '');
+        if (rId && !localIds.has(rId)) {
+          merged.push({
+            id: rId,
+            reqId: remote.reqId,
+            senderEmail: remote.senderEmail,
+            senderName: remote.senderName,
+            senderRole: remote.senderRole,
+            receiverEmail: remote.receiverEmail,
+            receiverName: remote.receiverName,
+            startupName: remote.startupName,
+            text: remote.text,
+            attachmentUrl: remote.attachmentUrl,
+            attachmentName: remote.attachmentName,
+            createdAt: remote.createdAt,
+            isRead: remote.isRead ?? false,
+          });
+          hasNew = true;
+        }
+      });
+
+      if (hasNew) {
+        localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(merged));
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new Event('investor_messages_updated'));
+      }
+    }
+  } catch (err) {
+    // Fail silently, use local storage fallback
+  } finally {
+    isFetchingMessages = false;
+  }
+};
 
 export const getInvestorMessages = (): InvestorMessage[] => {
+  syncInvestorMessagesWithBackend();
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.MESSAGES);
     if (stored) return JSON.parse(stored);
@@ -522,6 +571,14 @@ export const sendInvestorMessage = (msgData: Omit<InvestorMessage, 'id' | 'creat
   localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(updated));
   window.dispatchEvent(new Event('storage'));
   window.dispatchEvent(new Event('investor_messages_updated'));
+
+  // POST to backend API asynchronously
+  fetch(`${API_URL}/investor-messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(newMsg),
+  }).catch(() => {});
+
   return newMsg;
 };
 

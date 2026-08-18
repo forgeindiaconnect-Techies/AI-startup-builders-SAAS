@@ -322,11 +322,23 @@ const FounderInvestorMessages: React.FC = () => {
                         </span>
                       </h3>
                       <p className="text-xs text-gray-500 font-medium flex flex-wrap items-center gap-1">
-                        <span>Investor: <strong className="text-gray-900 font-bold">{currentInvName}</strong> ({currentInvFirm})</span>
-                        <span>•</span>
-                        <span>Founder: <strong className="text-gray-900 font-bold">{currentFounderName}</strong> ({currentFounderEmail})</span>
-                        <span>•</span>
-                        <span>Startup: <strong className="text-[#5B21B6] font-bold">{currentStartupName}</strong></span>
+                        {isInvestorUser ? (
+                          <>
+                            <span>Founder: <strong className="text-gray-900 font-bold">{currentFounderName}</strong> ({currentFounderEmail})</span>
+                            <span>•</span>
+                            <span>Investor: <strong className="text-gray-900 font-bold">{currentInvName}</strong> ({currentInvFirm})</span>
+                            <span>•</span>
+                            <span>Startup: <strong className="text-[#5B21B6] font-bold">{currentStartupName}</strong></span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Investor: <strong className="text-gray-900 font-bold">{currentInvName}</strong> ({currentInvFirm})</span>
+                            <span>•</span>
+                            <span>Founder: <strong className="text-gray-900 font-bold">{currentFounderName}</strong> ({currentFounderEmail})</span>
+                            <span>•</span>
+                            <span>Startup: <strong className="text-[#5B21B6] font-bold">{currentStartupName}</strong></span>
+                          </>
+                        )}
                       </p>
                     </div>
                   </div>
