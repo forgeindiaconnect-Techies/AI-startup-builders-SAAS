@@ -8,7 +8,7 @@ import {
 import { useAuth } from '../../../context/AuthContext';
 import { addNotification } from '../../../utils/localStorageHelper';
 import { getInvestorLeads, saveInvestorLead, deleteInvestorLead, getInvestorApplications, type InvestorInviteLead } from '../../../utils/investorInvites';
-import { getInvestorMeetingInvites, saveInvestorMeetingInvite, type InvestorMeetingInvite } from '../../../utils/investorModuleStorage';
+import { getInvestorMeetingInvites, saveInvestorMeetingInvite, createInvestorMeeting, type InvestorMeetingInvite } from '../../../utils/investorModuleStorage';
 import { API_URL } from '../../../config/api';
 
 type TabType = 'all' | 'invited' | 'pending' | 'approved' | 'rejected' | 'suspended';
@@ -99,24 +99,21 @@ const INITIAL_INVESTOR_APPLICATIONS: InvestorApplication[] = [
   },
   {
     id: 'INV-2026-7734',
-    fullName: 'Priya Nambiar',
-    email: 'priya@nambiarfamily.in',
+    fullName: 'Ananya Deshmukh',
+    email: 'ananya@angelnetwork.in',
     mobile: '+91 99300 44556',
     investorType: 'Angel Investor',
-    companyName: 'Nambiar Capital',
-    designation: 'Angel Investor & Advisor',
+    companyName: 'Mumbai Angels Network',
+    designation: 'Lead Investor',
     experienceYears: '5 - 10 years',
     location: 'Mumbai, India',
-    linkedinUrl: 'https://linkedin.com/in/priya-nambiar-angel',
-    website: 'https://nambiarcapital.in',
-    bio: 'Ex-VP Product at FinTech unicorn. Active angel investor backing AI-driven FinTech & HealthTech.',
-    preferredIndustries: ['FinTech', 'HealthTech', 'Artificial Intelligence'],
+    linkedinUrl: 'https://linkedin.com/in/ananya-d-angel',
+    website: 'https://angelnetwork.in',
+    bio: 'Active angel investor focusing on B2B SaaS and AI productivity solutions.',
+    preferredIndustries: ['Artificial Intelligence', 'FinTech', 'SaaS'],
     investmentStages: ['Pre-Seed', 'Seed'],
     investmentRange: '₹25 Lakhs – ₹1 Crore',
     preferredLocation: 'India',
-    previousExperience: 'Angel investor in 14 early stage companies with 3 exits.',
-    startupsInvestedCount: '14',
-    portfolioCompanies: 'PayFlow, MedPulse AI, CareConnect',
     status: 'APPROVED',
     submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     approvedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
@@ -174,6 +171,7 @@ const AdminInvestorApproval: React.FC = () => {
   });
   const [meetingTimeVal, setMeetingTimeVal] = useState('11:00');
   const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [isSendingLink, setIsSendingLink] = useState(false);
   const [existingInvite, setExistingInvite] = useState<InvestorMeetingInvite | null>(null);
 
   useEffect(() => {
@@ -192,6 +190,7 @@ const AdminInvestorApproval: React.FC = () => {
     }
   }, [meetingModalApp]);
 
+  // 1. Action: Send Email Notification to Investor's Email
   const handleSendMeetingInvite = async () => {
     if (!meetingModalApp) return;
     setIsSendingInvite(true);
@@ -199,7 +198,6 @@ const AdminInvestorApproval: React.FC = () => {
     const videoUrl = `https://meet.jit.si/ai-startup-builder-investor-${meetingModalApp.id.replace(/[^a-zA-Z0-9]/g, '')}`;
     const passcode = `INV-${meetingModalApp.id.slice(-4)}`;
 
-    // Simulate API request delay for realistic loading state
     await new Promise(res => setTimeout(res, 850));
 
     const newInvite: InvestorMeetingInvite = {
@@ -224,11 +222,70 @@ const AdminInvestorApproval: React.FC = () => {
     setExistingInvite(newInvite);
     setIsSendingInvite(false);
 
+    // Add email notification record for Investor
     addNotification({
-      title: 'Meeting Invite Dispatched',
-      message: `Accreditation meeting invitation sent to ${meetingModalApp.fullName} (${meetingModalApp.email}) for ${meetingDateVal} at ${meetingTimeVal} IST`,
+      title: 'Meeting Email Notification Dispatched',
+      message: `Official accreditation meeting invitation sent to ${meetingModalApp.fullName} (${meetingModalApp.email}) for ${meetingDateVal} at ${meetingTimeVal} IST`,
       type: 'system',
     });
+
+    alert(`Email invitation successfully dispatched to ${meetingModalApp.email}!`);
+  };
+
+  // 2. Action: Send Invite Link to BOTH Founder & Investor Dashboard Meetings pages
+  const handleSendInviteLink = async () => {
+    if (!meetingModalApp) return;
+    setIsSendingLink(true);
+
+    const videoUrl = `https://meet.jit.si/ai-startup-builder-investor-${meetingModalApp.id.replace(/[^a-zA-Z0-9]/g, '')}`;
+    const passcode = `INV-${meetingModalApp.id.slice(-4)}`;
+
+    await new Promise(res => setTimeout(res, 850));
+
+    // A. Save to Investor Meetings Schedule
+    const newInvite: InvestorMeetingInvite = {
+      id: existingInvite?.id || `mtg_${Date.now()}`,
+      investorId: meetingModalApp.id,
+      investorName: meetingModalApp.fullName,
+      investorEmail: meetingModalApp.email,
+      investorType: meetingModalApp.investorType,
+      firmName: meetingModalApp.companyName || 'Independent Investor',
+      meetingDate: meetingDateVal,
+      meetingTime: meetingTimeVal,
+      timezone: 'IST (UTC+05:30)',
+      duration: '45 Mins',
+      videoUrl,
+      passcode,
+      status: 'SENT',
+      sentAt: new Date().toISOString(),
+      createdAt: existingInvite?.createdAt || new Date().toISOString(),
+    };
+    saveInvestorMeetingInvite(newInvite);
+
+    // B. Save to Founder Meetings Schedule
+    createInvestorMeeting({
+      investorName: meetingModalApp.fullName,
+      investorEmail: meetingModalApp.email,
+      investorFirm: meetingModalApp.companyName || 'Independent Investor',
+      founderEmail: 'renugopal24022000@gmail.com',
+      founderName: 'Renu',
+      startupId: 'startup_general',
+      startupName: 'Startup IT / Platform',
+      proposedDate: meetingDateVal,
+      proposedTime: meetingTimeVal,
+      agenda: `Investor Accreditation & Pitch Review - Passcode: ${passcode}`,
+    });
+
+    setExistingInvite(newInvite);
+    setIsSendingLink(false);
+
+    addNotification({
+      title: 'Meeting Link Published to Dashboards',
+      message: `Meeting invite for ${meetingModalApp.fullName} successfully sent to BOTH Founder and Investor Dashboard Meetings pages.`,
+      type: 'system',
+    });
+
+    alert(`Meeting invite link successfully sent to BOTH Founder Dashboard & Investor Dashboard Meetings pages!`);
   };
 
   // Invite Modal State
@@ -1543,14 +1600,22 @@ const AdminInvestorApproval: React.FC = () => {
                     )}
                   </button>
 
-                  <a
-                    href={videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full sm:w-auto px-4 py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
+                  <button
+                    onClick={handleSendInviteLink}
+                    disabled={isSendingLink}
+                    className="w-full sm:w-auto px-5 py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                    title="Publish meeting invite link to both Founder & Investor Dashboard Meetings pages"
                   >
-                    <Video size={15} /> Join Meeting Now <ArrowUpRight size={14} />
-                  </a>
+                    {isSendingLink ? (
+                      <>
+                        <RefreshCw size={15} className="animate-spin" /> Sending Link...
+                      </>
+                    ) : (
+                      <>
+                        <Link2 size={15} /> Send Invite Link
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
