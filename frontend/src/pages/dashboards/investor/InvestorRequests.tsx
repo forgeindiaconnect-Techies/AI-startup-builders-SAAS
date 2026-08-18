@@ -159,7 +159,16 @@ const InvestorRequests: React.FC = () => {
                       {isAccepted && (
                         <>
                           <button
-                            onClick={() => navigate('/dashboard/investor/inbox')}
+                            onClick={() => navigate('/dashboard/investor/inbox', {
+                              state: {
+                                founderEmail: r.founderEmail || fData.founderEmail,
+                                founderName: r.founderName || r.founder_name || 'Founder',
+                                startupName: fData.startupName || r.startupName || 'Startup IT',
+                                investorEmail: r.investorEmail || user?.email,
+                                investorName: r.investorName || user?.fullName,
+                                reqId: r.id || (r as any)._id
+                              }
+                            })}
                             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition-all flex items-center gap-1 cursor-pointer"
                           >
                             <MessageSquare size={13} /> Chat with Founder
@@ -259,6 +268,29 @@ const InvestorRequests: React.FC = () => {
                   className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs rounded-xl border border-red-200 transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <XCircle size={13} /> Reject Request
+                </button>
+              )}
+
+              {(selectedReq.status || 'PENDING').toUpperCase() === 'ACCEPTED' && (
+                <button
+                  onClick={() => {
+                    const r = selectedReq;
+                    const fData: any = r.form_data || {};
+                    setSelectedReq(null);
+                    navigate('/dashboard/investor/inbox', {
+                      state: {
+                        founderEmail: r.founderEmail || fData.founderEmail,
+                        founderName: r.founderName || r.founder_name || 'Founder',
+                        startupName: fData.startupName || r.startupName || 'Startup IT',
+                        investorEmail: r.investorEmail || user?.email,
+                        investorName: r.investorName || user?.fullName,
+                        reqId: r.id || (r as any)._id
+                      }
+                    });
+                  }}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow cursor-pointer flex items-center gap-1"
+                >
+                  <MessageSquare size={13} /> Chat with Founder
                 </button>
               )}
 

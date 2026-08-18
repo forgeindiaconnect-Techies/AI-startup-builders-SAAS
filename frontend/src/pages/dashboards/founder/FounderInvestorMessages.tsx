@@ -20,13 +20,16 @@ const getFounderName = (r: any, fallback?: string): string => r?.founderName || 
 const FounderInvestorMessages: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const stateReqId = location.state?.reqId;
   const stateEmail = location.state?.investorEmail;
   const stateName = location.state?.investorName;
+  const stateFounderEmail = location.state?.founderEmail;
+  const stateFounderName = location.state?.founderName;
   const stateStartup = location.state?.startupName;
-  const stateFounderName = location.state?.founderName || user?.fullName || user?.name || 'Renu';
+  const stateFounderDisplayName = location.state?.founderName || user?.fullName || user?.name || 'Renu';
 
   const founderEmail = user?.email || 'renugopal24022000@gmail.com';
-  const founderDisplayName = user?.fullName || user?.name || stateFounderName || 'Renu';
+  const founderDisplayName = user?.fullName || user?.name || stateFounderDisplayName || 'Renu';
 
   const [connectedRequests, setConnectedRequests] = useState<InvestmentRequest[]>([]);
   const [activeRequestId, setActiveRequestId] = useState<string>('');
@@ -44,9 +47,14 @@ const FounderInvestorMessages: React.FC = () => {
     setConnectedRequests(allReqs);
 
     if (allReqs.length > 0 && !activeRequestId) {
-      const targetReq = stateEmail
-        ? allReqs.find(r => getInvEmail(r) === stateEmail || r.investorEmail === stateEmail)
-        : allReqs[0];
+      const targetReq = stateReqId
+        ? allReqs.find(r => String(r.id || (r as any)?._id) === String(stateReqId))
+        : (stateEmail
+            ? allReqs.find(r => getInvEmail(r) === stateEmail || r.investorEmail === stateEmail)
+            : (stateFounderEmail
+                ? allReqs.find(r => r.founderEmail === stateFounderEmail || (r as any).founder_email === stateFounderEmail)
+                : allReqs[0]));
+
       const firstId = String(targetReq?.id || (targetReq as any)?._id || allReqs[0]?.id || (allReqs[0] as any)?._id || '');
       setActiveRequestId(firstId);
       setActiveInvestorEmail(stateEmail || getInvEmail(targetReq || allReqs[0]));

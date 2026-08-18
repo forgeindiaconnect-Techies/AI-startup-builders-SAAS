@@ -3,14 +3,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Building2, ClipboardList, Inbox, CalendarClock, Wallet } from 'lucide-react';
 import InvestorMarketplace from './InvestorMarketplace';
 import InvestorRequests from './InvestorRequests';
-import SharedInbox from '../founder/SharedInbox';
+import FounderInvestorMessages from '../founder/FounderInvestorMessages';
 import InvestorMeetings from './InvestorMeetings';
 import InvestorTransactions from './InvestorTransactions';
 
 const INVESTOR_HUB_TABS = [
   { id: 'marketplace', label: 'Startup Marketplace', path: '/dashboard/investor/marketplace', icon: Building2, component: InvestorMarketplace },
   { id: 'requests', label: 'Investment Requests', path: '/dashboard/investor/requests', icon: ClipboardList, component: InvestorRequests },
-  { id: 'messages', label: 'Messages', path: '/dashboard/investor/inbox', icon: Inbox, component: SharedInbox },
+  { id: 'messages', label: 'Messages', path: '/dashboard/investor/inbox', icon: Inbox, component: FounderInvestorMessages },
   { id: 'meetings', label: 'Meetings', path: '/dashboard/investor/meetings', icon: CalendarClock, component: InvestorMeetings },
   { id: 'transactions', label: 'Funding & Transactions', path: '/dashboard/investor/transactions', icon: Wallet, component: InvestorTransactions },
 ];
