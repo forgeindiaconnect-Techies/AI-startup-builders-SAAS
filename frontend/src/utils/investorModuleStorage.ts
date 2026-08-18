@@ -607,8 +607,15 @@ export const syncInvestorMeetingsWithBackend = async (): Promise<void> => {
         if (!remoteId) return;
 
         // A. Update or insert into Founder list
-        const mIdx = mergedMeetings.findIndex(m => m.id === remoteId || m.id === remote.id);
+        const mIdx = mergedMeetings.findIndex(m => 
+          m.id === remoteId || 
+          m.id === remote.id || 
+          (m.investorEmail && remote.investorEmail && m.investorEmail.toLowerCase() === remote.investorEmail.toLowerCase() && m.proposedDate === remote.proposedDate)
+        );
         if (mIdx >= 0) {
+          // Sync database ID to local storage to prevent duplicate cards
+          mergedMeetings[mIdx].id = remoteId;
+          
           if (mergedMeetings[mIdx].status !== remote.status || mergedMeetings[mIdx].meetingLink !== remote.meetingLink) {
             mergedMeetings[mIdx] = {
               ...mergedMeetings[mIdx],
@@ -642,8 +649,15 @@ export const syncInvestorMeetingsWithBackend = async (): Promise<void> => {
         }
 
         // B. Update or insert into Investor invites list
-        const iIdx = mergedInvites.findIndex(i => i.id === remoteId || i.id === remote.id);
+        const iIdx = mergedInvites.findIndex(i => 
+          i.id === remoteId || 
+          i.id === remote.id ||
+          (i.investorEmail && remote.investorEmail && i.investorEmail.toLowerCase() === remote.investorEmail.toLowerCase() && i.meetingDate === remote.proposedDate)
+        );
         if (iIdx >= 0) {
+          // Sync database ID to local storage
+          mergedInvites[iIdx].id = remoteId;
+
           const mappedStatus = remote.status === 'Scheduled' ? 'SENT' : (remote.status === 'Cancelled' ? 'PENDING' : remote.status);
           if (mergedInvites[iIdx].status !== mappedStatus || mergedInvites[iIdx].videoUrl !== remote.meetingLink) {
             mergedInvites[iIdx] = {
