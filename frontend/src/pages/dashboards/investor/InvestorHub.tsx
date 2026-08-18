@@ -10,7 +10,7 @@ import InvestorTransactions from './InvestorTransactions';
 const INVESTOR_HUB_TABS = [
   { id: 'marketplace', label: 'Startup Marketplace', path: '/dashboard/investor/marketplace', icon: Building2, component: InvestorMarketplace },
   { id: 'requests', label: 'Investment Requests', path: '/dashboard/investor/requests', icon: ClipboardList, component: InvestorRequests },
-  { id: 'messages', label: 'Messages', path: '/dashboard/investor/inbox', icon: Inbox, component: FounderInvestorMessages },
+  { id: 'messages', label: 'Messages', path: '/dashboard/investor/messages', icon: Inbox, component: FounderInvestorMessages },
   { id: 'meetings', label: 'Meetings', path: '/dashboard/investor/meetings', icon: CalendarClock, component: InvestorMeetings },
   { id: 'transactions', label: 'Funding & Transactions', path: '/dashboard/investor/transactions', icon: Wallet, component: InvestorTransactions },
 ];

@@ -241,7 +241,7 @@ function App() {
                     <Route path="meetings"        element={<InvestorHub />} />
                     <Route path="transactions"    element={<InvestorHub />} />
                     <Route path="learning-center" element={<InvestorLearningCenter />} />
-                    <Route path="inbox"           element={<InvestorHub />} />
+                    <Route path="inbox"           element={<SharedNotifications />} />
                     <Route path="messages"        element={<InvestorHub />} />
                     <Route path="profile-kyc"     element={<InvestorProfileKYC />} />
                     {/* Legacy / Direct paths */}

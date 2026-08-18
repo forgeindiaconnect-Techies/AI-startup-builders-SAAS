@@ -159,7 +159,7 @@ const InvestorRequests: React.FC = () => {
                       {isAccepted && (
                         <>
                           <button
-                            onClick={() => navigate('/dashboard/investor/inbox', {
+                            onClick={() => navigate('/dashboard/investor/messages', {
                               state: {
                                 founderEmail: r.founderEmail || fData.founderEmail,
                                 founderName: r.founderName || r.founder_name || 'Founder',
@@ -277,7 +277,7 @@ const InvestorRequests: React.FC = () => {
                     const r = selectedReq;
                     const fData: any = r.form_data || {};
                     setSelectedReq(null);
-                    navigate('/dashboard/investor/inbox', {
+                    navigate('/dashboard/investor/messages', {
                       state: {
                         founderEmail: r.founderEmail || fData.founderEmail,
                         founderName: r.founderName || r.founder_name || 'Founder',
