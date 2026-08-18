@@ -3,7 +3,8 @@ import {
   TrendingUp, UserPlus, CheckCircle2, XCircle, Clock, Eye, AlertCircle,
   FileText, ShieldCheck, Mail, Phone, Building2, MapPin, Globe, Link2,
   Lock, Copy, Check, Search, Filter, Sparkles, AlertTriangle, ChevronRight,
-  Shield, RefreshCw, X, ArrowUpRight, Trash2, Video, CalendarClock, Calendar
+  Shield, RefreshCw, X, ArrowUpRight, Trash2, Video, CalendarClock, Calendar,
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { addNotification } from '../../../utils/localStorageHelper';
@@ -1589,19 +1590,19 @@ const AdminInvestorApproval: React.FC = () => {
               {/* Fixed Footer */}
               <div className="p-6 sm:p-8 pt-4 border-t border-gray-100 shrink-0 bg-gray-50/50 rounded-b-3xl">
                 {/* 5. Primary CTA & Secondary Action Buttons */}
-                <div className="flex flex-col sm:flex-row items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                   <button
                     onClick={() => setMeetingModalApp(null)}
-                    className="w-full sm:w-auto px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition-all flex items-center justify-center order-last sm:order-first cursor-pointer"
+                    className="w-full sm:w-auto px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 order-last sm:order-first cursor-pointer shadow-sm"
                   >
-                    Go Back
+                    <ArrowLeft size={15} /> Back
                   </button>
 
-                  <div className="w-full sm:flex-1 flex flex-col sm:flex-row items-center gap-3 justify-end">
+                  <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3 justify-end sm:flex-1">
                     <button
                       onClick={handleSendMeetingInvite}
                       disabled={isSendingInvite}
-                      className={`w-full sm:flex-1 py-3 px-4 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      className={`w-full sm:w-auto py-3 px-5 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer ${
                         isSent
                           ? 'bg-amber-600 hover:bg-amber-700 text-white'
                           : 'bg-[#6C4CF1] hover:bg-[#5B21B6] text-white shadow-purple-500/20'
