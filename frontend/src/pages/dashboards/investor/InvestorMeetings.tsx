@@ -7,7 +7,6 @@ import { useAuth } from '../../../context/AuthContext';
 
 const InvestorMeetings: React.FC = () => {
   const { user } = useAuth();
-  const syncDateRef = useRef<HTMLInputElement>(null);
   const rescheduleDateRef = useRef<HTMLInputElement>(null);
   const [meetingInvites, setMeetingInvites] = useState<InvestorMeetingInvite[]>([]);
 
@@ -76,22 +75,6 @@ const InvestorMeetings: React.FC = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Investor Meetings & Accreditation Calls</h1>
           <p className="text-gray-500 mt-1 text-sm">Manage your scheduled video calls, pitch reviews, and platform accreditation sessions.</p>
-        </div>
-        <div className="relative">
-          <input 
-            type="date" 
-            ref={syncDateRef} 
-            className="absolute inset-0 opacity-0 pointer-events-none" 
-            onChange={(e) => {
-              if(e.target.value) window.alert(`Calendar synced from: ${e.target.value}`);
-            }} 
-          />
-          <button 
-            onClick={() => syncDateRef.current?.showPicker()}
-            className="flex items-center px-4 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow text-sm transition-colors cursor-pointer"
-          >
-            <Link size={16} className="mr-2" /> Sync Google Calendar
-          </button>
         </div>
       </div>
 
