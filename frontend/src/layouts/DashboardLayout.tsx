@@ -63,6 +63,7 @@ import AdminSubPayments from '../pages/dashboards/admin/AdminSubPayments';
 import AdminAnalytics from '../pages/dashboards/admin/AdminAnalytics';
 import AdminPlatformSettings from '../pages/dashboards/admin/AdminPlatformSettings';
 import AdminMentorEarnings from '../pages/dashboards/admin/AdminMentorEarnings';
+import AdminInvestorFunding from '../pages/dashboards/admin/AdminInvestorFunding';
 import AdminProfile from '../pages/dashboards/admin/AdminProfile';
 
 import FounderDataRoom from '../pages/dashboards/founder/FounderDataRoom';
@@ -144,6 +145,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/admin/notifications': SharedNotifications,
     '/dashboard/admin/inbox': SharedInbox,
     '/dashboard/admin/mentor-earnings': AdminMentorEarnings,
+    '/dashboard/admin/funding-transactions': AdminInvestorFunding,
     '/dashboard/admin/profile': AdminProfile,
   },
 };
@@ -219,6 +221,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Subscriptions & Payments',icon: CreditCard,      path: '/dashboard/admin/sub-payments' },
         { name: 'AI Analytics',            icon: BarChart2,       path: '/dashboard/admin/analytics' },
         { name: 'Mentor Earnings',         icon: IndianRupee,     path: '/dashboard/admin/mentor-earnings' },
+        { name: 'Investor Funding',         icon: Wallet,          path: '/dashboard/admin/funding-transactions' },
         { name: 'Notifications',           icon: Bell,            path: '/dashboard/admin/notifications' },
         { name: 'Profile',                 icon: UserCog,         path: '/dashboard/admin/profile' },
       ],
