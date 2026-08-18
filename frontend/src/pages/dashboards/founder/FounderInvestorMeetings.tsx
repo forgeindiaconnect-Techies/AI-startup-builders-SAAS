@@ -4,7 +4,7 @@ import {
   ExternalLink, Building2, User, X, AlertCircle, Calendar as CalendarIcon
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
-import { getStartups } from '../../../utils/localStorageHelper';
+import { getStartups, addNotification } from '../../../utils/localStorageHelper';
 import {
   getInvestmentRequests, getInvestorMeetings, createInvestorMeeting,
   updateMeetingStatus
@@ -97,9 +97,48 @@ const FounderInvestorMeetings: React.FC = () => {
     loadData();
   };
 
-  const handleStatusChange = (meetingId: string, status: InvestorMeeting['status']) => {
+  const handleStatusChange = async (meetingId: string, status: InvestorMeeting['status']) => {
     updateMeetingStatus(meetingId, status);
     showToast(`Meeting status updated to ${status}.`);
+    
+    if (status === 'Completed') {
+      const targetMtg = meetings.find(item => item.id === meetingId);
+      if (targetMtg) {
+        const fid = user?.id || user?._id || 'founder';
+        const iid = targetMtg.investorEmail || 'investor';
+
+        // 1. Notify Founder
+        await addNotification({
+          userId: fid,
+          title: 'Investor Meeting Completed',
+          message: `Your accreditation meeting with investor "${targetMtg.investorName || 'Investor'}" has been completed.`,
+          type: 'meeting_completed',
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
+
+        // 2. Notify Investor
+        await addNotification({
+          userId: iid,
+          title: 'Accreditation Meeting Completed',
+          message: `Your accreditation meeting with founder "${targetMtg.founderName || 'Founder'}" has been completed.`,
+          type: 'meeting_completed',
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
+
+        // 3. Notify Admin
+        await addNotification({
+          userId: 'admin',
+          title: 'Accreditation Meeting Completed',
+          message: `Accreditation meeting between founder "${targetMtg.founderName || 'Founder'}" and investor "${targetMtg.investorName || 'Investor'}" was completed.`,
+          type: 'meeting_completed',
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
+      }
+    }
+
     loadData();
   };
 

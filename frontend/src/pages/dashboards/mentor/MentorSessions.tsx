@@ -272,16 +272,48 @@ const MentorSessions: React.FC = () => {
     setCompletingId(b._id);
     try {
       await completeSession(b._id);
+      
+      const f = b?.userId;
+      const fid = f && typeof f === 'object' ? (f._id || f.id) : (b?.founderId || b?.userId || 'founder');
+      const mid = user?.id || user?._id || b?.mentorId?._id || b?.mentorId?.id || b?.mentorId || 'mentor';
+      const mName = user?.fullName || 'Mentor';
+
+      // 1. Notify Admin
       addNotification({
         id: `notif_admin_comp_${Date.now()}`,
         userId: 'admin',
         title: 'Mentoring Session Completed',
-        message: `Session for "${startupNameOf(b)}" between founder "${founderNameOf(b)}" and mentor is marked as completed.`,
+        message: `Session for "${startupNameOf(b)}" between founder "${founderNameOf(b)}" and mentor "${mName}" is marked as completed.`,
         type: 'session_completed',
         actionUrl: '/dashboard/admin/notifications',
         isRead: false,
         createdAt: new Date().toISOString(),
       });
+
+      // 2. Notify Founder
+      addNotification({
+        id: `notif_founder_comp_${Date.now()}`,
+        userId: fid,
+        title: 'Mentoring Session Completed',
+        message: `Your mentoring session for "${startupNameOf(b)}" with mentor "${mName}" is marked as completed.`,
+        type: 'session_completed',
+        actionUrl: '/dashboard/founder/meetings',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
+
+      // 3. Notify Mentor
+      addNotification({
+        id: `notif_mentor_comp_${Date.now()}`,
+        userId: mid,
+        title: 'Session Marked Completed',
+        message: `Session for "${startupNameOf(b)}" with founder "${founderNameOf(b)}" has been marked completed.`,
+        type: 'session_completed',
+        actionUrl: '/dashboard/mentor/sessions',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
+
       showToast('success', 'Session marked as completed.');
       loadBookings();
     } catch (err: any) {

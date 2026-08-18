@@ -981,6 +981,7 @@ const PaymentModal: React.FC<{
 
 // ─── Main Page ────────────────────────────────────────────────────
 const FounderMentors: React.FC = () => {
+  const { user } = useAuth();
   const [tab, setTab] = useState<TabId>('mentors');
   const [loading, setLoading] = useState(true);
   const [mentors, setMentors] = useState<any[]>([]);
@@ -1125,13 +1126,42 @@ const FounderMentors: React.FC = () => {
       localStorage.setItem('ai_startup_builder_user_bookings', JSON.stringify(updated));
     } catch (e) {}
 
+    const fid = user?.id || user?._id || b.userId || 'founder';
+    const mid = b.mentorId?._id || b.mentorId?.id || b.mentorId || 'mentor';
+    const mName = mentorNameOf(b);
+
+    // 1. Notify Admin
     await addNotification({
       id: `notif_admin_comp_${Date.now()}`,
       userId: 'admin',
       title: 'Mentoring Session Completed',
-      message: `Session for "${startupNameOf(b)}" between founder and mentor "${mentorNameOf(b)}" has been marked completed.`,
+      message: `Session for "${startupNameOf(b)}" between founder "${user?.fullName || 'Founder'}" and mentor "${mName}" has been marked completed.`,
       type: 'session_completed',
       actionUrl: '/dashboard/admin/notifications',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+
+    // 2. Notify Founder
+    await addNotification({
+      id: `notif_founder_comp_${Date.now()}`,
+      userId: fid,
+      title: 'Mentoring Session Completed',
+      message: `Your mentoring session for "${startupNameOf(b)}" with mentor "${mName}" has been marked completed.`,
+      type: 'session_completed',
+      actionUrl: '/dashboard/founder/meetings',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+
+    // 3. Notify Mentor
+    await addNotification({
+      id: `notif_mentor_comp_${Date.now()}`,
+      userId: mid,
+      title: 'Session Marked Completed',
+      message: `Session for "${startupNameOf(b)}" with founder "${user?.fullName || 'Founder'}" has been marked completed.`,
+      type: 'session_completed',
+      actionUrl: '/dashboard/mentor/sessions',
       isRead: false,
       createdAt: new Date().toISOString(),
     });
