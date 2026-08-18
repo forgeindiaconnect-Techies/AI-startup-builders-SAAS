@@ -3,7 +3,7 @@ import {
   TrendingUp, UserPlus, CheckCircle2, XCircle, Clock, Eye, AlertCircle,
   FileText, ShieldCheck, Mail, Phone, Building2, MapPin, Globe, Link2,
   Lock, Copy, Check, Search, Filter, Sparkles, AlertTriangle, ChevronRight,
-  Shield, RefreshCw, X, ArrowUpRight, Trash2
+  Shield, RefreshCw, X, ArrowUpRight, Trash2, Video, CalendarClock, Calendar
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { addNotification } from '../../../utils/localStorageHelper';
@@ -162,6 +162,11 @@ const AdminInvestorApproval: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedApp, setSelectedApp] = useState<InvestorApplication | null>(null);
   const [selectedLead, setSelectedLead] = useState<InvestorInviteLead | null>(null);
+
+  // Meeting Link Modal State
+  const [meetingModalApp, setMeetingModalApp] = useState<InvestorApplication | null>(null);
+  const [copiedMeetingLink, setCopiedMeetingLink] = useState(false);
+  const [meetingDateText, setMeetingDateText] = useState('Tomorrow, 11:00 AM IST');
 
   // Invite Modal State
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -799,6 +804,14 @@ const AdminInvestorApproval: React.FC = () => {
                       <Eye size={15} /> View Full Profile & Docs
                     </button>
 
+                    <button
+                      onClick={() => setMeetingModalApp(app)}
+                      className="px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-[#6C4CF1] border border-purple-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5"
+                      title="View or Schedule Meeting Link for Investor"
+                    >
+                      <Video size={15} /> Meeting Link
+                    </button>
+
                     {app.status === 'PENDING_VERIFICATION' && (
                       <>
                         <button
@@ -1272,6 +1285,119 @@ const AdminInvestorApproval: React.FC = () => {
                   className="px-6 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all"
                 >
                   Close Details
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL 4: MEETING LINK & ACCREDITATION DETAILS ── */}
+      {meetingModalApp && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative my-8 animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setMeetingModalApp(null)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-purple-100 text-[#6C4CF1] flex items-center justify-center font-black">
+                <Video size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-extrabold text-gray-900">Investor Meeting & Accreditation Link</h3>
+                <p className="text-xs text-gray-500">Virtual interview and credential verification details.</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Investor Details Summary */}
+              <div className="bg-purple-50/60 p-4 rounded-2xl border border-purple-100">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-bold text-gray-900 text-sm">{meetingModalApp.fullName}</h4>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-[#6C4CF1]">
+                    {meetingModalApp.investorType}
+                  </span>
+                </div>
+                <div className="text-xs text-gray-600 space-y-1">
+                  <p>Firm: <strong className="text-gray-900">{meetingModalApp.companyName || 'Independent Investor'}</strong></p>
+                  <p>Email: <strong className="text-gray-900">{meetingModalApp.email}</strong></p>
+                  <p>Phone: <strong className="text-gray-900">{meetingModalApp.mobile || 'Not specified'}</strong></p>
+                  <p>Target Cheque: <strong className="text-[#6C4CF1]">{meetingModalApp.investmentRange || 'Standard'}</strong></p>
+                </div>
+              </div>
+
+              {/* Scheduled Date & Time */}
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200">
+                <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center gap-1.5">
+                  <CalendarClock size={14} className="text-[#6C4CF1]" /> Scheduled Meeting Time
+                </label>
+                <input
+                  type="text"
+                  value={meetingDateText}
+                  onChange={(e) => setMeetingDateText(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#6C4CF1]"
+                />
+              </div>
+
+              {/* Meeting Link & Passcode */}
+              <div className="bg-gray-900 text-white p-5 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Video Call URL</span>
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800/60">
+                    Jitsi / Google Meet Ready
+                  </span>
+                </div>
+
+                <div className="bg-gray-800 border border-gray-700 p-3 rounded-xl flex items-center justify-between gap-2">
+                  <span className="font-mono text-xs text-purple-200 truncate flex-1">
+                    {`https://meet.jit.si/ai-startup-builder-investor-${meetingModalApp.id.replace(/[^a-zA-Z0-9]/g, '')}`}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const link = `https://meet.jit.si/ai-startup-builder-investor-${meetingModalApp.id.replace(/[^a-zA-Z0-9]/g, '')}`;
+                      navigator.clipboard.writeText(link);
+                      setCopiedMeetingLink(true);
+                      setTimeout(() => setCopiedMeetingLink(false), 2000);
+                    }}
+                    className="px-3 py-1.5 bg-[#6C4CF1] hover:bg-[#5B21B6] text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+                  >
+                    {copiedMeetingLink ? <Check size={13} /> : <Copy size={13} />}
+                    {copiedMeetingLink ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
+                  <span>Passcode: <strong className="text-white font-mono">{`INV-${meetingModalApp.id.slice(-4)}`}</strong></span>
+                  <span>Max Duration: <strong className="text-white">45 Mins</strong></span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                <a
+                  href={`https://meet.jit.si/ai-startup-builder-investor-${meetingModalApp.id.replace(/[^a-zA-Z0-9]/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:flex-1 py-3 bg-[#6C4CF1] hover:bg-[#5B21B6] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                  <Video size={16} /> Join Meeting Now <ArrowUpRight size={14} />
+                </a>
+                <button
+                  onClick={() => {
+                    addNotification({
+                      title: 'Meeting Invite Dispatched',
+                      message: `Meeting details sent to ${meetingModalApp.fullName} (${meetingModalApp.email}) for ${meetingDateText}`,
+                      type: 'system',
+                    });
+                    alert(`Meeting link dispatched to ${meetingModalApp.email}!`);
+                  }}
+                  className="w-full sm:w-auto px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Mail size={15} /> Send Email Invite
                 </button>
               </div>
             </div>
