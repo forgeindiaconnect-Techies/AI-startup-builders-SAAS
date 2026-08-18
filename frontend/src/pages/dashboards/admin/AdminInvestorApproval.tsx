@@ -1077,15 +1077,15 @@ const AdminInvestorApproval: React.FC = () => {
       {/* ── MODAL 2: FULL INVESTOR APPLICATION DETAILS ── */}
       {selectedApp && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl relative my-8 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 text-left">
             <button
               onClick={() => setSelectedApp(null)}
-              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors z-10"
             >
               <X size={20} />
             </button>
 
-            <div className="mb-6 border-b border-gray-100 pb-4">
+            <div className="p-6 sm:p-8 pb-4 border-b border-gray-100 shrink-0 pr-14">
               <span className={`px-3 py-0.5 rounded-full text-xs font-black uppercase ${
                 selectedApp.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' :
                 selectedApp.status === 'REJECTED' ? 'bg-red-50 text-red-600 border border-red-200' :
@@ -1093,11 +1093,11 @@ const AdminInvestorApproval: React.FC = () => {
               }`}>
                 Status: {selectedApp.status}
               </span>
-              <h2 className="text-2xl font-black text-gray-900 mt-2">{selectedApp.fullName}</h2>
+              <h2 className="text-2xl font-black text-gray-900 mt-2 tracking-tight">{selectedApp.fullName}</h2>
               <p className="text-xs text-gray-500">{selectedApp.investorType} • Application ID: {selectedApp.id}</p>
             </div>
 
-            <div className="space-y-6 text-xs text-gray-700">
+            <div className="p-6 sm:p-8 py-4 overflow-y-auto flex-1 space-y-6 text-xs text-gray-700">
               {/* Personal & Profile */}
               <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
                 <h4 className="font-bold text-gray-900 mb-2 uppercase text-[11px] text-[#6C4CF1]">Personal & Professional Info</h4>
@@ -1202,22 +1202,29 @@ const AdminInvestorApproval: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end gap-3">
-              {selectedApp.status === 'PENDING_VERIFICATION' && (
+            <div className="p-6 sm:p-8 pt-4 border-t border-gray-100 shrink-0 flex justify-end gap-3 bg-gray-50/50 rounded-b-3xl">
+              {selectedApp.status === 'PENDING_VERIFICATION' ? (
                 <>
                   <button
                     onClick={() => { const app = selectedApp; setSelectedApp(null); setRejectingApp(app); }}
-                    className="px-5 py-2.5 bg-red-50 text-red-600 border border-red-200 font-bold text-xs rounded-xl hover:bg-red-100"
+                    className="px-5 py-2.5 bg-red-50 text-red-600 border border-red-200 font-bold text-xs rounded-xl hover:bg-red-100 cursor-pointer"
                   >
                     Reject Application
                   </button>
                   <button
                     onClick={() => handleApprove(selectedApp)}
-                    className="px-6 py-2.5 bg-emerald-600 text-white font-extrabold text-xs rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-500/20"
+                    className="px-6 py-2.5 bg-emerald-600 text-white font-extrabold text-xs rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-500/20 cursor-pointer"
                   >
                     Approve & Activate Investor
                   </button>
                 </>
+              ) : (
+                <button
+                  onClick={() => setSelectedApp(null)}
+                  className="px-6 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+                >
+                  Close Details
+                </button>
               )}
             </div>
           </div>
@@ -1257,15 +1264,15 @@ const AdminInvestorApproval: React.FC = () => {
       {/* ── MODAL 4: INVESTOR INVITATION LEAD DETAILS ── */}
       {selectedLead && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 text-left">
+          <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl relative my-8 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 text-left">
             <button
               onClick={() => setSelectedLead(null)}
-              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors z-10"
             >
               <X size={20} />
             </button>
 
-            <div className="mb-6 border-b border-gray-100 pb-4">
+            <div className="p-6 sm:p-8 pb-4 border-b border-gray-100 shrink-0 pr-14">
               <div className="flex items-center gap-2 mb-2">
                 <span className="px-3 py-0.5 rounded-full text-xs font-black uppercase bg-amber-100 text-amber-800 border border-amber-200">
                   Status: {selectedLead.status}
@@ -1276,11 +1283,11 @@ const AdminInvestorApproval: React.FC = () => {
                   </span>
                 )}
               </div>
-              <h2 className="text-2xl font-black text-gray-900">{selectedLead.fullName}</h2>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">{selectedLead.fullName}</h2>
               <p className="text-xs text-gray-500">{selectedLead.email}</p>
             </div>
 
-            <div className="space-y-5 text-xs text-gray-700">
+            <div className="p-6 sm:p-8 py-4 overflow-y-auto flex-1 space-y-5 text-xs text-gray-700">
               {/* Profile Details (Name, Email, LinkedIn) */}
               <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 space-y-3">
                 <h4 className="font-bold text-gray-900 uppercase text-[11px] text-[#6C4CF1] flex items-center gap-1.5">
@@ -1392,21 +1399,22 @@ const AdminInvestorApproval: React.FC = () => {
                 </div>
               </div>
 
-              {/* Action Buttons Footer */}
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <button
-                  onClick={() => { handleDeleteLead(selectedLead); setSelectedLead(null); }}
-                  className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5"
-                >
-                  <Trash2 size={14} /> Delete Invitation
-                </button>
-                <button
-                  onClick={() => setSelectedLead(null)}
-                  className="px-6 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all"
-                >
-                  Close Details
-                </button>
-              </div>
+            </div>
+
+            {/* Action Buttons Footer */}
+            <div className="p-6 sm:p-8 pt-4 border-t border-gray-100 shrink-0 flex items-center justify-between bg-gray-50/50 rounded-b-3xl">
+              <button
+                onClick={() => { handleDeleteLead(selectedLead); setSelectedLead(null); }}
+                className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 size={14} /> Delete Invitation
+              </button>
+              <button
+                onClick={() => setSelectedLead(null)}
+                className="px-6 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
+              >
+                Close Details
+              </button>
             </div>
           </div>
         </div>
@@ -1423,52 +1431,54 @@ const AdminInvestorApproval: React.FC = () => {
 
         return (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative my-8 animate-in zoom-in-95 duration-200">
+            <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl relative my-8 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 text-left">
               <button
                 onClick={() => setMeetingModalApp(null)}
-                className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors z-10"
               >
                 <X size={20} />
               </button>
 
-              {/* Modal Header & Status Pill */}
-              <div className="flex items-center justify-between gap-3 mb-6 pb-4 border-b border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-purple-100 text-[#6C4CF1] flex items-center justify-center font-black shadow-sm">
-                    <Video size={24} />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-extrabold text-gray-900">Investor Meeting & Accreditation Link</h3>
-                    <p className="text-xs text-gray-500">Virtual interview and credential verification details.</p>
-                  </div>
-                </div>
-
-                <span className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase shrink-0 ${
-                  isSent
-                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                    : 'bg-amber-50 text-amber-700 border border-amber-200'
-                }`}>
-                  {isSent ? 'Invite Sent ✓' : 'Pending Invite'}
-                </span>
-              </div>
-
-              {/* Sent Status Banner (if already sent) */}
-              {isSent && (
-                <div className="bg-emerald-50/80 border border-emerald-200 p-3.5 rounded-2xl mb-4 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-xs text-emerald-800 font-bold">
-                    <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+              {/* Fixed Header */}
+              <div className="p-6 sm:p-8 pb-4 border-b border-gray-100 shrink-0 pr-14">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-100 text-[#6C4CF1] flex items-center justify-center font-black shadow-sm shrink-0">
+                      <Video size={24} />
+                    </div>
                     <div>
-                      <p className="font-extrabold text-emerald-900">Meeting Invite Dispatched</p>
-                      <p className="text-[11px] text-emerald-700 font-medium">Sent on {formattedSentDate || 'Today'}</p>
+                      <h3 className="text-xl font-extrabold text-gray-900 tracking-tight leading-tight">Investor Meeting & Accreditation Link</h3>
+                      <p className="text-xs text-gray-500">Virtual interview and credential verification details.</p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono font-bold bg-white text-emerald-800 px-2 py-1 rounded-lg border border-emerald-200 truncate max-w-[180px]">
-                    To: {meetingModalApp.email}
+
+                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase shrink-0 ${
+                    isSent
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                  }`}>
+                    {isSent ? 'Invite Sent ✓' : 'Pending Invite'}
                   </span>
                 </div>
-              )}
+              </div>
 
-              <div className="space-y-4">
+              {/* Scrollable Content */}
+              <div className="p-6 sm:p-8 py-4 overflow-y-auto flex-1 space-y-4">
+                {/* Sent Status Banner (if already sent) */}
+                {isSent && (
+                  <div className="bg-emerald-50/80 border border-emerald-200 p-3.5 rounded-2xl mb-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs text-emerald-800 font-bold">
+                      <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                      <div>
+                        <p className="font-extrabold text-emerald-900">Meeting Invite Dispatched</p>
+                        <p className="text-[11px] text-emerald-700 font-medium">Sent on {formattedSentDate || 'Today'}</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold bg-white text-emerald-800 px-2 py-1 rounded-lg border border-emerald-200 truncate max-w-[180px]">
+                      To: {meetingModalApp.email}
+                    </span>
+                  </div>
+                )}
                 {/* 1. Investor Details Summary */}
                 <div className="bg-purple-50/60 p-4 rounded-2xl border border-purple-100">
                   <div className="flex items-center justify-between mb-2">
@@ -1574,48 +1584,61 @@ const AdminInvestorApproval: React.FC = () => {
                   <strong className="text-gray-900 font-bold font-mono">{meetingModalApp.email}</strong>
                 </div>
 
+              </div>
+
+              {/* Fixed Footer */}
+              <div className="p-6 sm:p-8 pt-4 border-t border-gray-100 shrink-0 bg-gray-50/50 rounded-b-3xl">
                 {/* 5. Primary CTA & Secondary Action Buttons */}
-                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                <div className="flex flex-col sm:flex-row items-center gap-3">
                   <button
-                    onClick={handleSendMeetingInvite}
-                    disabled={isSendingInvite}
-                    className={`w-full sm:flex-1 py-3 px-4 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                      isSent
-                        ? 'bg-amber-600 hover:bg-amber-700 text-white'
-                        : 'bg-[#6C4CF1] hover:bg-[#5B21B6] text-white shadow-purple-500/20'
-                    }`}
+                    onClick={() => setMeetingModalApp(null)}
+                    className="w-full sm:w-auto px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-xl transition-all flex items-center justify-center order-last sm:order-first cursor-pointer"
                   >
-                    {isSendingInvite ? (
-                      <>
-                        <RefreshCw size={15} className="animate-spin" /> Sending Invite...
-                      </>
-                    ) : isSent ? (
-                      <>
-                        <Mail size={15} /> Resend Meeting Invite
-                      </>
-                    ) : (
-                      <>
-                        <Mail size={15} /> Send Email Invite
-                      </>
-                    )}
+                    Go Back
                   </button>
 
-                  <button
-                    onClick={handleSendInviteLink}
-                    disabled={isSendingLink}
-                    className="w-full sm:w-auto px-5 py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
-                    title="Publish meeting invite link to both Founder & Investor Dashboard Meetings pages"
-                  >
-                    {isSendingLink ? (
-                      <>
-                        <RefreshCw size={15} className="animate-spin" /> Sending Link...
-                      </>
-                    ) : (
-                      <>
-                        <Link2 size={15} /> Send Invite Link
-                      </>
-                    )}
-                  </button>
+                  <div className="w-full sm:flex-1 flex flex-col sm:flex-row items-center gap-3 justify-end">
+                    <button
+                      onClick={handleSendMeetingInvite}
+                      disabled={isSendingInvite}
+                      className={`w-full sm:flex-1 py-3 px-4 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                        isSent
+                          ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                          : 'bg-[#6C4CF1] hover:bg-[#5B21B6] text-white shadow-purple-500/20'
+                      }`}
+                    >
+                      {isSendingInvite ? (
+                        <>
+                          <RefreshCw size={15} className="animate-spin" /> Sending Invite...
+                        </>
+                      ) : isSent ? (
+                        <>
+                          <Mail size={15} /> Resend Meeting Invite
+                        </>
+                      ) : (
+                        <>
+                          <Mail size={15} /> Send Email Invite
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={handleSendInviteLink}
+                      disabled={isSendingLink}
+                      className="w-full sm:w-auto px-5 py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                      title="Publish meeting invite link to both Founder & Investor Dashboard Meetings pages"
+                    >
+                      {isSendingLink ? (
+                        <>
+                          <RefreshCw size={15} className="animate-spin" /> Sending Link...
+                        </>
+                      ) : (
+                        <>
+                          <Link2 size={15} /> Send Invite Link
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
