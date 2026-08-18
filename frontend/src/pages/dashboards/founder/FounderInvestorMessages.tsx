@@ -170,9 +170,9 @@ const FounderInvestorMessages: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-gray-200 shadow-xl grid grid-cols-1 lg:grid-cols-12 overflow-hidden h-[75vh]">
+        <div className="bg-white rounded-3xl border border-gray-200 shadow-xl flex flex-col md:flex-row overflow-hidden h-[78vh] min-h-[550px]">
           {/* Left Sidebar: Connected Conversations */}
-          <div className="lg:col-span-4 border-r border-gray-100 flex flex-col bg-gray-50/50">
+          <div className="w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col bg-gray-50/50 shrink-0 h-48 md:h-auto overflow-hidden">
             <div className="p-4 border-b border-gray-100 bg-white">
               <h2 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-2">Connected Conversations</h2>
               <div className="relative">
@@ -236,7 +236,7 @@ const FounderInvestorMessages: React.FC = () => {
           </div>
 
           {/* Right Chat Pane */}
-          <div className="lg:col-span-8 flex flex-col bg-white">
+          <div className="flex-1 flex flex-col bg-white min-w-0 h-full relative">
             {activeRequest ? (
               <>
                 {/* Chat Header */}
