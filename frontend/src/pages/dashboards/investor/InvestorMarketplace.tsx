@@ -7,8 +7,6 @@ import { useFunding } from '../../../context/FundingContext';
 import { API_URL } from '../../../config/api';
 import { getStartupVisibilityMap, setStartupInvestorVisibility } from '../../../utils/investorModuleStorage';
 
-import { InvestorHubHeaderTabs } from '../../../components/investor/InvestorHubHeaderTabs';
-
 const InvestorMarketplace: React.FC = () => {
   const { user } = useAuth();
   const { sendOffer } = useFunding();
@@ -214,7 +212,6 @@ const InvestorMarketplace: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up">
-      <InvestorHubHeaderTabs />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Deal Flow Marketplace</h1>

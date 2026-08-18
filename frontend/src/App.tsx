@@ -60,6 +60,7 @@ import MentorProfile   from './pages/dashboards/mentor/MentorProfile';
 
 // ── Investor Pages ───────────────────────────────────────────────
 import InvestorDashboard   from './pages/dashboards/InvestorDashboard';
+import InvestorHub         from './pages/dashboards/investor/InvestorHub';
 import InvestorMarketplace from './pages/dashboards/investor/InvestorMarketplace';
 import InvestorPortfolio   from './pages/dashboards/investor/InvestorPortfolio';
 import InvestorSaved       from './pages/dashboards/investor/InvestorSaved';
@@ -233,14 +234,15 @@ function App() {
                   {/* ───────────── INVESTOR ───────────── */}
                   <Route path="investor" element={<ProtectedRoute allowedRoles={['investor']} />}>
                     <Route index                  element={<InvestorDashboard />} />
-                    <Route path="marketplace"     element={<InvestorMarketplace />} />
+                    <Route path="marketplace"     element={<InvestorHub />} />
                     <Route path="portfolio-hub"   element={<InvestorPortfolioHub />} />
-                    <Route path="requests"        element={<InvestorRequests />} />
+                    <Route path="requests"        element={<InvestorHub />} />
                     <Route path="due-diligence"   element={<InvestorDueDiligence />} />
-                    <Route path="meetings"        element={<InvestorMeetings />} />
-                    <Route path="transactions"    element={<InvestorTransactions />} />
+                    <Route path="meetings"        element={<InvestorHub />} />
+                    <Route path="transactions"    element={<InvestorHub />} />
                     <Route path="learning-center" element={<InvestorLearningCenter />} />
-                    <Route path="inbox"           element={<SharedInbox />} />
+                    <Route path="inbox"           element={<InvestorHub />} />
+                    <Route path="messages"        element={<InvestorHub />} />
                     <Route path="profile-kyc"     element={<InvestorProfileKYC />} />
                     {/* Legacy / Direct paths */}
                     <Route path="saved"           element={<InvestorSaved />} />

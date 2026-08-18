@@ -43,6 +43,7 @@ import MentorFeedbackHub from '../pages/dashboards/mentor/MentorFeedbackHub';
 import MentorEarnings from '../pages/dashboards/mentor/MentorEarnings';
 import MentorProfile from '../pages/dashboards/mentor/MentorProfile';
 import InvestorDashboard from '../pages/dashboards/InvestorDashboard';
+import InvestorHub from '../pages/dashboards/investor/InvestorHub';
 import InvestorMarketplace from '../pages/dashboards/investor/InvestorMarketplace';
 import InvestorPortfolioHub from '../pages/dashboards/investor/InvestorPortfolioHub';
 import InvestorRequests from '../pages/dashboards/investor/InvestorRequests';
@@ -115,14 +116,15 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
   },
   investor: {
     '/dashboard/investor': InvestorDashboard,
-    '/dashboard/investor/marketplace': InvestorMarketplace,
+    '/dashboard/investor/marketplace': InvestorHub,
     '/dashboard/investor/portfolio-hub': InvestorPortfolioHub,
-    '/dashboard/investor/requests': InvestorRequests,
+    '/dashboard/investor/requests': InvestorHub,
     '/dashboard/investor/due-diligence': InvestorDueDiligence,
-    '/dashboard/investor/meetings': InvestorMeetings,
-    '/dashboard/investor/transactions': InvestorTransactions,
+    '/dashboard/investor/meetings': InvestorHub,
+    '/dashboard/investor/transactions': InvestorHub,
     '/dashboard/investor/learning-center': InvestorLearningCenter,
-    '/dashboard/investor/inbox': SharedInbox,
+    '/dashboard/investor/inbox': InvestorHub,
+    '/dashboard/investor/messages': InvestorHub,
     '/dashboard/investor/profile-kyc': InvestorProfileKYC,
   },
   admin: {

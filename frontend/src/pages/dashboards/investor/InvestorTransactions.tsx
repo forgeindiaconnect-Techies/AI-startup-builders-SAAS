@@ -1,13 +1,11 @@
 import React from 'react';
 import { IndianRupee, ArrowUpRight, Clock } from 'lucide-react';
-import { InvestorHubHeaderTabs } from '../../../components/investor/InvestorHubHeaderTabs';
 
 const transactions: any[] = [];
 
 const InvestorTransactions: React.FC = () => {
   return (
     <div className="animate-fade-in-up pb-10">
-      <InvestorHubHeaderTabs />
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>

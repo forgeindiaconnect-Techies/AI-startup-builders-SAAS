@@ -5,7 +5,6 @@ import { useAuth } from '../../../context/AuthContext';
 import {
   getInvestmentRequests, updateInvestmentRequestStatus
 } from '../../../utils/investorModuleStorage';
-import { InvestorHubHeaderTabs } from '../../../components/investor/InvestorHubHeaderTabs';
 import type { InvestmentRequest } from '../../../utils/investorModuleStorage';
 
 const statusStyles: Record<string, { icon: React.ElementType, color: string, bg: string }> = {
@@ -54,7 +53,6 @@ const InvestorRequests: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up pb-10 font-sans">
-      <InvestorHubHeaderTabs />
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <Handshake size={28} className="text-[#5B21B6]" /> Investment Requests
