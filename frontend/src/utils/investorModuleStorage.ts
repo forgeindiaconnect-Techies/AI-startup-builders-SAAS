@@ -100,7 +100,84 @@ const STORAGE_KEYS = {
 
 // ─── Initial Seed Data ───
 
-const INITIAL_REQUESTS: InvestmentRequest[] = [];
+const INITIAL_REQUESTS: InvestmentRequest[] = [
+  {
+    id: 'req_conn_demo_1',
+    founderId: 'f_1',
+    founder_id: 'f_1',
+    investorId: 'inv_1',
+    investor_id: 'inv_1',
+    founderName: 'Renu Gopal',
+    founder_name: 'Renu Gopal',
+    founderEmail: 'renugopal24022000@gmail.com',
+    investorName: 'Rakesh',
+    investor_name: 'Rakesh',
+    investorEmail: 'rakesh@investor.com',
+    investorFirm: 'Nexus Venture Partners',
+    startupId: 'startup_mock_1',
+    startupName: 'Tourists Platform AI',
+    fundingAmount: '₹50,00,000',
+    fundingStage: 'Seed',
+    shortIntro: 'Requesting investment for Tourists Platform AI. Hyper-personalized AI itinerary and travel booking copilot.',
+    whySeeking: 'Seeking investment from Nexus Venture Partners due to your strong track record in AI & Consumer Tech startups.',
+    optionalMessage: 'We have 10k monthly active users and 40% MoM growth. Would love to present our pitch deck.',
+    form_data: {
+      startupId: 'startup_mock_1',
+      startupName: 'Tourists Platform AI',
+      fundingAmount: '₹50,00,000',
+      fundingStage: 'Seed',
+      shortIntro: 'Requesting investment for Tourists Platform AI. Hyper-personalized AI itinerary and travel booking copilot.',
+      whySeeking: 'Seeking investment from Nexus Venture Partners due to your strong track record in AI & Consumer Tech startups.',
+      optionalMessage: 'We have 10k monthly active users and 40% MoM growth. Would love to present our pitch deck.',
+      founderEmail: 'renugopal24022000@gmail.com',
+      investorEmail: 'rakesh@investor.com',
+      investorFirm: 'Nexus Venture Partners',
+    },
+    status: 'pending',
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'req_conn_demo_2',
+    founderId: 'f_2',
+    founder_id: 'f_2',
+    investorId: 'inv_1',
+    investor_id: 'inv_1',
+    founderName: 'Ananya Sharma',
+    founder_name: 'Ananya Sharma',
+    founderEmail: 'ananya@healthpulse.ai',
+    investorName: 'Rakesh',
+    investor_name: 'Rakesh',
+    investorEmail: 'rakesh@investor.com',
+    investorFirm: 'Nexus Venture Partners',
+    startupId: 'startup_mock_2',
+    startupName: 'HealthPulse AI',
+    fundingAmount: '₹1,00,00,000',
+    fundingStage: 'Pre-Seed',
+    shortIntro: 'Building predictive diagnostic workflow AI for clinics and diagnostic labs.',
+    whySeeking: 'Looking for seed lead investors with HealthTech domain expertise.',
+    optionalMessage: 'Completed clinical trials with 94% diagnostic precision.',
+    form_data: {
+      startupId: 'startup_mock_2',
+      startupName: 'HealthPulse AI',
+      fundingAmount: '₹1,00,00,000',
+      fundingStage: 'Pre-Seed',
+      shortIntro: 'Building predictive diagnostic workflow AI for clinics and diagnostic labs.',
+      whySeeking: 'Looking for seed lead investors with HealthTech domain expertise.',
+      optionalMessage: 'Completed clinical trials with 94% diagnostic precision.',
+      founderEmail: 'ananya@healthpulse.ai',
+      investorEmail: 'rakesh@investor.com',
+      investorFirm: 'Nexus Venture Partners',
+    },
+    status: 'pending',
+    createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+    updated_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  }
+];
 
 const INITIAL_MESSAGES: InvestorMessage[] = [
   {
@@ -182,10 +259,14 @@ const INITIAL_TRANSACTIONS: FundingTransaction[] = [
 
 export const getInvestmentRequests = (): InvestmentRequest[] => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.REQUESTS);
-    if (stored) return JSON.parse(stored);
+    const stored = localStorage.getItem(STORAGE_KEYS.REQUESTS) || localStorage.getItem('ai_startup_builder_investment_requests');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
   } catch {}
   localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(INITIAL_REQUESTS));
+  localStorage.setItem('ai_startup_builder_investment_requests', JSON.stringify(INITIAL_REQUESTS));
   return INITIAL_REQUESTS;
 };
 

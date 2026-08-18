@@ -30,9 +30,11 @@ const InvestorRequests: React.FC = () => {
     const currentUserId = (user.id || user._id || '').toLowerCase();
     const currentUserEmail = (user.email || '').toLowerCase();
     const currentUserName = (user.fullName || user.name || '').toLowerCase();
+    const isInvestorRole = (user.role || '').toLowerCase() === 'investor';
+    const isAdminRole = (user.role || '').toLowerCase() === 'admin';
 
-    // Strict investor filtering: show requests matching investor ID, Email, or Name
-    const filtered = all.filter(r => {
+    // Investor filtering logic: show requests matching investor ID, Email, or Name
+    const matched = all.filter(r => {
       const rId = (r.investorId || r.investor_id || '').toLowerCase();
       const rEmail = (r.investorEmail || '').toLowerCase();
       const rName = (r.investorName || r.investor_name || '').toLowerCase();
@@ -41,13 +43,17 @@ const InvestorRequests: React.FC = () => {
       if (rEmail && currentUserEmail && rEmail === currentUserEmail) return true;
       if (rName && currentUserName && (rName.includes(currentUserName) || currentUserName.includes(rName))) return true;
 
-      // Admin or demo investors view full list for review
-      if (user.role === 'admin' || currentUserEmail.includes('investor')) return true;
-
       return false;
     });
 
-    setRequests(filtered);
+    if (matched.length > 0) {
+      setRequests(matched);
+    } else if (isInvestorRole || isAdminRole) {
+      // If logged in as investor or admin, show available incoming founder requests
+      setRequests(all);
+    } else {
+      setRequests(matched);
+    }
   };
 
   useEffect(() => {
