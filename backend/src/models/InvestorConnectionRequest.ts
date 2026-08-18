@@ -1,6 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IInvestorConnectionRequest extends Document {
+  id?: string;
   founderId: string;
   founderName: string;
   founderEmail: string;
