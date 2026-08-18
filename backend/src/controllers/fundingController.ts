@@ -79,3 +79,61 @@ export const deleteOffer = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: 'Server error deleting offer' });
   }
 };
+
+import InvestorConnectionRequest from '../models/InvestorConnectionRequest.js';
+
+// GET /api/funding/connection-requests
+export const getAllConnectionRequests = async (req: Request, res: Response) => {
+  try {
+    const { founderId, investorId } = req.query;
+    const filter: any = {};
+    if (founderId) filter.founderId = founderId;
+    if (investorId) filter.investorId = investorId;
+
+    const requests = await InvestorConnectionRequest.find(filter).sort({ createdAt: -1 });
+    return res.json({ success: true, data: requests });
+  } catch (err) {
+    console.error('Error fetching connection requests:', err);
+    return res.status(500).json({ success: false, message: 'Server error fetching connection requests' });
+  }
+};
+
+// POST /api/funding/connection-requests
+export const createConnectionRequest = async (req: Request, res: Response) => {
+  try {
+    const reqData = req.body;
+    const newReq = new InvestorConnectionRequest({
+      ...reqData,
+      status: reqData.status || 'pending',
+    });
+    await newReq.save();
+    return res.json({ success: true, data: newReq });
+  } catch (err) {
+    console.error('Error creating connection request:', err);
+    return res.status(500).json({ success: false, message: 'Server error creating connection request' });
+  }
+};
+
+// PATCH /api/funding/connection-requests/:id
+export const updateConnectionRequestStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status, responseNote } = req.body;
+
+    const updated = await InvestorConnectionRequest.findByIdAndUpdate(
+      id,
+      { status, responseNote, updatedAt: new Date() },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Connection request not found' });
+    }
+
+    return res.json({ success: true, data: updated });
+  } catch (err) {
+    console.error('Error updating connection request status:', err);
+    return res.status(500).json({ success: false, message: 'Server error updating status' });
+  }
+};
+

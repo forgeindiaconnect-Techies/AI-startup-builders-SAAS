@@ -259,6 +259,28 @@ const INITIAL_TRANSACTIONS: FundingTransaction[] = [
 
 export const getInvestmentRequests = (): InvestmentRequest[] => {
   try {
+    fetch(`${API_URL}/funding/connection-requests`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          const currentStored = localStorage.getItem(STORAGE_KEYS.REQUESTS);
+          const currentParsed = currentStored ? JSON.parse(currentStored) : [];
+          // Merge API data with current local items avoiding duplicates
+          const apiMap = new Map<string, any>();
+          data.data.forEach((item: any) => apiMap.set(item.id || item._id, item));
+          currentParsed.forEach((item: any) => {
+            if (item.id && !apiMap.has(item.id)) apiMap.set(item.id, item);
+          });
+          const merged = Array.from(apiMap.values());
+          localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(merged));
+          localStorage.setItem('ai_startup_builder_investment_requests', JSON.stringify(merged));
+          window.dispatchEvent(new Event('investment_requests_updated'));
+        }
+      })
+      .catch(() => {});
+  } catch (e) {}
+
+  try {
     const stored = localStorage.getItem(STORAGE_KEYS.REQUESTS) || localStorage.getItem('ai_startup_builder_investment_requests');
     if (stored) {
       const parsed = JSON.parse(stored);
@@ -340,6 +362,15 @@ export const saveInvestmentRequest = (reqData: {
     localStorage.setItem('ai_startup_builder_investment_requests', JSON.stringify(updated));
   } catch (e) {}
 
+  // Sync to Backend MongoDB API
+  try {
+    fetch(`${API_URL}/funding/connection-requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newReq),
+    }).catch(err => console.warn('Could not sync connection request to backend:', err));
+  } catch (e) {}
+
   // 2. Transactionally create notifications for Investor and Admin
   try {
     const formattedDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -382,6 +413,18 @@ export const saveInvestmentRequest = (reqData: {
     const storedNotifs = localStorage.getItem('ai_startup_builder_notifications');
     const parsedNotifs = storedNotifs ? JSON.parse(storedNotifs) : [];
     localStorage.setItem('ai_startup_builder_notifications', JSON.stringify([adminNotif, investorNotif, ...parsedNotifs]));
+
+    fetch(`${API_URL}/notifications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(adminNotif),
+    }).catch(() => {});
+
+    fetch(`${API_URL}/notifications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(investorNotif),
+    }).catch(() => {});
   } catch (err) {
     console.warn('Could not save connection request notifications:', err);
   }
