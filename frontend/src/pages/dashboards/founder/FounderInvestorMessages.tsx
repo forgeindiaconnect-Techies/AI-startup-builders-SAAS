@@ -53,7 +53,7 @@ const FounderInvestorMessages: React.FC = () => {
   const stateStartup = location.state?.startupName;
   const stateFounderDisplayName = location.state?.founderName || 'Renu';
 
-  const userEmail = user?.email || (isInvestorUser ? 'rakesh@investor.com' : 'renugopal24022000@gmail.com');
+  const userEmail = user?.email || (isInvestorUser ? 'rakesh@investor.com' : 'renu@gmail.com');
   const userDisplayName = user?.fullName || user?.name || (isInvestorUser ? 'Rakesh' : stateFounderDisplayName);
 
   const [connectedRequests, setConnectedRequests] = useState<InvestmentRequest[]>([]);
@@ -131,7 +131,7 @@ const FounderInvestorMessages: React.FC = () => {
   const currentInvName = activeRequest ? getInvName(activeRequest) : stateName || 'Rakesh';
   const currentInvFirm = activeRequest ? getInvFirm(activeRequest) : 'Independent Investor';
   const currentFounderName = activeRequest ? getFounderName(activeRequest, stateFounderName) : stateFounderName || 'Renu';
-  const currentFounderEmail = activeRequest?.founderEmail || (activeRequest as any)?.founder_email || stateFounderEmail || 'renugopal24022000@gmail.com';
+  const currentFounderEmail = activeRequest?.founderEmail || (activeRequest as any)?.founder_email || stateFounderEmail || 'renu@gmail.com';
   const currentStartupName = activeRequest ? getStartupName(activeRequest) : stateStartup || 'Startup IT';
 
   // Filter messages for active conversation

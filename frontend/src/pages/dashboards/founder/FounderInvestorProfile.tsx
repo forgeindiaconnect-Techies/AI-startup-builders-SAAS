@@ -224,7 +224,7 @@ const FounderInvestorProfile: React.FC = () => {
       startupName: currentStartup.startupName || 'My Startup',
       founderId: user?.id || user?._id || 'founder_id',
       founderName: user?.fullName || user?.name || 'Founder Name',
-      founderEmail: user?.email || 'renugopal24022000@gmail.com',
+      founderEmail: user?.email || 'renu@gmail.com',
       investorId: investor.id,
       investorName: investor.name,
       investorEmail: investor.email,

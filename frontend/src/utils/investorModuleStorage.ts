@@ -110,7 +110,7 @@ const INITIAL_REQUESTS: InvestmentRequest[] = [
     investor_id: 'inv_1',
     founderName: 'Renu Gopal',
     founder_name: 'Renu Gopal',
-    founderEmail: 'renugopal24022000@gmail.com',
+    founderEmail: 'renu@gmail.com',
     investorName: 'Rakesh',
     investor_name: 'Rakesh',
     investorEmail: 'rakesh@investor.com',
@@ -130,7 +130,7 @@ const INITIAL_REQUESTS: InvestmentRequest[] = [
       shortIntro: 'Requesting investment for Tourists Platform AI. Hyper-personalized AI itinerary and travel booking copilot.',
       whySeeking: 'Seeking investment from Nexus Venture Partners due to your strong track record in AI & Consumer Tech startups.',
       optionalMessage: 'We have 10k monthly active users and 40% MoM growth. Would love to present our pitch deck.',
-      founderEmail: 'renugopal24022000@gmail.com',
+      founderEmail: 'renu@gmail.com',
       investorEmail: 'rakesh@investor.com',
       investorFirm: 'Nexus Venture Partners',
     },
@@ -185,7 +185,7 @@ const INITIAL_MESSAGES: InvestorMessage[] = [];
 const INITIAL_MEETINGS: InvestorMeeting[] = [
   {
     id: 'meet_101',
-    founderEmail: 'renugopal24022000@gmail.com',
+    founderEmail: 'renu@gmail.com',
     founderName: 'Renu',
     investorEmail: 'priya@nambiarfamily.in',
     investorName: 'Priya Nambiar',
@@ -897,7 +897,7 @@ export const saveInvestorMeetingInvite = (invite: InvestorMeetingInvite): void =
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       id: invite.id,
-      founderEmail: 'renugopal24022000@gmail.com', // fallback founder email
+      founderEmail: 'renu@gmail.com', // fallback founder email
       founderName: 'Renu',
       investorEmail: invite.investorEmail,
       investorName: invite.investorName,

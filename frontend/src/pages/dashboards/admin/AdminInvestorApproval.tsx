@@ -310,7 +310,7 @@ const AdminInvestorApproval: React.FC = () => {
       investorName: meetingModalApp.fullName,
       investorEmail: meetingModalApp.email,
       investorFirm: meetingModalApp.companyName || 'Independent Investor',
-      founderEmail: 'renugopal24022000@gmail.com',
+      founderEmail: 'renu@gmail.com',
       founderName: 'Renu',
       startupId: 'startup_general',
       startupName: 'Startup IT / Platform',

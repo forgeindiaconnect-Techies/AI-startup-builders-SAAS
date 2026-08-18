@@ -13,7 +13,7 @@ import type { InvestorMeeting, InvestmentRequest } from '../../../utils/investor
 
 const FounderInvestorMeetings: React.FC = () => {
   const { user } = useAuth();
-  const founderEmail = user?.email || 'renugopal24022000@gmail.com';
+  const founderEmail = user?.email || 'renu@gmail.com';
 
   const [meetings, setMeetings] = useState<InvestorMeeting[]>([]);
   const [connectedRequests, setConnectedRequests] = useState<InvestmentRequest[]>([]);
@@ -199,11 +199,11 @@ const FounderInvestorMeetings: React.FC = () => {
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-lg font-black shadow shrink-0">
-                      {m.founderName ? m.founderName.charAt(0).toUpperCase() : 'F'}
+                      {(user?.fullName || m.founderName || 'Renu').charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 text-base">{m.founderName || 'Founder'}</h3>
-                      <p className="text-xs text-gray-500 font-medium">{m.founderEmail || 'renugopal24022000@gmail.com'}</p>
+                      <h3 className="font-bold text-gray-900 text-base">{user?.fullName || m.founderName || 'Renu'}</h3>
+                      <p className="text-xs text-gray-500 font-medium">{user?.email || m.founderEmail || 'renu@gmail.com'}</p>
                     </div>
                   </div>
                   {getStatusBadge(m.status)}
