@@ -689,3 +689,45 @@ export const setStartupInvestorVisibility = (startupId: string, isVisible: boole
   window.dispatchEvent(new Event('storage'));
   window.dispatchEvent(new Event('startup_visibility_updated'));
 };
+
+export interface InvestorMeetingInvite {
+  id: string;
+  investorId: string;
+  investorName: string;
+  investorEmail: string;
+  investorType: string;
+  firmName?: string;
+  meetingDate: string;
+  meetingTime: string;
+  timezone: string;
+  duration: string;
+  videoUrl: string;
+  passcode: string;
+  status: 'PENDING' | 'SENT' | 'ACCEPTED' | 'RESCHEDULED';
+  sentAt?: string;
+  createdAt: string;
+}
+
+export const STORAGE_KEYS_MEETINGS = 'admin_investor_meeting_invites';
+
+export const getInvestorMeetingInvites = (): InvestorMeetingInvite[] => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS_MEETINGS);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [];
+};
+
+export const saveInvestorMeetingInvite = (invite: InvestorMeetingInvite): void => {
+  const existing = getInvestorMeetingInvites();
+  const index = existing.findIndex(i => i.id === invite.id || i.investorEmail.toLowerCase() === invite.investorEmail.toLowerCase());
+  if (index >= 0) {
+    existing[index] = invite;
+  } else {
+    existing.unshift(invite);
+  }
+  localStorage.setItem(STORAGE_KEYS_MEETINGS, JSON.stringify(existing));
+  window.dispatchEvent(new Event('storage'));
+  window.dispatchEvent(new Event('investor_meetings_updated'));
+};
+

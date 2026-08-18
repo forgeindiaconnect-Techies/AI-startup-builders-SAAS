@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../../../context/AuthContext';
 import { addNotification } from '../../../utils/localStorageHelper';
 import { getInvestorLeads, saveInvestorLead, deleteInvestorLead, getInvestorApplications, type InvestorInviteLead } from '../../../utils/investorInvites';
+import { getInvestorMeetingInvites, saveInvestorMeetingInvite, type InvestorMeetingInvite } from '../../../utils/investorModuleStorage';
 import { API_URL } from '../../../config/api';
 
 type TabType = 'all' | 'invited' | 'pending' | 'approved' | 'rejected' | 'suspended';
@@ -163,10 +164,72 @@ const AdminInvestorApproval: React.FC = () => {
   const [selectedApp, setSelectedApp] = useState<InvestorApplication | null>(null);
   const [selectedLead, setSelectedLead] = useState<InvestorInviteLead | null>(null);
 
-  // Meeting Link Modal State
+  // Meeting Link Modal State & Invites
   const [meetingModalApp, setMeetingModalApp] = useState<InvestorApplication | null>(null);
   const [copiedMeetingLink, setCopiedMeetingLink] = useState(false);
-  const [meetingDateText, setMeetingDateText] = useState('Tomorrow, 11:00 AM IST');
+  const [copiedPasscode, setCopiedPasscode] = useState(false);
+  const [meetingDateVal, setMeetingDateVal] = useState(() => {
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    return tomorrow.toISOString().split('T')[0];
+  });
+  const [meetingTimeVal, setMeetingTimeVal] = useState('11:00');
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [existingInvite, setExistingInvite] = useState<InvestorMeetingInvite | null>(null);
+
+  useEffect(() => {
+    if (meetingModalApp) {
+      const invites = getInvestorMeetingInvites();
+      const match = invites.find(
+        i => i.investorId === meetingModalApp.id || i.investorEmail.toLowerCase() === meetingModalApp.email.toLowerCase()
+      );
+      if (match) {
+        setExistingInvite(match);
+        if (match.meetingDate) setMeetingDateVal(match.meetingDate);
+        if (match.meetingTime) setMeetingTimeVal(match.meetingTime);
+      } else {
+        setExistingInvite(null);
+      }
+    }
+  }, [meetingModalApp]);
+
+  const handleSendMeetingInvite = async () => {
+    if (!meetingModalApp) return;
+    setIsSendingInvite(true);
+
+    const videoUrl = `https://meet.jit.si/ai-startup-builder-investor-${meetingModalApp.id.replace(/[^a-zA-Z0-9]/g, '')}`;
+    const passcode = `INV-${meetingModalApp.id.slice(-4)}`;
+
+    // Simulate API request delay for realistic loading state
+    await new Promise(res => setTimeout(res, 850));
+
+    const newInvite: InvestorMeetingInvite = {
+      id: existingInvite?.id || `mtg_${Date.now()}`,
+      investorId: meetingModalApp.id,
+      investorName: meetingModalApp.fullName,
+      investorEmail: meetingModalApp.email,
+      investorType: meetingModalApp.investorType,
+      firmName: meetingModalApp.companyName || 'Independent Investor',
+      meetingDate: meetingDateVal,
+      meetingTime: meetingTimeVal,
+      timezone: 'IST (UTC+05:30)',
+      duration: '45 Mins',
+      videoUrl,
+      passcode,
+      status: 'SENT',
+      sentAt: new Date().toISOString(),
+      createdAt: existingInvite?.createdAt || new Date().toISOString(),
+    };
+
+    saveInvestorMeetingInvite(newInvite);
+    setExistingInvite(newInvite);
+    setIsSendingInvite(false);
+
+    addNotification({
+      title: 'Meeting Invite Dispatched',
+      message: `Accreditation meeting invitation sent to ${meetingModalApp.fullName} (${meetingModalApp.email}) for ${meetingDateVal} at ${meetingTimeVal} IST`,
+      type: 'system',
+    });
+  };
 
   // Invite Modal State
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -1293,117 +1356,207 @@ const AdminInvestorApproval: React.FC = () => {
       )}
 
       {/* ── MODAL 4: MEETING LINK & ACCREDITATION DETAILS ── */}
-      {meetingModalApp && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative my-8 animate-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setMeetingModalApp(null)}
-              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
-            >
-              <X size={20} />
-            </button>
+      {meetingModalApp && (() => {
+        const videoUrl = `https://meet.jit.si/ai-startup-builder-investor-${meetingModalApp.id.replace(/[^a-zA-Z0-9]/g, '')}`;
+        const passcode = `INV-${meetingModalApp.id.slice(-4)}`;
+        const isSent = existingInvite?.status === 'SENT' || existingInvite?.status === 'ACCEPTED';
+        const formattedSentDate = existingInvite?.sentAt
+          ? new Date(existingInvite.sentAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : '';
 
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-purple-100 text-[#6C4CF1] flex items-center justify-center font-black">
-                <Video size={24} />
-              </div>
-              <div>
-                <h3 className="text-xl font-extrabold text-gray-900">Investor Meeting & Accreditation Link</h3>
-                <p className="text-xs text-gray-500">Virtual interview and credential verification details.</p>
-              </div>
-            </div>
+        return (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative my-8 animate-in zoom-in-95 duration-200">
+              <button
+                onClick={() => setMeetingModalApp(null)}
+                className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <X size={20} />
+              </button>
 
-            <div className="space-y-4">
-              {/* Investor Details Summary */}
-              <div className="bg-purple-50/60 p-4 rounded-2xl border border-purple-100">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-bold text-gray-900 text-sm">{meetingModalApp.fullName}</h4>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-[#6C4CF1]">
-                    {meetingModalApp.investorType}
-                  </span>
-                </div>
-                <div className="text-xs text-gray-600 space-y-1">
-                  <p>Firm: <strong className="text-gray-900">{meetingModalApp.companyName || 'Independent Investor'}</strong></p>
-                  <p>Email: <strong className="text-gray-900">{meetingModalApp.email}</strong></p>
-                  <p>Phone: <strong className="text-gray-900">{meetingModalApp.mobile || 'Not specified'}</strong></p>
-                  <p>Target Cheque: <strong className="text-[#6C4CF1]">{meetingModalApp.investmentRange || 'Standard'}</strong></p>
-                </div>
-              </div>
-
-              {/* Scheduled Date & Time */}
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200">
-                <label className="block text-xs font-bold text-gray-700 mb-1 flex items-center gap-1.5">
-                  <CalendarClock size={14} className="text-[#6C4CF1]" /> Scheduled Meeting Time
-                </label>
-                <input
-                  type="text"
-                  value={meetingDateText}
-                  onChange={(e) => setMeetingDateText(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#6C4CF1]"
-                />
-              </div>
-
-              {/* Meeting Link & Passcode */}
-              <div className="bg-gray-900 text-white p-5 rounded-2xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Video Call URL</span>
-                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800/60">
-                    Jitsi / Google Meet Ready
-                  </span>
+              {/* Modal Header & Status Pill */}
+              <div className="flex items-center justify-between gap-3 mb-6 pb-4 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-100 text-[#6C4CF1] flex items-center justify-center font-black shadow-sm">
+                    <Video size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-extrabold text-gray-900">Investor Meeting & Accreditation Link</h3>
+                    <p className="text-xs text-gray-500">Virtual interview and credential verification details.</p>
+                  </div>
                 </div>
 
-                <div className="bg-gray-800 border border-gray-700 p-3 rounded-xl flex items-center justify-between gap-2">
-                  <span className="font-mono text-xs text-purple-200 truncate flex-1">
-                    {`https://meet.jit.si/ai-startup-builder-investor-${meetingModalApp.id.replace(/[^a-zA-Z0-9]/g, '')}`}
+                <span className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase shrink-0 ${
+                  isSent
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                }`}>
+                  {isSent ? 'Invite Sent ✓' : 'Pending Invite'}
+                </span>
+              </div>
+
+              {/* Sent Status Banner (if already sent) */}
+              {isSent && (
+                <div className="bg-emerald-50/80 border border-emerald-200 p-3.5 rounded-2xl mb-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-xs text-emerald-800 font-bold">
+                    <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                    <div>
+                      <p className="font-extrabold text-emerald-900">Meeting Invite Dispatched</p>
+                      <p className="text-[11px] text-emerald-700 font-medium">Sent on {formattedSentDate || 'Today'}</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono font-bold bg-white text-emerald-800 px-2 py-1 rounded-lg border border-emerald-200 truncate max-w-[180px]">
+                    To: {meetingModalApp.email}
                   </span>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {/* 1. Investor Details Summary */}
+                <div className="bg-purple-50/60 p-4 rounded-2xl border border-purple-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-bold text-gray-900 text-sm">{meetingModalApp.fullName}</h4>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-[#6C4CF1]">
+                      {meetingModalApp.investorType}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                    <p>Firm: <strong className="text-gray-900">{meetingModalApp.companyName || 'Independent Investor'}</strong></p>
+                    <p>Email: <strong className="text-gray-900">{meetingModalApp.email}</strong></p>
+                    <p>Phone: <strong className="text-gray-900">{meetingModalApp.mobile || 'Not specified'}</strong></p>
+                    <p>Target Cheque: <strong className="text-[#6C4CF1]">{meetingModalApp.investmentRange || 'Standard'}</strong></p>
+                  </div>
+                </div>
+
+                {/* 2. Meeting Schedule & Timezone */}
+                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                      <CalendarClock size={15} className="text-[#6C4CF1]" /> Meeting Schedule
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase bg-purple-100 text-[#6C4CF1] px-2 py-0.5 rounded-full">
+                        IST (UTC+05:30)
+                      </span>
+                      <span className="text-[10px] font-black uppercase bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">
+                        45 Mins
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-500 mb-1">Meeting Date</label>
+                      <input
+                        type="date"
+                        value={meetingDateVal}
+                        onChange={(e) => setMeetingDateVal(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#6C4CF1]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-gray-500 mb-1">Meeting Time</label>
+                      <input
+                        type="time"
+                        value={meetingTimeVal}
+                        onChange={(e) => setMeetingTimeVal(e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-xl text-xs font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#6C4CF1]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Generated Video Call URL & Passcode */}
+                <div className="bg-gray-900 text-white p-5 rounded-2xl space-y-3 shadow-inner">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Video Call URL</span>
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800/60">
+                      Jitsi / Google Meet Ready
+                    </span>
+                  </div>
+
+                  <div className="bg-gray-800 border border-gray-700 p-3 rounded-xl flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs text-purple-200 truncate flex-1">{videoUrl}</span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(videoUrl);
+                        setCopiedMeetingLink(true);
+                        setTimeout(() => setCopiedMeetingLink(false), 2000);
+                      }}
+                      className="px-3 py-1.5 bg-[#6C4CF1] hover:bg-[#5B21B6] text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+                    >
+                      {copiedMeetingLink ? <Check size={13} /> : <Copy size={13} />}
+                      {copiedMeetingLink ? 'Copied URL!' : 'Copy URL'}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-gray-300 pt-1">
+                    <div className="flex items-center gap-2">
+                      <span>Password: <strong className="text-white font-mono">{passcode}</strong></span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(passcode);
+                          setCopiedPasscode(true);
+                          setTimeout(() => setCopiedPasscode(false), 2000);
+                        }}
+                        className="text-[11px] text-amber-400 hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        {copiedPasscode ? <Check size={11} /> : <Copy size={11} />}
+                        {copiedPasscode ? 'Copied!' : 'Copy Password'}
+                      </button>
+                    </div>
+                    <span>Max Duration: <strong className="text-white">45 Mins</strong></span>
+                  </div>
+                </div>
+
+                {/* 4. Recipient Email Bar */}
+                <div className="bg-purple-50/40 border border-purple-100 p-3 rounded-xl flex items-center justify-between text-xs">
+                  <span className="text-gray-500 font-medium flex items-center gap-1.5">
+                    <Mail size={14} className="text-[#6C4CF1]" /> Recipient Email:
+                  </span>
+                  <strong className="text-gray-900 font-bold font-mono">{meetingModalApp.email}</strong>
+                </div>
+
+                {/* 5. Primary CTA & Secondary Action Buttons */}
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                   <button
-                    onClick={() => {
-                      const link = `https://meet.jit.si/ai-startup-builder-investor-${meetingModalApp.id.replace(/[^a-zA-Z0-9]/g, '')}`;
-                      navigator.clipboard.writeText(link);
-                      setCopiedMeetingLink(true);
-                      setTimeout(() => setCopiedMeetingLink(false), 2000);
-                    }}
-                    className="px-3 py-1.5 bg-[#6C4CF1] hover:bg-[#5B21B6] text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+                    onClick={handleSendMeetingInvite}
+                    disabled={isSendingInvite}
+                    className={`w-full sm:flex-1 py-3 px-4 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      isSent
+                        ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                        : 'bg-[#6C4CF1] hover:bg-[#5B21B6] text-white shadow-purple-500/20'
+                    }`}
                   >
-                    {copiedMeetingLink ? <Check size={13} /> : <Copy size={13} />}
-                    {copiedMeetingLink ? 'Copied!' : 'Copy'}
+                    {isSendingInvite ? (
+                      <>
+                        <RefreshCw size={15} className="animate-spin" /> Sending Invite...
+                      </>
+                    ) : isSent ? (
+                      <>
+                        <Mail size={15} /> Resend Meeting Invite
+                      </>
+                    ) : (
+                      <>
+                        <Mail size={15} /> Send Email Invite
+                      </>
+                    )}
                   </button>
-                </div>
 
-                <div className="flex items-center justify-between text-xs text-gray-400 pt-1">
-                  <span>Passcode: <strong className="text-white font-mono">{`INV-${meetingModalApp.id.slice(-4)}`}</strong></span>
-                  <span>Max Duration: <strong className="text-white">45 Mins</strong></span>
+                  <a
+                    href={videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto px-4 py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <Video size={15} /> Join Meeting Now <ArrowUpRight size={14} />
+                  </a>
                 </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-                <a
-                  href={`https://meet.jit.si/ai-startup-builder-investor-${meetingModalApp.id.replace(/[^a-zA-Z0-9]/g, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:flex-1 py-3 bg-[#6C4CF1] hover:bg-[#5B21B6] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
-                >
-                  <Video size={16} /> Join Meeting Now <ArrowUpRight size={14} />
-                </a>
-                <button
-                  onClick={() => {
-                    addNotification({
-                      title: 'Meeting Invite Dispatched',
-                      message: `Meeting details sent to ${meetingModalApp.fullName} (${meetingModalApp.email}) for ${meetingDateText}`,
-                      type: 'system',
-                    });
-                    alert(`Meeting link dispatched to ${meetingModalApp.email}!`);
-                  }}
-                  className="w-full sm:w-auto px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Mail size={15} /> Send Email Invite
-                </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };
