@@ -354,8 +354,23 @@ const FounderInvestorMessages: React.FC = () => {
                   ) : (
                     currentConversation.map((msg) => {
                       const isMe = isInvestorUser ? msg.senderRole === 'investor' : msg.senderRole === 'founder';
+                      const senderDisplayName = msg.senderName || (msg.senderRole === 'founder' ? currentFounderName : currentInvName);
+                      const isFounderSender = msg.senderRole === 'founder';
+
                       return (
                         <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                          {/* Sender Name & Role Label */}
+                          <div className="flex items-center gap-1.5 mb-1 px-1 text-[11px] font-extrabold text-gray-600">
+                            <span>{senderDisplayName}</span>
+                            <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider border ${
+                              isFounderSender
+                                ? 'bg-purple-50 text-[#5B21B6] border-purple-200'
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            }`}>
+                              {isFounderSender ? 'Founder' : 'Investor'}
+                            </span>
+                          </div>
+
                           <div
                             className={`max-w-[75%] p-4 rounded-2xl text-xs font-medium leading-relaxed shadow-xs ${
                               isMe
