@@ -212,7 +212,7 @@ function App() {
                     <Route path="profile"            element={<AdminProfile />} />
                     <Route path="help"              element={<SharedHelp />} />
                     <Route path="mentor-earnings"    element={<AdminMentorEarnings />} />
-                    <Route path="funding-transactions" element={<AdminInvestorFunding />} />
+                    <Route path="investor-funding"   element={<AdminInvestorFunding />} />
                   </Route>
 
                   {/* ───────────── MENTOR ───────────── */}
