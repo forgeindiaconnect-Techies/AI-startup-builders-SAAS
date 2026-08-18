@@ -179,44 +179,7 @@ const INITIAL_REQUESTS: InvestmentRequest[] = [
   }
 ];
 
-const INITIAL_MESSAGES: InvestorMessage[] = [
-  {
-    id: 'msg_1',
-    senderEmail: 'priya@nambiarfamily.in',
-    senderName: 'Priya Nambiar',
-    senderRole: 'investor',
-    receiverEmail: 'renugopal24022000@gmail.com',
-    receiverName: 'Renu',
-    startupName: 'Tourists Platform AI',
-    text: 'Hello Renu! We reviewed your AI Analysis and pitch deck for Tourists Platform AI. The market size and unit economics look very promising.',
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    isRead: true,
-  },
-  {
-    id: 'msg_2',
-    senderEmail: 'renugopal24022000@gmail.com',
-    senderName: 'Renu',
-    senderRole: 'founder',
-    receiverEmail: 'priya@nambiarfamily.in',
-    receiverName: 'Priya Nambiar',
-    startupName: 'Tourists Platform AI',
-    text: 'Thank you Priya! We have also attached our latest financial projections and pilot customer feedback for your review.',
-    createdAt: new Date(Date.now() - 20 * 60 * 60 * 1000).toISOString(),
-    isRead: true,
-  },
-  {
-    id: 'msg_3',
-    senderEmail: 'priya@nambiarfamily.in',
-    senderName: 'Priya Nambiar',
-    senderRole: 'investor',
-    receiverEmail: 'renugopal24022000@gmail.com',
-    receiverName: 'Renu',
-    startupName: 'Tourists Platform AI',
-    text: 'Sounds great. Let us schedule a 30-minute video call this week to discuss term sheet specifics.',
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    isRead: false,
-  }
-];
+const INITIAL_MESSAGES: InvestorMessage[] = [];
 
 const INITIAL_MEETINGS: InvestorMeeting[] = [
   {

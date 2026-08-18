@@ -138,25 +138,22 @@ const FounderInvestorMessages: React.FC = () => {
     const targetStartup = (currentStartupName || '').trim().toLowerCase();
 
     // 1. Match by startup name (e.g. "Bakery" or "Startup IT")
-    const isSameStartup = msgStartup && targetStartup && (
-      msgStartup === targetStartup ||
-      msgStartup.includes(targetStartup) ||
-      targetStartup.includes(msgStartup)
-    );
+    if (msgStartup && targetStartup) {
+      return (
+        msgStartup === targetStartup ||
+        msgStartup.includes(targetStartup) ||
+        targetStartup.includes(msgStartup)
+      );
+    }
 
     // 2. Sender / Receiver participant matching
-    const isFounderSender = m.senderRole === 'founder' || emailsMatch(m.senderEmail, currentFounderEmail) || namesMatch(m.senderName, currentFounderName);
-    const isInvestorSender = m.senderRole === 'investor' || emailsMatch(m.senderEmail, currentInvEmail) || namesMatch(m.senderName, currentInvName);
+    const isFounderSender = m.senderRole === 'founder' || emailsMatch(m.senderEmail, currentFounderEmail);
+    const isInvestorSender = m.senderRole === 'investor' || emailsMatch(m.senderEmail, currentInvEmail);
 
-    const isFounderReceiver = emailsMatch(m.receiverEmail, currentFounderEmail) || namesMatch(m.receiverName, currentFounderName);
-    const isInvestorReceiver = emailsMatch(m.receiverEmail, currentInvEmail) || namesMatch(m.receiverName, currentInvName);
+    const isFounderReceiver = emailsMatch(m.receiverEmail, currentFounderEmail);
+    const isInvestorReceiver = emailsMatch(m.receiverEmail, currentInvEmail);
 
-    const isValidPair = (isFounderSender && (isInvestorReceiver || isInvestorUser)) || (isInvestorSender && (isFounderReceiver || !isInvestorUser));
-
-    if (isSameStartup) return true;
-    if (isValidPair) return true;
-
-    return false;
+    return (isFounderSender && isInvestorReceiver) || (isInvestorSender && isFounderReceiver);
   });
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -344,7 +341,7 @@ const FounderInvestorMessages: React.FC = () => {
                     </div>
                   ) : (
                     currentConversation.map((msg) => {
-                      const isMe = msg.senderRole === (isInvestorUser ? 'investor' : 'founder') || msg.senderEmail === userEmail;
+                      const isMe = isInvestorUser ? msg.senderRole === 'investor' : msg.senderRole === 'founder';
                       return (
                         <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                           <div
