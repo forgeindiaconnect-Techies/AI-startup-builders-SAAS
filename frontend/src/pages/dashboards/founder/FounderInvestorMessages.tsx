@@ -17,6 +17,27 @@ const getInvFirm = (r: any): string => r?.investorFirm || r?.investor_firm || r?
 const getStartupName = (r: any): string => r?.startupName || r?.startup_name || 'Startup IT';
 const getFounderName = (r: any, fallback?: string): string => r?.founderName || r?.founder_name || fallback || 'Founder';
 
+const namesMatch = (n1?: string, n2?: string): boolean => {
+  if (!n1 || !n2) return false;
+  const s1 = n1.trim().toLowerCase();
+  const s2 = n2.trim().toLowerCase();
+  if (s1 === s2) return true;
+  if (s1.includes(s2) || s2.includes(s1)) return true;
+  const w1 = s1.split(' ')[0];
+  const w2 = s2.split(' ')[0];
+  return Boolean(w1 && w2 && w1.length > 2 && w1 === w2);
+};
+
+const emailsMatch = (e1?: string, e2?: string): boolean => {
+  if (!e1 || !e2) return false;
+  const s1 = e1.trim().toLowerCase();
+  const s2 = e2.trim().toLowerCase();
+  if (s1 === s2) return true;
+  const username1 = s1.split('@')[0];
+  const username2 = s2.split('@')[0];
+  return Boolean(username1 && username2 && username1.length > 2 && (username1.includes(username2) || username2.includes(username1)));
+};
+
 const FounderInvestorMessages: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
@@ -108,35 +129,43 @@ const FounderInvestorMessages: React.FC = () => {
   const currentStartupName = activeRequest ? getStartupName(activeRequest) : stateStartup || 'Startup IT';
 
   // Filter messages for active conversation
-  const currentConversation = messages.filter(
-    m => {
-      const isUserMatch = m.senderEmail === userEmail || m.receiverEmail === userEmail;
-      const targetEmail = isInvestorUser ? currentFounderEmail : currentInvEmail;
-      const isTargetMatch = m.senderEmail === targetEmail || m.receiverEmail === targetEmail;
+  const currentConversation = messages.filter(m => {
+    const msgStartup = (m.startupName || '').trim().toLowerCase();
+    const targetStartup = (currentStartupName || '').trim().toLowerCase();
 
-      if (isUserMatch && isTargetMatch) return true;
-
-      // Fallback matching by startup name and role pair
-      if (
-        m.startupName &&
-        currentStartupName &&
-        m.startupName.toLowerCase() === currentStartupName.toLowerCase()
-      ) {
-        if (isInvestorUser) {
-          return (
-            (m.senderRole === 'investor' && m.receiverName?.toLowerCase() === currentFounderName.toLowerCase()) ||
-            (m.senderRole === 'founder' && m.senderName?.toLowerCase() === currentFounderName.toLowerCase())
-          );
-        } else {
-          return (
-            (m.senderRole === 'founder' && m.receiverName?.toLowerCase() === currentInvName.toLowerCase()) ||
-            (m.senderRole === 'investor' && m.senderName?.toLowerCase() === currentInvName.toLowerCase())
-          );
-        }
-      }
-      return false;
+    // 1. Match by startup name (e.g. "Bakery" or "Startup IT")
+    if (
+      msgStartup &&
+      targetStartup &&
+      (msgStartup === targetStartup || msgStartup.includes(targetStartup) || targetStartup.includes(msgStartup))
+    ) {
+      return true;
     }
-  );
+
+    // 2. Email matching between sender/receiver
+    if (
+      emailsMatch(m.senderEmail, userEmail) ||
+      emailsMatch(m.receiverEmail, userEmail) ||
+      emailsMatch(m.senderEmail, currentFounderEmail) ||
+      emailsMatch(m.receiverEmail, currentFounderEmail) ||
+      emailsMatch(m.senderEmail, currentInvEmail) ||
+      emailsMatch(m.receiverEmail, currentInvEmail)
+    ) {
+      return true;
+    }
+
+    // 3. Name matching between sender/receiver
+    if (
+      namesMatch(m.senderName, currentFounderName) ||
+      namesMatch(m.receiverName, currentFounderName) ||
+      namesMatch(m.senderName, currentInvName) ||
+      namesMatch(m.receiverName, currentInvName)
+    ) {
+      return true;
+    }
+
+    return false;
+  });
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
