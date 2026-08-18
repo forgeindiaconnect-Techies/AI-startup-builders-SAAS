@@ -26,8 +26,30 @@ const FounderInvestmentRequests: React.FC = () => {
   };
 
   const loadRequests = () => {
-    // Requirements: Do NOT show the submitted request under the Founder Dashboard -> Founder Requests page.
-    setRequests([]);
+    const all = getInvestmentRequests();
+    if (!user) {
+      setRequests(all);
+      return;
+    }
+
+    const currentUserId = (user.id || user._id || '').toLowerCase();
+    const currentUserEmail = (user.email || '').toLowerCase();
+    const currentUserName = (user.fullName || user.name || '').toLowerCase();
+
+    // Filter requests sent by founder
+    const founderReqs = all.filter(r => {
+      const fId = (r.founderId || r.founder_id || '').toLowerCase();
+      const fEmail = (r.founderEmail || '').toLowerCase();
+      const fName = (r.founderName || r.founder_name || '').toLowerCase();
+
+      if (fId && currentUserId && fId === currentUserId) return true;
+      if (fEmail && currentUserEmail && fEmail === currentUserEmail) return true;
+      if (fName && currentUserName && (fName.includes(currentUserName) || currentUserName.includes(fName))) return true;
+
+      return false;
+    });
+
+    setRequests(founderReqs.length > 0 ? founderReqs : all);
   };
 
   useEffect(() => {
@@ -40,7 +62,10 @@ const FounderInvestmentRequests: React.FC = () => {
     };
   }, [user]);
 
-  const filteredRequests = requests.filter(r => r.status === activeTab);
+  const filteredRequests = requests.filter(r => {
+    const s = (r.status || 'pending').toUpperCase();
+    return s === activeTab;
+  });
 
   const handleWithdraw = (reqId: string, invName: string) => {
     if (window.confirm(`Are you sure you want to withdraw your funding request to ${invName}?`)) {
@@ -52,7 +77,8 @@ const FounderInvestmentRequests: React.FC = () => {
   };
 
   const getStatusBadge = (status: InvestmentRequest['status']) => {
-    switch (status) {
+    const upper = (status || 'PENDING').toUpperCase();
+    switch (upper) {
       case 'ACCEPTED':
         return (
           <span className="px-3 py-1 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1">
@@ -121,7 +147,7 @@ const FounderInvestmentRequests: React.FC = () => {
       </div>
 
       {/* Accepted Banner Notice */}
-      {requests.some(r => r.status === 'ACCEPTED') && (
+      {requests.some(r => (r.status || '').toUpperCase() === 'ACCEPTED') && (
         <div className="mb-8 bg-emerald-50 border border-emerald-200 rounded-2xl p-5 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3">
@@ -158,7 +184,7 @@ const FounderInvestmentRequests: React.FC = () => {
       {/* Tabs */}
       <div className="bg-white rounded-2xl border border-gray-200 p-2 shadow-sm mb-6 flex gap-2 overflow-x-auto">
         {(['PENDING', 'ACCEPTED', 'REJECTED', 'WITHDRAWN'] as const).map((tab) => {
-          const count = requests.filter(r => r.status === tab).length;
+          const count = requests.filter(r => (r.status || 'pending').toUpperCase() === tab).length;
           return (
             <button
               key={tab}
