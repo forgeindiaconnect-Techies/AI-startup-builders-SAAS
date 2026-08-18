@@ -1026,7 +1026,7 @@ const AdminInvestorApproval: React.FC = () => {
 
       {/* ── MODAL 1: INVITE INVESTOR ── */}
       {showInviteModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-16 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative my-8 animate-in zoom-in-95 duration-200">
             <button
               onClick={() => setShowInviteModal(false)}
@@ -1126,7 +1126,7 @@ const AdminInvestorApproval: React.FC = () => {
 
       {/* ── MODAL 2: FULL INVESTOR APPLICATION DETAILS ── */}
       {selectedApp && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-16 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl relative my-8 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 text-left">
             <button
               onClick={() => setSelectedApp(null)}
@@ -1283,7 +1283,7 @@ const AdminInvestorApproval: React.FC = () => {
 
       {/* ── MODAL 3: REJECTION REASON DIALOG ── */}
       {rejectingApp && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-16 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative animate-in zoom-in-95">
             <h3 className="text-lg font-black text-gray-900 mb-1">Reject Investor Application</h3>
             <p className="text-xs text-gray-500 mb-4">
@@ -1313,7 +1313,7 @@ const AdminInvestorApproval: React.FC = () => {
 
       {/* ── MODAL 4: INVESTOR INVITATION LEAD DETAILS ── */}
       {selectedLead && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-16 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl relative my-8 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 text-left">
             <button
               onClick={() => setSelectedLead(null)}
@@ -1480,7 +1480,7 @@ const AdminInvestorApproval: React.FC = () => {
           : '';
 
         return (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-16 overflow-y-auto">
             <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl relative my-8 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 text-left">
               <button
                 onClick={() => setMeetingModalApp(null)}
