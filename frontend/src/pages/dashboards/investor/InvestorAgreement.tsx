@@ -39,6 +39,10 @@ interface AgreementRecord {
   version: string;
   signatureName?: string;
   signatureFontIndex?: number;
+  // Founder signature details
+  founderSignedAt?: string;
+  founderSignatureName?: string;
+  founderSignatureFontIndex?: number;
 }
 
 const getSignedAgreements = (): AgreementRecord[] => {
@@ -297,8 +301,24 @@ const AgreementDocument: React.FC<{
                 )}
               </div>
               <div className="bg-white border border-blue-100 rounded-xl p-3 flex flex-col justify-center min-h-[75px]">
-                <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Founder Countersignature</p>
-                <p className="text-gray-400 italic text-[11px]">Pending — Founder will be notified after investor signs</p>
+                <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Founder Countersignature (Party B)</p>
+                {signedRecord?.founderSignedAt ? (
+                  <div>
+                    <p
+                      className="text-2xl text-[#5B21B6] italic select-none"
+                      style={SIGNATURE_STYLES[signedRecord.founderSignatureFontIndex ?? 0]?.style}
+                    >
+                      {signedRecord.founderSignatureName}
+                    </p>
+                    <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                      Countersigned: {fmtDate(signedRecord.founderSignedAt)}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-400 italic text-[11px]">
+                    Pending founder countersignature
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -716,12 +736,21 @@ const InvestorAgreement: React.FC = () => {
     catch { return d; }
   };
 
-  const getStatusBadge = (status: string, signed: boolean) => {
-    if (signed) return (
-      <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
-        <CheckCircle2 size={9} /> Signed
-      </span>
-    );
+  const getStatusBadge = (status: string, signed: boolean, signedRec?: AgreementRecord) => {
+    if (signed) {
+      if (signedRec?.founderSignedAt) {
+        return (
+          <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full text-[10px] font-extrabold flex items-center gap-1 w-fit">
+            <CheckCircle2 size={9} className="text-emerald-700" /> Fully Executed
+          </span>
+        );
+      }
+      return (
+        <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
+          <CheckCircle2 size={9} /> Signed
+        </span>
+      );
+    }
     if (status === 'accepted') return (
       <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
         <Clock size={9} /> Awaiting Signature
@@ -863,7 +892,7 @@ const InvestorAgreement: React.FC = () => {
                       <td className="px-5 py-4 text-gray-500">{fmtDate(o.createdAt)}</td>
                       <td className="px-5 py-4">
                         <div className="flex flex-col gap-0.5">
-                          {getStatusBadge(o.status, signed)}
+                          {getStatusBadge(o.status, signed, signedRec)}
                           {signed && signedRec && (
                             <p className="text-[9px] text-gray-400 mt-0.5">Signed: {fmtDate(signedRec.signedAt)}</p>
                           )}
