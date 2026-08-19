@@ -25,7 +25,7 @@ export interface IFundingOffer extends Document {
     message: string;
   };
   adminNote: string;
-  status: 'offer_received' | 'accepted' | 'counter_offer' | 'rejected' | 'funded';
+  status: 'offer_received' | 'accepted' | 'counter_offer' | 'rejected' | 'funded' | 'payment_pending' | 'payment_submitted' | 'under_verification' | 'completed' | 'failed';
   history: Array<{
     action: string;
     performedBy: string;
@@ -33,6 +33,19 @@ export interface IFundingOffer extends Document {
     message: string;
     createdAt: string;
   }>;
+  fundingStage?: string;
+  agreementStatus?: string;
+  dueDiligenceStatus?: string;
+  paymentMethod?: string;
+  transactionId?: string;
+  paymentProof?: string;
+  paymentDate?: Date;
+  paymentNotes?: string;
+  senderDetails?: {
+    bankName: string;
+    accountNumber: string;
+    accountHolderName: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,7 +78,7 @@ const FundingOfferSchema: Schema = new Schema(
     adminNote: { type: String, default: '' },
     status: {
       type: String,
-      enum: ['offer_received', 'accepted', 'counter_offer', 'rejected', 'funded'],
+      enum: ['offer_received', 'accepted', 'counter_offer', 'rejected', 'funded', 'payment_pending', 'payment_submitted', 'under_verification', 'completed', 'failed'],
       default: 'offer_received',
     },
     history: [
@@ -77,6 +90,19 @@ const FundingOfferSchema: Schema = new Schema(
         createdAt: { type: String },
       },
     ],
+    fundingStage: { type: String, default: 'Seed' },
+    agreementStatus: { type: String, default: 'Pending' },
+    dueDiligenceStatus: { type: String, default: 'Pending' },
+    paymentMethod: { type: String, default: '' },
+    transactionId: { type: String, default: '' },
+    paymentProof: { type: String, default: '' },
+    paymentDate: { type: Date },
+    paymentNotes: { type: String, default: '' },
+    senderDetails: {
+      bankName: { type: String, default: '' },
+      accountNumber: { type: String, default: '' },
+      accountHolderName: { type: String, default: '' },
+    },
   },
   { timestamps: true }
 );
