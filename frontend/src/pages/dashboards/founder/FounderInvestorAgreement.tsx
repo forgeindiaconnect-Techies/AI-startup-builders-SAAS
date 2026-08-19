@@ -568,24 +568,35 @@ const FounderInvestorAgreement: React.FC = () => {
   const founderOffers = useMemo(() => {
     if (!user) return [];
     const founderStartupNames = startupsList
-      .filter((s: any) => String(s.founderId || s.userId || '') === String(user.id || ''))
+      .filter((s: any) => String(s.founderId || s.userId || '') === String(user.id || user._id || ''))
       .map((s: any) => (s.startupName || s.name || '').toLowerCase());
 
-    const id = String(user.id || '');
+    const id = String(user.id || user._id || '').toLowerCase();
     const email = (user.email || '').toLowerCase();
+    const name = (user.fullName || user.name || '').toLowerCase();
 
-    return offers.filter(o =>
-      (o.founderId && String(o.founderId) === id) ||
-      (o.founderEmail && o.founderEmail.toLowerCase() === email) ||
-      (o.startupName && founderStartupNames.includes(o.startupName.toLowerCase()))
-    );
+    return offers.filter(o => {
+      const fId = String(o.founderId || '').toLowerCase();
+      const fEmail = String(o.founderEmail || '').toLowerCase();
+      const fName = String(o.founderName || '').toLowerCase();
+      const sName = String(o.startupName || '').toLowerCase();
+
+      const matchesId = Boolean(id && fId && fId === id);
+      const matchesEmail = Boolean(email && fEmail && (fEmail === email || email.includes(fEmail) || fEmail.includes(email)));
+      const matchesName = Boolean(name && fName && (fName === name || name.includes(fName) || fName.includes(name)));
+      const matchesStartup = Boolean(sName && founderStartupNames.includes(sName));
+
+      // Has dispatched agreement
+      const isDispatched = Boolean(o.agreementStatus && !['Draft', 'Drafted'].includes(o.agreementStatus));
+
+      return matchesId || matchesEmail || matchesName || matchesStartup || isDispatched;
+    });
   }, [offers, user, startupsList]);
 
-  // Show accepted active commitments (ignore Draft agreement status since they haven't been sent yet!)
+  // Show active commitments that have an agreement dispatched
   const agreementOffers = useMemo(() => {
     return founderOffers.filter(o => 
-      ['accepted', 'payment_pending', 'payment_submitted', 'under_verification', 'completed', 'funded', 'failed'].includes(o.status) &&
-      o.agreementStatus && o.agreementStatus !== 'Draft'
+      o.agreementStatus && !['Draft', 'Drafted'].includes(o.agreementStatus)
     );
   }, [founderOffers]);
 

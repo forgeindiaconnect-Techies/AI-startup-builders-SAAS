@@ -621,9 +621,6 @@ export const createFundingOffer = async (offerData: any) => {
   // Offline fallback
   const fallbackOffer = {
     id: offerData.id || `offer_${Date.now()}`,
-    ...offerData,
-    status: 'offer_received',
-    agreementStatus: 'Drafted',
     dueDiligenceStatus: 'Pending',
     paymentStatus: 'Pending',
     paymentMethod: '',
@@ -638,16 +635,19 @@ export const createFundingOffer = async (offerData: any) => {
     expectedInvestmentDate: offerData.expectedInvestmentDate || '',
     commitmentNotes: offerData.commitmentNotes || '',
     agreementAcknowledged: offerData.agreementAcknowledged || false,
-    history: [
+    history: offerData.history || [
       {
-        action: 'offer_received',
-        performedBy: offerData.investorName,
+        action: offerData.status || 'offer_received',
+        performedBy: offerData.investorName || 'Investor',
         role: 'Investor',
         message: 'Investor sent funding offer.',
         createdAt: new Date().toISOString(),
       }
     ],
-    createdAt: new Date().toISOString(),
+    status: offerData.status || 'offer_received',
+    agreementStatus: offerData.agreementStatus || 'Sent to Founder',
+    ...offerData,
+    createdAt: offerData.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
   try {
