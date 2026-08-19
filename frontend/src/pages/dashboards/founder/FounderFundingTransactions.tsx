@@ -344,56 +344,167 @@ const FounderFundingTransactions: React.FC = () => {
 
       {/* ── Recorded Deals Tab ── */}
       {activeTab === 'deals' && (
-        localDeals.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-14 text-center">
-            <FileCheck size={40} className="mx-auto text-gray-300 mb-3" />
-            <h3 className="text-base font-bold text-gray-800">No Finalized Deals Recorded</h3>
-            <p className="text-xs text-gray-500 mt-1">Once an investment agreement is signed and finalized, record it here.</p>
-            <button onClick={() => setShowAddModal(true)} className="mt-4 px-5 py-2.5 bg-[#5B21B6] text-white font-bold text-xs rounded-xl shadow-md">+ Record Finalized Deal</button>
-          </div>
-        ) : (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-bold text-gray-900 text-sm">Finalized Deals & Term Sheets</h3>
-              <span className="px-3 py-1 bg-purple-100 text-[#5B21B6] rounded-lg text-xs font-bold">{localDeals.length} Recorded</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left whitespace-nowrap text-xs font-medium">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100 text-gray-400 font-bold uppercase text-[10px] tracking-wider">
-                    <th className="px-5 py-3.5">Ref ID</th>
-                    <th className="px-5 py-3.5">Startup</th>
-                    <th className="px-5 py-3.5">Investor & Firm</th>
-                    <th className="px-5 py-3.5">Funding Amount</th>
-                    <th className="px-5 py-3.5">Stage</th>
-                    <th className="px-5 py-3.5">Status</th>
-                    <th className="px-5 py-3.5">Date</th>
-                    <th className="px-5 py-3.5 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 text-gray-700">
-                  {localDeals.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-gray-50/80 transition-colors">
-                      <td className="px-5 py-4 font-bold text-[#5B21B6] font-mono">{tx.referenceId}</td>
-                      <td className="px-5 py-4 font-bold text-gray-900">{tx.startupName}</td>
-                      <td className="px-5 py-4">
-                        <div className="font-bold text-gray-900">{tx.investorName}</div>
-                        <div className="text-[10px] text-gray-400">{tx.investorFirm}</div>
-                      </td>
-                      <td className="px-5 py-4 font-black text-emerald-600 text-sm">{tx.fundingAmount}</td>
-                      <td className="px-5 py-4 font-semibold text-gray-600">{tx.investmentStage}</td>
-                      <td className="px-5 py-4">{getDealBadge(tx.transactionStatus)}</td>
-                      <td className="px-5 py-4 text-gray-500">{fmtDate(tx.transactionDate)}</td>
-                      <td className="px-5 py-4 text-right">
-                        <button onClick={() => setViewingDeal(tx)} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-lg text-[10px] transition-colors">View Deal</button>
-                      </td>
-                    </tr>
+        <div className="space-y-6">
+
+          {/* ── Investor Payment Submissions (from FundingContext) ── */}
+          {(() => {
+            const paidOffers = founderOffers.filter(o => o.paymentStatus || o.paymentMethod || ['payment_submitted','under_verification','funded','completed'].includes(o.status));
+            if (paidOffers.length === 0) return null;
+            return (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={16} className="text-emerald-600" />
+                    <h3 className="font-bold text-gray-900 text-sm">Investor Payment Details</h3>
+                  </div>
+                  <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold">{paidOffers.length} Payment{paidOffers.length > 1 ? 's' : ''}</span>
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {paidOffers.map((o) => (
+                    <div key={o.id || o._id} className="p-5 space-y-4">
+                      {/* Header row */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] flex items-center justify-center shrink-0">
+                            <IndianRupee size={16} className="text-white" />
+                          </div>
+                          <div>
+                            <p className="font-extrabold text-gray-900 text-sm">{o.startupName}</p>
+                            <p className="text-[10px] text-gray-400 font-mono">{o.commitmentId || `FC-${String(o.id || '').slice(-6).toUpperCase()}`}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-lg font-black text-[#5B21B6]">₹{o.offerAmount.toLocaleString('en-IN')}</span>
+                          {getOfferBadge(o.status)}
+                        </div>
+                      </div>
+
+                      {/* Payment details grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4">
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider mb-0.5">Investor</p>
+                          <p className="font-bold text-gray-900 text-xs">{o.investorName}</p>
+                          <p className="text-[10px] text-gray-400">{o.investorCompany}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider mb-0.5">Payment Method</p>
+                          <p className="font-bold text-gray-900 text-xs">{o.paymentMethod || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider mb-0.5">UTR / Reference No.</p>
+                          <p className="font-bold text-gray-900 font-mono text-xs">{o.paymentReference || '—'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider mb-0.5">Payment Status</p>
+                          {o.paymentStatus === 'Submitted' || o.paymentStatus === 'submitted' ? (
+                            <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-[10px] font-black">⏳ Submitted</span>
+                          ) : o.status === 'funded' || o.status === 'completed' ? (
+                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-black">✅ Verified</span>
+                          ) : o.status === 'under_verification' ? (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-[10px] font-black">🔍 Verifying</span>
+                          ) : (
+                            <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-[10px] font-bold">{o.paymentStatus || 'Pending'}</span>
+                          )}
+                        </div>
+                        {o.paymentDate && (
+                          <div>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider mb-0.5">Payment Date</p>
+                            <p className="font-bold text-gray-900 text-xs">{fmtDate(o.paymentDate)}</p>
+                          </div>
+                        )}
+                        {o.verificationStatus && (
+                          <div>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider mb-0.5">Verification</p>
+                            <p className="font-bold text-gray-900 text-xs">{o.verificationStatus}</p>
+                          </div>
+                        )}
+                        {o.transactionId && (
+                          <div>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider mb-0.5">Transaction ID</p>
+                            <p className="font-bold text-gray-900 font-mono text-xs">{o.transactionId}</p>
+                          </div>
+                        )}
+                        {o.instrument && (
+                          <div>
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider mb-0.5">Type / Round</p>
+                            <p className="font-bold text-gray-900 text-xs">{o.instrument}{o.fundingRound ? ` · ${o.fundingRound}` : ''}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Payment Proof Image */}
+                      {o.paymentProof && o.paymentProof.startsWith('data:image') && (
+                        <div className="mt-2">
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider mb-2">Payment Receipt / Proof</p>
+                          <img
+                            src={o.paymentProof}
+                            alt="Payment Proof"
+                            className="max-h-40 rounded-xl border border-gray-200 shadow-sm object-contain bg-gray-50"
+                          />
+                        </div>
+                      )}
+                      {o.paymentProof && !o.paymentProof.startsWith('data:image') && o.paymentProof !== 'Uploaded receipt verification pending.' && (
+                        <p className="text-[10px] text-gray-500 italic">{o.paymentProof}</p>
+                      )}
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ── Manually Recorded Deals ── */}
+          {localDeals.length === 0 && founderOffers.filter(o => o.paymentStatus || o.paymentMethod).length === 0 ? (
+            <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-14 text-center">
+              <FileCheck size={40} className="mx-auto text-gray-300 mb-3" />
+              <h3 className="text-base font-bold text-gray-800">No Finalized Deals Recorded</h3>
+              <p className="text-xs text-gray-500 mt-1">Once an investment agreement is signed and finalized, record it here.</p>
+              <button onClick={() => setShowAddModal(true)} className="mt-4 px-5 py-2.5 bg-[#5B21B6] text-white font-bold text-xs rounded-xl shadow-md">+ Record Finalized Deal</button>
             </div>
-          </div>
-        )
+          ) : localDeals.length > 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-bold text-gray-900 text-sm">Finalized Deals & Term Sheets</h3>
+                <span className="px-3 py-1 bg-purple-100 text-[#5B21B6] rounded-lg text-xs font-bold">{localDeals.length} Recorded</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left whitespace-nowrap text-xs font-medium">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100 text-gray-400 font-bold uppercase text-[10px] tracking-wider">
+                      <th className="px-5 py-3.5">Ref ID</th>
+                      <th className="px-5 py-3.5">Startup</th>
+                      <th className="px-5 py-3.5">Investor & Firm</th>
+                      <th className="px-5 py-3.5">Funding Amount</th>
+                      <th className="px-5 py-3.5">Stage</th>
+                      <th className="px-5 py-3.5">Status</th>
+                      <th className="px-5 py-3.5">Date</th>
+                      <th className="px-5 py-3.5 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 text-gray-700">
+                    {localDeals.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-gray-50/80 transition-colors">
+                        <td className="px-5 py-4 font-bold text-[#5B21B6] font-mono">{tx.referenceId}</td>
+                        <td className="px-5 py-4 font-bold text-gray-900">{tx.startupName}</td>
+                        <td className="px-5 py-4">
+                          <div className="font-bold text-gray-900">{tx.investorName}</div>
+                          <div className="text-[10px] text-gray-400">{tx.investorFirm}</div>
+                        </td>
+                        <td className="px-5 py-4 font-black text-emerald-600 text-sm">{tx.fundingAmount}</td>
+                        <td className="px-5 py-4 font-semibold text-gray-600">{tx.investmentStage}</td>
+                        <td className="px-5 py-4">{getDealBadge(tx.transactionStatus)}</td>
+                        <td className="px-5 py-4 text-gray-500">{fmtDate(tx.transactionDate)}</td>
+                        <td className="px-5 py-4 text-right">
+                          <button onClick={() => setViewingDeal(tx)} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-lg text-[10px] transition-colors">View Deal</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
+        </div>
       )}
 
       {/* ─── INVESTOR COMMITMENT DETAIL MODAL ─── */}
@@ -542,26 +653,58 @@ const FounderFundingTransactions: React.FC = () => {
 
       {/* ─── VIEW LOCAL DEAL MODAL ─── */}
       {viewingDeal && (
-        <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative font-sans">
+        <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative font-sans my-6">
             <button onClick={() => setViewingDeal(null)} className="absolute top-5 right-5 p-2 rounded-full bg-gray-100 text-gray-500"><X size={18} /></button>
             <span className="text-[10px] font-black text-[#5B21B6] uppercase tracking-wider block mb-1">Ref: {viewingDeal.referenceId}</span>
             <h2 className="text-xl font-black text-gray-900 mb-1">{viewingDeal.startupName}</h2>
             <p className="text-xs text-gray-500 mb-5">Finalized Investment Record</p>
             <div className="space-y-3 text-xs">
+              {/* Amount */}
               <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 text-center">
                 <span className="text-[10px] font-black text-purple-400 uppercase block">Funding Amount</span>
                 <span className="text-2xl font-black text-emerald-600">{viewingDeal.fundingAmount}</span>
                 <span className="text-[11px] text-gray-500 block font-medium mt-0.5">{viewingDeal.investmentStage}</span>
               </div>
+              {/* Investor & Firm */}
               <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-xl">
                 <div><span className="text-[10px] font-black text-gray-400 uppercase block">Investor</span><span className="font-bold text-gray-900">{viewingDeal.investorName}</span></div>
                 <div><span className="text-[10px] font-black text-gray-400 uppercase block">Firm</span><span className="font-bold text-gray-900">{viewingDeal.investorFirm}</span></div>
               </div>
+              {/* Status */}
               <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl">
-                <span className="text-[10px] font-black text-gray-400 uppercase">Status</span>
+                <span className="text-[10px] font-black text-gray-400 uppercase">Deal Status</span>
                 {getDealBadge(viewingDeal.transactionStatus)}
               </div>
+              {/* Payment Details - sourced from matching FundingContext offer */}
+              {(() => {
+                const matched = founderOffers.find(o =>
+                  (o.investorName && viewingDeal.investorName && o.investorName.toLowerCase().includes(viewingDeal.investorName.toLowerCase())) ||
+                  (o.commitmentId && o.commitmentId === viewingDeal.referenceId)
+                );
+                if (!matched || (!matched.paymentMethod && !matched.paymentReference)) return null;
+                return (
+                  <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 space-y-2">
+                    <p className="text-[10px] font-black text-emerald-700 uppercase tracking-wider flex items-center gap-1">
+                      <ShieldCheck size={11} /> Payment Details
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {matched.paymentMethod && <div><span className="text-[10px] text-gray-400">Method</span><p className="font-bold text-gray-900">{matched.paymentMethod}</p></div>}
+                      {matched.paymentReference && <div><span className="text-[10px] text-gray-400">UTR / Reference</span><p className="font-bold text-gray-900 font-mono">{matched.paymentReference}</p></div>}
+                      {matched.paymentStatus && <div><span className="text-[10px] text-gray-400">Payment Status</span><p className="font-bold text-emerald-700">{matched.paymentStatus}</p></div>}
+                      {matched.paymentDate && <div><span className="text-[10px] text-gray-400">Payment Date</span><p className="font-bold text-gray-900">{fmtDate(matched.paymentDate)}</p></div>}
+                      {matched.transactionId && <div><span className="text-[10px] text-gray-400">Transaction ID</span><p className="font-bold text-gray-900 font-mono">{matched.transactionId}</p></div>}
+                      {matched.verificationStatus && <div><span className="text-[10px] text-gray-400">Verification</span><p className="font-bold text-gray-900">{matched.verificationStatus}</p></div>}
+                    </div>
+                    {matched.paymentProof && matched.paymentProof.startsWith('data:image') && (
+                      <div className="mt-2">
+                        <p className="text-[10px] text-gray-400 mb-1">Payment Receipt</p>
+                        <img src={matched.paymentProof} alt="Receipt" className="max-h-32 rounded-lg border border-gray-200 object-contain bg-gray-50" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               {viewingDeal.dealNotes && (
                 <div>
                   <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">Deal Notes</span>
