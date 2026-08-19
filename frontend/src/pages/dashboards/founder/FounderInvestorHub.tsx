@@ -14,7 +14,7 @@ const INVESTOR_TABS = [
   { id: 'messages', label: 'Messages', path: '/dashboard/founder/messages', icon: Inbox, component: FounderInvestorMessages },
   { id: 'meetings', label: 'Meetings', path: '/dashboard/founder/meetings', icon: CalendarClock, component: FounderInvestorMeetings },
   { id: 'agreement', label: 'Agreement', path: '/dashboard/founder/agreement', icon: ScrollText, component: FounderInvestorAgreement },
-  { id: 'funding-transactions', label: 'Funding & Transactions', path: '/dashboard/founder/funding-transactions', icon: Wallet, component: FounderFundingTransactions },
+  { id: 'funding-transactions', label: 'Transactions', path: '/dashboard/founder/funding-transactions', icon: Wallet, component: FounderFundingTransactions },
 ];
 
 const FounderInvestorHub: React.FC = () => {

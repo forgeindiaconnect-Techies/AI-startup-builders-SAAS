@@ -7,7 +7,7 @@ const SUB_NAV_TABS = [
   { id: 'messages',    label: 'Messages',                path: '/dashboard/investor/messages',    icon: Inbox },
   { id: 'meetings',    label: 'Meetings',                path: '/dashboard/investor/meetings',    icon: CalendarClock },
   { id: 'agreement',   label: 'Agreement',               path: '/dashboard/investor/agreement',   icon: ScrollText },
-  { id: 'transactions',label: 'Funding & Transactions',  path: '/dashboard/investor/transactions', icon: Wallet },
+  { id: 'transactions',label: 'Transactions',  path: '/dashboard/investor/transactions', icon: Wallet },
 ];
 
 interface InvestorSubNavProps {

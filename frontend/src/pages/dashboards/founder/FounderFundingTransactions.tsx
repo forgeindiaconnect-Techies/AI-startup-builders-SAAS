@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Wallet, FileCheck, ShieldCheck, CheckCircle2,
   Clock, Plus, X, AlertCircle, TrendingUp, IndianRupee,
@@ -201,7 +201,7 @@ const FounderFundingTransactions: React.FC = () => {
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-            <Wallet className="text-[#5B21B6]" size={28} /> Funding & Transactions
+            <Wallet className="text-[#5B21B6]" size={28} /> Transactions
           </h1>
           <p className="text-sm text-gray-500 mt-1">View investor commitments, manage funding offers, and record finalized deals.</p>
         </div>
