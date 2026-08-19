@@ -52,27 +52,6 @@ const AgreementDocument: React.FC<{
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [readConfirmed, setReadConfirmed] = useState(false);
-  const [showSignModal, setShowSignModal] = useState(false);
-  const [signatureName, setSignatureName] = useState(offer.investorName);
-  const [selectedFontIndex, setSelectedFontIndex] = useState(0);
-
-  // Load Google Fonts for Cursive Signatures
-  React.useEffect(() => {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Dancing+Script:wght@700&family=Great+Vibes&family=Parisienne&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-    return () => {
-      try { document.head.removeChild(link); } catch (e) {}
-    };
-  }, []);
-
-  const signatureFonts = [
-    { name: 'Dancing Script', style: { fontFamily: "'Dancing Script', cursive" } },
-    { name: 'Caveat', style: { fontFamily: "'Caveat', cursive" } },
-    { name: 'Great Vibes', style: { fontFamily: "'Great Vibes', cursive" } },
-    { name: 'Parisienne', style: { fontFamily: "'Parisienne', cursive" } },
-  ];
 
   const commitmentId = offer.commitmentId || `FC-${String(offer.id || '').slice(-6).toUpperCase()}`;
 
@@ -90,33 +69,6 @@ const AgreementDocument: React.FC<{
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
       setHasScrolledToBottom(true);
     }
-  };
-
-  const handleTriggerSignatureFlow = () => {
-    if (!hasScrolledToBottom) {
-      alert("Please scroll through the entire agreement terms to the bottom before signing.");
-      if (scrollRef.current) {
-        scrollRef.current.scrollTo({
-          top: scrollRef.current.scrollHeight,
-          behavior: 'smooth'
-        });
-      }
-      return;
-    }
-    setShowSignModal(true);
-  };
-
-  const handleExecuteSignature = () => {
-    if (!signatureName.trim()) {
-      alert("Please enter your name to sign.");
-      return;
-    }
-    setReadConfirmed(true);
-    setShowSignModal(false);
-    onSign({
-      ...offer,
-      investorName: signatureName.trim()
-    });
   };
 
   const clauses = [
@@ -262,38 +214,15 @@ const AgreementDocument: React.FC<{
 
           {/* Signature Block */}
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
-            <div className="flex justify-between items-center mb-3">
-              <h4 className="font-extrabold text-blue-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
-                <Pen size={11} /> Digital Signature Block
-              </h4>
-              {!isAlreadySigned && (
-                <button
-                  type="button"
-                  onClick={handleTriggerSignatureFlow}
-                  className="px-2.5 py-1 bg-blue-100 hover:bg-blue-200 text-blue-850 rounded-lg text-[10px] font-black flex items-center gap-1 transition-colors cursor-pointer border-none"
-                >
-                  <Pen size={10} /> Edit & Sign
-                </button>
-              )}
-            </div>
+            <h4 className="font-extrabold text-blue-700 uppercase tracking-wider text-[10px] mb-3 flex items-center gap-1.5">
+              <Pen size={11} /> Digital Signature Block
+            </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-white border border-blue-100 rounded-xl p-3 relative">
+              <div className="bg-white border border-blue-100 rounded-xl p-3">
                 <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Investor Signature</p>
-                {isAlreadySigned ? (
-                  <>
-                    <p className="font-bold text-gray-900 italic text-sm">{offer.investorName}</p>
-                    <p className="text-[10px] text-emerald-600 font-semibold">{signedAt ? `Digitally signed: ${fmtDate(signedAt)}` : 'Signed'}</p>
-                  </>
-                ) : (
-                  <div
-                    onClick={handleTriggerSignatureFlow}
-                    className="cursor-pointer hover:bg-purple-50/50 p-2.5 rounded-xl border border-dashed border-purple-200 transition-all text-center flex flex-col items-center justify-center py-4 group"
-                  >
-                    <Pen size={14} className="text-[#5B21B6] group-hover:scale-110 transition-transform mb-1" />
-                    <p className="text-[#5B21B6] font-bold text-[10px] group-hover:underline">Click Edit to Sign</p>
-                    <p className="text-gray-400 italic text-[9px] mt-0.5">Pending investor signature</p>
-                  </div>
-                )}
+                {isAlreadySigned
+                  ? <><p className="font-bold text-gray-900 italic">{offer.investorName}</p><p className="text-[10px] text-emerald-600 font-semibold">{signedAt ? `Digitally signed: ${fmtDate(signedAt)}` : 'Signed'}</p></>
+                  : <p className="text-gray-400 italic text-[11px]">Pending investor signature</p>}
               </div>
               <div className="bg-white border border-blue-100 rounded-xl p-3">
                 <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Founder Countersignature</p>
@@ -375,99 +304,6 @@ const AgreementDocument: React.FC<{
             </div>
           )}
         </div>
-
-        {/* Cursive Signature Creation Modal Overlay */}
-        {showSignModal && (
-          <div className="fixed inset-0 z-[180] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative font-sans">
-              <button
-                type="button"
-                onClick={() => setShowSignModal(false)}
-                className="absolute top-4 right-4 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500"
-              >
-                <X size={16} />
-              </button>
-              
-              <h3 className="text-lg font-black text-gray-900 mb-1 flex items-center gap-1.5">
-                <Pen size={18} className="text-[#5B21B6]" /> Create Digital Signature
-              </h3>
-              <p className="text-xs text-gray-500 mb-5">Type your full legal name to generate your digital signature.</p>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Your Full Name</label>
-                  <input
-                    type="text"
-                    value={signatureName}
-                    onChange={e => setSignatureName(e.target.value)}
-                    placeholder="e.g. John Doe"
-                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-950 outline-none focus:ring-2 focus:ring-[#5B21B6]"
-                  />
-                </div>
-                
-                {/* Signature Preview Box */}
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Signature Style Preview</label>
-                  <div className="bg-purple-50/50 border border-purple-100 rounded-2xl p-6 text-center min-h-[100px] flex items-center justify-center relative overflow-hidden">
-                    <p 
-                      className="text-3xl text-purple-950 transition-all select-none"
-                      style={signatureFonts[selectedFontIndex].style}
-                    >
-                      {signatureName || 'Your Signature'}
-                    </p>
-                    <span className="absolute bottom-2 right-3 text-[9px] text-purple-400 font-mono">
-                      Font: {signatureFonts[selectedFontIndex].name}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Style Selector */}
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Select Font Style</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {signatureFonts.map((font, idx) => (
-                      <button
-                        key={font.name}
-                        type="button"
-                        onClick={() => setSelectedFontIndex(idx)}
-                        className={`py-2 rounded-xl text-[10px] font-bold border transition-all ${
-                          selectedFontIndex === idx
-                            ? 'bg-[#5B21B6] border-[#5B21B6] text-white shadow-sm'
-                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        Style {idx + 1}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Submit */}
-                <div className="flex gap-3 pt-3 border-t border-gray-100">
-                  <button
-                    type="button"
-                    onClick={() => setShowSignModal(false)}
-                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleExecuteSignature}
-                    disabled={!signatureName.trim()}
-                    className={`flex-1 py-2.5 text-white font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-1.5 ${
-                      signatureName.trim()
-                        ? 'bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] hover:from-[#4C1D95] hover:to-[#6D28D9]'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                    }`}
-                  >
-                    <CheckCircle2 size={13} /> Confirm & Sign
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
