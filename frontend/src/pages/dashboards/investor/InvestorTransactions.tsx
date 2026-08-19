@@ -514,15 +514,23 @@ const InvestorTransactions: React.FC = () => {
         </div>
         {activeTab === 'funding' && investorOffers.length > 0 && (
           <button
-            onClick={() => {
+            onClick={async () => {
               if (startups.length === 0) {
-                getStartups().then(res => setStartups(res || []));
+                const res = await getStartups();
+                setStartups(res || []);
               }
-              setShowCreateCommitmentModal(true);
+              const readyOffer = investorOffers.find(o => o.agreementStatus === 'Fully Signed' && o.paymentStatus === 'Pending') ||
+                                 investorOffers.find(o => o.status === 'accepted' || o.agreementStatus === 'Sent to Founder') ||
+                                 investorOffers[0];
+              if (readyOffer) {
+                setPaymentOffer(readyOffer);
+              } else {
+                setShowCreateCommitmentModal(true);
+              }
             }}
-            className="mb-2 sm:mb-0 px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto"
+            className="mb-2 sm:mb-0 px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
           >
-            + Create Funding Commitment
+            + Add Payment Method
           </button>
         )}
       </div>
@@ -536,17 +544,18 @@ const InvestorTransactions: React.FC = () => {
             <div className="p-12 text-center text-gray-400 flex flex-col items-center justify-center">
               <Wallet size={40} className="mb-3 text-gray-300" />
               <p className="font-bold text-gray-700 text-base">No funding commitments yet.</p>
-              <p className="text-xs text-gray-400 mt-1 mb-5">Select a startup and submit a new allocation request to get started.</p>
+              <p className="text-xs text-gray-400 mt-1 mb-5">Select a startup and add a new payment method or transaction to get started.</p>
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (startups.length === 0) {
-                    getStartups().then(res => setStartups(res || []));
+                    const res = await getStartups();
+                    setStartups(res || []);
                   }
                   setShowCreateCommitmentModal(true);
                 }}
-                className="px-5 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl font-bold text-sm shadow-md transition-all"
+                className="px-5 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl font-bold text-sm shadow-md transition-all cursor-pointer"
               >
-                + Create Funding Commitment
+                + Add Payment Method
               </button>
             </div>
           ) : (
@@ -1426,7 +1435,7 @@ const InvestorTransactions: React.FC = () => {
             <div className="p-6 sm:p-8 pb-4 border-b border-gray-100 flex flex-col">
               <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                 <Wallet className="text-[#5B21B6]" size={22} /> 
-                {showSummaryStep ? 'Review Commitment Summary' : 'Create Funding Commitment'}
+                {showSummaryStep ? 'Review Commitment Summary' : 'Add Payment Method / Funding Transaction'}
               </h2>
               <p className="text-xs text-gray-500 mt-1">
                 {showSummaryStep 
