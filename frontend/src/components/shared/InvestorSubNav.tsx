@@ -1,16 +1,17 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardList, Inbox, CalendarClock, Wallet } from 'lucide-react';
+import { ClipboardList, Inbox, CalendarClock, Wallet, ScrollText } from 'lucide-react';
 
 const SUB_NAV_TABS = [
-  { id: 'requests', label: 'Founder Requests', path: '/dashboard/investor/requests', icon: ClipboardList },
-  { id: 'messages', label: 'Messages', path: '/dashboard/investor/messages', icon: Inbox },
-  { id: 'meetings', label: 'Meetings', path: '/dashboard/investor/meetings', icon: CalendarClock },
-  { id: 'transactions', label: 'Funding & Transactions', path: '/dashboard/investor/transactions', icon: Wallet },
+  { id: 'requests',     label: 'Founder Requests',       path: '/dashboard/investor/requests',    icon: ClipboardList },
+  { id: 'messages',    label: 'Messages',                path: '/dashboard/investor/messages',    icon: Inbox },
+  { id: 'meetings',    label: 'Meetings',                path: '/dashboard/investor/meetings',    icon: CalendarClock },
+  { id: 'agreement',   label: 'Agreement',               path: '/dashboard/investor/agreement',   icon: ScrollText },
+  { id: 'transactions',label: 'Funding & Transactions',  path: '/dashboard/investor/transactions', icon: Wallet },
 ];
 
 interface InvestorSubNavProps {
-  activeTab: 'requests' | 'messages' | 'meetings' | 'transactions';
+  activeTab: 'requests' | 'messages' | 'meetings' | 'agreement' | 'transactions';
 }
 
 const InvestorSubNav: React.FC<InvestorSubNavProps> = ({ activeTab }) => {

@@ -65,6 +65,7 @@ import InvestorSaved       from './pages/dashboards/investor/InvestorSaved';
 import InvestorRequests    from './pages/dashboards/investor/InvestorRequests';
 import InvestorMeetings    from './pages/dashboards/investor/InvestorMeetings';
 import InvestorTransactions from './pages/dashboards/investor/InvestorTransactions';
+import InvestorAgreement   from './pages/dashboards/investor/InvestorAgreement';
 import InvestorReports     from './pages/dashboards/investor/InvestorReports';
 import InvestorProfileDetails from './pages/dashboards/investor/InvestorProfileDetails';
 import InvestorKYC         from './pages/dashboards/investor/InvestorKYC';
@@ -234,6 +235,7 @@ function App() {
                     <Route path="portfolio-hub"   element={<InvestorPortfolioHub />} />
                     <Route path="requests"        element={<InvestorRequests />} />
                     <Route path="meetings"        element={<InvestorMeetings />} />
+                    <Route path="agreement"       element={<InvestorAgreement />} />
                     <Route path="transactions"    element={<InvestorTransactions />} />
                     <Route path="learning-center" element={<InvestorLearningCenter />} />
                     <Route path="inbox"           element={<SharedNotifications />} />

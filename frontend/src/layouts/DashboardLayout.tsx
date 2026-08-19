@@ -49,6 +49,7 @@ import InvestorPortfolioHub from '../pages/dashboards/investor/InvestorPortfolio
 import InvestorRequests from '../pages/dashboards/investor/InvestorRequests';
 import InvestorMeetings from '../pages/dashboards/investor/InvestorMeetings';
 import InvestorTransactions from '../pages/dashboards/investor/InvestorTransactions';
+import InvestorAgreement from '../pages/dashboards/investor/InvestorAgreement';
 import InvestorLearningCenter from '../pages/dashboards/investor/InvestorLearningCenter';
 import InvestorProfileKYC from '../pages/dashboards/investor/InvestorProfileKYC';
 import AdminDashboard from '../pages/dashboards/AdminDashboard';
@@ -115,6 +116,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/investor/portfolio-hub': InvestorPortfolioHub,
     '/dashboard/investor/requests': InvestorRequests,
     '/dashboard/investor/meetings': InvestorMeetings,
+    '/dashboard/investor/agreement': InvestorAgreement,
     '/dashboard/investor/transactions': InvestorTransactions,
     '/dashboard/investor/learning-center': InvestorLearningCenter,
     '/dashboard/investor/messages': FounderInvestorMessages,
