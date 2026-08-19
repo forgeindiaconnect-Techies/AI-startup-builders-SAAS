@@ -1,10 +1,11 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Building2, ClipboardList, Inbox, CalendarClock, Wallet } from 'lucide-react';
+import { Building2, ClipboardList, Inbox, CalendarClock, Wallet, ScrollText } from 'lucide-react';
 import FounderInvestorMarketplace from './FounderInvestorMarketplace';
 import FounderInvestmentRequests from './FounderInvestmentRequests';
 import FounderInvestorMessages from './FounderInvestorMessages';
 import FounderInvestorMeetings from './FounderInvestorMeetings';
+import FounderInvestorAgreement from './FounderInvestorAgreement';
 import FounderFundingTransactions from './FounderFundingTransactions';
 
 const INVESTOR_TABS = [
@@ -12,6 +13,7 @@ const INVESTOR_TABS = [
   { id: 'investment-requests', label: 'Founder Requests', path: '/dashboard/founder/investment-requests', icon: ClipboardList, component: FounderInvestmentRequests },
   { id: 'messages', label: 'Messages', path: '/dashboard/founder/messages', icon: Inbox, component: FounderInvestorMessages },
   { id: 'meetings', label: 'Meetings', path: '/dashboard/founder/meetings', icon: CalendarClock, component: FounderInvestorMeetings },
+  { id: 'agreement', label: 'Agreement', path: '/dashboard/founder/agreement', icon: ScrollText, component: FounderInvestorAgreement },
   { id: 'funding-transactions', label: 'Funding & Transactions', path: '/dashboard/founder/funding-transactions', icon: Wallet, component: FounderFundingTransactions },
 ];
 
@@ -29,6 +31,7 @@ const FounderInvestorHub: React.FC = () => {
     (t.id === 'investment-requests' && currentPath.includes('/founder/investment-requests')) ||
     (t.id === 'messages' && currentPath.includes('/founder/messages')) ||
     (t.id === 'meetings' && currentPath.includes('/founder/meetings')) ||
+    (t.id === 'agreement' && currentPath.includes('/founder/agreement')) ||
     (t.id === 'funding-transactions' && (currentPath.includes('/founder/funding-transactions') || currentPath.includes('/founder/funding')))
   ) || INVESTOR_TABS[0];
 

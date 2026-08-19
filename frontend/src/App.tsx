@@ -44,6 +44,7 @@ import FounderInvestorMessages    from './pages/dashboards/founder/FounderInvest
 import FounderInvestorMeetings    from './pages/dashboards/founder/FounderInvestorMeetings';
 import FounderFundingTransactions  from './pages/dashboards/founder/FounderFundingTransactions';
 import FounderInvestorProfile     from './pages/dashboards/founder/FounderInvestorProfile';
+import FounderInvestorAgreement   from './pages/dashboards/founder/FounderInvestorAgreement';
 
 // ── Mentor Pages ─────────────────────────────────────────────────
 import MentorDashboard from './pages/dashboards/MentorDashboard';
@@ -158,6 +159,7 @@ function App() {
                     <Route path="investment-requests"  element={<FounderInvestmentRequests />} />
                     <Route path="messages"             element={<FounderInvestorMessages />} />
                     <Route path="meetings"             element={<FounderInvestorMeetings />} />
+                    <Route path="agreement"            element={<FounderInvestorAgreement />} />
                     <Route path="funding-transactions" element={<FounderFundingTransactions />} />
                     <Route path="funding"              element={<FounderFundingTransactions />} />
                     <Route path="documents"           element={<FounderDocuments />} />
