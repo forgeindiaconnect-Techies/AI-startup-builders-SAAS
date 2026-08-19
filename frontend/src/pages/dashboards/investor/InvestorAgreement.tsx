@@ -64,6 +64,10 @@ const AgreementDocument: React.FC<{
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [readConfirmed, setReadConfirmed] = useState(false);
 
+  // Terms & Conditions guidelines state
+  const [termsGuidelinesRead, setTermsGuidelinesRead] = useState(false);
+  const [showTermsGuidelinesModal, setShowTermsGuidelinesModal] = useState(false);
+
   // Signature customization state
   const [showSignModal, setShowSignModal] = useState(false);
   const [signatureName, setSignatureName] = useState(
@@ -343,34 +347,65 @@ const AgreementDocument: React.FC<{
             </div>
           ) : (
             <div className="space-y-3">
-              <div className={`flex items-start gap-2.5 rounded-xl border-2 p-3 transition-all ${hasScrolledToBottom ? 'border-purple-200 bg-purple-50/30' : 'border-gray-200 bg-gray-100/50'}`}>
+              <div className={`flex items-start gap-2.5 rounded-xl border-2 p-3 transition-all ${
+                (hasScrolledToBottom && termsGuidelinesRead) 
+                  ? 'border-purple-200 bg-purple-50/30' 
+                  : 'border-gray-200 bg-gray-100/50'
+              }`}>
                 <input
                   type="checkbox"
                   id="agreementReadCheck"
-                  disabled={!hasScrolledToBottom}
+                  disabled={!hasScrolledToBottom || !termsGuidelinesRead}
                   checked={readConfirmed}
                   onChange={e => setReadConfirmed(e.target.checked)}
-                  className={`mt-0.5 w-4 h-4 rounded transition-all ${hasScrolledToBottom ? 'cursor-pointer' : 'opacity-40 cursor-not-allowed'}`}
+                  className={`mt-0.5 w-4 h-4 rounded transition-all ${
+                    (hasScrolledToBottom && termsGuidelinesRead) 
+                      ? 'cursor-pointer text-[#5B21B6]' 
+                      : 'opacity-40 cursor-not-allowed'
+                  }`}
                 />
                 <label
                   htmlFor="agreementReadCheck"
-                  className={`text-[11px] font-semibold leading-relaxed ${hasScrolledToBottom ? 'text-gray-700 cursor-pointer' : 'text-gray-400 cursor-not-allowed'}`}
+                  className={`text-[11px] font-semibold leading-relaxed ${
+                    (hasScrolledToBottom && termsGuidelinesRead) 
+                      ? 'text-gray-700 cursor-pointer' 
+                      : 'text-gray-400 cursor-not-allowed'
+                  }`}
                 >
-                  I have read, understood, and agree to all terms in this Investment Agreement (Ref: {commitmentId} · {AGREEMENT_VERSION}).
-                  I understand this constitutes a legally binding digital signature.
+                  I have read, understood, and agree to all terms in this{" "}
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsGuidelinesModal(true)}
+                    className="text-[#5B21B6] underline hover:text-[#4C1D95] font-black bg-transparent border-none p-0 inline cursor-pointer"
+                  >
+                    Investment Terms & Conditions Guidelines
+                  </button>{" "}
+                  (Ref: {commitmentId} · {AGREEMENT_VERSION}). I understand this constitutes a legally binding digital signature.
+                  
                   {!hasScrolledToBottom && (
-                    <span className="block text-[10px] text-amber-600 font-bold mt-0.5 italic">← Scroll through the full agreement to unlock</span>
+                    <span className="block text-[10px] text-amber-600 font-bold mt-1 italic">
+                      ← Scroll through the full agreement text to unlock
+                    </span>
+                  )}
+                  {hasScrolledToBottom && !termsGuidelinesRead && (
+                    <span className="block text-[10px] text-[#5B21B6] font-bold mt-1 italic animate-pulse">
+                      ← Click the link above and read the Terms & Conditions to enable the checkbox
+                    </span>
                   )}
                 </label>
               </div>
 
               <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="text-[10px] text-gray-400 flex items-center gap-1">
-                  {hasScrolledToBottom
-                    ? readConfirmed
-                      ? <><Unlock size={11} className="text-emerald-600" /><span className="text-emerald-600 font-bold">Ready to sign</span></>
-                      : <><Unlock size={11} className="text-purple-500" /><span className="text-purple-600 font-semibold">Agreement read — tick checkbox to continue</span></>
-                    : <><Lock size={11} /><span>Read the full agreement to enable signing</span></>}
+                <div className="text-[10px] text-gray-400 flex items-center gap-1 font-semibold">
+                  {!hasScrolledToBottom ? (
+                    <><Lock size={11} /><span>Scroll the agreement to begin</span></>
+                  ) : !termsGuidelinesRead ? (
+                    <><Lock size={11} className="text-purple-500" /><span className="text-purple-600">Click link & accept guidelines to unlock</span></>
+                  ) : !readConfirmed ? (
+                    <><Unlock size={11} className="text-purple-500" /><span className="text-purple-600">Tick checkbox to sign</span></>
+                  ) : (
+                    <><Unlock size={11} className="text-emerald-600" /><span className="text-emerald-600">Ready to sign</span></>
+                  )}
                 </div>
                 <div className="flex gap-3">
                   <button onClick={onClose} className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl text-xs shadow-sm hover:bg-gray-50">Close</button>
@@ -380,7 +415,7 @@ const AgreementDocument: React.FC<{
                     className={`px-6 py-2.5 font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 ${
                       readConfirmed && !actionLoading
                         ? 'bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] hover:from-[#4C1D95] hover:to-[#6D28D9] text-white'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                     }`}
                   >
                     <Pen size={13} />
@@ -486,6 +521,79 @@ const AgreementDocument: React.FC<{
                     <CheckCircle2 size={13} /> Confirm Style
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── TERMS & CONDITIONS GUIDELINES MODAL (OVERLAY) ─── */}
+        {showTermsGuidelinesModal && (
+          <div className="fixed inset-0 z-[190] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl relative my-6 flex flex-col font-sans max-h-[85vh] text-left">
+              <button
+                type="button"
+                onClick={() => setShowTermsGuidelinesModal(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 z-10"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="p-6 pb-4 border-b border-gray-100 flex items-start gap-2.5 shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-[#5B21B6]/10 text-[#5B21B6] flex items-center justify-center shrink-0">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-900">Investment Terms & Conditions</h3>
+                  <p className="text-[10px] text-gray-500 font-mono">Platform Guidelines & Compliance Framework</p>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 py-4 text-[11px] text-gray-600 space-y-4 leading-relaxed">
+                <p className="font-semibold text-gray-700">
+                  Please review the following platform guidelines, allocation compliance, and investor code of conduct. You must read these terms to activate the acknowledgment checkbox.
+                </p>
+
+                <div className="space-y-3">
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <h4 className="font-bold text-gray-800 mb-1">1. Allocation Matching</h4>
+                    <p className="text-gray-500">Investors commit that the investment amount specified corresponds directly with the allocations approved during due diligence and meetings. Ad hoc modifications without platform authorization are prohibited.</p>
+                  </div>
+
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <h4 className="font-bold text-gray-800 mb-1">2. Verification and Escrow Timelines</h4>
+                    <p className="text-gray-600">All funding transfers must route through the platform's verified escrow. Upon submission, verification processes occur within 2-5 business days. Direct offline transfers circumventing escrow will invalidate transaction guarantees.</p>
+                  </div>
+
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <h4 className="font-bold text-gray-800 mb-1">3. Early Stage Equity Risks</h4>
+                    <p className="text-gray-600">Startups are high-risk early-stage ventures. Capital committed might undergo total loss. The investor verifies that they possess sufficient liquidity and risk threshold for the allocation committed.</p>
+                  </div>
+
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                    <h4 className="font-bold text-gray-800 mb-1">4. Anti-Money Laundering (AML) Compliance</h4>
+                    <p className="text-gray-600">All funds must route from legally registered bank accounts belonging to the verified investor or entity. AML and KYC procedures apply globally to all transactions on the platform.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-2.5 shrink-0 rounded-b-3xl">
+                <button
+                  type="button"
+                  onClick={() => setShowTermsGuidelinesModal(false)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTermsGuidelinesRead(true);
+                    setShowTermsGuidelinesModal(false);
+                  }}
+                  className="px-5 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold rounded-xl text-xs shadow-md"
+                >
+                  I Have Read & Accept the Terms
+                </button>
               </div>
             </div>
           </div>
