@@ -78,21 +78,22 @@ const AdminInvestorFunding: React.FC = () => {
   const getTxId = (tx: FundingOffer) => tx._id || tx.id || 'N/A';
 
   // Handle Admin Status Update Actions
-  const handleAction = async (actionType: 'approve' | 'reject' | 'verify' | 'completed') => {
+  // Handle Admin Status Update Actions
+  const handleAction = async (actionType: 'approve' | 'reject' | 'verify' | 'completed' | 'clarify') => {
     if (!selectedTx) return;
     const txId = selectedTx._id || selectedTx.id;
     setActionLoading(true);
     try {
-      if (actionType === 'verify') {
+      if (actionType === 'verify' || actionType === 'completed') {
         const historyEntry = {
-          action: 'funded',
+          action: 'completed',
           performedBy: adminName,
           role: 'Admin',
-          message: 'Admin verified compliance and UTR reference, marking deal as funded.',
+          message: 'Admin verified payment reference, UTR compliance, and signatures, marking deal as completed.',
           createdAt: new Date().toISOString(),
         };
         const updates = {
-          status: 'funded' as const,
+          status: 'completed' as const,
           paymentStatus: 'Completed',
           verificationStatus: 'Verified',
           adminNote: adminNoteInput || selectedTx.adminNote || 'Admin verified compliance and UTR reference.',
@@ -105,8 +106,8 @@ const AdminInvestorFunding: React.FC = () => {
         if (selectedTx.founderId) {
           await addNotification({
             userId: selectedTx.founderId,
-            title: `Funding Confirmed`,
-            message: `Admin verified your funding offer from ${selectedTx.investorCompany || selectedTx.investorName} ($${selectedTx.offerAmount.toLocaleString()}) as Funded!`,
+            title: `Funding Completed ✓`,
+            message: `Admin verified your funding payment from ${selectedTx.investorCompany || selectedTx.investorName} (₹${selectedTx.offerAmount.toLocaleString('en-IN')}) as Completed!`,
             type: 'funding',
             actionUrl: '/dashboard/founder/funding',
             isRead: false,
@@ -116,45 +117,69 @@ const AdminInvestorFunding: React.FC = () => {
         if (selectedTx.investorId) {
           await addNotification({
             userId: selectedTx.investorId,
-            title: `Funding Confirmed`,
-            message: `Admin verified your $${selectedTx.offerAmount.toLocaleString()} investment in ${selectedTx.startupName} as Funded!`,
+            title: `Funding Completed ✓`,
+            message: `Admin verified your ₹${selectedTx.offerAmount.toLocaleString('en-IN')} investment in ${selectedTx.startupName} as Completed!`,
             type: 'funding',
             actionUrl: '/dashboard/investor/portfolio-hub',
             isRead: false,
             createdAt: new Date().toISOString(),
           });
         }
-        showToast('Funding offer successfully verified!');
-      } else if (actionType === 'completed') {
+        showToast('Payment verified and funding marked as Completed!');
+      } else if (actionType === 'clarify') {
         const historyEntry = {
-          action: 'completed',
+          action: 'clarification_requested',
           performedBy: adminName,
           role: 'Admin',
-          message: 'Admin marked the transaction as completed.',
+          message: 'Admin requested clarification regarding the payment transfer.',
           createdAt: new Date().toISOString(),
         };
         const updates = {
-          status: 'funded' as const,
-          paymentStatus: 'Completed',
-          verificationStatus: 'Verified',
-          adminNote: adminNoteInput || selectedTx.adminNote || 'Admin verified compliance and marked deal as completed.',
+          verificationStatus: 'Clarification Requested',
+          status: 'under_verification' as const,
+          adminNote: adminNoteInput || 'Admin requested clarification regarding transaction details.',
           history: [...selectedTx.history, historyEntry],
           updatedAt: new Date().toISOString(),
         };
         await updateFundingOffer(txId, updates);
-        showToast('Funding offer successfully completed and funded!');
+
+        // Notify both parties
+        if (selectedTx.founderId) {
+          await addNotification({
+            userId: selectedTx.founderId,
+            title: `Clarification Requested`,
+            message: `Admin requested clarification on the payment for ${selectedTx.startupName}. Note: ${updates.adminNote}`,
+            type: 'funding',
+            actionUrl: '/dashboard/founder/funding',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          });
+        }
+        if (selectedTx.investorId) {
+          await addNotification({
+            userId: selectedTx.investorId,
+            title: `Clarification Requested`,
+            message: `Admin requested clarification on your payment for ${selectedTx.startupName}. Note: ${updates.adminNote}`,
+            type: 'funding',
+            actionUrl: '/dashboard/investor/transactions',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          });
+        }
+        showToast('Clarification requested successfully.');
       } else {
-        const newStatus = actionType === 'approve' ? 'accepted' : 'rejected';
+        const isTxVerification = ['payment_submitted', 'under_verification'].includes(selectedTx.status);
+        const newStatus = actionType === 'approve' ? 'accepted' : (isTxVerification ? 'failed' : 'rejected');
         const historyEntry = {
           action: newStatus,
           performedBy: adminName,
           role: 'Admin',
-          message: `Admin ${actionType === 'approve' ? 'approved' : 'rejected'} the funding offer.`,
+          message: `Admin ${actionType === 'approve' ? 'approved' : 'rejected'} the funding transaction/offer.`,
           createdAt: new Date().toISOString(),
         };
 
         const updates = {
-          status: newStatus,
+          status: newStatus as any,
           paymentStatus: actionType === 'approve' ? 'Pending' : 'Failed',
           verificationStatus: actionType === 'approve' ? 'Pending' : 'Rejected',
           adminNote: adminNoteInput || selectedTx.adminNote || '',
@@ -168,8 +193,8 @@ const AdminInvestorFunding: React.FC = () => {
         if (selectedTx.founderId) {
           await addNotification({
             userId: selectedTx.founderId,
-            title: `Funding Offer ${actionType === 'approve' ? 'Approved' : 'Rejected'}`,
-            message: `Admin has ${actionType === 'approve' ? 'approved' : 'rejected'} your funding offer from ${selectedTx.investorCompany}.`,
+            title: `Funding Transaction ${actionType === 'approve' ? 'Approved' : 'Rejected'}`,
+            message: `Admin has ${actionType === 'approve' ? 'approved' : 'rejected'} your funding offer from ${selectedTx.investorCompany}. Note: ${updates.adminNote}`,
             type: 'funding',
             actionUrl: '/dashboard/founder/funding',
             isRead: false,
@@ -179,8 +204,8 @@ const AdminInvestorFunding: React.FC = () => {
         if (selectedTx.investorId) {
           await addNotification({
             userId: selectedTx.investorId,
-            title: `Funding Offer ${actionType === 'approve' ? 'Approved' : 'Rejected'}`,
-            message: `Admin has ${actionType === 'approve' ? 'approved' : 'rejected'} your funding offer for ${selectedTx.startupName}.`,
+            title: `Funding Transaction ${actionType === 'approve' ? 'Approved' : 'Rejected'}`,
+            message: `Admin has ${actionType === 'approve' ? 'approved' : 'rejected'} your funding offer for ${selectedTx.startupName}. Note: ${updates.adminNote}`,
             type: 'funding',
             actionUrl: '/dashboard/investor/portfolio-hub',
             isRead: false,
@@ -188,7 +213,7 @@ const AdminInvestorFunding: React.FC = () => {
           });
         }
 
-        showToast(`Funding offer successfully updated to ${newStatus}.`);
+        showToast(`Funding transaction successfully updated to ${newStatus}.`);
       }
 
       await refreshOffers();
@@ -516,6 +541,57 @@ const AdminInvestorFunding: React.FC = () => {
                 </div>
               </div>
 
+              {/* Investment Agreement Details */}
+              <div className="border border-purple-100 rounded-2xl p-4 space-y-3 bg-purple-50/10">
+                <h4 className="font-bold text-[#6C4CF1] uppercase text-[10px] tracking-wider flex items-center gap-1.5 border-b border-purple-100 pb-1.5">
+                  <FileText size={14} /> Investment Agreement Details
+                </h4>
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <span className="text-gray-500 block">Agreement ID:</span>
+                    <strong className="text-gray-900 font-mono">{selectedTx.agreementId || 'N/A'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block">Agreement Version:</span>
+                    <strong className="text-gray-900 font-mono">{selectedTx.agreementVersion || 'v1.0'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block">Agreement Status:</span>
+                    <strong className="text-purple-700 font-bold">{selectedTx.agreementStatus || 'Draft'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block">Verification:</span>
+                    <strong className="text-gray-900">{selectedTx.verificationStatus || 'Pending'}</strong>
+                  </div>
+                  <div className="col-span-2 border-t border-purple-100/50 pt-2 grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-gray-500 block font-semibold">Investor Signature:</span>
+                      {selectedTx.investorSignedAt ? (
+                        <div className="mt-0.5">
+                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-bold">Signed ✓</span>
+                          <span className="block text-[10px] text-gray-500 mt-0.5 font-mono">{new Date(selectedTx.investorSignedAt).toLocaleString()}</span>
+                          <span className="block text-[10px] text-purple-900 font-serif italic mt-0.5">"{selectedTx.investorSignatureName}"</span>
+                        </div>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-[9px] font-bold mt-0.5 inline-block">Awaiting Signature ⏳</span>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-gray-500 block font-semibold">Founder Signature:</span>
+                      {selectedTx.founderSignedAt ? (
+                        <div className="mt-0.5">
+                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-bold">Signed ✓</span>
+                          <span className="block text-[10px] text-gray-500 mt-0.5 font-mono">{new Date(selectedTx.founderSignedAt).toLocaleString()}</span>
+                          <span className="block text-[10px] text-purple-900 font-serif italic mt-0.5">"{selectedTx.founderSignatureName}"</span>
+                        </div>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-[9px] font-bold mt-0.5 inline-block">Awaiting Signature ⏳</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Meta information */}
               <div className="border border-gray-100 rounded-2xl p-4 space-y-2.5 bg-gray-50/30">
                 <div className="flex justify-between text-gray-500 border-b border-gray-100 pb-2">
@@ -676,10 +752,16 @@ const AdminInvestorFunding: React.FC = () => {
                     <Ban size={14} /> Reject/Void Deal
                   </button>
                   <button
-                    onClick={() => setShowActionBox('verify')}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
+                    onClick={() => setShowActionBox('clarify')}
+                    className="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-600 font-bold rounded-xl border border-amber-200 transition-all flex items-center gap-1.5 cursor-pointer"
                   >
-                    <ShieldCheck size={14} /> Verify Funding
+                    <HelpCircle size={14} /> Request Clarification
+                  </button>
+                  <button
+                    onClick={() => setShowActionBox('verify')}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ShieldCheck size={14} /> Approve Payment
                   </button>
                   <button
                     onClick={() => setShowActionBox('completed')}

@@ -185,7 +185,7 @@ const FounderFunding: React.FC = () => {
                         </div>
                         <div>
                           <p className="text-gray-400 font-bold block uppercase text-[9px] mb-1">Agreement Status</p>
-                          <p className="text-gray-800 font-bold">{offer.agreementStatus || 'Completed'}</p>
+                          <p className="text-gray-800 font-bold">{offer.agreementStatus || 'Pending'}</p>
                         </div>
                         <div>
                           <p className="text-gray-400 font-bold block uppercase text-[9px] mb-1">Transaction Status</p>
@@ -216,8 +216,8 @@ const FounderFunding: React.FC = () => {
                         <span className="text-purple-700 text-[9px] uppercase tracking-wider block">Timeline:</span>
                         <span className="flex items-center gap-1 text-emerald-600"><CheckCircle2 size={12} /> Deal Accepted</span>
                         <span className="text-gray-300">→</span>
-                        <span className={`flex items-center gap-1 ${offer.agreementStatus === 'Completed' ? 'text-emerald-600' : 'text-gray-400'}`}>
-                          {offer.agreementStatus === 'Completed' && <CheckCircle2 size={12} />} Agreement Signed
+                        <span className={`flex items-center gap-1 ${offer.agreementStatus === 'Fully Signed' ? 'text-emerald-600' : 'text-gray-400'}`}>
+                          {offer.agreementStatus === 'Fully Signed' && <CheckCircle2 size={12} />} Agreement Signed
                         </span>
                         <span className="text-gray-300">→</span>
                         <span className={`flex items-center gap-1 ${['payment_submitted', 'under_verification', 'funded', 'completed'].includes(offer.status) ? 'text-emerald-600' : 'text-gray-400'}`}>

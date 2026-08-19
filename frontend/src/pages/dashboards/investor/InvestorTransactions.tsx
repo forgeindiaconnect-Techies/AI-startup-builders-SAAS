@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   IndianRupee, ArrowUpRight, Clock, Wallet, CheckCircle2, 
   AlertCircle, X, ShieldCheck, Eye, CreditCard, Landmark, 
@@ -12,6 +13,7 @@ import InvestorSubNav from '../../../components/shared/InvestorSubNav';
 import { getStartups } from '../../../utils/localStorageHelper';
 
 const InvestorTransactions: React.FC = () => {
+  const navigate = useNavigate();
   const { offers, loading, refreshOffers, sendOffer } = useFunding();
   const { user } = useAuth();
   
@@ -280,7 +282,7 @@ const InvestorTransactions: React.FC = () => {
     if (o.status === 'payment_submitted') return 'Payment Submitted';
     if (o.status === 'payment_pending') return 'Payment Pending';
     if (o.status === 'accepted') {
-      if (o.agreementStatus === 'Completed') return 'Payment Pending';
+      if (o.agreementStatus === 'Fully Signed') return 'Payment Pending';
       return 'Founder Accepted';
     }
     if (o.status === 'offer_received') return 'Commitment Submitted';
@@ -546,7 +548,7 @@ const InvestorTransactions: React.FC = () => {
                   {investorOffers.map(o => {
                     const isAccepted = o.status === 'accepted';
                     const hasPaid = ['payment_submitted', 'under_verification', 'funded', 'completed'].includes(o.status);
-                    const isPendingSign = !o.agreementStatus || o.agreementStatus === 'Drafted';
+                    const isFullySigned = o.agreementStatus === 'Fully Signed';
 
                     return (
                       <tr key={o.id || o._id} className="hover:bg-gray-50/50 transition-colors">
@@ -587,20 +589,19 @@ const InvestorTransactions: React.FC = () => {
                               <Eye size={12} /> View Details
                             </button>
                             
-                            {isAccepted && isPendingSign && (
+                             {isAccepted && !isFullySigned && (
                               <button
-                                onClick={() => handleSignAgreement(o)}
-                                disabled={actionLoading}
-                                className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] rounded-lg font-bold text-xs border border-purple-200 transition-colors flex items-center gap-1"
+                                onClick={() => navigate('/dashboard/investor/agreement')}
+                                className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] rounded-lg font-bold text-xs border border-purple-200 transition-colors flex items-center gap-1 cursor-pointer"
                               >
-                                <FileCheck size={12} /> Sign Agreement
+                                <FileCheck size={12} /> {!o.investorSignedAt ? 'Sign Agreement' : 'Awaiting Countersign'}
                               </button>
                             )}
 
-                            {isAccepted && !isPendingSign && !hasPaid && (
+                            {isAccepted && isFullySigned && !hasPaid && (
                               <button
                                 onClick={() => setPaymentOffer(o)}
-                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow-sm transition-colors flex items-center gap-1"
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow-sm transition-colors flex items-center gap-1 cursor-pointer"
                               >
                                 <IndianRupee size={12} /> Continue Payment
                               </button>
@@ -795,7 +796,7 @@ const InvestorTransactions: React.FC = () => {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs gap-3">
                   {[
                     { title: 'Initiated', active: true },
-                    { title: 'Agreement Signed', active: selectedFunding.agreementStatus === 'Completed' },
+                    { title: 'Agreement Signed', active: selectedFunding.agreementStatus === 'Fully Signed' },
                     { title: 'Payment Submitted', active: ['payment_submitted', 'under_verification', 'funded', 'completed'].includes(selectedFunding.status) },
                     { title: 'Admin Verification', active: ['under_verification', 'funded', 'completed'].includes(selectedFunding.status) },
                     { title: 'Funding Completed', active: ['funded', 'completed'].includes(selectedFunding.status) }
@@ -820,11 +821,14 @@ const InvestorTransactions: React.FC = () => {
                 <Info size={16} className="shrink-0 text-amber-600 mt-0.5" />
                 <div>
                   <span className="font-bold block mb-0.5">Required actions:</span>
-                  {(!selectedFunding.agreementStatus || selectedFunding.agreementStatus === 'Drafted') && (
-                    <p>The investment term sheet is accepted. You must sign the formal Investment Agreement before releasing funds.</p>
+                  {(!selectedFunding.agreementStatus || selectedFunding.agreementStatus === 'Pending Investor Signature') && (
+                    <p>The investment term sheet is accepted. You must sign the formal Investment Agreement in the Agreement tab before releasing funds.</p>
                   )}
-                  {selectedFunding.agreementStatus === 'Completed' && selectedFunding.paymentStatus === 'Pending' && (
-                    <p>Agreement is signed by all parties. Click "Fund / Make Payment" to initiate escrow transfer.</p>
+                  {selectedFunding.agreementStatus === 'Pending Founder Signature' && (
+                    <p>You have signed the agreement. We are awaiting the Founder's countersignature. Payment will unlock once fully signed.</p>
+                  )}
+                  {selectedFunding.agreementStatus === 'Fully Signed' && selectedFunding.paymentStatus === 'Pending' && (
+                    <p>Agreement is signed by both parties. Click "Fund / Make Payment" to initiate escrow transfer.</p>
                   )}
                   {selectedFunding.paymentStatus === 'Submitted' && (
                     <p>Payment has been recorded. Admin is currently verifying the Reference/UTR number. No further action needed.</p>
@@ -844,24 +848,36 @@ const InvestorTransactions: React.FC = () => {
                 Close
               </button>
 
-              {selectedFunding.status === 'accepted' && (!selectedFunding.agreementStatus || selectedFunding.agreementStatus === 'Drafted') && (
+              {selectedFunding.status === 'accepted' && selectedFunding.agreementStatus !== 'Fully Signed' && (
                 <button
-                  onClick={() => handleSignAgreement(selectedFunding)}
-                  disabled={actionLoading}
-                  className="px-5 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold rounded-xl text-xs shadow transition-colors flex items-center gap-1.5"
+                  onClick={() => { setSelectedFunding(null); navigate('/dashboard/investor/agreement'); }}
+                  className="px-5 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold rounded-xl text-xs shadow transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  <FileCheck size={14} /> Sign Agreement
+                  <FileCheck size={14} /> Review & Sign Agreement
                 </button>
               )}
 
-              {selectedFunding.agreementStatus === 'Completed' && selectedFunding.paymentStatus === 'Pending' && (
+              {/* Payment button (unlocked only if fully signed) */}
+              {selectedFunding.agreementStatus === 'Fully Signed' && selectedFunding.paymentStatus === 'Pending' ? (
                 <button
                   onClick={() => { setPaymentOffer(selectedFunding); setSelectedFunding(null); }}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs shadow transition-colors flex items-center gap-1.5"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl text-xs shadow transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <IndianRupee size={14} /> Fund / Make Payment
                 </button>
-              )}
+              ) : selectedFunding.paymentStatus === 'Pending' ? (
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    disabled
+                    className="px-5 py-2 bg-gray-200 text-gray-400 font-extrabold rounded-xl text-xs flex items-center gap-1.5 cursor-not-allowed"
+                  >
+                    <IndianRupee size={14} /> Fund / Make Payment (Locked)
+                  </button>
+                  <span className="text-[10px] text-red-500 font-semibold block text-right max-w-[280px] mt-1">
+                    Payment is available after both Investor and Founder have signed the Investment Agreement.
+                  </span>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -941,7 +957,7 @@ const InvestorTransactions: React.FC = () => {
                   <div className="flex justify-between border-b border-gray-100 pb-2">
                     <span className="text-gray-500">Agreement Status:</span>
                     <strong className="text-emerald-700 font-bold flex items-center gap-0.5">
-                      <CheckCircle2 size={12} /> {selectedTx.agreementStatus || 'Completed'}
+                      <CheckCircle2 size={12} /> {selectedTx.agreementStatus || 'Fully Signed'}
                     </strong>
                   </div>
                 </div>
@@ -954,7 +970,7 @@ const InvestorTransactions: React.FC = () => {
                   {[
                     { title: 'Funding Commitment Created', date: selectedTx.createdAt, desc: 'Investor commits the initial capital allocation.' },
                     { title: 'Founder Accepted', date: ['accepted', 'payment_submitted', 'under_verification', 'funded', 'completed', 'failed'].includes(selectedTx.status) ? selectedTx.createdAt : null, desc: 'Founder approved the investment proposal.' },
-                    { title: 'Agreement Signed', date: selectedTx.agreementStatus === 'Completed' ? selectedTx.createdAt : null, desc: 'Legal documentation completed by both parties.' },
+                    { title: 'Agreement Signed', date: selectedTx.agreementStatus === 'Fully Signed' ? selectedTx.createdAt : null, desc: 'Legal documentation completed by both parties.' },
                     { title: 'Payment Initiated', date: selectedTx.paymentDate || null, desc: 'Investor started the payment process.' },
                     { title: 'Payment Submitted', date: ['payment_submitted', 'under_verification', 'funded', 'completed'].includes(selectedTx.status) ? selectedTx.paymentDate : null, desc: `Capital transfer proof submitted via ${selectedTx.paymentMethod || 'Manual'}.` },
                     { title: 'Admin Verification', date: ['under_verification', 'funded', 'completed'].includes(selectedTx.status) ? (selectedTx.updatedAt || selectedTx.paymentDate) : null, desc: 'Escrow verification in progress.' },

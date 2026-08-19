@@ -41,6 +41,14 @@ export interface IFundingOffer extends Document {
   expectedInvestmentDate?: string;
   commitmentNotes?: string;
   agreementAcknowledged?: boolean;
+  agreementId?: string;
+  agreementVersion?: string;
+  investorSignedAt?: string;
+  investorSignatureName?: string;
+  investorSignatureFontIndex?: number;
+  founderSignedAt?: string;
+  founderSignatureName?: string;
+  founderSignatureFontIndex?: number;
   history: Array<{
     action: string;
     performedBy: string;
@@ -98,6 +106,14 @@ const FundingOfferSchema: Schema = new Schema(
     expectedInvestmentDate: { type: String, default: '' },
     commitmentNotes: { type: String, default: '' },
     agreementAcknowledged: { type: Boolean, default: false },
+    agreementId: { type: String, default: '' },
+    agreementVersion: { type: String, default: 'v1.0' },
+    investorSignedAt: { type: String, default: '' },
+    investorSignatureName: { type: String, default: '' },
+    investorSignatureFontIndex: { type: Number, default: 0 },
+    founderSignedAt: { type: String, default: '' },
+    founderSignatureName: { type: String, default: '' },
+    founderSignatureFontIndex: { type: Number, default: 0 },
     history: [
       {
         action: { type: String },

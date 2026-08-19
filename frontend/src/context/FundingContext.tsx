@@ -45,6 +45,14 @@ export interface FundingOffer {
   fundingRound?: string;
   expectedInvestmentDate?: string;
   commitmentNotes?: string;
+  agreementId?: string;
+  agreementVersion?: string;
+  investorSignedAt?: string;
+  investorSignatureName?: string;
+  investorSignatureFontIndex?: number;
+  founderSignedAt?: string;
+  founderSignatureName?: string;
+  founderSignatureFontIndex?: number;
   agreementAcknowledged?: boolean;
   history: Array<{
     action: string;
@@ -67,6 +75,7 @@ interface FundingContextType {
   getStartupOffers: (startupId: string, startupName?: string) => FundingOffer[];
   updateOfferAdminNote: (offerId: string, note: string) => Promise<void>;
   verifyOffer: (offerId: string, adminName: string) => Promise<void>;
+  updateOfferDetails: (offerId: string, updates: Partial<FundingOffer>) => Promise<void>;
   refreshOffers: () => Promise<void>;
 }
 
@@ -139,6 +148,18 @@ export const FundingProvider: React.FC<{ children: ReactNode }> = ({ children })
       history: [...offer.history, historyEntry],
       updatedAt: new Date().toISOString(),
     };
+
+    if (responseType === 'accepted') {
+      updates.agreementStatus = 'Pending Investor Signature';
+      updates.agreementId = offer.agreementId || `AGR-2026-${offerId.slice(-4).toUpperCase()}`;
+      updates.agreementVersion = 'v1.0';
+      updates.investorSignedAt = '';
+      updates.investorSignatureName = '';
+      updates.investorSignatureFontIndex = 0;
+      updates.founderSignedAt = '';
+      updates.founderSignatureName = '';
+      updates.founderSignatureFontIndex = 0;
+    }
 
     if (responseType === 'rejected') updates.founderResponse = details.message || '';
     if (responseType === 'counter_offer') {
@@ -222,6 +243,19 @@ export const FundingProvider: React.FC<{ children: ReactNode }> = ({ children })
       await addNotification({ userId: 'admin', title: 'Offer Verified', message: `You verified the funding offer and activated ${offer.startupName}.`, type: 'funding', actionUrl: '/dashboard/admin/startups', isRead: false, createdAt: new Date().toISOString() });
     }
   };
+  
+  const updateOfferDetails = async (offerId: string, updates: Partial<FundingOffer>) => {
+    const offer = offers.find(o => getOfferId(o) === offerId);
+    if (!offer) return;
+    const finalUpdates = {
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    const updated = await updateFundingOffer(offerId, finalUpdates);
+    if (updated) {
+      setOffers(prev => prev.map(o => getOfferId(o) === offerId ? { ...o, ...finalUpdates } : o));
+    }
+  };
 
   const getFounderOffers = (founderId: string) =>
     offers.filter(o => o.founderId === founderId);
@@ -232,7 +266,7 @@ export const FundingProvider: React.FC<{ children: ReactNode }> = ({ children })
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
-    <FundingContext.Provider value={{ offers, loading, sendOffer, respondToOffer, markAsFunded, getFounderOffers, getStartupOffers, updateOfferAdminNote, verifyOffer, refreshOffers }}>
+    <FundingContext.Provider value={{ offers, loading, sendOffer, respondToOffer, markAsFunded, getFounderOffers, getStartupOffers, updateOfferAdminNote, verifyOffer, updateOfferDetails, refreshOffers }}>
       {children}
     </FundingContext.Provider>
   );

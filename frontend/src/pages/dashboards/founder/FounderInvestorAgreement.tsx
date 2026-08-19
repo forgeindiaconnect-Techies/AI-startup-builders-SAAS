@@ -11,7 +11,7 @@ import type { FundingOffer } from '../../../context/FundingContext';
 import { useAuth } from '../../../context/AuthContext';
 import { addNotification, getStartups } from '../../../utils/localStorageHelper';
 
-const AGREEMENT_VERSION = 'v1.0-2026';
+const AGREEMENT_VERSION = 'v1.0';
 
 // Signature font styles
 const SIGNATURE_STYLES = [
@@ -21,48 +21,14 @@ const SIGNATURE_STYLES = [
   { name: 'Caveat', style: { fontFamily: "'Caveat', cursive", fontSize: '24px', fontWeight: 700 } },
 ];
 
-// ─── localStorage helpers ─────────────────────────────────────────────────────
-const AGREEMENT_KEY = 'ai_startup_builder_signed_agreements';
-
-interface AgreementRecord {
-  offerId: string;
-  commitmentId: string;
-  startupName: string;
-  investorId: string;
-  investorName: string;
-  founderId: string;
-  founderName: string;
-  amount: number;
-  instrument: string;
-  signedAt: string;
-  version: string;
-  signatureName?: string;
-  signatureFontIndex?: number;
-  // Founder signature details
-  founderSignedAt?: string;
-  founderSignatureName?: string;
-  founderSignatureFontIndex?: number;
-}
-
-const getSignedAgreements = (): AgreementRecord[] => {
-  try { return JSON.parse(localStorage.getItem(AGREEMENT_KEY) || '[]'); }
-  catch { return []; }
-};
-
-const saveSignedAgreement = (record: AgreementRecord) => {
-  const list = getSignedAgreements().filter(r => r.offerId !== record.offerId);
-  localStorage.setItem(AGREEMENT_KEY, JSON.stringify([...list, record]));
-};
-
 // ─── Agreement Document Modal ─────────────────────────────────────────────────
 const AgreementDocument: React.FC<{
   offer: FundingOffer;
   onClose: () => void;
   onSign: (offer: FundingOffer, sigName: string, fontIdx: number) => void;
   onUpdateSignature: (offer: FundingOffer, sigName: string, fontIdx: number) => void;
-  signedRecord?: AgreementRecord;
   actionLoading: boolean;
-}> = ({ offer, onClose, onSign, onUpdateSignature, signedRecord, actionLoading }) => {
+}> = ({ offer, onClose, onSign, onUpdateSignature, actionLoading }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [readConfirmed, setReadConfirmed] = useState(false);
@@ -74,15 +40,25 @@ const AgreementDocument: React.FC<{
   // Countersignature customization state
   const [showSignModal, setShowSignModal] = useState(false);
   const [signatureName, setSignatureName] = useState(
-    signedRecord?.founderSignatureName || offer.founderName || ''
+    offer.founderSignatureName || offer.founderName || ''
   );
   const [selectedFontIndex, setSelectedFontIndex] = useState(
-    signedRecord?.founderSignatureFontIndex ?? 0
+    offer.founderSignatureFontIndex ?? 0
   );
 
-  const commitmentId = offer.commitmentId || `FC-${String(offer.id || '').slice(-6).toUpperCase()}`;
-  const isInvestorSigned = !!signedRecord?.signedAt;
-  const isFounderSigned = !!signedRecord?.founderSignedAt;
+  const commitmentId = offer.commitmentId || `FC-2026-${String(offer.id || offer._id || '').slice(-4).toUpperCase()}`;
+  const agreementId = offer.agreementId || `AGR-2026-${String(offer.id || offer._id || '').slice(-4).toUpperCase()}`;
+  const isInvestorSigned = !!offer.investorSignedAt;
+  const isFounderSigned = !!offer.founderSignedAt;
+
+  useEffect(() => {
+    if (offer.founderSignatureName) {
+      setSignatureName(offer.founderSignatureName);
+    }
+    if (offer.founderSignatureFontIndex !== undefined) {
+      setSelectedFontIndex(offer.founderSignatureFontIndex);
+    }
+  }, [offer]);
 
   const fmtDate = (d: string) => {
     try { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }); }
@@ -107,13 +83,6 @@ const AgreementDocument: React.FC<{
       onUpdateSignature(offer, signatureName.trim(), selectedFontIndex);
     }
   };
-
-  useEffect(() => {
-    if (signedRecord) {
-      if (signedRecord.founderSignatureName) setSignatureName(signedRecord.founderSignatureName);
-      if (signedRecord.founderSignatureFontIndex !== undefined) setSelectedFontIndex(signedRecord.founderSignatureFontIndex);
-    }
-  }, [signedRecord]);
 
   const clauses = [
     {
@@ -166,12 +135,12 @@ const AgreementDocument: React.FC<{
     <div className="fixed inset-0 z-[170] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl relative my-8 flex flex-col font-sans max-h-[92vh]">
         {/* Close */}
-        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 z-10">
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 z-10 cursor-pointer">
           <X size={18} />
         </button>
 
         {/* Modal Header */}
-        <div className="p-6 sm:p-8 pb-4 border-b border-gray-100 flex items-start gap-3 shrink-0">
+        <div className="p-6 sm:p-8 pb-4 border-b border-gray-100 flex items-start gap-3 shrink-0 text-left">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] flex items-center justify-center shrink-0">
             <ScrollText size={22} className="text-white" />
           </div>
@@ -184,9 +153,9 @@ const AgreementDocument: React.FC<{
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500 mt-0.5 font-mono">{commitmentId} · {AGREEMENT_VERSION}</p>
-            {isFounderSigned && signedRecord?.founderSignedAt && (
-              <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">Countersigned by Founder on {fmtDate(signedRecord.founderSignedAt)}</p>
+            <p className="text-xs text-gray-500 mt-0.5 font-mono">{agreementId} (Commitment: {commitmentId}) · {AGREEMENT_VERSION}</p>
+            {isFounderSigned && offer.founderSignedAt && (
+              <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">Countersigned by Founder on {fmtDate(offer.founderSignedAt)}</p>
             )}
           </div>
         </div>
@@ -195,52 +164,30 @@ const AgreementDocument: React.FC<{
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto p-6 sm:p-8 py-5 text-xs text-gray-700 space-y-5"
+          className="flex-1 overflow-y-auto p-6 sm:p-8 py-5 text-xs text-gray-700 space-y-5 text-left"
         >
           {/* Parties */}
           <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-3">
             <h4 className="font-extrabold text-gray-700 uppercase tracking-wider text-[10px]">Parties to This Agreement</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-white border border-gray-100 rounded-xl p-3 flex flex-col justify-between">
-                <div>
-                  <p className="text-[9px] font-black text-purple-500 uppercase mb-1 flex items-center gap-1"><User size={9} /> Investor (Party A)</p>
-                  <p className="font-bold text-gray-900">{offer.investorName}</p>
-                  <p className="text-gray-500">{offer.investorCompany}</p>
-                  {offer.investorEmail && <p className="text-[10px] text-gray-400 mt-0.5">{offer.investorEmail}</p>}
-                </div>
-                {isInvestorSigned ? (
-                  <span className="mt-2 text-[9px] text-emerald-600 font-semibold flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded w-fit">
-                    <CheckCircle2 size={9} /> Signed
-                  </span>
-                ) : (
-                  <span className="mt-2 text-[9px] text-amber-600 font-semibold flex items-center gap-1 bg-amber-50 px-2 py-1 rounded w-fit">
-                    <Clock size={9} /> Awaiting Investor Sign
-                  </span>
-                )}
+              <div className="bg-white border border-gray-100 rounded-xl p-3">
+                <p className="text-[9px] font-black text-purple-500 uppercase mb-1 flex items-center gap-1"><User size={9} /> Investor (Party A)</p>
+                <p className="font-bold text-gray-900">{offer.investorName}</p>
+                <p className="text-gray-500">{offer.investorCompany}</p>
+                {offer.investorEmail && <p className="text-[10px] text-gray-400 mt-0.5">{offer.investorEmail}</p>}
               </div>
-              <div className="bg-white border border-gray-100 rounded-xl p-3 flex flex-col justify-between">
-                <div>
-                  <p className="text-[9px] font-black text-blue-500 uppercase mb-1 flex items-center gap-1"><Building2 size={9} /> Founder / Company (Party B)</p>
-                  <p className="font-bold text-gray-900">{offer.founderName}</p>
-                  <p className="text-gray-500">{offer.startupName}</p>
-                  {offer.founderEmail && <p className="text-[10px] text-gray-400 mt-0.5">{offer.founderEmail}</p>}
-                </div>
-                {isFounderSigned ? (
-                  <span className="mt-2 text-[9px] text-emerald-600 font-semibold flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded w-fit">
-                    <CheckCircle2 size={9} /> Countersigned
-                  </span>
-                ) : (
-                  <span className="mt-2 text-[9px] text-amber-600 font-semibold flex items-center gap-1 bg-amber-50 px-2 py-1 rounded w-fit">
-                    <Clock size={9} /> Awaiting Countersign
-                  </span>
-                )}
+              <div className="bg-white border border-gray-100 rounded-xl p-3">
+                <p className="text-[9px] font-black text-blue-500 uppercase mb-1 flex items-center gap-1"><Building2 size={9} /> Founder / Company (Party B)</p>
+                <p className="font-bold text-gray-900">{offer.founderName}</p>
+                <p className="text-gray-500">{offer.startupName}</p>
+                {offer.founderResponse && <p className="text-[10px] text-gray-400 mt-0.5">Response: {offer.founderResponse}</p>}
               </div>
             </div>
           </div>
 
           {/* Deal Summary */}
           <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
-            <h4 className="font-extrabold text-[#5B21B6] uppercase tracking-wider text-[10px] mb-3 flex items-center gap-1.5">
+            <h4 className="font-extrabold text-[#5B21B6] uppercase tracking-wider text-[10px] mb-3 flex items-center gap-1.5 font-bold">
               <IndianRupee size={11} /> Investment Summary
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -265,7 +212,7 @@ const AgreementDocument: React.FC<{
 
           {/* Clauses */}
           <div className="space-y-3">
-            <h4 className="font-extrabold text-gray-800 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+            <h4 className="font-extrabold text-gray-800 uppercase tracking-wider text-[10px] flex items-center gap-1.5 font-bold">
               <FileText size={11} /> Agreement Terms & Conditions
             </h4>
             {clauses.map(clause => (
@@ -284,37 +231,35 @@ const AgreementDocument: React.FC<{
               <h4 className="font-extrabold text-blue-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5 font-bold">
                 <Pen size={11} /> Digital Signature Block
               </h4>
-              {!isFounderSigned && (
-                <button
-                  type="button"
-                  onClick={() => setShowSignModal(true)}
-                  className="px-2.5 py-1 bg-purple-100 hover:bg-purple-200 text-[#5B21B6] border border-purple-200 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer"
-                >
-                  <Pen size={10} /> Edit Signature
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowSignModal(true)}
+                className="px-2.5 py-1 bg-purple-100 hover:bg-purple-200 text-[#5B21B6] border border-purple-200 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+              >
+                <Pen size={10} /> Edit Signature
+              </button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Investor signature display */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
               <div className="bg-white border border-blue-100 rounded-xl p-3 flex flex-col justify-center min-h-[75px]">
                 <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Investor Signature (Party A)</p>
                 {isInvestorSigned ? (
                   <div>
                     <p
-                      className="text-2xl text-purple-950 italic select-none"
-                      style={SIGNATURE_STYLES[signedRecord?.signatureFontIndex ?? 0]?.style}
+                      className="text-2xl text-[#5B21B6] italic select-none"
+                      style={SIGNATURE_STYLES[offer.investorSignatureFontIndex ?? 0]?.style}
                     >
-                      {signedRecord?.signatureName}
+                      {offer.investorSignatureName}
                     </p>
                     <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">
-                      Digitally signed: {signedRecord?.signedAt ? fmtDate(signedRecord.signedAt) : ''}
+                      Digitally signed: {fmtDate(offer.investorSignedAt || '')}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-gray-400 italic text-[11px]">Pending investor signature</p>
+                  <p className="text-gray-400 italic text-[11px]">
+                    Pending investor signature
+                  </p>
                 )}
               </div>
-              {/* Founder signature display */}
               <div className="bg-white border border-blue-100 rounded-xl p-3 flex flex-col justify-center min-h-[75px]">
                 <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Founder Countersignature (Party B)</p>
                 {isFounderSigned ? (
@@ -326,20 +271,23 @@ const AgreementDocument: React.FC<{
                       {signatureName}
                     </p>
                     <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">
-                      Countersigned: {signedRecord?.founderSignedAt ? fmtDate(signedRecord.founderSignedAt) : today}
+                      Countersigned: {offer.founderSignedAt ? fmtDate(offer.founderSignedAt) : today}
                     </p>
                   </div>
                 ) : (
                   <div>
                     {signatureName ? (
-                      <p
-                        className="text-2xl text-[#5B21B6] italic select-none"
-                        style={SIGNATURE_STYLES[selectedFontIndex]?.style}
-                      >
-                        {signatureName}
-                      </p>
+                      <div>
+                        <p
+                          className="text-2xl text-gray-400 italic select-none"
+                          style={SIGNATURE_STYLES[selectedFontIndex]?.style}
+                        >
+                          {signatureName}
+                        </p>
+                        <p className="text-[9px] text-gray-400 mt-1 italic">Preview style (not yet submitted)</p>
+                      </div>
                     ) : (
-                      <p className="text-gray-400 italic text-[11px]">Ready to sign as: {offer.founderName}</p>
+                      <p className="text-gray-400 italic text-[11px]">Ready to countersign as: {offer.founderName}</p>
                     )}
                   </div>
                 )}
@@ -361,7 +309,6 @@ const AgreementDocument: React.FC<{
         <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50/50 shrink-0 rounded-b-3xl">
           {isFounderSigned ? (
             <div className="space-y-3 text-left">
-              {/* Terms & Conditions acknowledgment shown as checked/disabled when signed */}
               <div className="flex items-start gap-2.5 rounded-xl border-2 p-3 border-emerald-200 bg-emerald-50/30">
                 <input
                   type="checkbox"
@@ -374,7 +321,7 @@ const AgreementDocument: React.FC<{
                   htmlFor="agreementReadCheckSigned"
                   className="text-[11px] font-semibold leading-relaxed text-emerald-800 cursor-not-allowed"
                 >
-                  I have read, understood, and agree to all terms in this Investment Agreement (Ref: {commitmentId} · {AGREEMENT_VERSION}).
+                  I have read, understood, and agree to all terms in this Investment Agreement (Ref: {agreementId}).
                   This constitutes a legally binding digital signature.
                 </label>
               </div>
@@ -384,22 +331,11 @@ const AgreementDocument: React.FC<{
                   <CheckCircle2 size={18} className="shrink-0" />
                   <div>
                     <p className="font-bold text-sm">Agreement Fully Executed</p>
-                    {signedRecord?.founderSignedAt && <p className="text-[10px]">Signed on {fmtDate(signedRecord.founderSignedAt)} · {AGREEMENT_VERSION}</p>}
+                    {offer.founderSignedAt && <p className="text-[10px]">Countersigned on {fmtDate(offer.founderSignedAt)}</p>}
                   </div>
                 </div>
-                <button onClick={onClose} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-200">Close</button>
+                <button onClick={onClose} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-200 cursor-pointer">Close</button>
               </div>
-            </div>
-          ) : !isInvestorSigned ? (
-            <div className="flex items-center justify-between gap-3 flex-wrap text-left">
-              <div className="flex items-center gap-2 text-amber-700">
-                <AlertCircle size={18} className="shrink-0" />
-                <div>
-                  <p className="font-bold text-sm">Awaiting Investor Signature</p>
-                  <p className="text-[10px] text-gray-500">The investor must sign the agreement first before you can countersign.</p>
-                </div>
-              </div>
-              <button onClick={onClose} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl text-xs">Close</button>
             </div>
           ) : (
             <div className="space-y-3 text-left">
@@ -436,7 +372,7 @@ const AgreementDocument: React.FC<{
                   >
                     Investment Terms & Conditions Guidelines
                   </button>{" "}
-                  (Ref: {commitmentId} · {AGREEMENT_VERSION}). I understand this constitutes a legally binding digital countersignature.
+                  (Ref: {agreementId}). I understand this constitutes a legally binding digital signature.
                   
                   {!hasScrolledToBottom && (
                     <span className="block text-[10px] text-amber-600 font-bold mt-1 italic">
@@ -464,18 +400,18 @@ const AgreementDocument: React.FC<{
                   )}
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={onClose} className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl text-xs shadow-sm hover:bg-gray-50">Close</button>
+                  <button onClick={onClose} className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl text-xs shadow-sm hover:bg-gray-50 cursor-pointer">Close</button>
                   <button
                     disabled={!readConfirmed || actionLoading}
                     onClick={() => onSign(offer, signatureName, selectedFontIndex)}
-                    className={`px-6 py-2.5 font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 ${
+                    className={`px-6 py-2.5 font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer ${
                       readConfirmed && !actionLoading
                         ? 'bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] hover:from-[#4C1D95] hover:to-[#6D28D9] text-white'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
                     }`}
                   >
                     <Pen size={13} />
-                    {actionLoading ? 'Signing...' : 'Sign Agreement'}
+                    {actionLoading ? 'Signing...' : 'Countersign Agreement'}
                   </button>
                 </div>
               </div>
@@ -490,13 +426,13 @@ const AgreementDocument: React.FC<{
               <button
                 type="button"
                 onClick={() => setShowSignModal(false)}
-                className="absolute top-4 right-4 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500"
+                className="absolute top-4 right-4 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 cursor-pointer"
               >
                 <X size={16} />
               </button>
 
               <h3 className="text-lg font-black text-gray-900 mb-1 flex items-center gap-1.5">
-                <Pen size={18} className="text-[#5B21B6]" /> Customize Digital Signature
+                <Pen size={18} className="text-[#5B21B6]" /> Customize Founder Signature
               </h3>
               <p className="text-xs text-gray-500 mb-5">Type your name and select a style for your digital signature.</p>
 
@@ -560,7 +496,7 @@ const AgreementDocument: React.FC<{
                   <button
                     type="button"
                     onClick={() => setShowSignModal(false)}
-                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-colors"
+                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -568,7 +504,7 @@ const AgreementDocument: React.FC<{
                     type="button"
                     onClick={handleSaveSignature}
                     disabled={!signatureName.trim()}
-                    className={`flex-1 py-2.5 text-white font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-1.5 ${
+                    className={`flex-1 py-2.5 text-white font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       signatureName.trim()
                         ? 'bg-[#5B21B6] hover:bg-[#4C1D95]'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
@@ -589,7 +525,7 @@ const AgreementDocument: React.FC<{
               <button
                 type="button"
                 onClick={() => setShowTermsGuidelinesModal(false)}
-                className="absolute top-4 right-4 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 z-10"
+                className="absolute top-4 right-4 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 z-10 cursor-pointer"
               >
                 <X size={16} />
               </button>
@@ -617,17 +553,17 @@ const AgreementDocument: React.FC<{
 
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
                     <h4 className="font-bold text-gray-800 mb-1">2. Allocation and Share Issuance</h4>
-                    <p className="text-gray-500">The company commits to issue ordinary shares or execution of SAFE/Convertible note within 15 business days of the fund release from the platform's escrow account.</p>
+                    <p className="text-gray-505">The company commits to issue ordinary shares or execution of SAFE/Convertible note within 15 business days of the fund release from the platform's escrow account.</p>
                   </div>
 
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
                     <h4 className="font-bold text-gray-800 mb-1">3. Proper Use of Funds</h4>
-                    <p className="text-gray-500">The funding proceeds shall only be utilized for approved company operations and growth targets. Personal expense routing or direct distribution of proceeds to existing shareholders without investor approval is strictly barred.</p>
+                    <p className="text-gray-600">The funding proceeds shall only be utilized for approved company operations and growth targets. Personal expense routing or direct distribution of proceeds to existing shareholders without investor approval is strictly barred.</p>
                   </div>
 
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
                     <h4 className="font-bold text-gray-800 mb-1">4. Reporting & Auditing</h4>
-                    <p className="text-gray-500">The company agrees to submit quarterly operations reports and verified annual financial statements to the investor within the designated timelines.</p>
+                    <p className="text-gray-650">The company agrees to submit quarterly operations reports and verified annual financial statements to the investor within the designated timelines.</p>
                   </div>
                 </div>
               </div>
@@ -636,7 +572,7 @@ const AgreementDocument: React.FC<{
                 <button
                   type="button"
                   onClick={() => setShowTermsGuidelinesModal(false)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-200"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-200 cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -646,7 +582,7 @@ const AgreementDocument: React.FC<{
                     setTermsGuidelinesRead(true);
                     setShowTermsGuidelinesModal(false);
                   }}
-                  className="px-5 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold rounded-xl text-xs shadow-md"
+                  className="px-5 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold rounded-xl text-xs shadow-md cursor-pointer"
                 >
                   I Have Read & Accept the Terms
                 </button>
@@ -663,10 +599,9 @@ const AgreementDocument: React.FC<{
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const FounderInvestorAgreement: React.FC = () => {
   const { user } = useAuth();
-  const { offers, loading, refreshOffers } = useFunding();
+  const { offers, loading, refreshOffers, updateOfferDetails } = useFunding();
 
   const [selectedOffer, setSelectedOffer] = useState<FundingOffer | null>(null);
-  const [signedAgreements, setSignedAgreements] = useState<AgreementRecord[]>(getSignedAgreements);
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [startupsList, setStartupsList] = useState<any[]>([]);
@@ -691,7 +626,6 @@ const FounderInvestorAgreement: React.FC = () => {
   // Find all commitments for this founder's startups
   const founderOffers = useMemo(() => {
     if (!user) return [];
-    // Get founder's startups
     const founderStartupNames = startupsList
       .filter((s: any) => String(s.founderId || s.userId || '') === String(user.id || ''))
       .map((s: any) => (s.startupName || s.name || '').toLowerCase());
@@ -706,52 +640,42 @@ const FounderInvestorAgreement: React.FC = () => {
     );
   }, [offers, user, startupsList]);
 
-  const isOfferSigned = (offerId: string) => {
-    const rec = signedAgreements.find(r => r.offerId === offerId);
-    return !!rec?.founderSignedAt;
-  };
-
-  const getSignedRecord = (offerId: string) =>
-    signedAgreements.find(r => r.offerId === offerId);
+  // Show accepted, active agreements
+  const agreementOffers = useMemo(() => {
+    return founderOffers.filter(o => ['accepted', 'payment_pending', 'payment_submitted', 'under_verification', 'completed', 'funded', 'failed'].includes(o.status));
+  }, [founderOffers]);
 
   const metrics = useMemo(() => {
-    const investorSignedOffers = founderOffers.filter(o => {
-      const rec = getSignedRecord(o.id || o._id || '');
-      return !!rec?.signedAt;
-    });
-
-    return {
-      total: founderOffers.length,
-      awaitingInvestor: founderOffers.length - investorSignedOffers.length,
-      awaitingFounder: investorSignedOffers.filter(o => !isOfferSigned(o.id || o._id || '')).length,
-      fullySigned: founderOffers.filter(o => isOfferSigned(o.id || o._id || '')).length,
-    };
-  }, [founderOffers, signedAgreements]);
+    const total = agreementOffers.length;
+    const awaitingInvestor = agreementOffers.filter(o => !o.investorSignedAt).length;
+    const awaitingFounder = agreementOffers.filter(o => !!o.investorSignedAt && !o.founderSignedAt).length;
+    const fullySigned = agreementOffers.filter(o => !!o.investorSignedAt && !!o.founderSignedAt).length;
+    return { total, awaitingInvestor, awaitingFounder, fullySigned };
+  }, [agreementOffers]);
 
   const handleCountersign = async (offer: FundingOffer, sigName: string, fontIdx: number) => {
     const offerId = offer.id || offer._id || '';
     setActionLoading(true);
     try {
-      const existing = getSignedRecord(offerId);
-      if (!existing) {
-        throw new Error("Investor has not signed this agreement yet.");
-      }
-
-      const updated: AgreementRecord = {
-        ...existing,
+      const isFullySignedNow = !!offer.investorSignedAt;
+      const updates = {
         founderSignedAt: new Date().toISOString(),
         founderSignatureName: sigName,
         founderSignatureFontIndex: fontIdx,
+        agreementStatus: isFullySignedNow ? 'Fully Signed' : 'Pending Investor Signature',
       };
+      
+      if (isFullySignedNow) {
+        (updates as any).status = 'payment_pending';
+      }
 
-      saveSignedAgreement(updated);
-      setSignedAgreements(getSignedAgreements());
+      await updateOfferDetails(offerId, updates);
 
       // Notify Investor
       await addNotification({
         userId: offer.investorId,
         title: '🤝 Investment Agreement Executed',
-        message: `${offer.founderName} countersigned the Investment Agreement for ${offer.startupName}. The agreement is now fully executed. Please proceed with UTR submission.`,
+        message: `${offer.founderName} countersigned the Investment Agreement for ${offer.startupName}. The agreement is now fully executed. Please proceed with payment release.`,
         type: 'funding',
         actionUrl: '/dashboard/investor/transactions',
         isRead: false,
@@ -762,14 +686,14 @@ const FounderInvestorAgreement: React.FC = () => {
       await addNotification({
         userId: 'admin',
         title: '🤝 Investment Agreement Executed',
-        message: `Both parties signed the Investment Agreement for ${offer.startupName} (₹${offer.offerAmount.toLocaleString('en-IN')}). Ref: ${updated.commitmentId}.`,
+        message: `Both parties signed the Investment Agreement for ${offer.startupName} (₹${offer.offerAmount.toLocaleString('en-IN')}). Agreement Ref: ${offer.agreementId || `AGR-2026-${offerId.slice(-4).toUpperCase()}`}.`,
         type: 'funding',
         actionUrl: '/dashboard/admin/investor-funding',
         isRead: false,
         createdAt: new Date().toISOString(),
       });
 
-      showToast(`Agreement executed successfully! ${offer.investorName} and Admin have been notified.`);
+      showToast(isFullySignedNow ? `Agreement executed successfully! ${offer.investorName} can now release funds.` : 'Agreement countersigned successfully!');
       setSelectedOffer(null);
       await refreshOffers();
     } catch (err: any) {
@@ -781,17 +705,16 @@ const FounderInvestorAgreement: React.FC = () => {
 
   const handleUpdateSignature = async (offer: FundingOffer, sigName: string, fontIdx: number) => {
     const offerId = offer.id || offer._id || '';
-    const existing = getSignedRecord(offerId);
-    if (!existing) return;
-
-    const updated: AgreementRecord = {
-      ...existing,
-      founderSignatureName: sigName,
-      founderSignatureFontIndex: fontIdx,
-    };
-    saveSignedAgreement(updated);
-    setSignedAgreements(getSignedAgreements());
-    showToast('Signature style modified successfully.');
+    try {
+      await updateOfferDetails(offerId, {
+        founderSignatureName: sigName,
+        founderSignatureFontIndex: fontIdx,
+      });
+      showToast('Signature style modified successfully.');
+      await refreshOffers();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update signature style.', 'error');
+    }
   };
 
   const fmtDate = (d: string) => {
@@ -799,31 +722,37 @@ const FounderInvestorAgreement: React.FC = () => {
     catch { return d; }
   };
 
-  const getStatusLabel = (offerId: string) => {
-    const rec = getSignedRecord(offerId);
-    if (!rec?.signedAt) {
+  const getStatusBadge = (o: FundingOffer) => {
+    if (o.agreementStatus === 'Fully Signed') {
       return (
-        <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
-          <Clock size={9} /> Awaiting Investor Sign
+        <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-full text-[10px] font-extrabold flex items-center gap-1 w-fit">
+          <CheckCircle2 size={9} className="text-emerald-700" /> Fully Signed
         </span>
       );
     }
-    if (!rec?.founderSignedAt) {
+    if (o.founderSignedAt) {
       return (
-        <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit animate-pulse">
-          <Clock size={9} /> Awaiting Countersign
+        <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
+          <CheckCircle2 size={9} /> Awaiting Investor
+        </span>
+      );
+    }
+    if (o.investorSignedAt) {
+      return (
+        <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit animate-pulse">
+          <Clock size={9} /> Awaiting Your Countersign
         </span>
       );
     }
     return (
-      <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
-        <CheckCircle2 size={9} /> Fully Executed
+      <span className="px-2.5 py-0.5 bg-gray-100 text-gray-500 border border-gray-200 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
+        <Clock size={9} /> Awaiting Investor Signature
       </span>
     );
   };
 
   return (
-    <div className="animate-fade-in-up pb-12 font-sans">
+    <div className="animate-fade-in-up pb-12 font-sans text-left">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Dancing+Script:wght@750&family=Great+Vibes&family=Sacramento&display=swap');
       `}</style>
@@ -844,84 +773,101 @@ const FounderInvestorAgreement: React.FC = () => {
           <ScrollText className="text-[#5B21B6]" size={28} /> Investment Agreements
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Review and digitally countersign agreements signed by your investors to execute deals.
+          Review and digitally countersign agreements from your active investors. Signing notifies the investor and platform admin.
         </p>
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-4 gap-4 mb-8 text-left">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Total Agreements</p>
           <p className="text-2xl font-extrabold text-gray-900 mt-1">{metrics.total}</p>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <p className="text-[10px] font-black text-amber-500 uppercase tracking-wider">Awaiting Investor</p>
-          <p className="text-2xl font-extrabold text-amber-600 mt-1">{metrics.awaitingInvestor}</p>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Awaiting Investor</p>
+          <p className="text-2xl font-extrabold text-gray-500 mt-1">{metrics.awaitingInvestor}</p>
         </div>
-        <div className="bg-white rounded-2xl border border-gray-150 shadow-sm p-5">
-          <p className="text-[10px] font-black text-purple-500 uppercase tracking-wider">Awaiting Your Sign</p>
-          <p className="text-2xl font-extrabold text-purple-600 mt-1">{metrics.awaitingFounder}</p>
+        <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-4">
+          <p className="text-[10px] font-black text-amber-500 uppercase tracking-wider">Awaiting Your Sign</p>
+          <p className="text-2xl font-extrabold text-amber-600 mt-1 animate-pulse">{metrics.awaitingFounder}</p>
         </div>
-        <div className="bg-gradient-to-br from-emerald-500 to-teal-650 rounded-2xl shadow-sm p-5 text-white">
-          <p className="text-[10px] font-black text-emerald-100 uppercase tracking-wider font-bold">Fully Signed</p>
+        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-sm p-4 text-white">
+          <p className="text-[10px] font-black text-emerald-100 uppercase tracking-wider">Fully Executed</p>
           <p className="text-2xl font-extrabold mt-1">{metrics.fullySigned}</p>
         </div>
       </div>
 
-      {/* List */}
+      {/* How It Works */}
+      <div className="mb-8 bg-gradient-to-r from-[#5B21B6] to-[#4C1D95] rounded-3xl p-5 sm:p-6 text-white shadow-xl">
+        <h3 className="text-xs font-black text-amber-300 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+          <ShieldCheck size={14} /> Agreement Acknowledgment Guidelines
+        </h3>
+        <p className="text-xs text-purple-100 leading-relaxed max-w-2xl mb-4">
+          Investment contracts are legally binding. Before countersigning, founders must verify that the term sheet parameters match internal capitalization tables and board-approved resolutions.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center text-[10px] font-bold">
+          {[
+            { step: '1', title: 'Investor Signs\nAgreement First', Icon: Pen },
+            { step: '2', title: 'Open & Audit\nDocument', Icon: ScrollText },
+            { step: '3', title: 'Countersign\nDigitally', Icon: Pen },
+            { step: '4', title: 'Payment Release\nUnlocked', Icon: Unlock },
+          ].map(({ step, title, Icon }) => (
+            <div key={step} className="bg-white/10 p-3 rounded-xl border border-white/15 flex flex-col items-center">
+              <span className="w-6 h-6 rounded-full bg-amber-400 text-purple-950 font-black text-[10px] flex items-center justify-center mb-1.5">{step}</span>
+              <Icon size={14} className="text-purple-200 mb-1" />
+              <span className="text-purple-100 leading-tight whitespace-pre-line">{title}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Table */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin w-8 h-8 border-4 border-[#5B21B6] border-t-transparent rounded-full" />
         </div>
-      ) : founderOffers.length === 0 ? (
+      ) : agreementOffers.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-14 text-center">
           <ScrollText size={44} className="mx-auto text-gray-300 mb-3" />
-          <h3 className="text-base font-bold text-gray-800">No Investment Agreements</h3>
+          <h3 className="text-base font-bold text-gray-800">No Agreements Issued Yet</h3>
           <p className="text-xs text-gray-500 mt-1 max-w-xs mx-auto">
-            Agreements appear here once you receive and accept a funding commitment from an investor.
+            Investment agreements will display here once you accept a funding commitment offer.
           </p>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-gray-100 flex items-center justify-between">
             <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-              <FileText size={16} className="text-[#5B21B6]" /> Investment Agreement Documents
+              <FileText size={16} className="text-[#5B21B6]" /> Startup Investment Agreements
             </h3>
             <span className="px-3 py-1 bg-purple-100 text-[#5B21B6] rounded-lg text-xs font-bold">
-              {founderOffers.length} Agreement(s)
+              {agreementOffers.length} Agreement(s)
             </span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left whitespace-nowrap text-xs font-medium">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100 text-gray-400 font-bold uppercase text-[10px] tracking-wider">
-                  <th className="px-5 py-3.5">Ref</th>
+                  <th className="px-5 py-3.5">Agreement Ref</th>
                   <th className="px-5 py-3.5">Startup</th>
                   <th className="px-5 py-3.5">Investor</th>
                   <th className="px-5 py-3.5">Amount</th>
                   <th className="px-5 py-3.5">Instrument</th>
-                  <th className="px-5 py-3.5">Commitment Date</th>
-                  <th className="px-5 py-3.5">Agreement Status</th>
+                  <th className="px-5 py-3.5">Date</th>
+                  <th className="px-5 py-3.5">Execution Status</th>
                   <th className="px-5 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 text-gray-700">
-                {founderOffers.map((o) => {
+                {agreementOffers.map((o) => {
                   const offerId = o.id || o._id || '';
-                  const rec = getSignedRecord(offerId);
-                  const isInvSigned = !!rec?.signedAt;
-                  const isFndSigned = !!rec?.founderSignedAt;
-                  const commitmentId = o.commitmentId || `FC-${offerId.slice(-6).toUpperCase()}`;
+                  const hasSigned = !!o.founderSignedAt;
+                  const isInvSigned = !!o.investorSignedAt;
+                  const agreementId = o.agreementId || `AGR-2026-${offerId.slice(-4).toUpperCase()}`;
 
                   return (
-                    <tr key={offerId} className={`hover:bg-gray-50/80 transition-colors ${
-                      isFndSigned 
-                        ? 'border-l-4 border-l-emerald-450' 
-                        : isInvSigned 
-                          ? 'border-l-4 border-l-purple-400' 
-                          : 'border-l-4 border-l-amber-300'
-                    }`}>
-                      <td className="px-5 py-4 font-mono font-bold text-[#5B21B6] text-[11px]">{commitmentId}</td>
+                    <tr key={offerId} className={`hover:bg-gray-50/80 transition-colors ${hasSigned ? 'border-l-4 border-l-emerald-400' : isInvSigned ? 'border-l-4 border-l-amber-300' : 'border-l-4 border-l-gray-200'}`}>
+                      <td className="px-5 py-4 font-mono font-bold text-[#5B21B6] text-[11px]">{agreementId}</td>
                       <td className="px-5 py-4 font-bold text-gray-900">{o.startupName}</td>
                       <td className="px-5 py-4">
                         <p className="font-semibold text-gray-700">{o.investorName}</p>
@@ -935,24 +881,29 @@ const FounderInvestorAgreement: React.FC = () => {
                       </td>
                       <td className="px-5 py-4 text-gray-500">{fmtDate(o.createdAt)}</td>
                       <td className="px-5 py-4">
-                        {getStatusLabel(offerId)}
+                        <div className="flex flex-col gap-0.5">
+                          {getStatusBadge(o)}
+                          {hasSigned && o.founderSignedAt && (
+                            <p className="text-[9px] text-gray-400 mt-0.5">Countersigned: {fmtDate(o.founderSignedAt)}</p>
+                          )}
+                        </div>
                       </td>
                       <td className="px-5 py-4 text-right">
                         <button
                           onClick={() => setSelectedOffer(o)}
-                          className={`px-3 py-1.5 font-bold rounded-lg text-[10px] transition-colors flex items-center gap-1 ml-auto ${
-                            isFndSigned
+                          className={`px-3 py-1.5 font-bold rounded-lg text-[10px] transition-colors flex items-center gap-1 ml-auto cursor-pointer ${
+                            hasSigned
                               ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200'
                               : isInvSigned
                                 ? 'bg-[#5B21B6] hover:bg-[#4C1D95] text-white animate-pulse'
-                                : 'bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-600'
+                                : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
                           }`}
                         >
-                          {isFndSigned 
-                            ? <><CheckCircle2 size={10} /> View Executed</>
-                            : isInvSigned 
-                              ? <><Pen size={10} /> Review & Countersign</>
-                              : <><FileText size={10} /> View Document</>
+                          {hasSigned
+                            ? <><CheckCircle2 size={10} /> View Signed</>
+                            : isInvSigned
+                              ? <><Pen size={10} /> Countersign</>
+                              : <><FileText size={10} /> Review Agreement</>
                           }
                         </button>
                       </td>
@@ -972,7 +923,6 @@ const FounderInvestorAgreement: React.FC = () => {
           onClose={() => setSelectedOffer(null)}
           onSign={handleCountersign}
           onUpdateSignature={handleUpdateSignature}
-          signedRecord={getSignedRecord(selectedOffer.id || selectedOffer._id || '')}
           actionLoading={actionLoading}
         />
       )}
