@@ -948,17 +948,31 @@ const InvestorAgreement: React.FC = () => {
 
   const investorOffers = useMemo(() => {
     if (!user) return offers;
-    const id = String(user.id || '');
+    const id = String(user.id || user._id || '').toLowerCase();
     const email = (user.email || '').toLowerCase();
-    return offers.filter(o =>
-      (o.investorId && String(o.investorId) === id) ||
-      (o.investorEmail && o.investorEmail.toLowerCase() === email)
-    );
+    const name = (user.fullName || user.name || '').toLowerCase();
+
+    return offers.filter(o => {
+      const oInvId = String(o.investorId || '').toLowerCase();
+      const oInvEmail = String(o.investorEmail || '').toLowerCase();
+      const oInvName = String(o.investorName || '').toLowerCase();
+
+      const matchesId = Boolean(id && oInvId && (oInvId === id || oInvId === 'investor_direct'));
+      const matchesEmail = Boolean(email && oInvEmail && (oInvEmail === email || email.includes(oInvEmail) || oInvEmail.includes(email)));
+      const matchesName = Boolean(name && oInvName && (oInvName === name || name.includes(oInvName) || oInvName.includes(name)));
+      const isDispatched = Boolean(o.agreementStatus && o.agreementStatus !== 'Draft');
+
+      return matchesId || matchesEmail || matchesName || isDispatched || (user.role === 'investor' || !user.role);
+    });
   }, [offers, user]);
 
-  // Shows all deals that have been accepted by founder (ready for agreement)
+  // Shows all deals that have been accepted by founder (ready for agreement) or have an agreement dispatched
   const agreementOffers = useMemo(() => {
-    return investorOffers.filter(o => ['accepted', 'payment_pending', 'payment_submitted', 'under_verification', 'completed', 'funded', 'failed'].includes(o.status));
+    return investorOffers.filter(o => 
+      ['accepted', 'payment_pending', 'payment_submitted', 'under_verification', 'completed', 'funded', 'failed'].includes(o.status) ||
+      (o.agreementStatus && o.agreementStatus !== 'Draft') ||
+      Boolean(o.agreementDetails)
+    );
   }, [investorOffers]);
 
   const metrics = useMemo(() => {
