@@ -3,7 +3,7 @@ import {
   IndianRupee, ArrowUpRight, Clock, Wallet, CheckCircle2, 
   AlertCircle, X, ShieldCheck, Eye, CreditCard, Landmark, 
   Send, Calendar, FileText, ChevronRight, Upload, Info, 
-  FileCheck, FileQuestion
+  FileCheck, FileQuestion, BookOpen, ExternalLink
 } from 'lucide-react';
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer } from '../../../context/FundingContext';
@@ -51,6 +51,16 @@ const InvestorTransactions: React.FC = () => {
   const [commitmentNotes, setCommitmentNotes] = useState('');
   const [agreementAcknowledged, setAgreementAcknowledged] = useState(false);
   const [showSummaryStep, setShowSummaryStep] = useState(false);
+
+  // Funding Guidelines state
+  const [showGuidelinesModal, setShowGuidelinesModal] = useState(false);
+  const [guidelinesRead, setGuidelinesRead] = useState(false);
+  const [guidelinesAudit, setGuidelinesAudit] = useState<{
+    reviewedAt: string;
+    version: string;
+    investorId: string;
+    status: string;
+  } | null>(null);
 
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
@@ -290,6 +300,10 @@ const InvestorTransactions: React.FC = () => {
       showToast('Please enter a valid investment amount.', 'error');
       return;
     }
+    if (!guidelinesRead) {
+      showToast('Please review and acknowledge the Funding Guidelines before continuing.', 'error');
+      return;
+    }
     if (!agreementAcknowledged) {
       showToast('Please acknowledge the agreement terms.', 'error');
       return;
@@ -328,6 +342,8 @@ const InvestorTransactions: React.FC = () => {
         expectedInvestmentDate: expectedInvestmentDate,
         commitmentNotes: commitmentNotes,
         agreementAcknowledged: agreementAcknowledged,
+        guidelinesVersion: guidelinesAudit?.version || 'v1.0',
+        guidelinesReviewedAt: guidelinesAudit?.reviewedAt || new Date().toISOString(),
         agreementStatus: 'Drafted'
       };
 
@@ -343,6 +359,8 @@ const InvestorTransactions: React.FC = () => {
       setExpectedInvestmentDate('');
       setCommitmentNotes('');
       setAgreementAcknowledged(false);
+      setGuidelinesRead(false);
+      setGuidelinesAudit(null);
       setShowSummaryStep(false);
       setShowCreateCommitmentModal(false);
       refreshOffers();
@@ -1436,19 +1454,77 @@ const InvestorTransactions: React.FC = () => {
                     />
                   </div>
 
-                  {/* Checkbox */}
-                  <div className="flex items-start gap-2.5 pt-2">
-                    <input
-                      type="checkbox"
-                      required
-                      id="agreementCheckbox"
-                      checked={agreementAcknowledged}
-                      onChange={(e) => setAgreementAcknowledged(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 rounded text-[#5B21B6] focus:ring-[#5B21B6] border-gray-300"
-                    />
-                    <label htmlFor="agreementCheckbox" className="text-gray-500 font-medium">
-                      I acknowledge the term sheet guidelines and verify that the committed amount matches our allocation framework. *
-                    </label>
+                  {/* Funding Guidelines Step */}
+                  <div className={`rounded-2xl border-2 p-4 transition-all ${
+                    guidelinesRead
+                      ? 'border-emerald-200 bg-emerald-50/50'
+                      : 'border-amber-200 bg-amber-50/40'
+                  }`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5">
+                        {guidelinesRead
+                          ? <CheckCircle2 size={18} className="text-emerald-600 mt-0.5 shrink-0" />
+                          : <BookOpen size={18} className="text-amber-600 mt-0.5 shrink-0" />
+                        }
+                        <div>
+                          <p className={`font-bold text-xs ${
+                            guidelinesRead ? 'text-emerald-800' : 'text-amber-800'
+                          }`}>
+                            {guidelinesRead ? '✓ Funding Guidelines Reviewed' : 'Funding Guidelines — Review Required'}
+                          </p>
+                          {guidelinesRead && guidelinesAudit && (
+                            <p className="text-[10px] text-emerald-600 font-medium mt-0.5">
+                              {guidelinesAudit.version} · Acknowledged {new Date(guidelinesAudit.reviewedAt).toLocaleString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          )}
+                          {!guidelinesRead && (
+                            <p className="text-[10px] text-amber-700 mt-0.5">You must read and confirm the investment framework before proceeding.</p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowGuidelinesModal(true)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-[10px] transition-all shrink-0 ${
+                          guidelinesRead
+                            ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border border-emerald-200'
+                            : 'bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 animate-pulse'
+                        }`}
+                      >
+                        <ExternalLink size={11} />
+                        {guidelinesRead ? 'Re-read Guidelines' : 'View Guidelines'}
+                      </button>
+                    </div>
+
+                    {/* Acknowledgement Checkbox — only enabled after guidelines read */}
+                    <div className={`mt-3 pt-3 border-t ${
+                      guidelinesRead ? 'border-emerald-200' : 'border-amber-200'
+                    } flex items-start gap-2.5`}>
+                      <input
+                        type="checkbox"
+                        required
+                        id="agreementCheckbox"
+                        disabled={!guidelinesRead}
+                        checked={agreementAcknowledged}
+                        onChange={(e) => setAgreementAcknowledged(e.target.checked)}
+                        className={`mt-0.5 w-4 h-4 rounded border-gray-300 transition-all ${
+                          guidelinesRead
+                            ? 'text-[#5B21B6] focus:ring-[#5B21B6] cursor-pointer'
+                            : 'opacity-40 cursor-not-allowed'
+                        }`}
+                      />
+                      <label
+                        htmlFor="agreementCheckbox"
+                        className={`font-medium text-[11px] leading-relaxed transition-all ${
+                          guidelinesRead ? 'text-gray-700 cursor-pointer' : 'text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        I acknowledge the term sheet guidelines and verify that the committed amount matches our allocation framework. *
+                        {!guidelinesRead && (
+                          <span className="block text-[10px] text-amber-600 font-bold mt-0.5 italic">← Read the guidelines above to unlock this checkbox</span>
+                        )}
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -1524,6 +1600,160 @@ const InvestorTransactions: React.FC = () => {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+      {/* ─── FUNDING GUIDELINES MODAL ─── */}
+      {showGuidelinesModal && (
+        <div className="fixed inset-0 z-[160] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl relative my-8 animate-in zoom-in-95 duration-200 flex flex-col text-left font-sans max-h-[90vh]">
+            <button
+              onClick={() => setShowGuidelinesModal(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors z-10"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Header */}
+            <div className="p-6 sm:p-8 pb-4 border-b border-gray-100 flex items-start gap-3 shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] flex items-center justify-center shrink-0">
+                <BookOpen size={18} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Funding Guidelines & Investment Framework</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Version v1.0 · Please read carefully before committing funds</p>
+              </div>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="p-6 sm:p-8 py-5 overflow-y-auto flex-1 space-y-5 text-xs text-gray-700">
+
+              {/* Section 1 */}
+              <div className="bg-purple-50/60 border border-purple-100 rounded-2xl p-4 space-y-2">
+                <h4 className="font-extrabold text-[#5B21B6] uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                  <IndianRupee size={12} /> Investment Amount & Allocation Rules
+                </h4>
+                <ul className="space-y-1.5 list-disc list-inside text-gray-600 leading-relaxed">
+                  <li>Minimum investment per commitment: <strong className="text-gray-900">₹1,00,000</strong> (₹1 Lakh)</li>
+                  <li>Maximum single-deal investment: <strong className="text-gray-900">₹10,00,00,000</strong> (₹10 Crore)</li>
+                  <li>Total platform investment capacity per investor: <strong className="text-gray-900">₹10 Crore</strong> per cycle</li>
+                  <li>Investment amounts must be committed in full and cannot be partially fulfilled</li>
+                  <li>Multi-tranche funding structures are supported only with explicit founder agreement</li>
+                </ul>
+              </div>
+
+              {/* Section 2 */}
+              <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 space-y-2">
+                <h4 className="font-extrabold text-blue-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                  <FileText size={12} /> Funding Commitment Rules & Term Sheet
+                </h4>
+                <ul className="space-y-1.5 list-disc list-inside text-gray-600 leading-relaxed">
+                  <li>A Funding Commitment is a formal binding declaration of intent to invest</li>
+                  <li>All commitments must specify: Investment Type (SAFE/Equity/Convertible Note), Funding Round, and Expected Investment Date</li>
+                  <li>Once the founder accepts a commitment, the investor is obligated to proceed to the payment stage</li>
+                  <li>Term sheet parameters (valuation cap, discount rate, equity %) are fixed at commitment creation and cannot be altered post-acceptance</li>
+                  <li>Both parties must digitally sign the Investment Agreement before funds can be released</li>
+                </ul>
+              </div>
+
+              {/* Section 3 */}
+              <div className="bg-emerald-50/60 border border-emerald-100 rounded-2xl p-4 space-y-2">
+                <h4 className="font-extrabold text-emerald-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                  <ShieldCheck size={12} /> Payment Requirements & Transaction Verification
+                </h4>
+                <ul className="space-y-1.5 list-disc list-inside text-gray-600 leading-relaxed">
+                  <li>Payments must be made to the platform's designated escrow account within <strong className="text-gray-900">30 days</strong> of agreement signing</li>
+                  <li>Accepted payment methods: UPI (Paytm/Google Pay) or Manual Bank Transfer (NEFT/RTGS/IMPS)</li>
+                  <li>Investors must provide the exact UTR / Reference Number of the transaction</li>
+                  <li>For Bank Transfer/Manual payments, a clear payment receipt or proof must be uploaded</li>
+                  <li>Payment amounts must exactly match the committed investment amount — no partial transfers accepted</li>
+                </ul>
+              </div>
+
+              {/* Section 4 */}
+              <div className="bg-amber-50/60 border border-amber-100 rounded-2xl p-4 space-y-2">
+                <h4 className="font-extrabold text-amber-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                  <Eye size={12} /> Due Diligence & Agreement Requirements
+                </h4>
+                <ul className="space-y-1.5 list-disc list-inside text-gray-600 leading-relaxed">
+                  <li>Investors are responsible for conducting their own due diligence before committing funds</li>
+                  <li>The platform provides startup data and AI analysis for informational purposes only</li>
+                  <li>Investment Agreement documents must be reviewed, negotiated, and signed via the platform's digital signing workflow</li>
+                  <li>KYC verification is mandatory before any investment commitment can be activated</li>
+                  <li>Investors may request additional information from founders through the platform's messaging system</li>
+                </ul>
+              </div>
+
+              {/* Section 5 */}
+              <div className="bg-rose-50/60 border border-rose-100 rounded-2xl p-4 space-y-2">
+                <h4 className="font-extrabold text-rose-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                  <AlertCircle size={12} /> Refund, Cancellation & Investor Responsibilities
+                </h4>
+                <ul className="space-y-1.5 list-disc list-inside text-gray-600 leading-relaxed">
+                  <li>Commitments may be cancelled <strong className="text-gray-900">before the founder accepts</strong>. Once accepted, cancellation requires mutual agreement</li>
+                  <li>Refunds are processed only in cases of verified platform errors or documented founder misrepresentation</li>
+                  <li>In case of failed payment verification, investors have <strong className="text-gray-900">7 days</strong> to resubmit correct payment proof</li>
+                  <li>Investors must maintain accurate contact and banking information on their platform profile</li>
+                  <li>Misrepresentation or fraudulent payment submissions will result in immediate account suspension</li>
+                </ul>
+              </div>
+
+              {/* Section 6 */}
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-2">
+                <h4 className="font-extrabold text-gray-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                  <CheckCircle2 size={12} /> Admin Verification & Funding Completion
+                </h4>
+                <ul className="space-y-1.5 list-disc list-inside text-gray-600 leading-relaxed">
+                  <li>All payment submissions undergo mandatory admin verification (UTR validation, escrow reconciliation)</li>
+                  <li>Verification typically completes within <strong className="text-gray-900">2–5 business days</strong></li>
+                  <li>Investors will be notified via the platform dashboard and email upon successful verification</li>
+                  <li>Funding is deemed <strong className="text-gray-900">Complete</strong> only after escrow reconciliation and admin confirmation</li>
+                  <li>Post-funding, equity or SAFE agreement details are digitally recorded in both parties' dashboards</li>
+                </ul>
+              </div>
+
+              {/* Footer notice */}
+              <div className="bg-[#5B21B6]/5 border border-[#5B21B6]/20 rounded-2xl p-4 flex items-start gap-3">
+                <Info size={16} className="text-[#5B21B6] shrink-0 mt-0.5" />
+                <p className="text-gray-600 leading-relaxed">
+                  <strong className="text-gray-900">Please read and understand the above guidelines before continuing.</strong> By clicking "I Have Read & Understand" you confirm that you have read, understood, and agree to comply with all guidelines stated in this Investment Framework (v1.0). This confirmation is recorded as part of the deal audit trail.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer actions */}
+            <div className="p-6 sm:p-8 pt-4 border-t border-gray-100 bg-gray-50/50 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-b-3xl">
+              <div className="text-[10px] text-gray-400 font-medium">
+                Guidelines Version: <strong className="text-gray-600">v1.0</strong> · Effective: Aug 2026
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowGuidelinesModal(false)}
+                  className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-colors shadow-sm hover:bg-gray-50"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const auditRecord = {
+                      reviewedAt: new Date().toISOString(),
+                      version: 'v1.0',
+                      investorId: String(user?.id || 'investor'),
+                      status: 'Acknowledged',
+                    };
+                    setGuidelinesAudit(auditRecord);
+                    setGuidelinesRead(true);
+                    setShowGuidelinesModal(false);
+                    showToast('Funding Guidelines acknowledged successfully!');
+                  }}
+                  className="px-6 py-2.5 bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] hover:from-[#4C1D95] hover:to-[#6D28D9] text-white font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center gap-2"
+                >
+                  <CheckCircle2 size={14} /> I Have Read & Understand
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
