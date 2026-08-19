@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, MessageCircle, FileCheck, X, AlertCircle } from 'lucide-react';
+import { Eye, MessageCircle, FileCheck, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer } from '../../../context/FundingContext';
@@ -149,6 +149,70 @@ const FounderFunding: React.FC = () => {
                     <div className="mb-6 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
                       <p className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-1">Message from Investor</p>
                       <p className="text-sm text-gray-700 italic">"{offer.investorMessage}"</p>
+                    </div>
+                  )}
+
+                  {['accepted', 'payment_submitted', 'under_verification', 'funded', 'completed', 'failed', 'rejected'].includes(offer.status) && (
+                    <div className="mb-6 border border-purple-100 bg-purple-50/20 p-5 rounded-xl space-y-3 text-left">
+                      <h4 className="font-bold text-[#5B21B6] uppercase text-[10px] tracking-wider">Investment Deal Progress Checklist</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs font-semibold text-gray-700">
+                        <div>
+                          <p className="text-gray-400 font-bold block uppercase text-[9px] mb-1">Investor Name</p>
+                          <p className="text-gray-900 font-extrabold">{offer.investorName}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 font-bold block uppercase text-[9px] mb-1">Committed Amount</p>
+                          <p className="text-emerald-700 font-extrabold">₹{offer.offerAmount.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 font-bold block uppercase text-[9px] mb-1">Investment Type</p>
+                          <p className="text-gray-900 font-bold">{offer.instrument}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 font-bold block uppercase text-[9px] mb-1">Agreement Status</p>
+                          <p className="text-gray-800 font-bold">{offer.agreementStatus || 'Completed'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 font-bold block uppercase text-[9px] mb-1">Transaction Status</p>
+                          <p className="text-gray-800 font-bold">
+                            {offer.status === 'funded' || offer.status === 'completed' ? 'Verified & Completed' :
+                             offer.status === 'under_verification' || offer.status === 'payment_submitted' ? 'Under Verification' :
+                             offer.status === 'failed' ? 'Failed / Refunded' :
+                             offer.status === 'rejected' ? 'Rejected' : 'Payment Pending'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 font-bold block uppercase text-[9px] mb-1">Funding Status</p>
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                            offer.status === 'funded' || offer.status === 'completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                            offer.status === 'under_verification' || offer.status === 'payment_submitted' ? 'bg-purple-50 text-purple-700 border border-purple-100' :
+                            offer.status === 'rejected' ? 'bg-red-50 text-red-700 border border-red-100' :
+                            'bg-amber-50 text-amber-700 border border-amber-100'
+                          }`}>
+                            {offer.status === 'funded' || offer.status === 'completed' ? 'Completed' :
+                             offer.status === 'under_verification' || offer.status === 'payment_submitted' ? 'Under Verification' :
+                             offer.status === 'rejected' ? 'Rejected' : 'Funding Pending'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Read-only timeline checklist */}
+                      <div className="border-t border-purple-100/60 pt-3 flex flex-wrap items-center gap-4 text-[10px] text-gray-500 font-bold">
+                        <span className="text-purple-700 text-[9px] uppercase tracking-wider block">Timeline:</span>
+                        <span className="flex items-center gap-1 text-emerald-600"><CheckCircle2 size={12} /> Deal Accepted</span>
+                        <span className="text-gray-300">→</span>
+                        <span className={`flex items-center gap-1 ${offer.agreementStatus === 'Completed' ? 'text-emerald-600' : 'text-gray-400'}`}>
+                          {offer.agreementStatus === 'Completed' && <CheckCircle2 size={12} />} Agreement Signed
+                        </span>
+                        <span className="text-gray-300">→</span>
+                        <span className={`flex items-center gap-1 ${['payment_submitted', 'under_verification', 'funded', 'completed'].includes(offer.status) ? 'text-emerald-600' : 'text-gray-400'}`}>
+                          {['payment_submitted', 'under_verification', 'funded', 'completed'].includes(offer.status) && <CheckCircle2 size={12} />} Payment Submitted
+                        </span>
+                        <span className="text-gray-300">→</span>
+                        <span className={`flex items-center gap-1 ${['funded', 'completed'].includes(offer.status) ? 'text-emerald-600' : 'text-gray-400'}`}>
+                          {['funded', 'completed'].includes(offer.status) && <CheckCircle2 size={12} />} Admin Verification & Funding Completed
+                        </span>
+                      </div>
                     </div>
                   )}
 

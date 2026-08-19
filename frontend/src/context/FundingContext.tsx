@@ -9,6 +9,7 @@ export interface FundingOffer {
   startupName: string;
   founderId: string;
   founderName: string;
+  founderEmail?: string;
   investorId: string;
   investorName: string;
   investorCompany: string;
@@ -29,7 +30,16 @@ export interface FundingOffer {
     message: string;
   };
   adminNote: string;
-  status: 'offer_received' | 'accepted' | 'counter_offer' | 'rejected' | 'funded' | 'payment_pending' | 'payment_submitted' | 'under_verification' | 'completed' | 'failed';
+  status: 'offer_received' | 'accepted' | 'counter_offer' | 'rejected' | 'funded' | 'funding_pending' | 'payment_pending' | 'payment_submitted' | 'under_verification' | 'completed' | 'failed';
+  agreementStatus?: string;
+  dueDiligenceStatus?: string;
+  paymentStatus?: string;
+  paymentMethod?: string;
+  paymentReference?: string;
+  paymentProof?: string;
+  paymentDate?: string;
+  verificationStatus?: string;
+  stage?: string;
   history: Array<{
     action: string;
     performedBy: string;
@@ -37,19 +47,6 @@ export interface FundingOffer {
     message: string;
     createdAt: string;
   }>;
-  fundingStage?: string;
-  agreementStatus?: string;
-  dueDiligenceStatus?: string;
-  paymentMethod?: string;
-  transactionId?: string;
-  paymentProof?: string;
-  paymentDate?: string;
-  paymentNotes?: string;
-  senderDetails?: {
-    bankName: string;
-    accountNumber: string;
-    accountHolderName: string;
-  };
   createdAt: string;
   updatedAt: string;
 }

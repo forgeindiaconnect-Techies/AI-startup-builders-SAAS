@@ -567,7 +567,12 @@ export const getFundingOffers = async (founderId?: string, investorId?: string) 
 
     const res = await fetch(url);
     const data = await res.json();
-    if (data.success) return data.data;
+    if (data.success) {
+      try {
+        localStorage.setItem('ai_startup_builder_funding_offers', JSON.stringify(data.data));
+      } catch (err) {}
+      return data.data;
+    }
   } catch (e) {
     console.error('Error fetching funding offers', e);
   }
@@ -588,11 +593,52 @@ export const createFundingOffer = async (offerData: any) => {
       body: JSON.stringify(offerData)
     });
     const data = await res.json();
-    if (data.success) return data.data;
+    if (data.success) {
+      try {
+        const stored = localStorage.getItem('ai_startup_builder_funding_offers');
+        const list = stored ? JSON.parse(stored) : [];
+        list.unshift(data.data);
+        localStorage.setItem('ai_startup_builder_funding_offers', JSON.stringify(list));
+      } catch (err) {}
+      return data.data;
+    }
   } catch (e) {
     console.error('Error creating funding offer', e);
   }
-  return null;
+  
+  // Offline fallback
+  const fallbackOffer = {
+    id: offerData.id || `offer_${Date.now()}`,
+    ...offerData,
+    status: 'offer_received',
+    agreementStatus: 'Drafted',
+    dueDiligenceStatus: 'Pending',
+    paymentStatus: 'Pending',
+    paymentMethod: '',
+    paymentReference: '',
+    paymentProof: '',
+    paymentDate: '',
+    verificationStatus: 'Pending',
+    stage: offerData.stage || 'Seed',
+    history: [
+      {
+        action: 'offer_received',
+        performedBy: offerData.investorName,
+        role: 'Investor',
+        message: 'Investor sent funding offer.',
+        createdAt: new Date().toISOString(),
+      }
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_funding_offers');
+    const list = stored ? JSON.parse(stored) : [];
+    list.unshift(fallbackOffer);
+    localStorage.setItem('ai_startup_builder_funding_offers', JSON.stringify(list));
+  } catch (err) {}
+  return fallbackOffer;
 };
 
 export const updateFundingOffer = async (id: string, updates: any) => {
@@ -603,11 +649,36 @@ export const updateFundingOffer = async (id: string, updates: any) => {
       body: JSON.stringify(updates)
     });
     const data = await res.json();
-    if (data.success) return data.data;
+    if (data.success) {
+      try {
+        const stored = localStorage.getItem('ai_startup_builder_funding_offers');
+        let list = stored ? JSON.parse(stored) : [];
+        list = list.map((item: any) => (item._id === id || item.id === id) ? { ...item, ...data.data } : item);
+        localStorage.setItem('ai_startup_builder_funding_offers', JSON.stringify(list));
+      } catch (err) {}
+      return data.data;
+    }
   } catch (e) {
     console.error('Error updating funding offer', e);
   }
-  return null;
+  
+  // Offline fallback
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_funding_offers');
+    let list = stored ? JSON.parse(stored) : [];
+    let updatedObj: any = null;
+    list = list.map((item: any) => {
+      if (item._id === id || item.id === id) {
+        updatedObj = { ...item, ...updates, updatedAt: new Date().toISOString() };
+        return updatedObj;
+      }
+      return item;
+    });
+    localStorage.setItem('ai_startup_builder_funding_offers', JSON.stringify(list));
+    return updatedObj;
+  } catch (err) {
+    return null;
+  }
 };
 
 export const detectStartupCategory = (startup: any): string => {

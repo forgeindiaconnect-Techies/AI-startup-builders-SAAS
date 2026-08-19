@@ -10,12 +10,12 @@ import { useAuth } from '../../../context/AuthContext';
 import { updateFundingOffer, addNotification } from '../../../utils/localStorageHelper';
 
 const AdminInvestorFunding: React.FC = () => {
-  const { offers, loading, refreshOffers } = useFunding();
+  const { offers, loading, refreshOffers, markAsFunded, verifyOffer } = useFunding();
   const { user } = useAuth();
   const adminName = user?.fullName || 'Admin';
 
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'All' | 'offer_received' | 'accepted' | 'payment_submitted' | 'funded' | 'rejected'>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'offer_received' | 'accepted' | 'rejected' | 'funded'>('All');
   
   // Selected transaction for details modal
   const [selectedTx, setSelectedTx] = useState<FundingOffer | null>(null);
@@ -31,21 +31,6 @@ const AdminInvestorFunding: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Map database status to client-friendly display statuses
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'offer_received': return 'Funding Pending';
-      case 'accepted': return 'Payment Pending';
-      case 'payment_submitted': return 'Payment Submitted';
-      case 'under_verification': return 'Under Verification';
-      case 'funded': return 'Funded';
-      case 'completed': return 'Completed';
-      case 'failed': return 'Failed';
-      case 'rejected': return 'Rejected';
-      default: return status;
-    }
-  };
-
   // Filter offers
   const filteredOffers = useMemo(() => {
     return offers.filter(o => {
@@ -56,11 +41,7 @@ const AdminInvestorFunding: React.FC = () => {
         (o.investorCompany && o.investorCompany.toLowerCase().includes(search.toLowerCase())) ||
         (o.id || o._id || '').toLowerCase().includes(search.toLowerCase());
 
-      const matchesTab = 
-        statusFilter === 'All' || 
-        o.status === statusFilter || 
-        (statusFilter === 'payment_submitted' && o.status === 'under_verification') ||
-        (statusFilter === 'funded' && o.status === 'completed');
+      const matchesTab = statusFilter === 'All' || o.status === statusFilter;
       return matchesSearch && matchesTab;
     });
   }, [offers, search, statusFilter]);
@@ -75,11 +56,11 @@ const AdminInvestorFunding: React.FC = () => {
 
     offers.forEach(o => {
       totalAmount += o.offerAmount;
-      if (o.status === 'payment_submitted' || o.status === 'under_verification') {
+      if (o.status === 'offer_received' || o.status === 'counter_offer') {
         pendingVerification += 1;
       } else if (o.status === 'accepted') {
         approvedFunding += 1;
-      } else if (o.status === 'funded' || o.status === 'completed') {
+      } else if (o.status === 'funded') {
         completedFunding += 1;
       }
     });
@@ -102,64 +83,113 @@ const AdminInvestorFunding: React.FC = () => {
     const txId = selectedTx._id || selectedTx.id;
     setActionLoading(true);
     try {
-      let newStatus: any = 'offer_received';
-      let actionMsg = '';
       if (actionType === 'verify') {
-        newStatus = 'under_verification';
-        actionMsg = `Admin put the payment transaction under verification review.`;
+        const historyEntry = {
+          action: 'funded',
+          performedBy: adminName,
+          role: 'Admin',
+          message: 'Admin verified compliance and UTR reference, marking deal as funded.',
+          createdAt: new Date().toISOString(),
+        };
+        const updates = {
+          status: 'funded' as const,
+          paymentStatus: 'Completed',
+          verificationStatus: 'Verified',
+          adminNote: adminNoteInput || selectedTx.adminNote || 'Admin verified compliance and UTR reference.',
+          history: [...selectedTx.history, historyEntry],
+          updatedAt: new Date().toISOString(),
+        };
+        await updateFundingOffer(txId, updates);
+        
+        // Notify both parties
+        if (selectedTx.founderId) {
+          await addNotification({
+            userId: selectedTx.founderId,
+            title: `Funding Confirmed`,
+            message: `Admin verified your funding offer from ${selectedTx.investorCompany || selectedTx.investorName} ($${selectedTx.offerAmount.toLocaleString()}) as Funded!`,
+            type: 'funding',
+            actionUrl: '/dashboard/founder/funding',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          });
+        }
+        if (selectedTx.investorId) {
+          await addNotification({
+            userId: selectedTx.investorId,
+            title: `Funding Confirmed`,
+            message: `Admin verified your $${selectedTx.offerAmount.toLocaleString()} investment in ${selectedTx.startupName} as Funded!`,
+            type: 'funding',
+            actionUrl: '/dashboard/investor/portfolio-hub',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          });
+        }
+        showToast('Funding offer successfully verified!');
       } else if (actionType === 'completed') {
-        newStatus = 'funded';
-        actionMsg = `Admin approved transaction and marked funding as Completed.`;
-      } else if (actionType === 'approve') {
-        newStatus = 'accepted';
-        actionMsg = `Admin approved the funding offer.`;
-      } else if (actionType === 'reject') {
-        newStatus = 'rejected';
-        actionMsg = `Admin rejected the funding transaction.`;
-      }
-
-      const historyEntry = {
-        action: newStatus,
-        performedBy: adminName,
-        role: 'Admin',
-        message: adminNoteInput || actionMsg,
-        createdAt: new Date().toISOString(),
-      };
-
-      const updates = {
-        status: newStatus,
-        adminNote: adminNoteInput || selectedTx.adminNote || '',
-        history: [...selectedTx.history, historyEntry],
-        updatedAt: new Date().toISOString(),
-      };
-
-      await updateFundingOffer(txId, updates);
-      
-      // Notify both parties
-      if (selectedTx.founderId) {
-        await addNotification({
-          userId: selectedTx.founderId,
-          title: `Funding Transaction Update`,
-          message: `Admin has marked your funding offer for ${selectedTx.startupName} as ${getStatusText(newStatus)}.`,
-          type: 'funding',
-          actionUrl: '/dashboard/founder/funding-transactions',
-          isRead: false,
+        const historyEntry = {
+          action: 'completed',
+          performedBy: adminName,
+          role: 'Admin',
+          message: 'Admin marked the transaction as completed.',
           createdAt: new Date().toISOString(),
-        });
-      }
-      if (selectedTx.investorId) {
-        await addNotification({
-          userId: selectedTx.investorId,
-          title: `Funding Transaction Update`,
-          message: `Admin has marked your investment for ${selectedTx.startupName} as ${getStatusText(newStatus)}.`,
-          type: 'funding',
-          actionUrl: '/dashboard/investor/transactions',
-          isRead: false,
+        };
+        const updates = {
+          status: 'funded' as const,
+          paymentStatus: 'Completed',
+          verificationStatus: 'Verified',
+          adminNote: adminNoteInput || selectedTx.adminNote || 'Admin verified compliance and marked deal as completed.',
+          history: [...selectedTx.history, historyEntry],
+          updatedAt: new Date().toISOString(),
+        };
+        await updateFundingOffer(txId, updates);
+        showToast('Funding offer successfully completed and funded!');
+      } else {
+        const newStatus = actionType === 'approve' ? 'accepted' : 'rejected';
+        const historyEntry = {
+          action: newStatus,
+          performedBy: adminName,
+          role: 'Admin',
+          message: `Admin ${actionType === 'approve' ? 'approved' : 'rejected'} the funding offer.`,
           createdAt: new Date().toISOString(),
-        });
-      }
+        };
 
-      showToast(`Funding transaction successfully updated to ${getStatusText(newStatus)}.`);
+        const updates = {
+          status: newStatus,
+          paymentStatus: actionType === 'approve' ? 'Pending' : 'Failed',
+          verificationStatus: actionType === 'approve' ? 'Pending' : 'Rejected',
+          adminNote: adminNoteInput || selectedTx.adminNote || '',
+          history: [...selectedTx.history, historyEntry],
+          updatedAt: new Date().toISOString(),
+        };
+
+        await updateFundingOffer(txId, updates);
+        
+        // Notify both parties
+        if (selectedTx.founderId) {
+          await addNotification({
+            userId: selectedTx.founderId,
+            title: `Funding Offer ${actionType === 'approve' ? 'Approved' : 'Rejected'}`,
+            message: `Admin has ${actionType === 'approve' ? 'approved' : 'rejected'} your funding offer from ${selectedTx.investorCompany}.`,
+            type: 'funding',
+            actionUrl: '/dashboard/founder/funding',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          });
+        }
+        if (selectedTx.investorId) {
+          await addNotification({
+            userId: selectedTx.investorId,
+            title: `Funding Offer ${actionType === 'approve' ? 'Approved' : 'Rejected'}`,
+            message: `Admin has ${actionType === 'approve' ? 'approved' : 'rejected'} your funding offer for ${selectedTx.startupName}.`,
+            type: 'funding',
+            actionUrl: '/dashboard/investor/portfolio-hub',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          });
+        }
+
+        showToast(`Funding offer successfully updated to ${newStatus}.`);
+      }
 
       await refreshOffers();
       
@@ -260,7 +290,7 @@ const AdminInvestorFunding: React.FC = () => {
         </div>
 
         <div className="flex gap-1.5 overflow-x-auto w-full md:w-auto">
-          {(['All', 'offer_received', 'accepted', 'payment_submitted', 'funded', 'rejected'] as const).map((tab) => (
+          {(['All', 'offer_received', 'accepted', 'funded', 'rejected'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setStatusFilter(tab)}
@@ -270,11 +300,7 @@ const AdminInvestorFunding: React.FC = () => {
                   : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
               }`}
             >
-              {tab === 'All' ? 'All Transactions' : 
-               tab === 'offer_received' ? 'Pending Review' : 
-               tab === 'accepted' ? 'Pending Payment' :
-               tab === 'payment_submitted' ? 'Payment Submitted' :
-               tab === 'funded' ? 'Funded / Completed' : tab}
+              {tab === 'All' ? 'All Transactions' : tab === 'offer_received' ? 'Pending Review' : tab}
             </button>
           ))}
         </div>
@@ -328,19 +354,15 @@ const AdminInvestorFunding: React.FC = () => {
                       </td>
                       <td className="p-4">
                         <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
-                          o.status === 'funded' || o.status === 'completed'
+                          o.status === 'funded' 
                             ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
                             : o.status === 'accepted' 
-                              ? 'bg-amber-50 text-amber-600 border-amber-100' 
-                              : o.status === 'payment_submitted' || o.status === 'under_verification'
-                                ? 'bg-blue-50 text-blue-600 border-blue-100'
-                                : o.status === 'rejected' || o.status === 'failed'
-                                  ? 'bg-red-50 text-red-600 border-red-100'
-                                  : 'bg-gray-50 text-gray-600 border-gray-200'
+                              ? 'bg-blue-50 text-blue-600 border-blue-100' 
+                              : o.status === 'rejected'
+                                ? 'bg-red-50 text-red-600 border-red-100'
+                                : 'bg-amber-50 text-amber-600 border-amber-100'
                         }`}>
-                          {o.status === 'offer_received' ? 'Pending Review' : 
-                           o.status === 'payment_submitted' ? 'Awaiting Verification' :
-                           o.status === 'under_verification' ? 'Under Verification' : o.status}
+                          {o.status === 'offer_received' ? 'Pending Review' : o.status}
                         </span>
                       </td>
                       <td className="p-4 text-right">
@@ -377,19 +399,15 @@ const AdminInvestorFunding: React.FC = () => {
             <div className="p-6 sm:p-8 pb-4 border-b border-gray-100 shrink-0 pr-14">
               <div className="flex items-center gap-2 mb-2">
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
-                  selectedTx.status === 'funded' || selectedTx.status === 'completed'
+                  selectedTx.status === 'funded' 
                     ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
                     : selectedTx.status === 'accepted' 
-                      ? 'bg-amber-50 text-amber-600 border-amber-100' 
-                      : selectedTx.status === 'payment_submitted' || selectedTx.status === 'under_verification'
-                        ? 'bg-blue-50 text-blue-600 border-blue-100'
-                        : selectedTx.status === 'rejected' || selectedTx.status === 'failed'
-                          ? 'bg-red-50 text-red-600 border-red-100'
-                          : 'bg-gray-50 text-gray-600 border-gray-200'
+                      ? 'bg-blue-50 text-blue-600 border-blue-100' 
+                      : selectedTx.status === 'rejected'
+                        ? 'bg-red-50 text-red-600 border-red-100'
+                        : 'bg-amber-50 text-amber-600 border-amber-100'
                 }`}>
-                  Status: {selectedTx.status === 'offer_received' ? 'Pending Review' : 
-                           selectedTx.status === 'payment_submitted' ? 'Payment Submitted (Awaiting Verification)' :
-                           selectedTx.status === 'under_verification' ? 'Under Verification' : selectedTx.status}
+                  Status: {selectedTx.status === 'offer_received' ? 'Pending Review' : selectedTx.status}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-[#6C4CF1] border border-purple-100">
                   {selectedTx.instrument || 'SAFE'}
@@ -476,58 +494,6 @@ const AdminInvestorFunding: React.FC = () => {
                 </div>
               </div>
 
-              {/* Payment Details (For Submitted Payments) */}
-              {(selectedTx.paymentMethod || selectedTx.transactionId || selectedTx.paymentProof) && (
-                <div className="bg-blue-50/40 border border-blue-100 p-4 rounded-2xl space-y-3">
-                  <h4 className="font-bold text-blue-800 uppercase text-[10px] tracking-wider">Payment Information Submitted</h4>
-                  <div className="grid grid-cols-2 gap-3 text-gray-700 text-xs">
-                    <div>
-                      <span className="text-gray-400 block text-[9px] uppercase font-bold">Payment Method</span>
-                      <strong className="text-gray-900">{selectedTx.paymentMethod}</strong>
-                    </div>
-                    <div>
-                      <span className="text-gray-400 block text-[9px] uppercase font-bold">Transaction Reference / UTR</span>
-                      <strong className="text-gray-900 font-mono">{selectedTx.transactionId}</strong>
-                    </div>
-                    {selectedTx.paymentDate && (
-                      <div className="col-span-2 border-t border-gray-200/50 pt-2">
-                        <span className="text-gray-400 block text-[9px] uppercase font-bold">Payment Submitted Date</span>
-                        <strong className="text-gray-900">{new Date(selectedTx.paymentDate).toLocaleString()}</strong>
-                      </div>
-                    )}
-                    {selectedTx.senderDetails && (
-                      <div className="col-span-2 border-t border-gray-200/50 pt-2">
-                        <span className="text-gray-400 block text-[9px] uppercase font-bold">Sender Account Details</span>
-                        <p className="text-gray-800 font-semibold mt-0.5">
-                          {selectedTx.senderDetails.bankName} • A/C: {selectedTx.senderDetails.accountNumber} ({selectedTx.senderDetails.accountHolderName})
-                        </p>
-                      </div>
-                    )}
-                    {selectedTx.paymentNotes && (
-                      <div className="col-span-2 border-t border-gray-200/50 pt-2">
-                        <span className="text-gray-400 block text-[9px] uppercase font-bold">Investor Payment Notes</span>
-                        <p className="text-gray-800 italic mt-0.5">"{selectedTx.paymentNotes}"</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {selectedTx.paymentProof && (
-                    <div className="border-t border-gray-200/50 pt-3">
-                      <span className="text-gray-400 block text-[9px] uppercase font-bold mb-1.5">Proof of Payment Receipt</span>
-                      <div className="border border-gray-200 bg-white rounded-xl p-3 flex justify-center max-h-[220px] overflow-hidden relative group">
-                        <img
-                          src={selectedTx.paymentProof}
-                          alt="Payment Receipt Screenshot"
-                          className="max-h-[200px] object-contain rounded-lg transition-transform hover:scale-105 duration-200 cursor-pointer"
-                          onClick={() => window.open(selectedTx.paymentProof)}
-                        />
-                      </div>
-                      <span className="text-[9px] text-gray-400 block mt-1 text-center font-semibold">Click image to expand / zoom</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* Meta information */}
               <div className="border border-gray-100 rounded-2xl p-4 space-y-2.5 bg-gray-50/30">
                 <div className="flex justify-between text-gray-500 border-b border-gray-100 pb-2">
@@ -555,6 +521,45 @@ const AdminInvestorFunding: React.FC = () => {
                   </span>
                 </div>
               </div>
+
+              {/* Payment Verification Info */}
+              {selectedTx.paymentMethod && (
+                <div className="border border-purple-100 rounded-2xl p-4 space-y-2.5 bg-purple-50/20">
+                  <h4 className="font-bold text-[#6C4CF1] uppercase text-[10px] tracking-wider flex items-center gap-1.5">
+                    <Landmark size={14} /> Investor Payment Information
+                  </h4>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between border-b border-gray-200/50 pb-1.5">
+                      <span className="text-gray-500 font-semibold">Payment Method:</span>
+                      <strong className="text-gray-900 font-bold">{selectedTx.paymentMethod}</strong>
+                    </div>
+                    <div className="flex justify-between border-b border-gray-200/50 pb-1.5">
+                      <span className="text-gray-500 font-semibold">UTR / Reference Number:</span>
+                      <strong className="text-gray-900 font-mono font-bold">{selectedTx.paymentReference || '—'}</strong>
+                    </div>
+                    <div className="flex justify-between border-b border-gray-200/50 pb-1.5">
+                      <span className="text-gray-500 font-semibold">Payment Date:</span>
+                      <strong className="text-gray-900 font-bold">
+                        {selectedTx.paymentDate ? new Date(selectedTx.paymentDate).toLocaleString() : '—'}
+                      </strong>
+                    </div>
+                    {selectedTx.paymentProof && (
+                      <div className="space-y-1.5 pt-1.5">
+                        <span className="text-gray-500 font-semibold block font-sans">Uploaded Receipt / Payment Proof:</span>
+                        {selectedTx.paymentProof.startsWith('data:image/') ? (
+                          <div className="border border-gray-200 rounded-xl overflow-hidden max-h-[180px] bg-white p-2 flex items-center justify-center">
+                            <img src={selectedTx.paymentProof} alt="Receipt Proof" className="object-contain max-h-[160px] rounded-lg shadow-sm" />
+                          </div>
+                        ) : (
+                          <div className="bg-white border border-gray-200 p-2.5 rounded-lg font-mono text-[10px] text-gray-600 truncate">
+                            {selectedTx.paymentProof}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Messages / Notes */}
               <div className="space-y-3.5">
@@ -639,31 +644,7 @@ const AdminInvestorFunding: React.FC = () => {
                 </>
               )}
 
-              {/* Show Verify / Mark Completed if payment is submitted or under verification */}
-              {(selectedTx.status === 'payment_submitted' || selectedTx.status === 'under_verification') && !showActionBox && (
-                <>
-                  <button
-                    onClick={() => setShowActionBox('reject')}
-                    className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl border border-red-200 transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Ban size={14} /> Reject Payment
-                  </button>
-                  <button
-                    onClick={() => setShowActionBox('verify')}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <ShieldCheck size={14} /> Under Review
-                  </button>
-                  <button
-                    onClick={() => setShowActionBox('completed')}
-                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <CheckCircle2 size={14} /> Approve & Complete
-                  </button>
-                </>
-              )}
-
-              {/* Show Verify / Mark Completed if accepted but not yet paid (fallback) */}
+              {/* Show Verify / Mark Completed if accepted */}
               {selectedTx.status === 'accepted' && !showActionBox && (
                 <>
                   <button
@@ -671,6 +652,12 @@ const AdminInvestorFunding: React.FC = () => {
                     className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl border border-red-200 transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <Ban size={14} /> Reject/Void Deal
+                  </button>
+                  <button
+                    onClick={() => setShowActionBox('verify')}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ShieldCheck size={14} /> Verify Funding
                   </button>
                   <button
                     onClick={() => setShowActionBox('completed')}
