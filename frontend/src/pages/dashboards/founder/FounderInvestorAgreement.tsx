@@ -71,6 +71,14 @@ const AgreementReviewModal: React.FC<{
 
 
 
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (el.scrollHeight <= el.clientHeight + 60) {
+      setHasScrolledToBottom(true);
+    }
+  }, [offer]);
+
   const handleScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
@@ -837,6 +845,21 @@ const FounderInvestorAgreement: React.FC = () => {
     );
   };
 
+  const handleLifecycleStepClick = (step: string) => {
+    if (step === '1') {
+      showToast('Investor must create and send the agreement terms first.');
+    } else if (step === '2' || step === '3') {
+      const signDeal = agreementOffers.find(o => ['Sent to Founder', 'Resent', 'Viewed by Founder'].includes(o.agreementStatus || '') && !o.founderSignedAt);
+      if (signDeal) {
+        handleOpenReview(signDeal);
+      } else {
+        showToast('No agreements are currently awaiting your signature review.');
+      }
+    } else if (step === '4') {
+      showToast('Once countersigned, payment release will be unlocked for the investor.');
+    }
+  };
+
   return (
     <div className="animate-fade-in-up pb-12 font-sans text-left">
       <style>{`
@@ -894,11 +917,15 @@ const FounderInvestorAgreement: React.FC = () => {
             { step: '3', title: 'Countersign\nDigitally', Icon: Pen },
             { step: '4', title: 'Payment Released\nFrom Escrow', Icon: Unlock },
           ].map(({ step, title, Icon }) => (
-            <div key={step} className="bg-white/10 p-3 rounded-xl border border-white/15 flex flex-col items-center">
+            <button
+              key={step}
+              onClick={() => handleLifecycleStepClick(step)}
+              className="bg-white/10 p-3 rounded-xl border border-white/15 flex flex-col items-center hover:bg-white/20 transition-all hover:scale-[1.03] cursor-pointer text-white text-center w-full focus:outline-none"
+            >
               <span className="w-6 h-6 rounded-full bg-amber-400 text-purple-950 font-black text-[10px] flex items-center justify-center mb-1.5">{step}</span>
               <Icon size={14} className="text-purple-200 mb-1" />
               <span className="text-purple-100 leading-tight whitespace-pre-line">{title}</span>
-            </div>
+            </button>
           ))}
         </div>
       </div>

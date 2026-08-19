@@ -1003,6 +1003,36 @@ const InvestorAgreement: React.FC = () => {
     return <span className="px-2.5 py-0.5 bg-gray-100 text-gray-500 border border-gray-200 rounded-full text-[10px] font-bold uppercase">Draft</span>;
   };
 
+  const handleLifecycleStepClick = (step: string) => {
+    if (step === '1') {
+      const draftDeal = agreementOffers.find(o => !o.agreementDetails || o.agreementStatus === 'Draft' || o.agreementStatus === 'Changes Requested');
+      if (draftDeal) {
+        setSelectedOfferForForm(draftDeal);
+      } else {
+        showToast('No deals currently require drafting an agreement. Accepted deals will appear below.');
+      }
+    } else if (step === '2') {
+      showToast('Awaiting founder countersignature. You will be notified when they sign.');
+    } else if (step === '3') {
+      const signDeal = agreementOffers.find(o => o.agreementStatus === 'Founder Signed' && !o.investorSignedAt);
+      if (signDeal) {
+        setShowSignOverlay(signDeal);
+      } else {
+        showToast('No agreements are currently awaiting your final execution signature.');
+      }
+    } else if (step === '4') {
+      const hasFullySigned = agreementOffers.some(o => o.agreementStatus === 'Fully Signed');
+      if (hasFullySigned) {
+        showToast('Payment unlocked! Redirecting to transactions...');
+        setTimeout(() => {
+          window.location.href = '/dashboard/investor/transactions';
+        }, 1000);
+      } else {
+        showToast('Escrow payments unlock once both parties fully execute the agreement.');
+      }
+    }
+  };
+
   return (
     <div className="animate-fade-in-up pb-12 font-sans">
       <style>{`
@@ -1059,11 +1089,15 @@ const InvestorAgreement: React.FC = () => {
             { step: '3', title: 'Investor Final\nSignature Execution', Icon: ShieldCheck },
             { step: '4', title: 'Payment Release\nUnlocked', Icon: Unlock },
           ].map(({ step, title, Icon }) => (
-            <div key={step} className="bg-white/10 p-3 rounded-xl border border-white/15 flex flex-col items-center">
+            <button
+              key={step}
+              onClick={() => handleLifecycleStepClick(step)}
+              className="bg-white/10 p-3 rounded-xl border border-white/15 flex flex-col items-center hover:bg-white/20 transition-all hover:scale-[1.03] cursor-pointer text-white text-center w-full focus:outline-none"
+            >
               <span className="w-6 h-6 rounded-full bg-amber-400 text-purple-950 font-black text-[10px] flex items-center justify-center mb-1.5">{step}</span>
               <Icon size={14} className="text-purple-200 mb-1" />
               <span className="text-purple-100 leading-tight whitespace-pre-line">{title}</span>
-            </div>
+            </button>
           ))}
         </div>
       </div>
