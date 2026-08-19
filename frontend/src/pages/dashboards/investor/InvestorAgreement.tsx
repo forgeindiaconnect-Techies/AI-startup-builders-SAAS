@@ -9,7 +9,7 @@ import {
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer, IAgreementDetails } from '../../../context/FundingContext';
 import { useAuth } from '../../../context/AuthContext';
-import { addNotification } from '../../../utils/localStorageHelper';
+import { addNotification, getUsers, createFundingOffer } from '../../../utils/localStorageHelper';
 import InvestorSubNav from '../../../components/shared/InvestorSubNav';
 
 const SIGNATURE_STYLES = [
@@ -793,19 +793,31 @@ const InvestorAgreement: React.FC = () => {
     if (directAmount <= 0) return alert('Investment Amount must be greater than zero.');
     if (directEquity <= 0 || directEquity > 100) return alert('Equity Percentage must be valid.');
     if (!directAgreeTerms) return alert('You must view and accept the terms and conditions guidelines first.');
+    if (!directSigned) return alert('Please complete your digital signature before sending.');
 
     setActionLoading(true);
     try {
+      // ── Look up real founder by email so the agreement appears on their dashboard ──
+      const allUsers: any[] = await getUsers();
+      const realFounder = allUsers.find(
+        (u: any) => (u.email || '').toLowerCase() === directFounderEmail.toLowerCase()
+      );
+      const resolvedFounderId = realFounder?.id || realFounder?._id || directFounderEmail;
+
+      const agreementId = `AGR-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const dealId = `FC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
       const newOfferData = {
         startupId: `startup_${Math.floor(1000 + Math.random() * 9000)}`,
         startupName: directStartupName,
-        founderId: `founder_${Math.floor(1000 + Math.random() * 9000)}`,
+        // Use the resolved founder ID so the founder's agreement page filter matches
+        founderId: resolvedFounderId,
         founderName: directFounderName,
-        founderEmail: directFounderEmail,
-        investorId: user?.id || user?._id || 'investor_direct',
+        founderEmail: directFounderEmail.toLowerCase(),
+        investorId: String(user?.id || user?._id || 'investor_direct'),
         investorName: user?.fullName || 'Investor',
-        investorCompany: 'Capital Partners',
-        investorEmail: user?.email || '',
+        investorCompany: user?.company || 'Capital Partners',
+        investorEmail: (user?.email || '').toLowerCase(),
         offerAmount: directAmount,
         currency: 'INR',
         equityPercentage: directEquity,
@@ -816,13 +828,17 @@ const InvestorAgreement: React.FC = () => {
         investorMessage: 'Manually drafted investment agreement.',
         status: 'accepted' as const,
         agreementStatus: 'Sent to Founder',
-        agreementId: `AGR-${Math.floor(10000 + Math.random() * 90000)}`,
+        agreementId,
         agreementVersion: 'v1.0',
+        // Store investor digital signature
+        investorSignedAt: new Date().toISOString(),
+        investorSignatureName: sigName,
+        investorSignatureFontIndex: sigFont,
         agreementDetails: {
           startupName: directStartupName,
           founderName: directFounderName,
           investorName: user?.fullName || 'Investor',
-          dealId: `FC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+          dealId,
           agreementDate: new Date().toISOString().split('T')[0],
           agreementExpiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           offerAmount: directAmount,
@@ -850,10 +866,17 @@ const InvestorAgreement: React.FC = () => {
         },
         agreementAuditTrail: [
           {
+            action: 'Investor Signed',
+            performedBy: user?.fullName || 'Investor',
+            role: 'Investor',
+            notes: `Investor digitally signed with signature style "${SIGNATURE_STYLES[sigFont].name}".`,
+            timestamp: new Date().toISOString()
+          },
+          {
             action: 'Sent to Founder',
             performedBy: user?.fullName || 'Investor',
             role: 'Investor',
-            notes: 'Manually drafted and dispatched custom agreement.',
+            notes: 'Manually drafted and dispatched custom agreement to founder for countersignature.',
             timestamp: new Date().toISOString()
           }
         ],
@@ -875,12 +898,34 @@ const InvestorAgreement: React.FC = () => {
         ]
       };
 
-      const { createFundingOffer } = await import('../../../utils/localStorageHelper');
       const created = await createFundingOffer(newOfferData);
       
       if (created) {
         await refreshOffers();
-        showToast('Custom Investment Agreement created and dispatched successfully!');
+
+        // ── Notify Founder ──────────────────────────────────────────────────
+        await addNotification({
+          userId: resolvedFounderId,
+          title: '✍️ New Investment Agreement Received',
+          message: `${user?.fullName || 'An Investor'} has sent you a Investment Agreement (${agreementId}) for ${directStartupName} — ₹${directAmount.toLocaleString('en-IN')} at ${directEquity}% equity. Please review and countersign.`,
+          type: 'funding',
+          actionUrl: '/dashboard/founder/agreement',
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+
+        // ── Notify Admin ────────────────────────────────────────────────────
+        await addNotification({
+          userId: 'admin',
+          title: '📄 New Investment Agreement Created',
+          message: `Agreement ${agreementId}: ${user?.fullName || 'Investor'} → ${directFounderName} (${directStartupName}) for ₹${directAmount.toLocaleString('en-IN')} at ${directEquity}% equity. Status: Sent to Founder.`,
+          type: 'funding',
+          actionUrl: '/dashboard/admin/investor-funding',
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+
+        showToast(`Agreement ${agreementId} sent to ${directFounderName} successfully!`);
         setDirectStartupName('');
         setDirectFounderName('');
         setDirectFounderEmail('');

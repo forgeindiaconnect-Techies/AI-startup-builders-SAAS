@@ -535,6 +535,18 @@ export const addNotification = async (notification: any) => {
   return notification;
 };
 
+export const getUsers = async (): Promise<any[]> => {
+  try {
+    const res = await fetch(`${API_URL}/auth/users`, { headers: authHeaders() });
+    const data = await res.json();
+    if (data.success && Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data)) return data;
+  } catch (e) {
+    console.error('Error fetching users', e);
+  }
+  return [];
+};
+
 export const markNotificationRead = async (id: string) => {
   try {
     const res = await fetch(`${API_URL}/notifications/${id}/read`, { method: 'PATCH' });
