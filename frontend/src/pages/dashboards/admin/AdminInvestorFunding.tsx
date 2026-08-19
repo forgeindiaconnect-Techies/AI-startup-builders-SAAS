@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   Wallet, ShieldCheck, CheckCircle2, AlertCircle, Search, 
   X, Mail, Building, MapPin, Calendar, FileText, Landmark,
-  TrendingUp, Clock, HelpCircle, Ban, RefreshCw
+  TrendingUp, Clock, HelpCircle, Ban, RefreshCw, FileDown, Eye
 } from 'lucide-react';
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer } from '../../../context/FundingContext';
@@ -542,52 +542,127 @@ const AdminInvestorFunding: React.FC = () => {
               </div>
 
               {/* Investment Agreement Details */}
-              <div className="border border-purple-100 rounded-2xl p-4 space-y-3 bg-purple-50/10">
-                <h4 className="font-bold text-[#6C4CF1] uppercase text-[10px] tracking-wider flex items-center gap-1.5 border-b border-purple-100 pb-1.5">
-                  <FileText size={14} /> Investment Agreement Details
+              <div className="border border-purple-100 rounded-2xl p-5 space-y-4 bg-purple-50/10">
+                <h4 className="font-bold text-[#6C4CF1] uppercase text-[10px] tracking-wider flex items-center gap-1.5 border-b border-purple-100 pb-2">
+                  <FileText size={14} /> Investment Agreement Audit & parameters
                 </h4>
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div>
-                    <span className="text-gray-500 block">Agreement ID:</span>
-                    <strong className="text-gray-900 font-mono">{selectedTx.agreementId || 'N/A'}</strong>
+                    <span className="text-gray-500 block font-semibold">Agreement ID:</span>
+                    <strong className="text-gray-900 font-mono font-bold">{selectedTx.agreementId || 'N/A'}</strong>
                   </div>
                   <div>
-                    <span className="text-gray-500 block">Agreement Version:</span>
-                    <strong className="text-gray-900 font-mono">{selectedTx.agreementVersion || 'v1.0'}</strong>
+                    <span className="text-gray-500 block font-semibold">Agreement Version:</span>
+                    <strong className="text-gray-900 font-mono font-bold">{selectedTx.agreementVersion || 'v1.0'}</strong>
                   </div>
                   <div>
-                    <span className="text-gray-500 block">Agreement Status:</span>
-                    <strong className="text-purple-700 font-bold">{selectedTx.agreementStatus || 'Draft'}</strong>
+                    <span className="text-gray-500 block font-semibold">Agreement Status:</span>
+                    <strong className="text-purple-700 font-bold uppercase">{selectedTx.agreementStatus || 'Draft'}</strong>
                   </div>
                   <div>
-                    <span className="text-gray-500 block">Verification:</span>
-                    <strong className="text-gray-900">{selectedTx.verificationStatus || 'Pending'}</strong>
+                    <span className="text-gray-500 block font-semibold">Verification Stage:</span>
+                    <strong className="text-gray-900 font-bold">{selectedTx.verificationStatus || 'Pending'}</strong>
                   </div>
-                  <div className="col-span-2 border-t border-purple-100/50 pt-2 grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-gray-500 block font-semibold">Investor Signature:</span>
-                      {selectedTx.investorSignedAt ? (
-                        <div className="mt-0.5">
-                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-bold">Signed ✓</span>
-                          <span className="block text-[10px] text-gray-500 mt-0.5 font-mono">{new Date(selectedTx.investorSignedAt).toLocaleString()}</span>
-                          <span className="block text-[10px] text-purple-900 font-serif italic mt-0.5">"{selectedTx.investorSignatureName}"</span>
-                        </div>
-                      ) : (
-                        <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-[9px] font-bold mt-0.5 inline-block">Awaiting Signature ⏳</span>
-                      )}
+                </div>
+
+                {/* Commercial parameters details if present */}
+                {selectedTx.agreementDetails && (
+                  <div className="border-t border-purple-100/50 pt-3 space-y-2.5 text-[11px]">
+                    <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-xl border border-purple-100/50 text-[10px]">
+                      <p><strong>Pre-Money Valuation:</strong> ₹{(selectedTx.agreementDetails.preMoneyValuation || 0).toLocaleString('en-IN')}</p>
+                      <p><strong>Post-Money Valuation:</strong> ₹{(selectedTx.agreementDetails.postMoneyValuation || 0).toLocaleString('en-IN')}</p>
+                      <p><strong>Funding Type:</strong> {selectedTx.agreementDetails.fundingType || 'N/A'}</p>
+                      <p><strong>Investment Type:</strong> {selectedTx.agreementDetails.investmentType || 'N/A'}</p>
+                      <p><strong>Expected Funding Date:</strong> {selectedTx.agreementDetails.expectedFundingDate || 'N/A'}</p>
+                      <p><strong>Agreement Date:</strong> {selectedTx.agreementDetails.agreementDate || 'N/A'}</p>
                     </div>
-                    <div>
-                      <span className="text-gray-500 block font-semibold">Founder Signature:</span>
-                      {selectedTx.founderSignedAt ? (
-                        <div className="mt-0.5">
-                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[9px] font-bold">Signed ✓</span>
-                          <span className="block text-[10px] text-gray-500 mt-0.5 font-mono">{new Date(selectedTx.founderSignedAt).toLocaleString()}</span>
-                          <span className="block text-[10px] text-purple-900 font-serif italic mt-0.5">"{selectedTx.founderSignatureName}"</span>
-                        </div>
-                      ) : (
-                        <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-[9px] font-bold mt-0.5 inline-block">Awaiting Signature ⏳</span>
-                      )}
+                    
+                    <div className="space-y-1">
+                      <span className="text-gray-500 block font-bold">Investment & Conversion terms:</span>
+                      <p className="text-gray-700 leading-normal bg-white p-2.5 rounded-xl border border-gray-100 font-semibold">{selectedTx.agreementDetails.investmentTerms}</p>
                     </div>
+
+                    {selectedTx.agreementDetails.specialClauses && (
+                      <div className="space-y-1">
+                        <span className="text-gray-500 block font-bold">Special Clauses:</span>
+                        <p className="text-gray-700 leading-normal bg-white p-2.5 rounded-xl border border-gray-100 font-semibold">{selectedTx.agreementDetails.specialClauses}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Uploaded files download buttons */}
+                {selectedTx.agreementDetails && (selectedTx.agreementDetails.uploadedDocument || selectedTx.agreementDetails.supportingDocuments) && (
+                  <div className="pt-2 flex flex-wrap gap-2">
+                    {selectedTx.agreementDetails.uploadedDocument && (
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadFile(selectedTx.agreementDetails!.uploadedDocument!, selectedTx.agreementDetails!.uploadedDocumentName || 'contract.pdf')}
+                        className="px-3 py-1.5 bg-[#6C4CF1] hover:bg-[#5B21B6] text-white rounded-lg font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer text-[10px]"
+                      >
+                        <FileDown size={11} /> Download Main Agreement Document
+                      </button>
+                    )}
+                    {selectedTx.agreementDetails.supportingDocuments && (
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadFile(selectedTx.agreementDetails!.supportingDocuments!, selectedTx.agreementDetails!.supportingDocumentsName || 'supporting.pdf')}
+                        className="px-3 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer text-[10px]"
+                      >
+                        <FileDown size={11} /> Supporting Files
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Audit trail timeline logs */}
+                {selectedTx.agreementAuditTrail && selectedTx.agreementAuditTrail.length > 0 && (
+                  <div className="border-t border-purple-100/50 pt-3 space-y-2">
+                    <span className="text-gray-500 block font-bold text-[10px] uppercase tracking-wider flex items-center gap-1"><Clock size={11} /> Document Audit Timeline</span>
+                    <div className="pl-3 border-l border-purple-200 space-y-2 text-[10px]">
+                      {selectedTx.agreementAuditTrail.map((log: any, idx: number) => (
+                        <div key={idx} className="relative">
+                          <div className="absolute -left-[16px] top-1 w-1.5 h-1.5 bg-[#6C4CF1] rounded-full" />
+                          <p className="font-bold text-gray-800">
+                            {log.action} <span className="font-normal text-gray-400">({new Date(log.timestamp).toLocaleString('en-IN')})</span>
+                          </p>
+                          <p className="text-[9px] text-gray-500">Performed by: {log.performedBy} ({log.role})</p>
+                          {log.notes && <p className="text-[9px] text-amber-700 italic bg-amber-50 rounded-md p-1 mt-0.5">"{log.notes}"</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Signature Block stamps */}
+                <div className="col-span-2 border-t border-purple-100/50 pt-3 grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-gray-500 block font-semibold text-[10px]">Investor Execution Stamp:</span>
+                    {selectedTx.investorSignedAt ? (
+                      <div className="mt-1 bg-white p-2.5 rounded-xl border border-gray-200">
+                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded text-[8px] font-black uppercase">Signed</span>
+                        <p className="text-xs text-[#5B21B6] italic font-serif mt-1 font-bold">
+                          {selectedTx.investorSignatureName}
+                        </p>
+                        <span className="block text-[8px] text-gray-400 mt-1 font-mono">{new Date(selectedTx.investorSignedAt).toLocaleString('en-IN')}</span>
+                      </div>
+                    ) : (
+                      <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-[9px] font-bold mt-1 inline-block border border-amber-100">Awaiting Signature ⏳</span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block font-semibold text-[10px]">Founder Execution Stamp:</span>
+                    {selectedTx.founderSignedAt ? (
+                      <div className="mt-1 bg-white p-2.5 rounded-xl border border-gray-200">
+                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded text-[8px] font-black uppercase">Signed</span>
+                        <p className="text-xs text-[#5B21B6] italic font-serif mt-1 font-bold">
+                          {selectedTx.founderSignatureName}
+                        </p>
+                        <span className="block text-[8px] text-gray-400 mt-1 font-mono">{new Date(selectedTx.founderSignedAt).toLocaleString('en-IN')}</span>
+                      </div>
+                    ) : (
+                      <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-[9px] font-bold mt-1 inline-block border border-amber-100">Awaiting Signature ⏳</span>
+                    )}
                   </div>
                 </div>
               </div>

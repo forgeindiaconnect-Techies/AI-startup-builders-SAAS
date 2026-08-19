@@ -7,7 +7,7 @@ import {
   File, Lightbulb, CalendarClock, Handshake, ClipboardList,
   Briefcase, Building2, UserCog, Inbox, CreditCard,
   BarChart2, Settings, CheckSquare, ShieldCheck,
-  IndianRupee, Film, Link2, Bell, GraduationCap, Star, FolderLock,
+  IndianRupee, Film, Link2, Bell, GraduationCap, Star, FolderLock, ScrollText,
 } from 'lucide-react';
 import NotificationDropdown from '../components/shared/NotificationDropdown';
 import PlanGate from '../components/shared/PlanGate';
@@ -162,6 +162,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Mentors',                  icon: GraduationCap,   path: '/dashboard/founder/mentors' },
         { name: 'Mentor Reviews',           icon: Star,            path: '/dashboard/founder/mentor-reviews' },
         { name: 'Investor Marketplace',    icon: Building2,       path: '/dashboard/founder/investors' },
+        { name: 'Agreements',               icon: ScrollText,      path: '/dashboard/founder/agreement' },
         { name: 'Subscription',             icon: CreditCard,      path: '/dashboard/founder/billing' },
         { name: 'Documents',                icon: File,            path: '/dashboard/founder/documents' },
         { name: 'Learning Videos',          icon: Film,            path: '/dashboard/founder/learning-videos' },

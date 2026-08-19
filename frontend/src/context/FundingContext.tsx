@@ -2,6 +2,48 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { getFundingOffers, createFundingOffer, updateFundingOffer, addNotification } from '../utils/localStorageHelper';
 
+export interface IAgreementDetails {
+  startupName: string;
+  founderName: string;
+  investorName: string;
+  dealId: string;
+  agreementDate: string;
+  agreementExpiryDate: string;
+  offerAmount: number;
+  currency: string;
+  equityPercentage: number;
+  preMoneyValuation?: number;
+  postMoneyValuation?: number;
+  fundingType?: string;
+  investmentType?: string;
+  expectedFundingDate?: string;
+  investmentTerms?: string;
+  equityTerms?: string;
+  investorRights?: string;
+  founderObligations?: string;
+  useOfFunds?: string;
+  milestones?: string;
+  exitTerms?: string;
+  confidentialityTerms?: string;
+  additionalConditions?: string;
+  uploadedDocument?: string;
+  uploadedDocumentName?: string;
+  supportingDocuments?: string;
+  supportingDocumentsName?: string;
+  specialClauses?: string;
+  version: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface IAgreementAuditTrail {
+  action: string;
+  performedBy: string;
+  role: string;
+  notes?: string;
+  timestamp: string;
+}
+
 export interface FundingOffer {
   id: string;
   _id?: string;
@@ -54,6 +96,9 @@ export interface FundingOffer {
   founderSignatureName?: string;
   founderSignatureFontIndex?: number;
   agreementAcknowledged?: boolean;
+  agreementDetails?: IAgreementDetails;
+  agreementVersions?: IAgreementDetails[];
+  agreementAuditTrail?: IAgreementAuditTrail[];
   history: Array<{
     action: string;
     performedBy: string;

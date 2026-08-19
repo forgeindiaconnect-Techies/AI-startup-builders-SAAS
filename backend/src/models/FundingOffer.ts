@@ -1,5 +1,47 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+export interface IAgreementDetails {
+  startupName: string;
+  founderName: string;
+  investorName: string;
+  dealId: string;
+  agreementDate: string;
+  agreementExpiryDate: string;
+  offerAmount: number;
+  currency: string;
+  equityPercentage: number;
+  preMoneyValuation?: number;
+  postMoneyValuation?: number;
+  fundingType?: string;
+  investmentType?: string;
+  expectedFundingDate?: string;
+  investmentTerms?: string;
+  equityTerms?: string;
+  investorRights?: string;
+  founderObligations?: string;
+  useOfFunds?: string;
+  milestones?: string;
+  exitTerms?: string;
+  confidentialityTerms?: string;
+  additionalConditions?: string;
+  uploadedDocument?: string;
+  uploadedDocumentName?: string;
+  supportingDocuments?: string;
+  supportingDocumentsName?: string;
+  specialClauses?: string;
+  version: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface IAgreementAuditTrail {
+  action: string;
+  performedBy: string;
+  role: string;
+  notes?: string;
+  timestamp: string;
+}
+
 export interface IFundingOffer extends Document {
   startupId: string;
   startupName: string;
@@ -49,6 +91,9 @@ export interface IFundingOffer extends Document {
   founderSignedAt?: string;
   founderSignatureName?: string;
   founderSignatureFontIndex?: number;
+  agreementDetails?: IAgreementDetails;
+  agreementVersions?: IAgreementDetails[];
+  agreementAuditTrail?: IAgreementAuditTrail[];
   history: Array<{
     action: string;
     performedBy: string;
@@ -114,6 +159,49 @@ const FundingOfferSchema: Schema = new Schema(
     founderSignedAt: { type: String, default: '' },
     founderSignatureName: { type: String, default: '' },
     founderSignatureFontIndex: { type: Number, default: 0 },
+    agreementDetails: {
+      startupName: { type: String, default: '' },
+      founderName: { type: String, default: '' },
+      investorName: { type: String, default: '' },
+      dealId: { type: String, default: '' },
+      agreementDate: { type: String, default: '' },
+      agreementExpiryDate: { type: String, default: '' },
+      offerAmount: { type: Number, default: 0 },
+      currency: { type: String, default: 'INR' },
+      equityPercentage: { type: Number, default: 0 },
+      preMoneyValuation: { type: Number, default: 0 },
+      postMoneyValuation: { type: Number, default: 0 },
+      fundingType: { type: String, default: '' },
+      investmentType: { type: String, default: '' },
+      expectedFundingDate: { type: String, default: '' },
+      investmentTerms: { type: String, default: '' },
+      equityTerms: { type: String, default: '' },
+      investorRights: { type: String, default: '' },
+      founderObligations: { type: String, default: '' },
+      useOfFunds: { type: String, default: '' },
+      milestones: { type: String, default: '' },
+      exitTerms: { type: String, default: '' },
+      confidentialityTerms: { type: String, default: '' },
+      additionalConditions: { type: String, default: '' },
+      uploadedDocument: { type: String, default: '' },
+      uploadedDocumentName: { type: String, default: '' },
+      supportingDocuments: { type: String, default: '' },
+      supportingDocumentsName: { type: String, default: '' },
+      specialClauses: { type: String, default: '' },
+      version: { type: String, default: 'v1.0' },
+      createdAt: { type: String, default: '' },
+      createdBy: { type: String, default: '' }
+    },
+    agreementVersions: { type: Array, default: [] },
+    agreementAuditTrail: [
+      {
+        action: { type: String },
+        performedBy: { type: String },
+        role: { type: String },
+        notes: { type: String },
+        timestamp: { type: String }
+      }
+    ],
     history: [
       {
         action: { type: String },
