@@ -20,20 +20,24 @@ const FounderFunding: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'offer_received': return <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold mb-3 inline-block">Offer Received</span>;
-      case 'accepted': return <span className="px-2.5 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold mb-3 inline-block">Offer Accepted</span>;
-      case 'counter_offer': return <span className="px-2.5 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-bold mb-3 inline-block">Counter Offer Sent</span>;
-      case 'rejected': return <span className="px-2.5 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold mb-3 inline-block">Rejected</span>;
-      case 'funded': return <span className="px-2.5 py-1 bg-green-500 text-white rounded-full text-xs font-bold mb-3 inline-block border border-green-600 shadow-sm">Funded</span>;
-      case 'verified': return <span className="px-2.5 py-1 bg-emerald-600 text-white rounded-full text-xs font-bold mb-3 inline-block border border-emerald-700 shadow-sm">Verified / Active</span>;
-      default: return null;
+      case 'offer_received': return <span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-bold mb-3 inline-block">Commitment Submitted</span>;
+      case 'accepted': return <span className="px-2.5 py-1 bg-purple-100 text-purple-700 border border-purple-200 rounded-full text-xs font-bold mb-3 inline-block">Accepted / Pending Payment</span>;
+      case 'counter_offer': return <span className="px-2.5 py-1 bg-orange-100 text-orange-700 border border-orange-200 rounded-full text-xs font-bold mb-3 inline-block">Counter Offer Sent</span>;
+      case 'rejected': return <span className="px-2.5 py-1 bg-red-100 text-red-700 border border-red-200 rounded-full text-xs font-bold mb-3 inline-block">Rejected</span>;
+      case 'payment_submitted':
+      case 'under_verification': return <span className="px-2.5 py-1 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-full text-xs font-bold mb-3 inline-block">Under Verification</span>;
+      case 'funded':
+      case 'completed': return <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold mb-3 inline-block border border-emerald-300 shadow-sm">Completed</span>;
+      case 'failed': return <span className="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-xs font-bold mb-3 inline-block">Failed</span>;
+      default: return <span className="px-2.5 py-1 bg-gray-50 text-gray-700 border border-gray-200 rounded-full text-xs font-bold mb-3 inline-block">{status}</span>;
     }
   };
 
   const handleAccept = (offer: FundingOffer) => {
-    if (window.confirm(`Are you sure you want to accept this offer from ${offer.investorCompany}?`)) {
+    const termLabel = offer.commitmentId ? "commitment" : "offer";
+    if (window.confirm(`Are you sure you want to accept this ${termLabel} from ${offer.investorCompany}?`)) {
       respondToOffer(offer.id, 'accepted', {});
-      window.alert("Offer accepted! Admin will verify and mark as Funded shortly.");
+      window.alert(`Offer accepted successfully!`);
     }
   };
 
@@ -107,47 +111,58 @@ const FounderFunding: React.FC = () => {
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                     <div>
                       {getStatusBadge(offer.status)}
-                      <h3 className="text-xl font-bold text-gray-900">Investment Offer</h3>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {offer.commitmentId ? 'Funding Commitment Request' : 'Investment Offer'}
+                      </h3>
                       <p className="text-sm text-gray-600">From: {offer.investorCompany} ({offer.investorName}) for <span className="font-semibold text-gray-900">{offer.startupName}</span></p>
+                      {offer.commitmentId && (
+                        <p className="text-xs text-purple-600 font-mono font-bold mt-1">Commitment ID: {offer.commitmentId}</p>
+                      )}
                     </div>
                     <div className="text-left md:text-right">
-                      <p className="text-3xl font-extrabold text-gray-900">${offer.offerAmount.toLocaleString()}</p>
-                      <p className="text-sm font-medium text-gray-500">for {offer.equityPercentage}% Equity</p>
+                      <p className="text-3xl font-extrabold text-gray-900">
+                        {offer.currency === 'INR' ? '₹' : '$'}{offer.offerAmount.toLocaleString()}
+                      </p>
+                      <p className="text-sm font-medium text-gray-500">
+                        {offer.instrument === 'Equity' ? `for ${offer.equityPercentage}% Equity` : `${offer.instrument}`}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div><p className="text-xs text-gray-500 uppercase font-bold">Investor Name</p><p className="font-semibold text-gray-900">{offer.investorName}</p></div>
-                    <div><p className="text-xs text-gray-500 uppercase font-bold">Investor Email</p><p className="font-semibold text-gray-900 truncate" title={offer.investorEmail}>{offer.investorEmail || 'N/A'}</p></div>
-                    <div className="col-span-2"><p className="text-xs text-gray-500 uppercase font-bold">Investor Address</p><p className="font-semibold text-gray-900 truncate" title={offer.investorAddress}>{offer.investorAddress || 'N/A'}</p></div>
+                  <div className="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                    <div><p className="text-gray-500 uppercase font-bold">Investor Name</p><p className="font-semibold text-gray-900">{offer.investorName}</p></div>
+                    <div><p className="text-gray-500 uppercase font-bold">Investor Email</p><p className="font-semibold text-gray-900 truncate" title={offer.investorEmail}>{offer.investorEmail || 'N/A'}</p></div>
+                    <div className="col-span-2"><p className="text-gray-500 uppercase font-bold">Investor Address</p><p className="font-semibold text-gray-900 truncate" title={offer.investorAddress}>{offer.investorAddress || 'N/A'}</p></div>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 p-4 bg-white rounded-lg border border-gray-100 shadow-sm text-xs">
                     <div>
-                      <p className="text-xs text-gray-500 font-medium">Instrument</p>
+                      <p className="text-gray-500 font-medium">Instrument</p>
                       <p className="font-bold text-gray-900">{offer.instrument}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 font-medium">Currency</p>
-                      <p className="font-bold text-gray-900">{offer.currency}</p>
+                      <p className="text-gray-500 font-medium">Funding Round</p>
+                      <p className="font-bold text-gray-900">{offer.fundingRound || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 font-medium">Valuation Cap</p>
-                      <p className="font-bold text-gray-900">${(offer.valuationCap / 1000000).toFixed(1)}M</p>
+                      <p className="text-gray-500 font-medium">Valuation Cap</p>
+                      <p className="font-bold text-gray-900">
+                        {offer.currency === 'INR' ? `₹${(offer.valuationCap / 10000000).toFixed(2)} Cr` : `$${(offer.valuationCap / 1000000).toFixed(1)}M`}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 font-medium">Discount</p>
+                      <p className="text-gray-500 font-medium">Expected Date</p>
+                      <p className="font-bold text-gray-900">{offer.expectedInvestmentDate || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 font-medium">Discount</p>
                       <p className="font-bold text-gray-900">{offer.discount}%</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 font-medium">Expires In</p>
-                      <p className="font-bold text-red-600">{offer.expiresInDays} Days</p>
                     </div>
                   </div>
 
                   {offer.investorMessage && (
                     <div className="mb-6 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
-                      <p className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-1">Message from Investor</p>
+                      <p className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-1">Message / Notes from Investor</p>
                       <p className="text-sm text-gray-700 italic">"{offer.investorMessage}"</p>
                     </div>
                   )}
@@ -222,22 +237,26 @@ const FounderFunding: React.FC = () => {
                         onClick={() => handleAccept(offer)}
                         className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm transition-colors shadow-sm"
                       >
-                        Review & Accept
+                        Accept Commitment
                       </button>
-                      <button 
-                        onClick={() => {
-                          setCounterData({ amount: offer.offerAmount.toString(), equity: offer.equityPercentage.toString(), message: '' });
-                          setShowCounterModal(offer.id);
-                        }}
-                        className="px-6 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-bold text-sm transition-colors shadow-sm"
-                      >
-                        Review Changes
-                      </button>
+                      
+                      {!offer.commitmentId && (
+                        <button 
+                          onClick={() => {
+                            setCounterData({ amount: offer.offerAmount.toString(), equity: offer.equityPercentage.toString(), message: '' });
+                            setShowCounterModal(offer.id);
+                          }}
+                          className="px-6 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-bold text-sm transition-colors shadow-sm"
+                        >
+                          Review Changes
+                        </button>
+                      )}
+                      
                       <button 
                         onClick={() => setShowRejectModal(offer.id)}
                         className="px-6 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 rounded-lg font-bold text-sm transition-colors"
                       >
-                        Reject
+                        Reject Commitment
                       </button>
                     </div>
                   )}

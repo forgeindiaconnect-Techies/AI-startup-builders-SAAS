@@ -620,6 +620,12 @@ export const createFundingOffer = async (offerData: any) => {
     paymentDate: '',
     verificationStatus: 'Pending',
     stage: offerData.stage || 'Seed',
+    commitmentId: offerData.commitmentId || '',
+    transactionId: offerData.transactionId || '',
+    fundingRound: offerData.fundingRound || 'Seed',
+    expectedInvestmentDate: offerData.expectedInvestmentDate || '',
+    commitmentNotes: offerData.commitmentNotes || '',
+    agreementAcknowledged: offerData.agreementAcknowledged || false,
     history: [
       {
         action: 'offer_received',

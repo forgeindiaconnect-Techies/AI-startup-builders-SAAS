@@ -35,6 +35,12 @@ export interface IFundingOffer extends Document {
   paymentDate: string;
   verificationStatus: string;
   stage: string;
+  commitmentId?: string;
+  transactionId?: string;
+  fundingRound?: string;
+  expectedInvestmentDate?: string;
+  commitmentNotes?: string;
+  agreementAcknowledged?: boolean;
   history: Array<{
     action: string;
     performedBy: string;
@@ -86,6 +92,12 @@ const FundingOfferSchema: Schema = new Schema(
     paymentDate: { type: String, default: '' },
     verificationStatus: { type: String, default: 'Pending' },
     stage: { type: String, default: 'Seed' },
+    commitmentId: { type: String, default: '' },
+    transactionId: { type: String, default: '' },
+    fundingRound: { type: String, default: 'Seed' },
+    expectedInvestmentDate: { type: String, default: '' },
+    commitmentNotes: { type: String, default: '' },
+    agreementAcknowledged: { type: Boolean, default: false },
     history: [
       {
         action: { type: String },

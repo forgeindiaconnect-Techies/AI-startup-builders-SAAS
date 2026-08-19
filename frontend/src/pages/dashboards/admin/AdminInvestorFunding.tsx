@@ -290,7 +290,7 @@ const AdminInvestorFunding: React.FC = () => {
         </div>
 
         <div className="flex gap-1.5 overflow-x-auto w-full md:w-auto">
-          {(['All', 'offer_received', 'accepted', 'funded', 'rejected'] as const).map((tab) => (
+          {(['All', 'offer_received', 'accepted', 'payment_submitted', 'funded', 'rejected'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setStatusFilter(tab)}
@@ -300,19 +300,24 @@ const AdminInvestorFunding: React.FC = () => {
                   : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
               }`}
             >
-              {tab === 'All' ? 'All Transactions' : tab === 'offer_received' ? 'Pending Review' : tab}
+              {tab === 'All' ? 'All Transactions' : 
+               tab === 'offer_received' ? 'Pending Review' : 
+               tab === 'payment_submitted' ? 'Awaiting Verification' : 
+               tab === 'accepted' ? 'Founder Accepted' : 
+               tab === 'funded' ? 'Completed' : tab}
             </button>
           ))}
         </div>
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden text-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 text-gray-400 font-extrabold uppercase tracking-wider border-b border-gray-100 text-[10px]">
                 <th className="p-4">Transaction ID</th>
+                <th className="p-4">Funding Commitment ID</th>
                 <th className="p-4">Investor</th>
                 <th className="p-4">Founder</th>
                 <th className="p-4">Startup</th>
@@ -326,26 +331,30 @@ const AdminInvestorFunding: React.FC = () => {
             <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-gray-400">Loading funding transactions...</td>
+                  <td colSpan={10} className="p-8 text-center text-gray-400">Loading funding transactions...</td>
                 </tr>
               ) : filteredOffers.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-gray-400">No funding transactions found.</td>
+                  <td colSpan={10} className="p-8 text-center text-gray-400">No funding transactions found.</td>
                 </tr>
               ) : (
                 filteredOffers.map((o) => {
-                  const txId = getTxId(o);
+                  const txId = o.transactionId || `TXN-2026-${String(o.id || o._id || '0000').slice(-4).toUpperCase()}`;
+                  const commitmentId = o.commitmentId || `FC-2026-${String(o.id || o._id || '0000').slice(-4).toUpperCase()}`;
                   return (
-                    <tr key={txId} className="hover:bg-gray-50/50 transition-colors">
+                    <tr key={o.id || o._id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="p-4 font-mono font-bold text-gray-600 truncate max-w-[120px]">
                         {txId}
+                      </td>
+                      <td className="p-4 font-mono font-bold text-gray-600 truncate max-w-[120px]">
+                        {commitmentId}
                       </td>
                       <td className="p-4 font-bold text-gray-900">{o.investorName}</td>
                       <td className="p-4 font-bold text-gray-900">{o.founderName}</td>
                       <td className="p-4 font-bold text-gray-900">{o.startupName}</td>
-                      <td className="p-4 font-black text-gray-900">${o.offerAmount.toLocaleString()}</td>
+                      <td className="p-4 font-black text-gray-900">{o.currency === 'INR' ? '₹' : '$'}{o.offerAmount.toLocaleString()}</td>
                       <td className="p-4">
-                        <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-lg text-[10px] font-bold">
+                        <span className="px-2 py-1 bg-purple-50 text-[#6C4CF1] border border-purple-100 rounded-lg text-[10px] font-bold">
                           {o.instrument || 'SAFE'}
                         </span>
                       </td>
@@ -354,15 +363,19 @@ const AdminInvestorFunding: React.FC = () => {
                       </td>
                       <td className="p-4">
                         <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
-                          o.status === 'funded' 
+                          ['funded', 'completed'].includes(o.status)
                             ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
                             : o.status === 'accepted' 
-                              ? 'bg-blue-50 text-blue-600 border-blue-100' 
+                              ? 'bg-purple-50 text-purple-600 border-purple-100' 
                               : o.status === 'rejected'
                                 ? 'bg-red-50 text-red-600 border-red-100'
-                                : 'bg-amber-50 text-amber-600 border-amber-100'
+                                : ['payment_submitted', 'under_verification'].includes(o.status)
+                                  ? 'bg-yellow-50 text-yellow-600 border-yellow-100'
+                                  : 'bg-blue-50 text-blue-600 border-blue-100'
                         }`}>
-                          {o.status === 'offer_received' ? 'Pending Review' : o.status}
+                          {o.status === 'offer_received' ? 'Commitment Submitted' : 
+                           o.status === 'payment_submitted' || o.status === 'under_verification' ? 'Awaiting Verification' :
+                           o.status === 'accepted' ? 'Founder Accepted' : o.status}
                         </span>
                       </td>
                       <td className="p-4 text-right">
@@ -380,11 +393,9 @@ const AdminInvestorFunding: React.FC = () => {
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* DEDICATED FUNDING DETAILS VIEW MODAL */}
+      </div>      {/* DEDICATED FUNDING DETAILS VIEW MODAL */}
       {selectedTx && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-16 overflow-y-auto font-sans text-xs">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center p-4 pt-16 overflow-y-auto font-sans text-xs text-left">
           <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl relative my-8 max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200 text-left">
             
             {/* Modal Close */}
@@ -397,24 +408,31 @@ const AdminInvestorFunding: React.FC = () => {
 
             {/* Modal Header */}
             <div className="p-6 sm:p-8 pb-4 border-b border-gray-100 shrink-0 pr-14">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
-                  selectedTx.status === 'funded' 
+                  ['funded', 'completed'].includes(selectedTx.status) 
                     ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
                     : selectedTx.status === 'accepted' 
-                      ? 'bg-blue-50 text-blue-600 border-blue-100' 
+                      ? 'bg-purple-50 text-purple-600 border-purple-100' 
                       : selectedTx.status === 'rejected'
                         ? 'bg-red-50 text-red-600 border-red-100'
-                        : 'bg-amber-50 text-amber-600 border-amber-100'
+                        : ['payment_submitted', 'under_verification'].includes(selectedTx.status)
+                          ? 'bg-yellow-50 text-yellow-600 border-yellow-100'
+                          : 'bg-blue-50 text-blue-600 border-blue-100'
                 }`}>
-                  Status: {selectedTx.status === 'offer_received' ? 'Pending Review' : selectedTx.status}
+                  Status: {selectedTx.status === 'offer_received' ? 'Commitment Submitted' : 
+                           selectedTx.status === 'payment_submitted' || selectedTx.status === 'under_verification' ? 'Awaiting Verification' :
+                           selectedTx.status === 'accepted' ? 'Founder Accepted' : selectedTx.status}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-[#6C4CF1] border border-purple-100">
                   {selectedTx.instrument || 'SAFE'}
                 </span>
               </div>
               <h2 className="text-xl font-black text-gray-900 tracking-tight">Funding Transaction Details</h2>
-              <p className="text-[10px] font-mono text-gray-500 mt-1">ID: {getTxId(selectedTx)}</p>
+              <p className="text-[10px] font-mono text-gray-500 mt-1">
+                Transaction ID: {selectedTx.transactionId || `TXN-2026-${String(selectedTx.id || selectedTx._id || '0000').slice(-4).toUpperCase()}`} | 
+                Commitment ID: {selectedTx.commitmentId || `FC-2026-${String(selectedTx.id || selectedTx._id || '0000').slice(-4).toUpperCase()}`}
+              </p>
             </div>
 
             {/* Modal Scroll Content */}
@@ -477,7 +495,9 @@ const AdminInvestorFunding: React.FC = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div>
                     <span className="text-gray-400 block text-[9px] uppercase font-bold">Investment Amount</span>
-                    <strong className="text-gray-900 text-sm font-black">${selectedTx.offerAmount.toLocaleString()}</strong>
+                    <strong className="text-gray-900 text-sm font-black">
+                      {selectedTx.currency === 'INR' ? '₹' : '$'}{selectedTx.offerAmount.toLocaleString()}
+                    </strong>
                   </div>
                   <div>
                     <span className="text-gray-400 block text-[9px] uppercase font-bold">Equity Offered</span>
@@ -485,7 +505,9 @@ const AdminInvestorFunding: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-gray-400 block text-[9px] uppercase font-bold">Valuation Cap</span>
-                    <strong className="text-gray-900 text-sm font-black">${(selectedTx.valuationCap || 0).toLocaleString()}</strong>
+                    <strong className="text-gray-900 text-sm font-black">
+                      {selectedTx.currency === 'INR' ? `₹${(selectedTx.valuationCap / 10000000).toFixed(2)} Cr` : `$${(selectedTx.valuationCap / 1000000).toFixed(1)}M`}
+                    </strong>
                   </div>
                   <div>
                     <span className="text-gray-400 block text-[9px] uppercase font-bold">Agreed Instrument</span>
@@ -505,7 +527,7 @@ const AdminInvestorFunding: React.FC = () => {
                 <div className="flex justify-between text-gray-500 border-b border-gray-100 pb-2">
                   <span>Meeting Reference:</span>
                   <span className="text-gray-900 font-bold flex items-center gap-1">
-                    <Clock size={12} className="text-purple-600" /> Virtual Accreditation & Pitch Pitch Review
+                    <Clock size={12} className="text-purple-600" /> Virtual Accreditation & Pitch Review
                   </span>
                 </div>
                 <div className="flex justify-between text-gray-500 border-b border-gray-100 pb-2">
@@ -517,7 +539,7 @@ const AdminInvestorFunding: React.FC = () => {
                 <div className="flex justify-between text-gray-500 pb-0.5">
                   <span>Calculated Platform Commission (2.0%):</span>
                   <span className="text-emerald-600 font-black text-sm">
-                    ${(selectedTx.offerAmount * 0.02).toLocaleString()}
+                    {selectedTx.currency === 'INR' ? '₹' : '$'}{(selectedTx.offerAmount * 0.02).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -593,7 +615,7 @@ const AdminInvestorFunding: React.FC = () => {
 
               {/* Conditionally rendering Admin Action boxes */}
               {showActionBox && (
-                <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl space-y-3">
+                <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl space-y-3 shadow-sm">
                   <h4 className="font-bold text-amber-800 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
                     <HelpCircle size={14} /> Specify Notes for Action: {showActionBox.toUpperCase()}
                   </h4>
@@ -625,7 +647,7 @@ const AdminInvestorFunding: React.FC = () => {
             </div>
 
             {/* Modal Actions Footer */}
-            <div className="p-6 sm:p-8 border-t border-gray-100 bg-gray-50/50 shrink-0 flex flex-wrap gap-2.5 justify-end">
+            <div className="p-6 sm:p-8 border-t border-gray-100 bg-gray-50/50 shrink-0 flex flex-wrap gap-2.5 justify-end rounded-b-3xl">
               {/* Show Approve/Reject if in offer_received status */}
               {(selectedTx.status === 'offer_received' || selectedTx.status === 'counter_offer') && !showActionBox && (
                 <>
@@ -644,8 +666,8 @@ const AdminInvestorFunding: React.FC = () => {
                 </>
               )}
 
-              {/* Show Verify / Mark Completed if accepted */}
-              {selectedTx.status === 'accepted' && !showActionBox && (
+              {/* Show Verify / Mark Completed if accepted, payment_submitted, or under_verification */}
+              {(['accepted', 'payment_submitted', 'under_verification'].includes(selectedTx.status)) && !showActionBox && (
                 <>
                   <button
                     onClick={() => setShowActionBox('reject')}

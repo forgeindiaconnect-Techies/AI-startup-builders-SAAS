@@ -40,6 +40,12 @@ export interface FundingOffer {
   paymentDate?: string;
   verificationStatus?: string;
   stage?: string;
+  commitmentId?: string;
+  transactionId?: string;
+  fundingRound?: string;
+  expectedInvestmentDate?: string;
+  commitmentNotes?: string;
+  agreementAcknowledged?: boolean;
   history: Array<{
     action: string;
     performedBy: string;
