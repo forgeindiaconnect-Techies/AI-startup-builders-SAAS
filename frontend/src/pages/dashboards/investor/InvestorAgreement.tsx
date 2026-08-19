@@ -783,6 +783,7 @@ const InvestorAgreement: React.FC = () => {
   const [directMilestones, setDirectMilestones] = useState('1. Delivery of core mobile beta MVP.\n2. Onboarding first 50 verified guides.');
   const [directAgreeTerms, setDirectAgreeTerms] = useState(false);
   const [showDirectTermsModal, setShowDirectTermsModal] = useState(false);
+  const [directSigned, setDirectSigned] = useState(false);
 
   const handleCreateDirectAgreement = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -884,6 +885,7 @@ const InvestorAgreement: React.FC = () => {
         setDirectFounderName('');
         setDirectFounderEmail('');
         setDirectAgreeTerms(false);
+        setDirectSigned(false);
       } else {
         showToast('Failed to create custom agreement.', 'error');
       }
@@ -1553,16 +1555,121 @@ const InvestorAgreement: React.FC = () => {
             )}
           </div>
 
+          {/* ─── Digital Signature Section ─────────────────────────── */}
+          <div className={`rounded-2xl border-2 p-5 transition-all duration-300 ${
+            directSigned
+              ? 'bg-emerald-50 border-emerald-300'
+              : directAgreeTerms
+                ? 'bg-purple-50/60 border-[#5B21B6]/40'
+                : 'bg-gray-50 border-gray-200 opacity-60 pointer-events-none'
+          }`}>
+            <p className={`text-[9px] font-black uppercase tracking-widest mb-3 flex items-center gap-1.5 ${
+              directSigned ? 'text-emerald-700' : 'text-[#5B21B6]'
+            }`}>
+              <Pen size={9} />
+              {directSigned ? '✓ Investor Digital Signature — Confirmed' : 'Investor Digital Signature — Required'}
+            </p>
+
+            {directSigned ? (
+              /* Signed confirmation badge */
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center shadow">
+                    <CheckCircle2 size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-emerald-800">Signed as:</p>
+                    <p className="text-emerald-700" style={{ ...SIGNATURE_STYLES[sigFont].style, fontSize: '22px' }}>
+                      {sigName}
+                    </p>
+                    <p className="text-[9px] text-emerald-500 font-bold mt-0.5">Style: {SIGNATURE_STYLES[sigFont].name}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDirectSigned(false)}
+                  className="px-3 py-1.5 bg-white border border-emerald-300 text-emerald-700 font-bold rounded-lg text-[10px] hover:bg-emerald-50 cursor-pointer"
+                >
+                  Change Signature
+                </button>
+              </div>
+            ) : (
+              /* Signature input panel */
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-[9px] font-black text-gray-400 uppercase tracking-wider mb-1">Your Name (as it will appear on the agreement)</label>
+                  <input
+                    type="text"
+                    value={sigName}
+                    onChange={e => setSigName(e.target.value)}
+                    placeholder="Type your full legal name…"
+                    className="w-full px-3 py-2.5 bg-white border border-purple-200 rounded-xl text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/30 focus:border-[#5B21B6]"
+                  />
+                </div>
+
+                {/* Signature preview */}
+                <div className="bg-white border border-purple-100 rounded-2xl px-6 py-5 text-center min-h-[72px] flex items-center justify-center relative shadow-sm">
+                  <p className="text-[#5B21B6]" style={SIGNATURE_STYLES[sigFont].style}>
+                    {sigName || 'Your Signature Preview'}
+                  </p>
+                  <span className="absolute bottom-2 right-3 text-[9px] text-purple-400 font-mono">Style: {SIGNATURE_STYLES[sigFont].name}</span>
+                </div>
+
+                {/* Font style selector */}
+                <div className="grid grid-cols-4 gap-2">
+                  {SIGNATURE_STYLES.map((f, i) => (
+                    <button
+                      key={f.name}
+                      type="button"
+                      onClick={() => setSigFont(i)}
+                      className={`p-2 border rounded-xl text-center transition-all min-h-[52px] flex flex-col items-center justify-center cursor-pointer ${
+                        sigFont === i
+                          ? 'bg-purple-50 border-[#5B21B6] shadow-sm'
+                          : 'bg-white border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className="text-[8px] font-bold text-gray-400 mb-0.5">{f.name}</span>
+                      <span className={`${sigFont === i ? 'text-[#5B21B6]' : 'text-gray-600'}`} style={{ ...f.style, fontSize: '13px' }}>
+                        {sigName || 'Sign'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Sign button */}
+                <button
+                  type="button"
+                  disabled={!sigName.trim()}
+                  onClick={() => {
+                    if (!sigName.trim()) return;
+                    setDirectSigned(true);
+                  }}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-extrabold text-sm transition-all ${
+                    sigName.trim()
+                      ? 'bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] hover:from-[#5B21B6] hover:to-[#4C1D95] text-white cursor-pointer shadow-md hover:shadow-lg'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Pen size={14} /> Sign Agreement Digitally
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Submit Button */}
           <div className="flex items-center justify-between pt-2 border-t border-gray-100">
             <p className="text-[10px] text-gray-400 font-semibold">
-              This will create an active deal track and notify the founder via the platform.
+              {!directAgreeTerms
+                ? '⚠ Accept Terms & Conditions first.'
+                : !directSigned
+                  ? '⚠ Complete your digital signature above.'
+                  : 'Ready to dispatch — this will notify the founder instantly.'}
             </p>
             <button
               type="submit"
-              disabled={actionLoading || !directAgreeTerms}
+              disabled={actionLoading || !directAgreeTerms || !directSigned}
               className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-extrabold text-sm shadow-lg transition-all ${
-                directAgreeTerms
+                directAgreeTerms && directSigned
                   ? 'bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] hover:from-[#5B21B6] hover:to-[#4C1D95] text-white cursor-pointer hover:scale-[1.02] hover:shadow-xl'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
