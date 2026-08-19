@@ -23,7 +23,7 @@ const AdminInvestorFunding: React.FC = () => {
   // Actions states
   const [actionLoading, setActionLoading] = useState(false);
   const [adminNoteInput, setAdminNoteInput] = useState('');
-  const [showActionBox, setShowActionBox] = useState<'verify' | 'completed' | 'reject' | 'approve' | null>(null);
+  const [showActionBox, setShowActionBox] = useState<'verify' | 'completed' | 'reject' | 'approve' | 'clarify' | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
