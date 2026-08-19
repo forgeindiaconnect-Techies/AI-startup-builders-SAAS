@@ -15,7 +15,7 @@ const AdminInvestorFunding: React.FC = () => {
   const adminName = user?.fullName || 'Admin';
 
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'All' | 'offer_received' | 'accepted' | 'rejected' | 'funded'>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'offer_received' | 'accepted' | 'rejected' | 'funded' | 'payment_submitted' | 'under_verification'>('All');
   
   // Selected transaction for details modal
   const [selectedTx, setSelectedTx] = useState<FundingOffer | null>(null);
