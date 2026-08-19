@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   FileText, CheckCircle2, X, AlertCircle, Clock,
   ChevronDown, ShieldCheck, Pen,
@@ -74,6 +74,13 @@ const AgreementDocument: React.FC<{
   );
 
   const commitmentId = offer.commitmentId || `FC-${String(offer.id || '').slice(-6).toUpperCase()}`;
+
+  useEffect(() => {
+    if (signedRecord) {
+      if (signedRecord.signatureName) setSignatureName(signedRecord.signatureName);
+      if (signedRecord.signatureFontIndex !== undefined) setSelectedFontIndex(signedRecord.signatureFontIndex);
+    }
+  }, [signedRecord]);
 
   const fmtDate = (d: string) => {
     try { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }); }
@@ -304,15 +311,35 @@ const AgreementDocument: React.FC<{
         {/* Footer */}
         <div className="p-5 sm:p-6 border-t border-gray-100 bg-gray-50/50 shrink-0 rounded-b-3xl">
           {isAlreadySigned ? (
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2 text-emerald-700">
-                <CheckCircle2 size={18} className="shrink-0" />
-                <div>
-                  <p className="font-bold text-sm">Agreement Digitally Signed</p>
-                  {signedRecord?.signedAt && <p className="text-[10px]">Signed {fmtDate(signedRecord.signedAt)} · {AGREEMENT_VERSION}</p>}
-                </div>
+            <div className="space-y-3 text-left">
+              {/* Terms & Conditions acknowledgment shown as checked/disabled when signed */}
+              <div className="flex items-start gap-2.5 rounded-xl border-2 p-3 border-emerald-200 bg-emerald-50/30">
+                <input
+                  type="checkbox"
+                  id="agreementReadCheckSigned"
+                  disabled={true}
+                  checked={true}
+                  className="mt-0.5 w-4 h-4 rounded cursor-not-allowed text-emerald-600"
+                />
+                <label
+                  htmlFor="agreementReadCheckSigned"
+                  className="text-[11px] font-semibold leading-relaxed text-emerald-800 cursor-not-allowed"
+                >
+                  I have read, understood, and agree to all terms in this Investment Agreement (Ref: {commitmentId} · {AGREEMENT_VERSION}).
+                  This constitutes a legally binding digital signature.
+                </label>
               </div>
-              <button onClick={onClose} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl text-xs">Close</button>
+
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <CheckCircle2 size={18} className="shrink-0" />
+                  <div>
+                    <p className="font-bold text-sm">Agreement Digitally Signed</p>
+                    {signedRecord?.signedAt && <p className="text-[10px]">Signed on {fmtDate(signedRecord.signedAt)} · {AGREEMENT_VERSION}</p>}
+                  </div>
+                </div>
+                <button onClick={onClose} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-200">Close</button>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
