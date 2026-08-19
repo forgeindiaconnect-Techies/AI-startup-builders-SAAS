@@ -648,13 +648,15 @@ const AdminInvestorFunding: React.FC = () => {
                 <div className="col-span-2 border-t border-purple-100/50 pt-3 grid grid-cols-2 gap-4">
                   <div>
                     <span className="text-gray-500 block font-semibold text-[10px]">Investor Execution Stamp:</span>
-                    {selectedTx.investorSignedAt ? (
+                    {(selectedTx.investorSignedAt || selectedTx.investorSignatureName || (selectedTx.agreementStatus && selectedTx.agreementStatus !== 'Draft')) ? (
                       <div className="mt-1 bg-white p-2.5 rounded-xl border border-gray-200">
                         <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded text-[8px] font-black uppercase">Signed</span>
                         <p className="text-xs text-[#5B21B6] italic font-serif mt-1 font-bold">
-                          {selectedTx.investorSignatureName}
+                          {selectedTx.investorSignatureName || selectedTx.investorName || 'Investor Signature'}
                         </p>
-                        <span className="block text-[8px] text-gray-400 mt-1 font-mono">{new Date(selectedTx.investorSignedAt).toLocaleString('en-IN')}</span>
+                        <span className="block text-[8px] text-gray-400 mt-1 font-mono">
+                          {selectedTx.investorSignedAt ? new Date(selectedTx.investorSignedAt).toLocaleString('en-IN') : new Date(selectedTx.createdAt).toLocaleString('en-IN')}
+                        </span>
                       </div>
                     ) : (
                       <span className="px-2 py-1 bg-amber-50 text-amber-700 rounded text-[9px] font-bold mt-1 inline-block border border-amber-100">Awaiting Signature ⏳</span>

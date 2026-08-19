@@ -267,16 +267,16 @@ const AgreementReviewModal: React.FC<{
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
               <div className="bg-white border border-blue-100 rounded-xl p-3 flex flex-col justify-center min-h-[75px]">
                 <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Investor Signature (Party A)</p>
-                {offer.investorSignedAt ? (
+                {(offer.investorSignedAt || offer.investorSignatureName || (offer.agreementStatus && offer.agreementStatus !== 'Draft')) ? (
                   <div>
                     <p
                       className="text-2xl text-[#5B21B6] italic select-none font-bold"
                       style={SIGNATURE_STYLES[offer.investorSignatureFontIndex ?? 0]?.style}
                     >
-                      {offer.investorSignatureName}
+                      {offer.investorSignatureName || offer.investorName || details?.investorName || details?.createdBy || 'Investor Signature'}
                     </p>
                     <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">
-                      Digitally signed: {fmtDate(offer.investorSignedAt)}
+                      Digitally signed: {fmtDate(offer.investorSignedAt || details?.createdAt || offer.createdAt)}
                     </p>
                   </div>
                 ) : (
