@@ -28,6 +28,11 @@ const handleDownloadFile = (base64Data: string, filename: string) => {
   document.body.removeChild(link);
 };
 
+const fmtDate = (d: string) => {
+  try { return new Date(d).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }); }
+  catch { return d; }
+};
+
 // ─── Agreement Review & Sign Modal ────────────────────────────────────────────
 const AgreementReviewModal: React.FC<{
   offer: FundingOffer;
@@ -64,10 +69,7 @@ const AgreementReviewModal: React.FC<{
   
   const isFounderSigned = !!offer.founderSignedAt;
 
-  const fmtDate = (d: string) => {
-    try { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }); }
-    catch { return d; }
-  };
+
 
   const handleScroll = () => {
     const el = scrollRef.current;

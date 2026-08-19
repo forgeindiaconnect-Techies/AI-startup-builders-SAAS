@@ -9,6 +9,16 @@ import type { FundingOffer } from '../../../context/FundingContext';
 import { useAuth } from '../../../context/AuthContext';
 import { updateFundingOffer, addNotification } from '../../../utils/localStorageHelper';
 
+const handleDownloadFile = (base64Data: string, filename: string) => {
+  if (!base64Data) return;
+  const link = document.createElement('a');
+  link.href = base64Data;
+  link.download = filename || 'document.pdf';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 const AdminInvestorFunding: React.FC = () => {
   const { offers, loading, refreshOffers, markAsFunded, verifyOffer } = useFunding();
   const { user } = useAuth();
