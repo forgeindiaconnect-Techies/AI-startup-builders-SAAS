@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+﻿import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   FileText, CheckCircle2, X, AlertCircle, Clock,
   ChevronDown, ShieldCheck, Pen,
@@ -12,6 +12,14 @@ import { addNotification } from '../../../utils/localStorageHelper';
 import InvestorSubNav from '../../../components/shared/InvestorSubNav';
 
 const AGREEMENT_VERSION = 'v1.0-2026';
+
+// Signature font styles
+const SIGNATURE_STYLES = [
+  { name: 'Sacramento', style: { fontFamily: "'Sacramento', cursive", fontSize: '28px', fontWeight: 400 } },
+  { name: 'Great Vibes', style: { fontFamily: "'Great Vibes', cursive", fontSize: '28px', fontWeight: 400 } },
+  { name: 'Dancing Script', style: { fontFamily: "'Dancing Script', cursive", fontSize: '24px', fontWeight: 700 } },
+  { name: 'Caveat', style: { fontFamily: "'Caveat', cursive", fontSize: '24px', fontWeight: 700 } },
+];
 
 // ─── localStorage helpers ─────────────────────────────────────────────────────
 const AGREEMENT_KEY = 'ai_startup_builder_signed_agreements';
@@ -28,6 +36,8 @@ interface AgreementRecord {
   instrument: string;
   signedAt: string;
   version: string;
+  signatureName?: string;
+  signatureFontIndex?: number;
 }
 
 const getSignedAgreements = (): AgreementRecord[] => {
@@ -44,14 +54,24 @@ const saveSignedAgreement = (record: AgreementRecord) => {
 const AgreementDocument: React.FC<{
   offer: FundingOffer;
   onClose: () => void;
-  onSign: (offer: FundingOffer) => void;
+  onSign: (offer: FundingOffer, sigName: string, fontIdx: number) => void;
+  onUpdateSignature: (offer: FundingOffer, sigName: string, fontIdx: number) => void;
   isAlreadySigned: boolean;
-  signedAt?: string;
+  signedRecord?: AgreementRecord;
   actionLoading: boolean;
-}> = ({ offer, onClose, onSign, isAlreadySigned, signedAt, actionLoading }) => {
+}> = ({ offer, onClose, onSign, onUpdateSignature, isAlreadySigned, signedRecord, actionLoading }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [readConfirmed, setReadConfirmed] = useState(false);
+
+  // Signature customization state
+  const [showSignModal, setShowSignModal] = useState(false);
+  const [signatureName, setSignatureName] = useState(
+    signedRecord?.signatureName || offer.investorName || ''
+  );
+  const [selectedFontIndex, setSelectedFontIndex] = useState(
+    signedRecord?.signatureFontIndex ?? 0
+  );
 
   const commitmentId = offer.commitmentId || `FC-${String(offer.id || '').slice(-6).toUpperCase()}`;
 
@@ -68,6 +88,14 @@ const AgreementDocument: React.FC<{
     if (!el) return;
     if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
       setHasScrolledToBottom(true);
+    }
+  };
+
+  const handleSaveSignature = () => {
+    if (!signatureName.trim()) return;
+    setShowSignModal(false);
+    if (isAlreadySigned) {
+      onUpdateSignature(offer, signatureName.trim(), selectedFontIndex);
     }
   };
 
@@ -141,8 +169,8 @@ const AgreementDocument: React.FC<{
               )}
             </div>
             <p className="text-xs text-gray-500 mt-0.5 font-mono">{commitmentId} · {AGREEMENT_VERSION}</p>
-            {isAlreadySigned && signedAt && (
-              <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">Digitally signed on {fmtDate(signedAt)}</p>
+            {isAlreadySigned && signedRecord?.signedAt && (
+              <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">Digitally signed on {fmtDate(signedRecord.signedAt)}</p>
             )}
           </div>
         </div>
@@ -214,17 +242,49 @@ const AgreementDocument: React.FC<{
 
           {/* Signature Block */}
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
-            <h4 className="font-extrabold text-blue-700 uppercase tracking-wider text-[10px] mb-3 flex items-center gap-1.5">
-              <Pen size={11} /> Digital Signature Block
-            </h4>
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="font-extrabold text-blue-700 uppercase tracking-wider text-[10px] flex items-center gap-1.5 font-bold">
+                <Pen size={11} /> Digital Signature Block
+              </h4>
+              <button
+                type="button"
+                onClick={() => setShowSignModal(true)}
+                className="px-2.5 py-1 bg-purple-100 hover:bg-purple-200 text-[#5B21B6] border border-purple-200 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer"
+              >
+                <Pen size={10} /> Edit Signature
+              </button>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-white border border-blue-100 rounded-xl p-3">
+              <div className="bg-white border border-blue-100 rounded-xl p-3 flex flex-col justify-center min-h-[75px]">
                 <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Investor Signature</p>
-                {isAlreadySigned
-                  ? <><p className="font-bold text-gray-900 italic">{offer.investorName}</p><p className="text-[10px] text-emerald-600 font-semibold">{signedAt ? `Digitally signed: ${fmtDate(signedAt)}` : 'Signed'}</p></>
-                  : <p className="text-gray-400 italic text-[11px]">Pending investor signature</p>}
+                {isAlreadySigned ? (
+                  <div>
+                    <p
+                      className="text-2xl text-[#5B21B6] italic select-none"
+                      style={SIGNATURE_STYLES[selectedFontIndex]?.style}
+                    >
+                      {signatureName}
+                    </p>
+                    <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                      Digitally signed: {signedRecord?.signedAt ? fmtDate(signedRecord.signedAt) : today}
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    {signatureName ? (
+                      <p
+                        className="text-2xl text-[#5B21B6] italic select-none"
+                        style={SIGNATURE_STYLES[selectedFontIndex]?.style}
+                      >
+                        {signatureName}
+                      </p>
+                    ) : (
+                      <p className="text-gray-400 italic text-[11px]">Ready to sign as: {offer.investorName}</p>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="bg-white border border-blue-100 rounded-xl p-3">
+              <div className="bg-white border border-blue-100 rounded-xl p-3 flex flex-col justify-center min-h-[75px]">
                 <p className="text-[9px] font-black text-gray-400 uppercase mb-1">Founder Countersignature</p>
                 <p className="text-gray-400 italic text-[11px]">Pending — Founder will be notified after investor signs</p>
               </div>
@@ -249,7 +309,7 @@ const AgreementDocument: React.FC<{
                 <CheckCircle2 size={18} className="shrink-0" />
                 <div>
                   <p className="font-bold text-sm">Agreement Digitally Signed</p>
-                  {signedAt && <p className="text-[10px]">Signed {fmtDate(signedAt)} · {AGREEMENT_VERSION}</p>}
+                  {signedRecord?.signedAt && <p className="text-[10px]">Signed {fmtDate(signedRecord.signedAt)} · {AGREEMENT_VERSION}</p>}
                 </div>
               </div>
               <button onClick={onClose} className="px-5 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl text-xs">Close</button>
@@ -289,7 +349,7 @@ const AgreementDocument: React.FC<{
                   <button onClick={onClose} className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl text-xs shadow-sm hover:bg-gray-50">Close</button>
                   <button
                     disabled={!readConfirmed || actionLoading}
-                    onClick={() => onSign(offer)}
+                    onClick={() => onSign(offer, signatureName, selectedFontIndex)}
                     className={`px-6 py-2.5 font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 ${
                       readConfirmed && !actionLoading
                         ? 'bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] hover:from-[#4C1D95] hover:to-[#6D28D9] text-white'
@@ -304,6 +364,105 @@ const AgreementDocument: React.FC<{
             </div>
           )}
         </div>
+
+        {/* ─── DIGITAL SIGNATURE CUSTOMIZATION MODAL (OVERLAY) ─── */}
+        {showSignModal && (
+          <div className="fixed inset-0 z-[180] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative font-sans text-left">
+              <button
+                type="button"
+                onClick={() => setShowSignModal(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500"
+              >
+                <X size={16} />
+              </button>
+
+              <h3 className="text-lg font-black text-gray-900 mb-1 flex items-center gap-1.5">
+                <Pen size={18} className="text-[#5B21B6]" /> Customize Digital Signature
+              </h3>
+              <p className="text-xs text-gray-500 mb-5">Type your name and select a style for your digital signature.</p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Signature Name</label>
+                  <input
+                    type="text"
+                    value={signatureName}
+                    onChange={e => setSignatureName(e.target.value)}
+                    placeholder="Type your name..."
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-950 outline-none focus:ring-2 focus:ring-[#5B21B6] text-xs"
+                  />
+                </div>
+
+                {/* Signature Preview */}
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1">Live Signature Preview</label>
+                  <div className="bg-purple-50/50 border border-purple-100 rounded-2xl p-6 text-center min-h-[90px] flex items-center justify-center relative overflow-hidden">
+                    <p
+                      className="text-[#5B21B6] transition-all select-none"
+                      style={SIGNATURE_STYLES[selectedFontIndex]?.style}
+                    >
+                      {signatureName || 'Your Signature'}
+                    </p>
+                    <span className="absolute bottom-2 right-3 text-[9px] text-purple-400 font-mono">
+                      Style: {SIGNATURE_STYLES[selectedFontIndex]?.name}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Style Selector */}
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1 font-bold">Select Signature Font Style</label>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    {SIGNATURE_STYLES.map((font, idx) => (
+                      <button
+                        key={font.name}
+                        type="button"
+                        onClick={() => setSelectedFontIndex(idx)}
+                        className={`p-3 rounded-xl border text-center transition-all flex flex-col justify-center min-h-[60px] cursor-pointer ${
+                          selectedFontIndex === idx
+                            ? 'bg-purple-50 border-[#5B21B6] text-[#5B21B6] shadow-sm font-bold'
+                            : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="text-[9px] font-bold text-gray-400 mb-1">{font.name}</span>
+                        <span
+                          className="text-base select-none leading-none truncate max-w-full"
+                          style={{ ...font.style, fontSize: '18px' }}
+                        >
+                          {signatureName || 'Signature'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Submit */}
+                <div className="flex gap-3 pt-3 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowSignModal(false)}
+                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveSignature}
+                    disabled={!signatureName.trim()}
+                    className={`flex-1 py-2.5 text-white font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-1.5 ${
+                      signatureName.trim()
+                        ? 'bg-[#5B21B6] hover:bg-[#4C1D95]'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                    }`}
+                  >
+                    <CheckCircle2 size={13} /> Confirm Style
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -334,7 +493,6 @@ const InvestorAgreement: React.FC = () => {
     );
   }, [offers, user]);
 
-  // All commitments are eligible for agreements
   const agreementOffers = useMemo(() => investorOffers, [investorOffers]);
 
   const isOfferSigned = (offerId: string) => signedAgreements.some(r => r.offerId === offerId);
@@ -346,7 +504,7 @@ const InvestorAgreement: React.FC = () => {
     pending: agreementOffers.filter(o => !isOfferSigned(o.id || o._id || '')).length,
   }), [agreementOffers, signedAgreements]);
 
-  const handleSign = async (offer: FundingOffer) => {
+  const handleSign = async (offer: FundingOffer, sigName: string, fontIdx: number) => {
     const offerId = offer.id || offer._id || '';
     setActionLoading(true);
     try {
@@ -362,6 +520,8 @@ const InvestorAgreement: React.FC = () => {
         instrument: offer.instrument || 'SAFE',
         signedAt: new Date().toISOString(),
         version: AGREEMENT_VERSION,
+        signatureName: sigName,
+        signatureFontIndex: fontIdx,
       };
 
       saveSignedAgreement(record);
@@ -371,7 +531,7 @@ const InvestorAgreement: React.FC = () => {
       await addNotification({
         userId: offer.founderId,
         title: '✍️ Investment Agreement Signed',
-        message: `${offer.investorName} (${offer.investorCompany}) has digitally signed the Investment Agreement for ${offer.startupName}. Please review and countersign at your earliest convenience.`,
+        message: `${sigName} (${offer.investorCompany}) has digitally signed the Investment Agreement for ${offer.startupName}. Please review and countersign at your earliest convenience.`,
         type: 'funding',
         actionUrl: '/dashboard/founder/funding-transactions',
         isRead: false,
@@ -382,7 +542,7 @@ const InvestorAgreement: React.FC = () => {
       await addNotification({
         userId: 'admin',
         title: '✍️ Investment Agreement Executed',
-        message: `${offer.investorName} signed the Investment Agreement for ${offer.startupName} (₹${offer.offerAmount.toLocaleString('en-IN')}). Commitment: ${record.commitmentId}. Awaiting founder countersignature.`,
+        message: `${sigName} signed the Investment Agreement for ${offer.startupName} (₹${offer.offerAmount.toLocaleString('en-IN')}). Commitment: ${record.commitmentId}. Awaiting founder countersignature.`,
         type: 'funding',
         actionUrl: '/dashboard/admin/investor-funding',
         isRead: false,
@@ -397,6 +557,21 @@ const InvestorAgreement: React.FC = () => {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleUpdateSignature = async (offer: FundingOffer, sigName: string, fontIdx: number) => {
+    const offerId = offer.id || offer._id || '';
+    const existing = getSignedRecord(offerId);
+    if (!existing) return;
+
+    const updated: AgreementRecord = {
+      ...existing,
+      signatureName: sigName,
+      signatureFontIndex: fontIdx,
+    };
+    saveSignedAgreement(updated);
+    setSignedAgreements(getSignedAgreements());
+    showToast('Signature style modified successfully.');
   };
 
   const fmtDate = (d: string) => {
@@ -427,6 +602,10 @@ const InvestorAgreement: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up pb-12 font-sans">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Dancing+Script:wght@750&family=Great+Vibes&family=Sacramento&display=swap');
+      `}</style>
+      
       {/* Toast */}
       {toast && (
         <div className={`fixed top-6 right-6 z-[200] px-5 py-3 rounded-xl shadow-xl font-semibold text-sm flex items-center gap-2 animate-in slide-in-from-top-2 ${
@@ -583,8 +762,9 @@ const InvestorAgreement: React.FC = () => {
           offer={selectedOffer}
           onClose={() => setSelectedOffer(null)}
           onSign={handleSign}
+          onUpdateSignature={handleUpdateSignature}
           isAlreadySigned={isOfferSigned(selectedOffer.id || selectedOffer._id || '')}
-          signedAt={getSignedRecord(selectedOffer.id || selectedOffer._id || '')?.signedAt}
+          signedRecord={getSignedRecord(selectedOffer.id || selectedOffer._id || '')}
           actionLoading={actionLoading}
         />
       )}
