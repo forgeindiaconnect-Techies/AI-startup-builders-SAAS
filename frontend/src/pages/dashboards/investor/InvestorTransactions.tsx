@@ -55,6 +55,14 @@ const InvestorTransactions: React.FC = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
+  // Manual Details Form States
+  const [manualStartupName, setManualStartupName] = useState('');
+  const [manualFounderName, setManualFounderName] = useState('');
+  const [manualFounderEmail, setManualFounderEmail] = useState('');
+  
+  // Qr Payment provider selection
+  const [activeQrApp, setActiveQrApp] = useState<'Paytm' | 'Google Pay'>('Paytm');
+
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
@@ -171,9 +179,7 @@ const InvestorTransactions: React.FC = () => {
     } finally {
       setActionLoading(false);
     }
-  };
-
-  // Submit Payment Flow
+  };  // Submit Payment Flow
   const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!paymentOffer) return;
@@ -192,27 +198,22 @@ const InvestorTransactions: React.FC = () => {
         return;
       }
       utr = upiUtr.trim();
-      details = `UPI ID: ${upiVpa.trim()}`;
-    } else if (paymentMethod === 'Bank Transfer' || paymentMethod === 'Manual Payment') {
-      if (paymentMethod === 'Bank Transfer' && (!senderBank.trim() || !senderAccount.trim())) {
-        showToast('Please enter sender bank and account details.', 'error');
+      details = `${activeQrApp} UPI ID: ${upiVpa.trim()}`;
+    } else if (paymentMethod === 'Manual Payment') {
+      if (!senderBank.trim()) {
+        showToast('Please enter your Bank / Payment Channel.', 'error');
         return;
       }
       if (!bankUtr.trim()) {
-        showToast('Please enter the transaction Reference/UTR number.', 'error');
+        showToast('Please enter the transaction reference / UTR number.', 'error');
+        return;
+      }
+      if (!proofBase64) {
+        showToast('Please upload transaction receipt or proof.', 'error');
         return;
       }
       utr = bankUtr.trim();
-      details = paymentMethod === 'Bank Transfer' 
-        ? `Bank: ${senderBank.trim()} (A/C: ${senderAccount.trim()})`
-        : `Manual Payment Ref: ${utr}`;
-    } else if (paymentMethod === 'Card') {
-      if (!cardName.trim() || !cardNumber.trim() || !cardExpiry.trim() || !cardCvv.trim()) {
-        showToast('Please complete all card details.', 'error');
-        return;
-      }
-      utr = `CARD-${Date.now().toString().slice(-8)}`;
-      details = `Cardholder: ${cardName.trim()}`;
+      details = `Manual: ${senderBank.trim()} (Notes: ${bankNotes.trim()})`;
     }
     
     setActionLoading(true);
@@ -221,19 +222,17 @@ const InvestorTransactions: React.FC = () => {
         action: 'payment_submitted',
         performedBy: user?.fullName || 'Investor',
         role: 'Investor',
-        message: `Investor submitted payment via ${paymentMethod}. UTR/Ref: ${utr}.`,
+        message: `Investor submitted payment via ${paymentMethod === 'UPI' ? activeQrApp + ' UPI' : 'Manual Payment'}. UTR/Ref: ${utr}.`,
         createdAt: new Date().toISOString(),
       };
       
-      const targetStatus = (paymentMethod === 'Bank Transfer' || paymentMethod === 'Manual Payment')
-        ? 'under_verification'
-        : 'payment_submitted';
+      const targetStatus = 'under_verification';
 
       const { updateFundingOffer } = await import('../../../utils/localStorageHelper');
       const updated = await updateFundingOffer(paymentOffer._id || paymentOffer.id, {
         status: targetStatus,
         paymentStatus: 'Submitted',
-        paymentMethod: paymentMethod,
+        paymentMethod: paymentMethod === 'UPI' ? `${activeQrApp} (UPI QR)` : 'Manual / Bank Transfer',
         paymentReference: utr,
         paymentDate: new Date().toISOString(),
         paymentProof: proofBase64 || 'Uploaded receipt verification pending.',
@@ -282,8 +281,16 @@ const InvestorTransactions: React.FC = () => {
   // Submit Commitment Action
   const handleCreateCommitment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedStartup) {
-      showToast('Please select a startup.', 'error');
+    if (!manualStartupName.trim()) {
+      showToast('Please enter the startup name.', 'error');
+      return;
+    }
+    if (!manualFounderName.trim()) {
+      showToast('Please enter the founder name.', 'error');
+      return;
+    }
+    if (!manualFounderEmail.trim()) {
+      showToast('Please enter the founder email.', 'error');
       return;
     }
     if (!commitmentAmount || isNaN(Number(commitmentAmount)) || Number(commitmentAmount) <= 0) {
@@ -304,11 +311,11 @@ const InvestorTransactions: React.FC = () => {
       const tId = `TXN-${year}-${txSuffix}`;
 
       const offerPayload = {
-        startupId: selectedStartup.startupId || selectedStartup.id,
-        startupName: selectedStartup.startupName,
-        founderId: selectedStartup.founderId,
-        founderName: selectedStartup.founderName || 'Founder',
-        founderEmail: selectedStartup.founderEmail || 'founder@aistartup.com',
+        startupId: selectedStartup?.startupId || selectedStartup?.id || `custom-${Date.now()}`,
+        startupName: manualStartupName.trim(),
+        founderId: selectedStartup?.founderId || `founder-${Date.now()}`,
+        founderName: manualFounderName.trim(),
+        founderEmail: manualFounderEmail.trim(),
         investorId: String(user?.id || 'investor_1'),
         investorName: user?.fullName || 'Investor',
         investorCompany: (user as any)?.companyName || 'Capital Partners',
@@ -317,7 +324,7 @@ const InvestorTransactions: React.FC = () => {
         offerAmount: Number(commitmentAmount),
         currency: 'INR',
         equityPercentage: commitmentType === 'Equity' ? 5 : 0,
-        valuationCap: selectedStartup.aiGenerated?.ideaAnalysis?.valuationCap || 50000000,
+        valuationCap: selectedStartup?.aiGenerated?.ideaAnalysis?.valuationCap || 50000000,
         instrument: commitmentType,
         discount: 10,
         expiresInDays: 30,
@@ -337,6 +344,9 @@ const InvestorTransactions: React.FC = () => {
       // Reset forms
       setSelectedStartupId('');
       setSelectedStartup(null);
+      setManualStartupName('');
+      setManualFounderName('');
+      setManualFounderEmail('');
       setCommitmentAmount('');
       setCommitmentType('SAFE');
       setFundingRound('Seed');
@@ -1039,50 +1049,129 @@ const InvestorTransactions: React.FC = () => {
                 </div>
 
                 {/* Method selector tabs */}
-                <div className="grid grid-cols-4 gap-2">
-                  {(['UPI', 'Bank Transfer', 'Card', 'Manual Payment'] as const).map(method => (
+                <div className="grid grid-cols-2 gap-3">
+                  {(['UPI', 'Manual Payment'] as const).map(method => (
                     <button
                       key={method}
                       type="button"
-                      onClick={() => setPaymentMethod(method)}
-                      className={`p-2.5 rounded-xl border font-bold text-center transition-all flex flex-col items-center justify-center gap-1.5 text-[10px] ${
+                      onClick={() => {
+                        setPaymentMethod(method);
+                      }}
+                      className={`p-3 rounded-2xl border font-bold text-center transition-all flex flex-col items-center justify-center gap-1.5 text-xs shadow-sm cursor-pointer ${
                         paymentMethod === method
-                          ? 'border-[#5B21B6] bg-purple-50/50 text-[#5B21B6] shadow-sm'
+                          ? 'border-[#5B21B6] bg-purple-50/50 text-[#5B21B6] font-extrabold'
                           : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
                       }`}
                     >
-                      {method === 'UPI' && <Send size={14} />}
-                      {method === 'Bank Transfer' && <Landmark size={14} />}
-                      {method === 'Card' && <CreditCard size={14} />}
-                      {method === 'Manual Payment' && <Landmark size={14} />}
-                      {method}
+                      {method === 'UPI' ? <Send size={16} /> : <Landmark size={16} />}
+                      {method === 'UPI' ? 'Paytm / Google Pay (UPI QR)' : 'Manual details / Bank Transfer'}
                     </button>
                   ))}
                 </div>
 
-                {/* UPI form */}
+                {/* Paytm / Google Pay (UPI QR) form */}
                 {paymentMethod === 'UPI' && (
                   <div className="space-y-4 animate-in fade-in duration-150">
+                    {/* App Selector Buttons */}
+                    <div className="flex gap-2">
+                      {(['Paytm', 'Google Pay'] as const).map(app => (
+                        <button
+                          key={app}
+                          type="button"
+                          onClick={() => setActiveQrApp(app)}
+                          className={`flex-1 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                            activeQrApp === app
+                              ? 'border-[#5B21B6] bg-purple-50/50 text-[#5B21B6] font-extrabold shadow-sm'
+                              : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {app}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Fixed Branded QR Code graphic */}
                     <div className="flex flex-col items-center justify-center p-4 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
-                      {/* CSS QR representation */}
-                      <div className="w-32 h-32 bg-white p-2 border border-gray-200 rounded-lg flex flex-col justify-between items-center relative shadow-sm mb-3">
-                        <div className="grid grid-cols-2 gap-1.5 w-full h-full opacity-80">
-                          <div className="border-[5px] border-gray-900 w-10 h-10"></div>
-                          <div className="border-[5px] border-gray-900 w-10 h-10 justify-self-end"></div>
-                          <div className="border-[5px] border-gray-900 w-10 h-10 align-self-end"></div>
-                          <div className="w-10 h-10 border-[3px] border-gray-900 border-dashed rounded-full align-self-end justify-self-end"></div>
-                        </div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-[10px] font-black uppercase text-white bg-purple-600 px-1.5 py-0.5 rounded shadow">UPI QR</span>
-                        </div>
+                      <div className={`w-36 h-36 bg-white p-2.5 border-2 ${
+                        activeQrApp === 'Paytm' ? 'border-sky-300' : 'border-blue-300'
+                      } rounded-2xl flex flex-col justify-between items-center relative shadow-sm mb-3`}>
+                        {/* SVG QR Code Pattern */}
+                        <svg viewBox="0 0 100 100" className="w-full h-full">
+                          {/* Corner Squares */}
+                          <rect x="5" y="5" width="20" height="20" fill={activeQrApp === 'Paytm' ? '#002E6E' : '#4285F4'} rx="2" />
+                          <rect x="9" y="9" width="12" height="12" fill="white" rx="1" />
+                          <rect x="12" y="12" width="6" height="6" fill={activeQrApp === 'Paytm' ? '#002E6E' : '#4285F4'} rx="0.5" />
+
+                          <rect x="75" y="5" width="20" height="20" fill={activeQrApp === 'Paytm' ? '#002E6E' : '#4285F4'} rx="2" />
+                          <rect x="79" y="9" width="12" height="12" fill="white" rx="1" />
+                          <rect x="82" y="12" width="6" height="6" fill={activeQrApp === 'Paytm' ? '#002E6E' : '#4285F4'} rx="0.5" />
+
+                          <rect x="5" y="75" width="20" height="20" fill={activeQrApp === 'Paytm' ? '#002E6E' : '#4285F4'} rx="2" />
+                          <rect x="9" y="79" width="12" height="12" fill="white" rx="1" />
+                          <rect x="12" y="82" width="6" height="6" fill={activeQrApp === 'Paytm' ? '#002E6E' : '#4285F4'} rx="0.5" />
+
+                          {/* Data points */}
+                          <g fill="#1F2937" opacity="0.8">
+                            <rect x="35" y="5" width="4" height="4" rx="0.5" />
+                            <rect x="45" y="10" width="4" height="8" rx="0.5" />
+                            <rect x="55" y="5" width="8" height="4" rx="0.5" />
+                            <rect x="65" y="15" width="4" height="4" rx="0.5" />
+                            
+                            <rect x="30" y="25" width="12" height="4" rx="0.5" />
+                            <rect x="48" y="25" width="4" height="12" rx="0.5" />
+                            <rect x="60" y="20" width="8" height="4" rx="0.5" />
+                            <rect x="75" y="30" width="4" height="8" rx="0.5" />
+
+                            <rect x="5" y="35" width="4" height="8" rx="0.5" />
+                            <rect x="15" y="45" width="8" height="4" rx="0.5" />
+                            <rect x="25" y="40" width="4" height="4" rx="0.5" />
+                            <rect x="35" y="45" width="12" height="4" rx="0.5" />
+                            <rect x="55" y="40" width="4" height="8" rx="0.5" />
+                            <rect x="65" y="45" width="8" height="4" rx="0.5" />
+                            <rect x="85" y="40" width="10" height="4" rx="0.5" />
+
+                            <rect x="5" y="55" width="8" height="4" rx="0.5" />
+                            <rect x="20" y="55" width="4" height="4" rx="0.5" />
+                            <rect x="30" y="50" width="4" height="8" rx="0.5" />
+                            <rect x="40" y="60" width="8" height="4" rx="0.5" />
+                            <rect x="55" y="55" width="12" height="4" rx="0.5" />
+                            <rect x="75" y="55" width="4" height="12" rx="0.5" />
+                            <rect x="85" y="60" width="4" height="4" rx="0.5" />
+
+                            <rect x="35" y="70" width="4" height="4" rx="0.5" />
+                            <rect x="45" y="75" width="8" height="4" rx="0.5" />
+                            <rect x="60" y="70" width="4" height="8" rx="0.5" />
+                            <rect x="70" y="80" width="8" height="4" rx="0.5" />
+
+                            <rect x="30" y="85" width="16" height="4" rx="0.5" />
+                            <rect x="55" y="85" width="4" height="8" rx="0.5" />
+                            <rect x="65" y="90" width="8" height="4" rx="0.5" />
+                            <rect x="80" y="85" width="4" height="4" rx="0.5" />
+                          </g>
+
+                          {/* Center Branding Area */}
+                          <rect x="35" y="35" width="30" height="30" fill="white" rx="5" stroke={activeQrApp === 'Paytm' ? '#002E6E' : '#4285F4'} strokeWidth="1.5" />
+                          <text x="50" y="53" fontSize="7" fontWeight="950" textAnchor="middle" fill={activeQrApp === 'Paytm' ? '#002E6E' : '#4285F4'} fontFamily="sans-serif">
+                            {activeQrApp === 'Paytm' ? 'Paytm' : 'G Pay'}
+                          </text>
+                        </svg>
                       </div>
-                      <p className="text-[10px] text-gray-500 font-semibold text-center">Scan QR code with BHIM / Google Pay / PhonePe to transfer exact amount.</p>
-                      <strong className="text-gray-900 font-mono mt-1 text-[11px]">escrow@aistartupplatform.upi</strong>
+
+                      <div className={`text-center px-3 py-1 rounded-lg border ${
+                        activeQrApp === 'Paytm' ? 'bg-sky-50 border-sky-100 text-sky-700' : 'bg-blue-50 border-blue-100 text-blue-700'
+                      } text-[9px] font-bold uppercase tracking-wider mb-2`}>
+                        {activeQrApp} Escrow Verification QR Code
+                      </div>
+                      <p className="text-[10px] text-gray-500 font-semibold text-center mb-1">Scan QR with UPI app to transfer exact amount:</p>
+                      <strong className="text-gray-900 text-base font-extrabold mb-1">₹{paymentOffer.offerAmount.toLocaleString()}</strong>
+                      <code className="text-[9px] text-gray-600 font-mono font-bold bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                        {activeQrApp === 'Paytm' ? 'escrow.paytm@aistartupplatform' : 'escrow.gpay@aistartupplatform'}
+                      </code>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Your VPA / UPI ID *</label>
+                        <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Your UPI VPA / ID *</label>
                         <input
                           type="text"
                           required
@@ -1099,7 +1188,7 @@ const InvestorTransactions: React.FC = () => {
                           required
                           value={upiUtr}
                           onChange={(e) => setUpiUtr(e.target.value)}
-                          placeholder="12-digit UPI Transaction Ref"
+                          placeholder="12-digit transaction UTR"
                           className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
                         />
                       </div>
@@ -1107,58 +1196,29 @@ const InvestorTransactions: React.FC = () => {
                   </div>
                 )}
 
-                {/* Bank Transfer & Manual Payment form */}
-                {(paymentMethod === 'Bank Transfer' || paymentMethod === 'Manual Payment') && (
+                {/* Manual details / Bank Transfer form */}
+                {paymentMethod === 'Manual Payment' && (
                   <div className="space-y-4 animate-in fade-in duration-150">
-                    {paymentMethod === 'Bank Transfer' && (
-                      <div className="bg-purple-50/40 border border-purple-100/60 p-4 rounded-xl text-xs space-y-1.5 text-gray-700">
-                        <span className="text-[10px] font-bold text-purple-700 uppercase block mb-1">Escrow Bank Details</span>
-                        <p className="flex justify-between"><span className="text-gray-500">Bank Name:</span> <strong>HDFC Bank</strong></p>
-                        <p className="flex justify-between"><span className="text-gray-500">A/C Number:</span> <strong>50200088921102</strong></p>
-                        <p className="flex justify-between"><span className="text-gray-500">IFSC Code:</span> <strong>HDFC0000104</strong></p>
-                        <p className="flex justify-between"><span className="text-gray-500">Account Name:</span> <strong>AI Startup Platform Escrow Account</strong></p>
-                      </div>
-                    )}
+                    <div className="bg-purple-50/40 border border-purple-100/60 p-4 rounded-xl text-xs space-y-1.5 text-gray-700">
+                      <span className="text-[10px] font-bold text-purple-700 uppercase block mb-1">Escrow Bank Details</span>
+                      <p className="flex justify-between"><span className="text-gray-500">Bank Name:</span> <strong>HDFC Bank</strong></p>
+                      <p className="flex justify-between"><span className="text-gray-500">A/C Number:</span> <strong>50200088921102</strong></p>
+                      <p className="flex justify-between"><span className="text-gray-500">IFSC Code:</span> <strong>HDFC0000104</strong></p>
+                      <p className="flex justify-between"><span className="text-gray-500">Account Name:</span> <strong>AI Startup Platform Escrow Account</strong></p>
+                    </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {paymentMethod === 'Bank Transfer' ? (
-                        <>
-                          <div>
-                            <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Sender Bank Name *</label>
-                            <input
-                              type="text"
-                              required
-                              value={senderBank}
-                              onChange={(e) => setSenderBank(e.target.value)}
-                              placeholder="e.g. ICICI Bank"
-                              className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
-                            />
-                          </div>
-                          <div>
-                            <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Sender Account Name/No. *</label>
-                            <input
-                              type="text"
-                              required
-                              value={senderAccount}
-                              onChange={(e) => setSenderAccount(e.target.value)}
-                              placeholder="Sender Name or Account No."
-                              className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
-                            />
-                          </div>
-                        </>
-                      ) : (
-                        <div>
-                          <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Payment Channel / Bank *</label>
-                          <input
-                            type="text"
-                            required
-                            value={senderBank}
-                            onChange={(e) => setSenderBank(e.target.value)}
-                            placeholder="e.g. Cash Deposit / Custody Escrow"
-                            className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
-                          />
-                        </div>
-                      )}
+                      <div>
+                        <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Payment Channel / Bank *</label>
+                        <input
+                          type="text"
+                          required
+                          value={senderBank}
+                          onChange={(e) => setSenderBank(e.target.value)}
+                          placeholder="e.g. ICICI Bank, Cash Deposit"
+                          className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                        />
+                      </div>
                       <div>
                         <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Transaction ID / UTR *</label>
                         <input
@@ -1170,16 +1230,17 @@ const InvestorTransactions: React.FC = () => {
                           className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
                         />
                       </div>
-                      <div>
-                        <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Notes (Optional)</label>
-                        <input
-                          type="text"
-                          value={bankNotes}
-                          onChange={(e) => setBankNotes(e.target.value)}
-                          placeholder="Remarks / notes"
-                          className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
-                        />
-                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Notes (Optional)</label>
+                      <input
+                        type="text"
+                        value={bankNotes}
+                        onChange={(e) => setBankNotes(e.target.value)}
+                        placeholder="Remarks / transfer reference notes"
+                        className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                      />
                     </div>
 
                     {/* File Proof Uploader */}
@@ -1215,64 +1276,6 @@ const InvestorTransactions: React.FC = () => {
                             <span className="text-[10px] text-gray-400 mt-0.5">JPEG, PNG receipt file up to 2MB</span>
                           </>
                         )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Card Form */}
-                {paymentMethod === 'Card' && (
-                  <div className="space-y-4 animate-in fade-in duration-150">
-                    <div>
-                      <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Cardholder Name *</label>
-                      <input
-                        type="text"
-                        required
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        placeholder="Name as it appears on Card"
-                        className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Card Number *</label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          required
-                          maxLength={19}
-                          value={cardNumber}
-                          onChange={(e) => setCardNumber(e.target.value.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim())}
-                          placeholder="4000 1234 5678 9010"
-                          className="w-full p-2.5 pl-10 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
-                        />
-                        <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Expiry Date *</label>
-                        <input
-                          type="text"
-                          required
-                          maxLength={5}
-                          value={cardExpiry}
-                          onChange={(e) => setCardExpiry(e.target.value)}
-                          placeholder="MM/YY"
-                          className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6] text-center"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">CVV *</label>
-                        <input
-                          type="password"
-                          required
-                          maxLength={3}
-                          value={cardCvv}
-                          onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ''))}
-                          placeholder="•••"
-                          className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6] text-center"
-                        />
                       </div>
                     </div>
                   </div>
@@ -1329,21 +1332,29 @@ const InvestorTransactions: React.FC = () => {
             {!showSummaryStep ? (
               <form onSubmit={(e) => { e.preventDefault(); setShowSummaryStep(true); }} className="flex-1 flex flex-col min-h-0 text-xs">
                 <div className="p-6 sm:p-8 py-4 overflow-y-auto space-y-4 max-h-[60vh]">
-                  {/* Select Startup */}
+                  {/* Select Startup Linkage */}
                   <div>
-                    <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Select Startup *</label>
+                    <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Link Startup Profile (Optional)</label>
                     <select
-                      required
                       value={selectedStartupId}
                       onChange={(e) => {
                         const sId = e.target.value;
                         setSelectedStartupId(sId);
                         const found = startups.find(s => s.startupId === sId || s.id === sId);
                         setSelectedStartup(found || null);
+                        if (found) {
+                          setManualStartupName(found.startupName);
+                          setManualFounderName(found.founderName || '');
+                          setManualFounderEmail(found.founderEmail || 'founder@aistartup.com');
+                        } else {
+                          setManualStartupName('');
+                          setManualFounderName('');
+                          setManualFounderEmail('');
+                        }
                       }}
                       className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
                     >
-                      <option value="">-- Choose Startup --</option>
+                      <option value="">-- Custom (Enter Manually Below) --</option>
                       {startups.map(s => (
                         <option key={s.id || s.startupId} value={s.id || s.startupId}>
                           {s.startupName}
@@ -1352,15 +1363,42 @@ const InvestorTransactions: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Founder */}
+                  {/* Startup Name */}
                   <div>
-                    <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Founder Name (Auto-filled)</label>
+                    <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Startup Name *</label>
                     <input
                       type="text"
-                      readOnly
-                      placeholder="Founder Name"
-                      value={selectedStartup ? selectedStartup.founderName : ''}
-                      className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-100 text-gray-500 outline-none cursor-not-allowed"
+                      required
+                      placeholder="e.g. Acme AI Corp"
+                      value={manualStartupName}
+                      onChange={(e) => setManualStartupName(e.target.value)}
+                      className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                    />
+                  </div>
+
+                  {/* Founder Name */}
+                  <div>
+                    <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Founder Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. John Doe"
+                      value={manualFounderName}
+                      onChange={(e) => setManualFounderName(e.target.value)}
+                      className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                    />
+                  </div>
+
+                  {/* Founder Email */}
+                  <div>
+                    <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Founder Email *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. founder@acme.com"
+                      value={manualFounderEmail}
+                      onChange={(e) => setManualFounderEmail(e.target.value)}
+                      className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
                     />
                   </div>
 
@@ -1470,11 +1508,11 @@ const InvestorTransactions: React.FC = () => {
                   <div className="bg-purple-50/50 border border-purple-100 p-5 rounded-2xl space-y-3">
                     <p className="flex justify-between pb-2 border-b border-purple-100/50 text-gray-600">
                       <span>Startup:</span>
-                      <strong className="text-gray-900 text-sm font-bold">{selectedStartup?.startupName}</strong>
+                      <strong className="text-gray-900 text-sm font-bold">{manualStartupName}</strong>
                     </p>
                     <p className="flex justify-between pb-2 border-b border-purple-100/50 text-gray-600">
                       <span>Founder:</span>
-                      <strong className="text-gray-900 text-sm font-bold">{selectedStartup?.founderName}</strong>
+                      <strong className="text-gray-900 text-sm font-bold">{manualFounderName}</strong>
                     </p>
                     <p className="flex justify-between pb-2 border-b border-purple-100/50 text-gray-600">
                       <span>Investment Amount:</span>
