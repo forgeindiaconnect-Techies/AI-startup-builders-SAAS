@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   FileText, CheckCircle2, X, AlertCircle, Clock,
   ChevronDown, ShieldCheck, Pen,
@@ -157,7 +158,7 @@ const AgreementDocument: React.FC<{
     },
   ];
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[170] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl relative my-8 flex flex-col font-sans max-h-[92vh]">
         {/* Close */}
@@ -599,7 +600,8 @@ const AgreementDocument: React.FC<{
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
