@@ -771,6 +771,129 @@ const InvestorAgreement: React.FC = () => {
   const [sigName, setSigName] = useState(user?.fullName || '');
   const [sigFont, setSigFont] = useState(0);
 
+  // Direct draft form states
+  const [directStartupName, setDirectStartupName] = useState('Tourists');
+  const [directFounderName, setDirectFounderName] = useState('Renu');
+  const [directFounderEmail, setDirectFounderEmail] = useState('renu@startup.com');
+  const [directAmount, setDirectAmount] = useState(5000000);
+  const [directEquity, setDirectEquity] = useState(10);
+  const [directValuation, setDirectValuation] = useState(50000000);
+  const [directInstrument, setDirectInstrument] = useState('SAFE');
+  const [directTerms, setDirectTerms] = useState('This agreement outlines the investment parameters. Capital will be utilized for product engineering and guide onboarding pilot launches.');
+  const [directMilestones, setDirectMilestones] = useState('1. Delivery of core mobile beta MVP.\n2. Onboarding first 50 verified guides.');
+  const [directAgreeTerms, setDirectAgreeTerms] = useState(false);
+  const [showDirectTermsModal, setShowDirectTermsModal] = useState(false);
+
+  const handleCreateDirectAgreement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!directStartupName.trim()) return alert('Startup Name is required.');
+    if (!directFounderName.trim()) return alert('Founder Name is required.');
+    if (!directFounderEmail.trim()) return alert('Founder Email is required.');
+    if (directAmount <= 0) return alert('Investment Amount must be greater than zero.');
+    if (directEquity <= 0 || directEquity > 100) return alert('Equity Percentage must be valid.');
+    if (!directAgreeTerms) return alert('You must view and accept the terms and conditions guidelines first.');
+
+    setActionLoading(true);
+    try {
+      const newOfferData = {
+        startupId: `startup_${Math.floor(1000 + Math.random() * 9000)}`,
+        startupName: directStartupName,
+        founderId: `founder_${Math.floor(1000 + Math.random() * 9000)}`,
+        founderName: directFounderName,
+        founderEmail: directFounderEmail,
+        investorId: user?.id || user?._id || 'investor_direct',
+        investorName: user?.fullName || 'Investor',
+        investorCompany: 'Capital Partners',
+        investorEmail: user?.email || '',
+        offerAmount: directAmount,
+        currency: 'INR',
+        equityPercentage: directEquity,
+        valuationCap: directValuation,
+        instrument: directInstrument,
+        discount: 0,
+        expiresInDays: 30,
+        investorMessage: 'Manually drafted investment agreement.',
+        status: 'accepted' as const,
+        agreementStatus: 'Sent to Founder',
+        agreementId: `AGR-${Math.floor(10000 + Math.random() * 90000)}`,
+        agreementVersion: 'v1.0',
+        agreementDetails: {
+          startupName: directStartupName,
+          founderName: directFounderName,
+          investorName: user?.fullName || 'Investor',
+          dealId: `FC-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+          agreementDate: new Date().toISOString().split('T')[0],
+          agreementExpiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          offerAmount: directAmount,
+          currency: 'INR',
+          equityPercentage: directEquity,
+          preMoneyValuation: directValuation - directAmount,
+          postMoneyValuation: directValuation,
+          fundingType: directInstrument,
+          investmentType: 'Primary',
+          expectedFundingDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          investmentTerms: directTerms,
+          equityTerms: `Investor shall acquire ${directEquity}% ownership interest.`,
+          investorRights: 'Standard information rights and participation rights.',
+          founderObligations: 'Founder shall run daily operations and report metrics monthly.',
+          useOfFunds: 'Capital shall be strictly deployed for business growth objectives.',
+          milestones: directMilestones,
+          exitTerms: 'Standard drag-along and tag-along rights.',
+          confidentialityTerms: 'All details in this agreement shall be strictly confidential.',
+          additionalConditions: '',
+          uploadedDocument: 'data:application/pdf;base64,JVBERi0xLjQKJdPr6eEKMSAwIG9iagogIDw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+CmVuZG9iagoyIDAgb2JqCiAgPDwvVHlwZS9QYWdlcy9LaWRzWzMgMCBSXS9Db3VudCAxPj4KZW5kb2JqCjMgMCBvYmoKICA8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCA1OTUgODQyXS9Db250ZW50cyA0IDAgUj4+CmVuZG9iago0IDAgb2JqCiAgPDwvTGVuZ3RoIDU5Pj5zdHJlYW0KQlQKICAvRjEgMTIgVGYKICA3MiA3MTIgVGQKICAoTW9jayBJbnZlc3RtZW50IEFncmVlbWVudCBEb2N1bWVudCkgVGoKRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2NyAwMDAwMCBuIAowMDAwMDAwMTIxIDAwMDAwIGYgCjAwMDAwMDAxODAgMDAwMDAgbiAKdHJhaWxlcgogIDw8L1NpemUgNS9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCiAyOTAKJSVFT0YK',
+          uploadedDocumentName: `${directStartupName.replace(/\s+/g, '_')}_Investment_Agreement_v1.0.pdf`,
+          version: 'v1.0',
+          createdAt: new Date().toISOString(),
+          createdBy: user?.fullName || 'Investor'
+        },
+        agreementAuditTrail: [
+          {
+            action: 'Sent to Founder',
+            performedBy: user?.fullName || 'Investor',
+            role: 'Investor',
+            notes: 'Manually drafted and dispatched custom agreement.',
+            timestamp: new Date().toISOString()
+          }
+        ],
+        history: [
+          {
+            action: 'accepted',
+            performedBy: directFounderName,
+            role: 'Founder',
+            message: 'Founder accepted the verbal deal terms.',
+            createdAt: new Date().toISOString()
+          },
+          {
+            action: 'Sent to Founder',
+            performedBy: user?.fullName || 'Investor',
+            role: 'Investor',
+            message: 'Investor drafted and dispatched the Investment Agreement.',
+            createdAt: new Date().toISOString()
+          }
+        ]
+      };
+
+      const { createFundingOffer } = await import('../../../utils/localStorageHelper');
+      const created = await createFundingOffer(newOfferData);
+      
+      if (created) {
+        await refreshOffers();
+        showToast('Custom Investment Agreement created and dispatched successfully!');
+        setDirectStartupName('');
+        setDirectFounderName('');
+        setDirectFounderEmail('');
+        setDirectAgreeTerms(false);
+      } else {
+        showToast('Failed to create custom agreement.', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Error creating agreement.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
@@ -1191,6 +1314,391 @@ const InvestorAgreement: React.FC = () => {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Direct Draft Agreement Section ──────────────────────────── */}
+      <div className="mt-10 mb-2">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#6C4CF1] to-[#4C1D95] flex items-center justify-center shadow-md">
+            <FileText size={16} className="text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-black text-gray-900">Draft &amp; Send Custom Agreement</h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Manually draft an investment agreement, accept the terms &amp; conditions, and instantly dispatch it to a founder — no active deal required.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <form
+        onSubmit={handleCreateDirectAgreement}
+        className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-8"
+      >
+        {/* Form Header Band */}
+        <div className="bg-gradient-to-r from-[#5B21B6]/5 to-[#6C4CF1]/5 border-b border-purple-100/60 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ScrollText size={15} className="text-[#5B21B6]" />
+            <span className="text-xs font-black text-[#5B21B6] uppercase tracking-widest">Agreement Information</span>
+          </div>
+          <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+            Direct Draft
+          </span>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Deal Parties Row */}
+          <div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1">
+              <User size={9} /> Deal Parties
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Startup Name <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <Building2 size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={directStartupName}
+                    onChange={e => setDirectStartupName(e.target.value)}
+                    placeholder="e.g. Tourists, Bakery"
+                    className="w-full pl-8 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/30 focus:border-[#5B21B6]"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Founder Name <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <User size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={directFounderName}
+                    onChange={e => setDirectFounderName(e.target.value)}
+                    placeholder="e.g. Renu"
+                    className="w-full pl-8 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/30 focus:border-[#5B21B6]"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Founder Email <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <Bell size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="email"
+                    value={directFounderEmail}
+                    onChange={e => setDirectFounderEmail(e.target.value)}
+                    placeholder="founder@startup.com"
+                    className="w-full pl-8 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/30 focus:border-[#5B21B6]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Investment Parameters Row */}
+          <div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1">
+              <IndianRupee size={9} /> Investment Parameters
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Investment Amount (₹) <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <IndianRupee size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="number"
+                    value={directAmount}
+                    onChange={e => setDirectAmount(Number(e.target.value))}
+                    min={1}
+                    className="w-full pl-8 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/30 focus:border-[#5B21B6]"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Equity % <span className="text-red-500">*</span></label>
+                <input
+                  type="number"
+                  value={directEquity}
+                  onChange={e => setDirectEquity(Number(e.target.value))}
+                  min={0.01}
+                  max={100}
+                  step={0.01}
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/30 focus:border-[#5B21B6]"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Valuation Cap (₹)</label>
+                <div className="relative">
+                  <IndianRupee size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="number"
+                    value={directValuation}
+                    onChange={e => setDirectValuation(Number(e.target.value))}
+                    min={0}
+                    className="w-full pl-8 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/30 focus:border-[#5B21B6]"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Funding Instrument</label>
+                <select
+                  value={directInstrument}
+                  onChange={e => setDirectInstrument(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/30 focus:border-[#5B21B6]"
+                >
+                  {['SAFE', 'Equity', 'Convertible Note', 'CCPS', 'NCD', 'Debt'].map(i => (
+                    <option key={i} value={i}>{i}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Commercial Terms Row */}
+          <div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1">
+              <ShieldCheck size={9} /> Commercial Terms
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Investment Terms <span className="text-red-500">*</span></label>
+                <textarea
+                  value={directTerms}
+                  onChange={e => setDirectTerms(e.target.value)}
+                  rows={4}
+                  placeholder="Describe the investment commercial terms, investor rights, and key obligations…"
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/30 focus:border-[#5B21B6] resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Milestones / Conditions</label>
+                <textarea
+                  value={directMilestones}
+                  onChange={e => setDirectMilestones(e.target.value)}
+                  rows={4}
+                  placeholder="List the milestones or conditions precedent to fund disbursement…"
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/30 focus:border-[#5B21B6] resize-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Deal Summary Preview */}
+          {directStartupName && directAmount > 0 && directEquity > 0 && (
+            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-2xl p-4">
+              <p className="text-[9px] font-black text-[#5B21B6] uppercase tracking-widest mb-3 flex items-center gap-1">
+                <Eye size={9} /> Live Agreement Preview
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[10px]">
+                <div className="bg-white rounded-xl p-2.5 border border-purple-100/60">
+                  <p className="text-gray-400 font-bold uppercase">Startup</p>
+                  <p className="font-extrabold text-gray-900 mt-0.5 truncate">{directStartupName}</p>
+                </div>
+                <div className="bg-white rounded-xl p-2.5 border border-purple-100/60">
+                  <p className="text-gray-400 font-bold uppercase">Amount</p>
+                  <p className="font-extrabold text-[#5B21B6] mt-0.5">₹{directAmount.toLocaleString('en-IN')}</p>
+                </div>
+                <div className="bg-white rounded-xl p-2.5 border border-purple-100/60">
+                  <p className="text-gray-400 font-bold uppercase">Equity</p>
+                  <p className="font-extrabold text-gray-900 mt-0.5">{directEquity}%</p>
+                </div>
+                <div className="bg-white rounded-xl p-2.5 border border-purple-100/60">
+                  <p className="text-gray-400 font-bold uppercase">Instrument</p>
+                  <p className="font-extrabold text-gray-900 mt-0.5">{directInstrument}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Terms & Conditions Acceptance */}
+          <div className="bg-amber-50/60 border border-amber-200/70 rounded-2xl p-4">
+            <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest mb-3 flex items-center gap-1">
+              <ShieldCheck size={9} /> Terms &amp; Conditions — Required
+            </p>
+            <label
+              htmlFor="directAgreeTermsChk"
+              className={`flex items-start gap-3 cursor-pointer group ${!directAgreeTerms ? 'opacity-80' : ''}`}
+            >
+              <div className="mt-0.5 flex-shrink-0">
+                <input
+                  id="directAgreeTermsChk"
+                  type="checkbox"
+                  checked={directAgreeTerms}
+                  onChange={e => setDirectAgreeTerms(e.target.checked)}
+                  className="w-4 h-4 accent-[#5B21B6] rounded"
+                />
+              </div>
+              <p className="text-xs text-gray-700 font-semibold leading-relaxed">
+                I have read and agree to the legally binding{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowDirectTermsModal(true)}
+                  className="text-[#5B21B6] underline font-black hover:text-[#4C1D95] bg-transparent border-none p-0 cursor-pointer inline"
+                >
+                  Investment Terms &amp; Conditions Guidelines
+                </button>
+                . I understand this digital agreement is legally enforceable and constitutes an official investment commitment between both parties.
+              </p>
+            </label>
+            {!directAgreeTerms && (
+              <button
+                type="button"
+                onClick={() => setShowDirectTermsModal(true)}
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold rounded-lg text-[10px] cursor-pointer transition-colors shadow-sm"
+              >
+                <Eye size={10} /> Click here to Read Terms &amp; Conditions First
+              </button>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+            <p className="text-[10px] text-gray-400 font-semibold">
+              This will create an active deal track and notify the founder via the platform.
+            </p>
+            <button
+              type="submit"
+              disabled={actionLoading || !directAgreeTerms}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-extrabold text-sm shadow-lg transition-all ${
+                directAgreeTerms
+                  ? 'bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] hover:from-[#5B21B6] hover:to-[#4C1D95] text-white cursor-pointer hover:scale-[1.02] hover:shadow-xl'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              {actionLoading ? (
+                <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Creating...</>
+              ) : (
+                <><ArrowRight size={16} /> Draft &amp; Send Agreement</>
+              )}
+            </button>
+          </div>
+        </div>
+      </form>
+
+      {/* Terms & Conditions Guidelines Modal */}
+      {showDirectTermsModal && (
+        <div className="fixed inset-0 z-[200] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl relative flex flex-col max-h-[88vh] text-left">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-100 flex items-start justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#6C4CF1] to-[#4C1D95] flex items-center justify-center shadow">
+                  <ShieldCheck size={16} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-gray-900">Investment Terms &amp; Conditions</h3>
+                  <p className="text-[10px] text-gray-400 mt-0.5">Platform Investment Agreement Guidelines</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDirectTermsModal(false)}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 cursor-pointer transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs text-gray-600 leading-relaxed">
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                <p className="text-[10px] font-black text-amber-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <AlertCircle size={10} /> Legally Binding Notice
+                </p>
+                <p className="text-amber-800 font-semibold text-[11px]">
+                  By accepting these guidelines, you confirm you have the legal authority to enter into this investment agreement on behalf of your entity and that the details provided are accurate and truthful.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-gray-800 text-[11px] uppercase tracking-wider flex items-center gap-1 mb-1.5">
+                  <span className="w-5 h-5 rounded-full bg-[#5B21B6] text-white text-[9px] font-black flex items-center justify-center">1</span>
+                  Digital Signature Authenticity
+                </h4>
+                <p>
+                  By executing this agreement electronically, you consent to the use of cursive digital signature technology. Under the Information Technology Act, 2000, and applicable electronic commerce regulations, electronic signatures are legally valid, binding, and enforceable — carrying the same legal weight as physical ink signatures.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-gray-800 text-[11px] uppercase tracking-wider flex items-center gap-1 mb-1.5">
+                  <span className="w-5 h-5 rounded-full bg-[#5B21B6] text-white text-[9px] font-black flex items-center justify-center">2</span>
+                  Escrow &amp; Fund Placement Rules
+                </h4>
+                <p>
+                  Upon countersignature from both the Investor and the Founder, the status shall shift to <strong>"Fully Signed"</strong>. The committed investment funds must be submitted to the platform escrow account within the agreed timeline. Funds will be reviewed and verified by the Admin Compliance Desk before being disbursed to the startup's designated registered bank account.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-gray-800 text-[11px] uppercase tracking-wider flex items-center gap-1 mb-1.5">
+                  <span className="w-5 h-5 rounded-full bg-[#5B21B6] text-white text-[9px] font-black flex items-center justify-center">3</span>
+                  Revision &amp; Dispute Resolution
+                </h4>
+                <p>
+                  Any changes requested to commercial terms, milestones, or clauses must be formally documented using the platform's "Request Changes" workflow. Re-dispatched agreement versions supersede all previous versions and automatically reset signature execution states for both parties.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-gray-800 text-[11px] uppercase tracking-wider flex items-center gap-1 mb-1.5">
+                  <span className="w-5 h-5 rounded-full bg-[#5B21B6] text-white text-[9px] font-black flex items-center justify-center">4</span>
+                  Confidentiality &amp; Non-Disclosure
+                </h4>
+                <p>
+                  All deal terms, financial parameters, commercial clauses, milestones, and identities of the parties involved are strictly confidential. Neither party shall disclose any agreement details to third parties without prior written consent from all signatories.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-gray-800 text-[11px] uppercase tracking-wider flex items-center gap-1 mb-1.5">
+                  <span className="w-5 h-5 rounded-full bg-[#5B21B6] text-white text-[9px] font-black flex items-center justify-center">5</span>
+                  Equity &amp; Ownership Transfer
+                </h4>
+                <p>
+                  The agreed equity stake shall be formally transferred and registered with the relevant regulatory body post-funding verification. The Founder acknowledges this transaction and agrees to issue or transfer shares as per the agreed instrument (SAFE / Equity / Convertible Note etc.) within the stipulated timelines.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-extrabold text-gray-800 text-[11px] uppercase tracking-wider flex items-center gap-1 mb-1.5">
+                  <span className="w-5 h-5 rounded-full bg-[#5B21B6] text-white text-[9px] font-black flex items-center justify-center">6</span>
+                  Platform Compliance
+                </h4>
+                <p>
+                  This platform acts solely as a facilitator and digital signing venue. All legal, tax, and regulatory compliance obligations remain the responsibility of the respective Investor and Founder entities. The platform does not provide legal, financial, or investment advisory services.
+                </p>
+              </div>
+
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                <p className="text-emerald-800 font-bold text-[11px]">
+                  ✓ By clicking <strong>"Accept &amp; Agree"</strong>, you confirm that you have read, understood, and fully agreed to all the terms and guidelines stated above.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0 rounded-b-3xl gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDirectTermsModal(false)}
+                className="px-4 py-2 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-xs hover:bg-gray-50 cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDirectAgreeTerms(true);
+                  setShowDirectTermsModal(false);
+                }}
+                className="flex items-center gap-1.5 px-6 py-2.5 bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] hover:from-[#5B21B6] hover:to-[#4C1D95] text-white font-extrabold rounded-xl text-xs shadow-md cursor-pointer transition-all"
+              >
+                <CheckCircle2 size={13} /> Accept &amp; Agree
+              </button>
+            </div>
           </div>
         </div>
       )}
