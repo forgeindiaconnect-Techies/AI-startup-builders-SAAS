@@ -1176,7 +1176,7 @@ const InvestorTransactions: React.FC = () => {
 
                       {/* Direct UPI App launcher buttons */}
                       <div className="mt-4 pt-3 border-t border-purple-100 w-full">
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider mb-2">Supported Apps & Direct Pay Links</p>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-wider mb-2">Open on Mobile — Tap to Pay via UPI App</p>
                         <div className="flex items-center justify-center gap-2 flex-wrap">
                           {['Paytm', 'Google Pay', 'PhonePe', 'BHIM UPI'].map((appName) => {
                             const upiPa = 'escrow.platform@upi';
@@ -1184,17 +1184,33 @@ const InvestorTransactions: React.FC = () => {
                             const upiAm = paymentOffer.offerAmount;
                             const upiTn = paymentOffer.commitmentId || `FC-2026-${String(paymentOffer.id || paymentOffer._id || '0000').slice(-4).toUpperCase()}`;
                             const upiDeepLink = `upi://pay?pa=${upiPa}&pn=${encodeURIComponent(upiPn)}&am=${upiAm}&tn=${encodeURIComponent(upiTn)}&cu=INR`;
+                            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
                             return (
-                              <a
+                              <button
                                 key={appName}
-                                href={upiDeepLink}
-                                className="px-3 py-1.5 bg-white border border-purple-200 hover:bg-purple-50 text-purple-900 rounded-xl font-bold text-[11px] flex items-center gap-1 shadow-2xs transition-all hover:scale-105"
+                                type="button"
+                                onClick={() => {
+                                  if (isMobile) {
+                                    window.location.href = upiDeepLink;
+                                  } else {
+                                    navigator.clipboard.writeText(upiPa).then(() => {
+                                      showToast(`UPI ID copied! Open ${appName} on your phone and pay to: ${upiPa}`);
+                                    });
+                                  }
+                                }}
+                                title={isMobile ? `Open ${appName} to pay` : `UPI apps work on mobile — click to copy UPI ID and scan QR above`}
+                                className="px-3 py-1.5 bg-white border border-purple-200 hover:bg-purple-50 text-purple-900 rounded-xl font-bold text-[11px] flex items-center gap-1 shadow-sm transition-all hover:scale-105 cursor-pointer"
                               >
-                                ⚡ Pay via {appName}
-                              </a>
+                                ⚡ {appName}
+                              </button>
                             );
                           })}
                         </div>
+                        {!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && (
+                          <p className="text-[9px] text-amber-600 font-semibold mt-2 text-center">
+                            📱 UPI app buttons work on mobile — scan the QR code above from your phone
+                          </p>
+                        )}
                       </div>
 
                       {/* Copy UPI VPA */}
