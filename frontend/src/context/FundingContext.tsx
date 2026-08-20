@@ -101,6 +101,7 @@ export interface FundingOffer {
     ifscCode?: string;
   };
   commissionUpiDetails?: {
+    selectedUpiApp?: 'gpay' | 'paytm' | 'phonepe' | 'all';
     paytmUpi?: string;
     gpayUpi?: string;
     phonepeUpi?: string;

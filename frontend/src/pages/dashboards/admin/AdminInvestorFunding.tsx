@@ -46,6 +46,7 @@ const AdminInvestorFunding: React.FC = () => {
   const [paytmUpi, setPaytmUpi] = useState('admin.aistartup@paytm');
   const [gpayUpi, setGpayUpi] = useState('admin.aistartup@okicici');
   const [phonepeUpi, setPhonepeUpi] = useState('admin.aistartup@ybl');
+  const [selectedUpiApp, setSelectedUpiApp] = useState<'gpay' | 'paytm' | 'phonepe' | 'all'>('gpay');
 
   // Actions states
   const [actionLoading, setActionLoading] = useState(false);
@@ -126,6 +127,7 @@ const AdminInvestorFunding: React.FC = () => {
     setPaytmUpi(tx.commissionUpiDetails?.paytmUpi || 'admin.aistartup@paytm');
     setGpayUpi(tx.commissionUpiDetails?.gpayUpi || 'admin.aistartup@okicici');
     setPhonepeUpi(tx.commissionUpiDetails?.phonepeUpi || 'admin.aistartup@ybl');
+    setSelectedUpiApp(tx.commissionUpiDetails?.selectedUpiApp || 'gpay');
   };
 
   // Save Platform Commission Action
@@ -141,7 +143,7 @@ const AdminInvestorFunding: React.FC = () => {
         action: 'commission_fixed',
         performedBy: adminName,
         role: 'Admin',
-        message: `Admin fixed platform commission to ₹${amount.toLocaleString('en-IN')} (${rate}%). Payment Options configured: ${commissionPaymentMode.toUpperCase()}.`,
+        message: `Admin fixed platform commission to ₹${amount.toLocaleString('en-IN')} (${rate}%). Payment Options configured: ${commissionPaymentMode.toUpperCase()} (${selectedUpiApp.toUpperCase()}).`,
         createdAt: new Date().toISOString(),
       };
 
@@ -160,6 +162,7 @@ const AdminInvestorFunding: React.FC = () => {
           ifscCode: bankIfscCode,
         },
         commissionUpiDetails: {
+          selectedUpiApp,
           paytmUpi,
           gpayUpi,
           phonepeUpi,
@@ -791,42 +794,93 @@ const AdminInvestorFunding: React.FC = () => {
                 {/* UPI QR & App Options */}
                 {(commissionPaymentMode === 'upi_qr' || commissionPaymentMode === 'both') && (
                   <div className="bg-white p-3 rounded-xl border border-gray-200 space-y-2 mt-2">
-                    <p className="text-[10px] font-extrabold uppercase text-gray-500 tracking-wider">UPI Apps &amp; QR Code Options</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-extrabold uppercase text-gray-500 tracking-wider">UPI Apps &amp; QR Code Options</p>
+                      <span className="text-[10px] text-purple-700 font-bold">Select App for QR</span>
+                    </div>
                     
-                    <div className="flex gap-2 mb-2">
-                      <span className="px-2 py-1 bg-blue-50 text-blue-700 font-extrabold text-[10px] rounded-lg border border-blue-200">Paytm</span>
-                      <span className="px-2 py-1 bg-emerald-50 text-emerald-700 font-extrabold text-[10px] rounded-lg border border-emerald-200">Google Pay</span>
-                      <span className="px-2 py-1 bg-purple-50 text-purple-700 font-extrabold text-[10px] rounded-lg border border-purple-200">PhonePe</span>
+                    {/* App Selection Buttons */}
+                    <div className="flex gap-2 mb-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUpiApp('gpay')}
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-extrabold cursor-pointer transition-colors ${
+                          selectedUpiApp === 'gpay'
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                        }`}
+                      >
+                        Google Pay
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUpiApp('paytm')}
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-extrabold cursor-pointer transition-colors ${
+                          selectedUpiApp === 'paytm'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                            : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                        }`}
+                      >
+                        Paytm
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUpiApp('phonepe')}
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-extrabold cursor-pointer transition-colors ${
+                          selectedUpiApp === 'phonepe'
+                            ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                            : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+                        }`}
+                      >
+                        PhonePe
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUpiApp('all')}
+                        className={`px-2.5 py-1 rounded-lg border text-[10px] font-extrabold cursor-pointer transition-colors ${
+                          selectedUpiApp === 'all'
+                            ? 'bg-gray-800 text-white border-gray-800 shadow-xs'
+                            : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'
+                        }`}
+                      >
+                        All UPI Apps
+                      </button>
                     </div>
 
                     <div className="space-y-1.5">
-                      <div>
-                        <span className="text-[10px] text-gray-400 font-semibold block">Paytm UPI ID</span>
-                        <input
-                          type="text"
-                          value={paytmUpi}
-                          onChange={(e) => setPaytmUpi(e.target.value)}
-                          className="w-full p-1.5 border border-gray-200 rounded-lg text-xs font-mono font-bold text-gray-900"
-                        />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-gray-400 font-semibold block">Google Pay UPI ID</span>
-                        <input
-                          type="text"
-                          value={gpayUpi}
-                          onChange={(e) => setGpayUpi(e.target.value)}
-                          className="w-full p-1.5 border border-gray-200 rounded-lg text-xs font-mono font-bold text-gray-900"
-                        />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-gray-400 font-semibold block">PhonePe UPI ID</span>
-                        <input
-                          type="text"
-                          value={phonepeUpi}
-                          onChange={(e) => setPhonepeUpi(e.target.value)}
-                          className="w-full p-1.5 border border-gray-200 rounded-lg text-xs font-mono font-bold text-gray-900"
-                        />
-                      </div>
+                      {(selectedUpiApp === 'gpay' || selectedUpiApp === 'all') && (
+                        <div>
+                          <span className="text-[10px] text-gray-400 font-semibold block">Google Pay UPI ID</span>
+                          <input
+                            type="text"
+                            value={gpayUpi}
+                            onChange={(e) => setGpayUpi(e.target.value)}
+                            className="w-full p-1.5 border border-gray-200 rounded-lg text-xs font-mono font-bold text-gray-900"
+                          />
+                        </div>
+                      )}
+                      {(selectedUpiApp === 'paytm' || selectedUpiApp === 'all') && (
+                        <div>
+                          <span className="text-[10px] text-gray-400 font-semibold block">Paytm UPI ID</span>
+                          <input
+                            type="text"
+                            value={paytmUpi}
+                            onChange={(e) => setPaytmUpi(e.target.value)}
+                            className="w-full p-1.5 border border-gray-200 rounded-lg text-xs font-mono font-bold text-gray-900"
+                          />
+                        </div>
+                      )}
+                      {(selectedUpiApp === 'phonepe' || selectedUpiApp === 'all') && (
+                        <div>
+                          <span className="text-[10px] text-gray-400 font-semibold block">PhonePe UPI ID</span>
+                          <input
+                            type="text"
+                            value={phonepeUpi}
+                            onChange={(e) => setPhonepeUpi(e.target.value)}
+                            className="w-full p-1.5 border border-gray-200 rounded-lg text-xs font-mono font-bold text-gray-900"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
