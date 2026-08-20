@@ -300,9 +300,9 @@ const FounderInvestorMarketplace: React.FC = () => {
       )}
 
       {/* Header Banner */}
-      <div className="mb-8 bg-gradient-to-r from-[#5B21B6] via-[#6C4CF1] to-[#4C1D95] rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="mb-8 bg-gradient-to-r from-[#5B21B6] via-[#6C4CF1] to-[#4C1D95] rounded-3xl p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="absolute top-0 right-0 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 max-w-3xl">
+        <div className="relative z-10 max-w-2xl">
           <span className="px-3.5 py-1 bg-amber-400/20 text-amber-300 rounded-full text-xs font-black uppercase tracking-wider border border-amber-400/30 inline-flex items-center gap-1.5 mb-3">
             <ShieldCheck size={14} /> Verified Investor Network
           </span>
@@ -311,6 +311,12 @@ const FounderInvestorMarketplace: React.FC = () => {
             Discover and connect directly with Admin-verified Angel Investors, Venture Capitalists, and Family Offices actively seeking high-potential startups.
           </p>
         </div>
+        <button
+          onClick={() => navigate('/dashboard/founder/funding')}
+          className="relative z-10 px-5 py-3 bg-white text-[#5B21B6] hover:bg-purple-50 font-black text-xs rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer shrink-0"
+        >
+          <FileText size={16} /> View Funding &amp; Transactions
+        </button>
       </div>
 
 

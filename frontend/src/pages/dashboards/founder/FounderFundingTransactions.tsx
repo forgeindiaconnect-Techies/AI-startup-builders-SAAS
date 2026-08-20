@@ -3,7 +3,7 @@ import {
   Wallet, FileCheck, ShieldCheck, CheckCircle2,
   Clock, Plus, X, AlertCircle, TrendingUp, IndianRupee,
   Eye, Building2, Calendar, User, FileText,
-  ThumbsUp, ThumbsDown, MessageSquare, RefreshCw
+  ThumbsUp, ThumbsDown, MessageSquare, RefreshCw, Coins
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { useFunding } from '../../../context/FundingContext';
@@ -82,14 +82,22 @@ const FounderFundingTransactions: React.FC = () => {
 
   // Metrics from live FundingContext offers
   const metrics = useMemo(() => {
-    let totalCommitted = 0, pending = 0, completed = 0, awaitingAction = 0;
+    let totalCommitted = 0, pending = 0, completed = 0, awaitingAction = 0, totalCommission = 0, netCapital = 0;
     founderOffers.forEach(o => {
       totalCommitted += o.offerAmount;
-      if (['funded', 'completed'].includes(o.status)) completed += o.offerAmount;
-      else if (['payment_submitted', 'under_verification', 'accepted'].includes(o.status)) pending += o.offerAmount;
+      const rate = o.commissionRate ?? 2;
+      const commAmt = o.commissionAmount ?? Math.round(o.offerAmount * (rate / 100));
+      totalCommission += commAmt;
+
+      if (['funded', 'completed'].includes(o.status)) {
+        completed += o.offerAmount;
+        netCapital += (o.offerAmount - commAmt);
+      } else if (['payment_submitted', 'under_verification', 'accepted'].includes(o.status)) {
+        pending += o.offerAmount;
+      }
       if (o.status === 'offer_received') awaitingAction++;
     });
-    return { totalCommitted, pending, completed, awaitingAction };
+    return { totalCommitted, pending, completed, awaitingAction, totalCommission, netCapital };
   }, [founderOffers]);
 
   const fmtAmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
@@ -215,7 +223,7 @@ const FounderFundingTransactions: React.FC = () => {
       {/* Metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Total Committed</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Total Capital Committed</p>
           <p className="text-xl font-extrabold text-gray-900 mt-1">{fmtAmt(metrics.totalCommitted)}</p>
           <p className="text-[10px] text-gray-400 mt-0.5">{founderOffers.length} commitment(s)</p>
         </div>
@@ -224,13 +232,14 @@ const FounderFundingTransactions: React.FC = () => {
           <p className="text-xl font-extrabold text-amber-600 mt-1">{fmtAmt(metrics.pending)}</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Funded / Completed</p>
+          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-wider">Funded / Completed Net</p>
           <p className="text-xl font-extrabold text-emerald-600 mt-1">{fmtAmt(metrics.completed)}</p>
+          <p className="text-[10px] text-emerald-700 font-bold mt-0.5">Verified Capital</p>
         </div>
         <div className="bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] rounded-2xl shadow-sm p-5 text-white">
-          <p className="text-[10px] font-black text-purple-200 uppercase tracking-wider">Awaiting Your Action</p>
-          <p className="text-xl font-extrabold mt-1">{metrics.awaitingAction}</p>
-          <p className="text-[10px] text-purple-200 mt-0.5">new commitment(s)</p>
+          <p className="text-[10px] font-black text-purple-200 uppercase tracking-wider">Platform Fee (Admin Fixed)</p>
+          <p className="text-xl font-extrabold mt-1">{fmtAmt(metrics.totalCommission)}</p>
+          <p className="text-[10px] text-purple-200 mt-0.5">Admin Platform Fee</p>
         </div>
       </div>
 
@@ -357,24 +366,52 @@ const FounderFundingTransactions: React.FC = () => {
                   <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold">{paidOffers.length} Payment{paidOffers.length > 1 ? 's' : ''}</span>
                 </div>
                 <div className="divide-y divide-gray-50">
-                  {paidOffers.map((o) => (
-                    <div key={o.id || o._id} className="p-5 space-y-4">
-                      {/* Header row */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] flex items-center justify-center shrink-0">
-                            <IndianRupee size={16} className="text-white" />
+                  {paidOffers.map((o) => {
+                    const commRate = o.commissionRate ?? 2;
+                    const commAmount = o.commissionAmount ?? Math.round(o.offerAmount * (commRate / 100));
+                    const netCapital = o.offerAmount - commAmount;
+
+                    return (
+                      <div key={o.id || o._id} className="p-5 space-y-4">
+                        {/* Header row */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] flex items-center justify-center shrink-0">
+                              <IndianRupee size={16} className="text-white" />
+                            </div>
+                            <div>
+                              <p className="font-extrabold text-gray-900 text-sm">{o.startupName}</p>
+                              <p className="text-[10px] text-gray-400 font-mono">{o.commitmentId || `FC-${String(o.id || '').slice(-6).toUpperCase()}`}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-extrabold text-gray-900 text-sm">{o.startupName}</p>
-                            <p className="text-[10px] text-gray-400 font-mono">{o.commitmentId || `FC-${String(o.id || '').slice(-6).toUpperCase()}`}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-lg font-black text-[#5B21B6]">₹{o.offerAmount.toLocaleString('en-IN')}</span>
+                            {getOfferBadge(o.status)}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-lg font-black text-[#5B21B6]">₹{o.offerAmount.toLocaleString('en-IN')}</span>
-                          {getOfferBadge(o.status)}
+
+                        {/* Net Capital & Admin Commission Breakdown Card */}
+                        <div className="bg-gradient-to-r from-purple-50/80 via-white to-emerald-50/80 p-4 rounded-2xl border border-purple-100 space-y-2">
+                          <div className="flex items-center justify-between text-xs pb-1.5 border-b border-purple-100/60">
+                            <span className="text-gray-500 font-bold uppercase text-[10px]">Investor Investment Capital</span>
+                            <strong className="text-gray-900 font-black text-sm">₹{o.offerAmount.toLocaleString('en-IN')}</strong>
+                          </div>
+                          <div className="flex items-center justify-between text-xs pb-1.5 border-b border-purple-100/60">
+                            <span className="text-emerald-700 font-bold uppercase text-[10px] flex items-center gap-1">
+                              <Coins size={13} /> Platform Commission Fee (Fixed by Admin - {commRate}%)
+                            </span>
+                            <strong className="text-emerald-700 font-black text-xs">- ₹{commAmount.toLocaleString('en-IN')}</strong>
+                          </div>
+                          <div className="flex items-center justify-between text-xs pt-1">
+                            <span className="text-[#5B21B6] font-extrabold uppercase text-[10px]">Net Capital Received by Founder</span>
+                            <strong className="text-[#5B21B6] font-black text-base">₹{netCapital.toLocaleString('en-IN')}</strong>
+                          </div>
+                          {o.commissionNotes && (
+                            <p className="text-[10px] text-gray-500 font-medium italic pt-1 border-t border-purple-100/40">
+                              Audit Note: {o.commissionNotes}
+                            </p>
+                          )}
                         </div>
-                      </div>
 
                       {/* Payment details grid */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4">
@@ -444,7 +481,8 @@ const FounderFundingTransactions: React.FC = () => {
                         <p className="text-[10px] text-gray-500 italic">{o.paymentProof}</p>
                       )}
                     </div>
-                  ))}
+                  );
+                })}
                 </div>
               </div>
             );
@@ -522,16 +560,44 @@ const FounderFundingTransactions: React.FC = () => {
                 <span className="font-bold text-gray-500 uppercase tracking-wider text-[10px]">Current Status</span>
                 {getOfferBadge(viewingOffer.status)}
               </div>
-              {/* Amount */}
-              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-2xl p-5 text-center">
-                <p className="text-[10px] font-black text-purple-400 uppercase">Investment Amount</p>
-                <p className="text-3xl font-black text-[#5B21B6] mt-1">₹{viewingOffer.offerAmount.toLocaleString('en-IN')}</p>
-                <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-                  <span className="px-2 py-0.5 bg-white border border-purple-200 text-[#5B21B6] rounded-lg text-[10px] font-bold">{viewingOffer.instrument || 'SAFE'}</span>
-                  {viewingOffer.fundingRound && <span className="px-2 py-0.5 bg-white border border-blue-200 text-blue-600 rounded-lg text-[10px] font-bold">{viewingOffer.fundingRound}</span>}
-                  {viewingOffer.equityPercentage > 0 && <span className="px-2 py-0.5 bg-white border border-emerald-200 text-emerald-600 rounded-lg text-[10px] font-bold">{viewingOffer.equityPercentage}% Equity</span>}
-                </div>
-              </div>
+              {/* Amount & Commission Breakdown */}
+              {(() => {
+                const commRate = viewingOffer.commissionRate ?? 2;
+                const commAmount = viewingOffer.commissionAmount ?? Math.round(viewingOffer.offerAmount * (commRate / 100));
+                const netCapital = viewingOffer.offerAmount - commAmount;
+
+                return (
+                  <div className="bg-gradient-to-r from-purple-50 via-white to-emerald-50 border border-purple-100 rounded-2xl p-5 space-y-3">
+                    <div className="text-center pb-3 border-b border-purple-100">
+                      <p className="text-[10px] font-black text-purple-400 uppercase">Gross Investment Capital</p>
+                      <p className="text-3xl font-black text-[#5B21B6] mt-0.5">₹{viewingOffer.offerAmount.toLocaleString('en-IN')}</p>
+                      <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
+                        <span className="px-2 py-0.5 bg-white border border-purple-200 text-[#5B21B6] rounded-lg text-[10px] font-bold">{viewingOffer.instrument || 'SAFE'}</span>
+                        {viewingOffer.fundingRound && <span className="px-2 py-0.5 bg-white border border-blue-200 text-blue-600 rounded-lg text-[10px] font-bold">{viewingOffer.fundingRound}</span>}
+                        {viewingOffer.equityPercentage > 0 && <span className="px-2 py-0.5 bg-white border border-emerald-200 text-emerald-600 rounded-lg text-[10px] font-bold">{viewingOffer.equityPercentage}% Equity</span>}
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1 text-xs">
+                      <div className="flex justify-between items-center text-emerald-700 font-bold">
+                        <span className="flex items-center gap-1 text-[10px] uppercase">
+                          <Coins size={12} /> Admin Platform Commission Fee ({commRate}%)
+                        </span>
+                        <span>- ₹{commAmount.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[#5B21B6] font-black text-sm pt-1 border-t border-purple-100">
+                        <span className="text-[10px] uppercase">Net Capital Funded to Founder</span>
+                        <span>₹{netCapital.toLocaleString('en-IN')}</span>
+                      </div>
+                      {viewingOffer.commissionNotes && (
+                        <p className="text-[10px] text-gray-500 italic pt-1 border-t border-gray-100">
+                          Audit Note: {viewingOffer.commissionNotes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
               {/* Investor + Startup */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-50 rounded-xl p-3">
