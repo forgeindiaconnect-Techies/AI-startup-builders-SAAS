@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, CheckCircle2, XCircle, Clock, Eye,
-  ShieldCheck, X, ExternalLink, FileText, UserCheck, Building2,
+  ShieldCheck, X, ExternalLink, FileText, UserCheck, Building2, Download, Printer,
 } from 'lucide-react';
 import {
   getDocuments, updateDocument,
@@ -30,7 +30,6 @@ const AdminDocumentVerification: React.FC = () => {
   const refreshDocs = useCallback(async () => {
     const fetched = (await getDocuments()) || [];
 
-    // Seed realistic investor proof documents if none present in storage
     const hasInvestorDocs = fetched.some((d: any) => isInvestorDocument(d));
     let combined = [...fetched];
 
@@ -125,6 +124,91 @@ const AdminDocumentVerification: React.FC = () => {
     setRejectModal({ doc: null, reason: '' });
   };
 
+  const handleOpenDocumentFile = (doc: any) => {
+    if (!doc) return;
+
+    if (doc.fileUrl) {
+      window.open(doc.fileUrl, '_blank');
+      return;
+    }
+
+    const docHtml = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8"/>
+          <title>${doc.documentLabel || doc.fileName || 'Proof Document'} - Platform Verification View</title>
+          <style>
+            body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8fafc; color: #0f172a; margin: 0; padding: 40px; }
+            .card { max-width: 780px; margin: 0 auto; background: white; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; overflow: hidden; }
+            .header { background: linear-gradient(135deg, #5B21B6, #7C3AED); color: white; padding: 36px; position: relative; }
+            .header h1 { margin: 0 0 8px 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+            .header p { margin: 0; opacity: 0.9; font-size: 14px; font-family: monospace; }
+            .body { padding: 36px; }
+            .seal { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: #dcfce7; color: #15803d; font-weight: 800; border-radius: 9999px; font-size: 13px; border: 1px solid #bbf7d0; margin-bottom: 24px; }
+            .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 28px; background: #f8fafc; padding: 24px; border-radius: 16px; border: 1px solid #f1f5f9; }
+            .info-item label { font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 6px; letter-spacing: 0.5px; }
+            .info-item .val { font-size: 14px; font-weight: 700; color: #0f172a; }
+            .doc-box { background: #fafafa; border: 2px dashed #cbd5e1; border-radius: 16px; padding: 32px; text-align: center; margin-top: 24px; }
+            .footer { text-align: center; padding: 24px; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; background: #f8fafc; }
+            .btn { display: inline-flex; align-items: center; gap: 8px; background: #5B21B6; color: white; text-decoration: none; font-weight: 700; padding: 12px 24px; border-radius: 12px; margin-top: 20px; font-size: 13px; cursor: pointer; border: none; }
+            .btn:hover { background: #4C1D95; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="header">
+              <h1>${doc.documentLabel || doc.fileName}</h1>
+              <p>Official ${doc.ownerRole || 'Platform User'} Identification & Verification Proof</p>
+            </div>
+            <div class="body">
+              <div class="seal">✓ Official Platform Verification Record</div>
+              <div class="info-grid">
+                <div class="info-item">
+                  <label>Document Uploader</label>
+                  <div class="val">${doc.ownerName || 'User'}</div>
+                </div>
+                <div class="info-item">
+                  <label>User Role</label>
+                  <div class="val">${doc.ownerRole || (activeTab === 'mentor' ? 'Mentor' : 'Investor')}</div>
+                </div>
+                <div class="info-item">
+                  <label>Email Address</label>
+                  <div class="val">${doc.ownerEmail || 'Registered Platform User'}</div>
+                </div>
+                <div class="info-item">
+                  <label>Verification Category</label>
+                  <div class="val">${doc.category || 'Proof Verification'}</div>
+                </div>
+              </div>
+
+              <div class="doc-box">
+                <h3 style="margin-top:0; color:#1e293b; font-size:16px;">Proof Information & Attributes</h3>
+                <p style="font-size:14px; color:#475569; line-height:1.6; max-width:550px; margin:12px auto 0;">${doc.documentDescription || 'Official verification proof document uploaded and recorded on the platform.'}</p>
+                <div style="font-size:12px; color:#64748b; font-family:monospace; margin-top:20px; background:#ffffff; padding:10px 16px; border-radius:8px; border:1px solid #e2e8f0; display:inline-block;">
+                  Document Ref ID: ${doc.id} | Timestamp: ${new Date(doc.updatedAt || doc.createdAt || Date.now()).toLocaleString('en-IN')}
+                </div>
+              </div>
+
+              <div style="text-align:center;">
+                <button onclick="window.print()" class="btn">🖨️ Print / Save Document Copy</button>
+              </div>
+            </div>
+            <div class="footer">
+              AI Startup Builder Platform • Official Identity & Proof Verification System
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(docHtml);
+      win.document.close();
+    }
+  };
+
   const filteredDocs = currentTabDocs.filter((d) => {
     const searchLower = search.trim().toLowerCase();
     return (
@@ -176,7 +260,7 @@ const AdminDocumentVerification: React.FC = () => {
         </p>
       </div>
 
-      {/* Sub-Navigation Tabs: Mentor Documents & Investor Documents */}
+      {/* Sub-Navigation Tabs */}
       <div className="flex gap-2 bg-gray-100 p-1.5 rounded-2xl mb-6 w-fit border border-gray-200/80">
         <button
           onClick={() => { setActiveTab('mentor'); setSearch(''); }}
@@ -340,11 +424,11 @@ const AdminDocumentVerification: React.FC = () => {
                       {/* Actions */}
                       <td className="px-5 py-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Preview / Inspection Button */}
+                          {/* View Proof Button */}
                           <button
                             onClick={() => setPreviewDoc(doc)}
-                            title="Inspect Proof Document"
-                            className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                            title="Inspect & View Proof Document"
+                            className="px-3 py-1.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white border border-[#5B21B6] rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
                           >
                             <Eye size={13} /> View Proof
                           </button>
@@ -448,13 +532,22 @@ const AdminDocumentVerification: React.FC = () => {
                 </span>
               </div>
 
-              {/* Document Reference & Details */}
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-2">
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Proof Document Details</p>
-                <p className="text-xs text-gray-800 font-semibold">{previewDoc.documentDescription || 'No description provided.'}</p>
-                <div className="flex flex-wrap gap-4 pt-1 text-[11px] text-gray-500">
-                  <span>Category: <strong className="text-gray-900">{previewDoc.category || 'General'}</strong></span>
-                  <span>File Name: <strong className="text-gray-900">{previewDoc.fileName}</strong></span>
+              {/* Inline Interactive Proof Certificate View */}
+              <div className="bg-gradient-to-br from-gray-50 to-purple-50/30 p-5 rounded-2xl border border-purple-100/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-800 bg-purple-100 px-2.5 py-1 rounded-full border border-purple-200">
+                    Official Document Proof Certificate
+                  </span>
+                  <span className="text-[10px] text-gray-400 font-mono">
+                    Ref ID: {previewDoc.id}
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-gray-900 leading-relaxed">
+                  {previewDoc.documentDescription || 'Official verification proof document uploaded and recorded on the platform.'}
+                </p>
+                <div className="grid grid-cols-2 gap-3 pt-2 text-[11px] text-gray-600 border-t border-purple-100/60">
+                  <div>Category: <strong className="text-gray-900">{previewDoc.category || 'Verification Proof'}</strong></div>
+                  <div>File Name: <strong className="text-gray-900">{previewDoc.fileName}</strong></div>
                 </div>
               </div>
 
@@ -473,32 +566,24 @@ const AdminDocumentVerification: React.FC = () => {
                 </div>
               )}
 
-              {/* File Proof View Link / Download */}
+              {/* File Proof View Action Bar */}
               <div className="bg-white border border-gray-200 p-4 rounded-2xl flex items-center justify-between shadow-xs">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-purple-100 text-[#5B21B6] flex items-center justify-center font-black">
+                  <div className="w-10 h-10 rounded-xl bg-purple-100 text-[#5B21B6] flex items-center justify-center font-black text-sm">
                     PDF
                   </div>
                   <div>
                     <p className="text-xs font-bold text-gray-900">{previewDoc.fileName}</p>
-                    <p className="text-[10px] text-gray-400 font-mono">Verification Proof Document File</p>
+                    <p className="text-[10px] text-gray-400 font-mono">Official Document Proof File</p>
                   </div>
                 </div>
 
-                {previewDoc.fileUrl ? (
-                  <a
-                    href={previewDoc.fileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold text-xs rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5"
-                  >
-                    <ExternalLink size={14} /> Open Document File
-                  </a>
-                ) : (
-                  <span className="text-xs text-gray-400 font-semibold bg-gray-100 px-3 py-1.5 rounded-xl">
-                    Proof Recorded via Form
-                  </span>
-                )}
+                <button
+                  onClick={() => handleOpenDocumentFile(previewDoc)}
+                  className="px-4 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold text-xs rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                >
+                  <ExternalLink size={14} /> Open &amp; View Document File
+                </button>
               </div>
             </div>
 
