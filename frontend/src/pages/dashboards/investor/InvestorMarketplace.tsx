@@ -35,7 +35,7 @@ const InvestorMarketplace: React.FC = () => {
     }
 
     if (list.some(item => item.id === startup.startupId)) {
-      navigate('/dashboard/investor/portfolio-hub', { state: { activeTab: 'saved' } });
+      navigate('/dashboard/investor/startup-ideas');
       return;
     }
 
@@ -49,12 +49,15 @@ const InvestorMarketplace: React.FC = () => {
       location: 'Global',
       rating: startup.aiGenerated?.aiReport?.investmentReadinessScore || 85,
       logo: 'from-purple-500 to-indigo-600',
+      fundingAsk: startup.fundingAmount || '₹50,00,000',
+      founderName: startup.founderName || 'Founder',
+      startupIdea: startup.startupIdea || startup.shortIntro,
       startupData: startup
     };
 
     const updated = [newSaved, ...list];
     localStorage.setItem(savedKey, JSON.stringify(updated));
-    navigate('/dashboard/investor/portfolio-hub', { state: { activeTab: 'saved' } });
+    navigate('/dashboard/investor/startup-ideas');
   };
 
   const [search, setSearch] = useState('');
@@ -336,9 +339,12 @@ const InvestorMarketplace: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Deal Flow Marketplace</h1>
           <p className="text-gray-500 mt-1">Discover, filter, and evaluate AI-vetted startup opportunities.</p>
         </div>
-        <button className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors">
-          <Bookmark size={20} className="mr-2" />
-          Saved Deals (2)
+        <button 
+          onClick={() => navigate('/dashboard/investor/startup-ideas')}
+          className="flex items-center px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 font-bold rounded-xl transition-all shadow-2xs cursor-pointer"
+        >
+          <Bookmark size={18} className="mr-2 fill-[#5B21B6]" />
+          Startup Ideas
         </button>
       </div>
 

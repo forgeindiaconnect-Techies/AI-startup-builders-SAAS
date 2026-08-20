@@ -46,6 +46,7 @@ import InvestorDashboard from '../pages/dashboards/InvestorDashboard';
 import InvestorHub from '../pages/dashboards/investor/InvestorHub';
 import InvestorMarketplace from '../pages/dashboards/investor/InvestorMarketplace';
 import InvestorPortfolioHub from '../pages/dashboards/investor/InvestorPortfolioHub';
+import InvestorSaved from '../pages/dashboards/investor/InvestorSaved';
 import InvestorRequests from '../pages/dashboards/investor/InvestorRequests';
 import InvestorMeetings from '../pages/dashboards/investor/InvestorMeetings';
 import InvestorTransactions from '../pages/dashboards/investor/InvestorTransactions';
@@ -115,6 +116,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
   investor: {
     '/dashboard/investor': InvestorDashboard,
     '/dashboard/investor/marketplace': InvestorMarketplace,
+    '/dashboard/investor/startup-ideas': InvestorSaved,
     '/dashboard/investor/portfolio-hub': InvestorPortfolioHub,
     '/dashboard/investor/requests': InvestorRequests,
     '/dashboard/investor/meetings': InvestorMeetings,
@@ -190,7 +192,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
       items: [
         { name: 'Overview',           icon: LayoutDashboard, path: '/dashboard/investor' },
         { name: 'Startup Marketplace',icon: Building2,       path: '/dashboard/investor/marketplace' },
-        { name: 'Portfolio',          icon: Briefcase,       path: '/dashboard/investor/portfolio-hub' },
+        { name: 'Startup Ideas',      icon: Rocket,          path: '/dashboard/investor/startup-ideas' },
         { name: 'Investment Requests',icon: Handshake,       path: '/dashboard/investor/requests' },
         { name: 'Learning Center',   icon: Film,             path: '/dashboard/investor/learning-center' },
         { name: 'Notifications',      icon: Bell,            path: '/dashboard/investor/notifications' },

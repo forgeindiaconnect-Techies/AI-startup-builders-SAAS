@@ -234,6 +234,7 @@ function App() {
                   <Route path="investor" element={<ProtectedRoute allowedRoles={['investor']} />}>
                     <Route index                  element={<InvestorDashboard />} />
                     <Route path="marketplace"     element={<InvestorMarketplace />} />
+                    <Route path="startup-ideas"   element={<InvestorSaved />} />
                     <Route path="portfolio-hub"   element={<InvestorPortfolioHub />} />
                     <Route path="requests"        element={<InvestorRequests />} />
                     <Route path="meetings"        element={<InvestorMeetings />} />
