@@ -93,6 +93,18 @@ export interface FundingOffer {
   commissionNotes?: string;
   commissionUpdatedAt?: string;
   commissionFixedBy?: string;
+  commissionPaymentMode?: 'bank' | 'upi_qr' | 'both';
+  commissionBankDetails?: {
+    accountHolder?: string;
+    bankName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+  };
+  commissionUpiDetails?: {
+    paytmUpi?: string;
+    gpayUpi?: string;
+    phonepeUpi?: string;
+  };
   agreementId?: string;
   agreementVersion?: string;
   investorSignedAt?: string;

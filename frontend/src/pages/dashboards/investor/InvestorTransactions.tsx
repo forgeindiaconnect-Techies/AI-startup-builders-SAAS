@@ -4,7 +4,7 @@ import {
   IndianRupee, ArrowUpRight, Clock, Wallet, CheckCircle2, 
   AlertCircle, X, ShieldCheck, Eye, CreditCard, Landmark, 
   Send, Calendar, FileText, ChevronRight, Upload, Info, 
-  FileCheck, FileQuestion, BookOpen, ExternalLink, Coins
+  FileCheck, FileQuestion, BookOpen, ExternalLink, Coins, QrCode, Smartphone
 } from 'lucide-react';
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer } from '../../../context/FundingContext';
@@ -1075,6 +1075,66 @@ const InvestorTransactions: React.FC = () => {
                       Audit Note: {selectedTx.commissionNotes}
                     </p>
                   )}
+                </div>
+              </div>
+
+              {/* Admin Configured Commission Payment Methods */}
+              <div className="bg-gradient-to-br from-purple-50/70 via-white to-emerald-50/50 p-5 rounded-2xl border border-purple-100 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-[#5B21B6] text-white rounded-xl">
+                      <QrCode size={18} />
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-gray-900 text-xs">Admin Platform Commission Payment Options</h4>
+                      <p className="text-[11px] text-gray-500">Pay via Manual Bank Transfer or Paytm / Google Pay / PhonePe QR</p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-extrabold text-[10px] rounded-full border border-emerald-200">
+                    Payment Options Ready
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                  {/* Manual Bank Details */}
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-2">
+                    <div className="flex items-center gap-1.5 text-gray-900 font-bold text-xs">
+                      <Landmark size={14} className="text-[#5B21B6]" />
+                      Manual Bank Transfer (NEFT/RTGS/IMPS)
+                    </div>
+                    <div className="space-y-1 text-[11px] font-medium text-gray-600">
+                      <div className="flex justify-between"><span className="text-gray-400">Account Holder:</span> <strong className="text-gray-900">{selectedTx.commissionBankDetails?.accountHolder || 'AI Startup Builder Platform'}</strong></div>
+                      <div className="flex justify-between"><span className="text-gray-400">Bank Name:</span> <strong className="text-gray-900">{selectedTx.commissionBankDetails?.bankName || 'HDFC Bank'}</strong></div>
+                      <div className="flex justify-between"><span className="text-gray-400">Account No:</span> <strong className="text-gray-900 font-mono">{selectedTx.commissionBankDetails?.accountNumber || '9990018472901'}</strong></div>
+                      <div className="flex justify-between"><span className="text-gray-400">IFSC Code:</span> <strong className="text-gray-900 font-mono">{selectedTx.commissionBankDetails?.ifscCode || 'HDFC0001234'}</strong></div>
+                    </div>
+                  </div>
+
+                  {/* Paytm / GPay / PhonePe UPI & QR */}
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-2">
+                    <div className="flex items-center justify-between text-gray-900 font-bold text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Smartphone size={14} className="text-emerald-600" />
+                        UPI Apps &amp; QR Code Payment
+                      </div>
+                      <div className="flex gap-1">
+                        <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[9px] font-extrabold rounded">Paytm</span>
+                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 text-[9px] font-extrabold rounded">GPay</span>
+                        <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[9px] font-extrabold rounded">PhonePe</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 text-[11px] font-medium text-gray-600">
+                      <div className="flex justify-between"><span className="text-gray-400">Paytm UPI:</span> <strong className="text-blue-700 font-mono">{selectedTx.commissionUpiDetails?.paytmUpi || 'admin.aistartup@paytm'}</strong></div>
+                      <div className="flex justify-between"><span className="text-gray-400">Google Pay UPI:</span> <strong className="text-emerald-700 font-mono">{selectedTx.commissionUpiDetails?.gpayUpi || 'admin.aistartup@okicici'}</strong></div>
+                      <div className="flex justify-between"><span className="text-gray-400">PhonePe UPI:</span> <strong className="text-purple-700 font-mono">{selectedTx.commissionUpiDetails?.phonepeUpi || 'admin.aistartup@ybl'}</strong></div>
+                    </div>
+
+                    <div className="pt-1 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-500">
+                      <span>✓ Paytm • Google Pay • PhonePe Supported</span>
+                      <span className="font-bold text-[#5B21B6]">Scan QR Ready</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
