@@ -38,7 +38,7 @@ const AdminInvestorFunding: React.FC = () => {
   const [commissionNotesInput, setCommissionNotesInput] = useState<string>('');
 
   // Payment Options State for Fixed Commission
-  const [commissionPaymentMode, setCommissionPaymentMode] = useState<'bank' | 'upi_qr' | 'both'>('both');
+  const [commissionPaymentMode, setCommissionPaymentMode] = useState<'bank' | 'upi_qr' | 'both'>('bank');
   const [bankAccountHolder, setBankAccountHolder] = useState('AI Startup Builder Platform');
   const [bankName, setBankName] = useState('HDFC Bank');
   const [bankAccountNumber, setBankAccountNumber] = useState('9990018472901');
@@ -119,7 +119,7 @@ const AdminInvestorFunding: React.FC = () => {
     setCommissionRateInput(defaultRate);
     setCommissionAmountInput(String(defaultAmount));
     setCommissionNotesInput(tx.commissionNotes || `Platform commission set for investment of ₹${tx.offerAmount.toLocaleString('en-IN')}`);
-    setCommissionPaymentMode(tx.commissionPaymentMode || 'both');
+    setCommissionPaymentMode(tx.commissionPaymentMode || 'bank');
     setBankAccountHolder(tx.commissionBankDetails?.accountHolder || 'AI Startup Builder Platform');
     setBankName(tx.commissionBankDetails?.bankName || 'HDFC Bank');
     setBankAccountNumber(tx.commissionBankDetails?.accountNumber || '9990018472901');
