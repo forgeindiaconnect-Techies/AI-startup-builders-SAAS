@@ -203,14 +203,11 @@ const FounderFundingTransactions: React.FC = () => {
           <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
             <Wallet className="text-[#5B21B6]" size={28} /> Transactions
           </h1>
-          <p className="text-sm text-gray-500 mt-1">View investor commitments, manage funding offers, and record finalized deals.</p>
+          <p className="text-sm text-gray-500 mt-1">View investor commitments and manage funding offers.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => refreshOffers()} className="p-2.5 bg-white border border-gray-200 text-gray-500 hover:text-[#5B21B6] rounded-xl transition-colors" title="Refresh">
+          <button onClick={() => refreshOffers()} className="p-2.5 bg-white border border-gray-200 text-gray-500 hover:text-[#5B21B6] rounded-xl transition-colors cursor-pointer" title="Refresh">
             <RefreshCw size={15} />
-          </button>
-          <button onClick={() => setShowAddModal(true)} className="px-5 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5">
-            <Plus size={14} /> Record Finalized Deal
           </button>
         </div>
       </div>
@@ -458,8 +455,7 @@ const FounderFundingTransactions: React.FC = () => {
             <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-14 text-center">
               <FileCheck size={40} className="mx-auto text-gray-300 mb-3" />
               <h3 className="text-base font-bold text-gray-800">No Finalized Deals Recorded</h3>
-              <p className="text-xs text-gray-500 mt-1">Once an investment agreement is signed and finalized, record it here.</p>
-              <button onClick={() => setShowAddModal(true)} className="mt-4 px-5 py-2.5 bg-[#5B21B6] text-white font-bold text-xs rounded-xl shadow-md">+ Record Finalized Deal</button>
+              <p className="text-xs text-gray-500 mt-1">Once an investment agreement is signed and finalized, it will be displayed here.</p>
             </div>
           ) : localDeals.length > 0 ? (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
