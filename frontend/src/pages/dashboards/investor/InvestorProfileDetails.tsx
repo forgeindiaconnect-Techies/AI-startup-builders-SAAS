@@ -116,7 +116,7 @@ const InvestorProfileDetails: React.FC = () => {
     <div className="animate-fade-in-up pb-4">
       <div className="pb-6 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Profile & KYC</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
           {getBadge()}
         </div>
         <p className="text-gray-500 mt-1">Manage your investor profile, contact information, and verified KYC accreditation documents all in one place.</p>

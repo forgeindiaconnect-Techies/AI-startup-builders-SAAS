@@ -196,7 +196,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Transactions',       icon: IndianRupee,     path: '/dashboard/investor/transactions' },
         { name: 'Learning Center',   icon: Film,             path: '/dashboard/investor/learning-center' },
         { name: 'Notifications',      icon: Bell,            path: '/dashboard/investor/notifications' },
-        { name: 'Profile & KYC',      icon: ShieldCheck,     path: '/dashboard/investor/profile-kyc' },
+        { name: 'Profile',            icon: ShieldCheck,     path: '/dashboard/investor/profile-kyc' },
       ],
     },
   ],
