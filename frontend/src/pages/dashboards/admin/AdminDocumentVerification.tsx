@@ -69,6 +69,9 @@ const AdminDocumentVerification: React.FC = () => {
         }
       ];
       combined = [...demoInvestorDocs, ...combined];
+      try {
+        localStorage.setItem('ai_startup_builder_documents', JSON.stringify(combined));
+      } catch (e) {}
     }
 
     setAllDocsList(combined);
