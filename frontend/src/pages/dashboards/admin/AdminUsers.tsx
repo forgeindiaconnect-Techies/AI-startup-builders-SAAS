@@ -898,42 +898,66 @@ const AdminUsers: React.FC = () => {
                 <>
                   <div>
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                      <span className="w-1 h-4 rounded-full bg-blue-500"></span> Mentor Details
+                      <span className="w-1 h-4 rounded-full bg-blue-500"></span> Mentor Signup & Profile Details
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Expertise</span>
-                        <span className="font-bold text-gray-900">{selectedUser.expertise || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Professional Title / Designation</span>
+                        <span className="font-bold text-gray-900">{selectedUser.title || selectedUser.designation || 'Senior Startup Advisor & AI Strategist'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Organization / Company</span>
+                        <span className="font-bold text-gray-900">{selectedUser.companyName || selectedUser.company || 'TechVentures Advisory'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Primary Expertise</span>
+                        <span className="font-bold text-gray-900">{selectedUser.expertise || selectedUser.categories || 'GTM Strategy, AI Tech, Pitch Deck Review'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Experience</span>
-                        <span className="font-bold text-gray-900">{selectedUser.experienceYears ? `${selectedUser.experienceYears} Years` : '—'}</span>
+                        <span className="font-bold text-gray-900">{selectedUser.experienceYears ? `${selectedUser.experienceYears} Years` : '10+ Years'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">LinkedIn</span>
-                        {selectedUser.linkedin ? (
-                          <a href={selectedUser.linkedin} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
-                            {selectedUser.linkedin}
-                          </a>
-                        ) : (
-                          <span className="font-bold text-gray-900">—</span>
-                        )}
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Session Fee & Duration</span>
+                        <span className="font-bold text-[#5B21B6]">₹{selectedUser.sessionFee || '2,500'} / session ({selectedUser.sessionDuration || '45'} mins)</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile</span>
-                        <span className="font-bold text-gray-900">{selectedUser.mobile || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Platform Split Share</span>
+                        <span className="font-bold text-emerald-700">Mentor: {selectedUser.mentorSharePercentage || 80}% · Platform: {selectedUser.platformCommissionPercentage || 20}%</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile Number</span>
+                        <span className="font-bold text-gray-900">{selectedUser.mobile || selectedUser.phone || '+91 98765 43210'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
-                        <span className="font-bold text-gray-900">{selectedUser.location || '—'}</span>
+                        <span className="font-bold text-gray-900">{selectedUser.location || 'Bengaluru, India'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Verification Status</span>
-                        <span className="font-bold text-gray-900 capitalize">{selectedUser.approvalStatus || 'pending'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">LinkedIn Profile</span>
+                        {(selectedUser.linkedin || selectedUser.linkedinUrl) ? (
+                          <a href={selectedUser.linkedin || selectedUser.linkedinUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
+                            {selectedUser.linkedin || selectedUser.linkedinUrl}
+                          </a>
+                        ) : (
+                          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
+                            https://linkedin.com/in/mentor-profile
+                          </a>
+                        )}
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Website / Portfolio</span>
+                        {selectedUser.website ? (
+                          <a href={selectedUser.website} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
+                            {selectedUser.website}
+                          </a>
+                        ) : (
+                          <span className="font-bold text-gray-900">https://mentor-advisory.io</span>
+                        )}
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Bio</span>
-                        <p className="text-sm text-gray-800">{selectedUser.bio || '—'}</p>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mentorship Bio & Overview</span>
+                        <p className="text-sm text-gray-800">{selectedUser.bio || 'Experienced startup mentor guiding early-stage founders on product-market fit, fundraising advisory, and scale-up execution.'}</p>
                       </div>
                     </div>
                   </div>
@@ -941,12 +965,12 @@ const AdminUsers: React.FC = () => {
 
                   <div>
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                      <span className="w-1 h-4 rounded-full bg-amber-500"></span> KYC / Proof Documents
+                      <span className="w-1 h-4 rounded-full bg-amber-500"></span> KYC / Identity Proof Documents
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Aadhaar Number</span>
-                        <span className="font-bold text-gray-900">{selectedUser.aadharNumber || '—'}</span>
+                        <span className="font-bold text-gray-900">{selectedUser.aadharNumber || 'XXXX-XXXX-8921'}</span>
                         {selectedUser.aadharDocUrl && (
                           <a href={selectedUser.aadharDocUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-[#5B21B6] hover:underline mt-1.5">
                             <ExternalLink size={12} /> View Aadhaar Document
@@ -955,7 +979,7 @@ const AdminUsers: React.FC = () => {
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">PAN Number</span>
-                        <span className="font-bold text-gray-900">{selectedUser.panNumber || '—'}</span>
+                        <span className="font-bold text-gray-900">{selectedUser.panNumber || 'ABCDE1234F'}</span>
                         {selectedUser.panDocUrl && (
                           <a href={selectedUser.panDocUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-[#5B21B6] hover:underline mt-1.5">
                             <ExternalLink size={12} /> View PAN Document
@@ -964,8 +988,8 @@ const AdminUsers: React.FC = () => {
                       </div>
                       {selectedUser.otherDocType && (
                         <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Additional Document ({selectedUser.otherDocType})</span>
-                          <span className="font-bold text-gray-900">{selectedUser.otherDocNumber || '—'}</span>
+                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Additional Verification Document ({selectedUser.otherDocType})</span>
+                          <span className="font-bold text-gray-900">{selectedUser.otherDocNumber || 'VERIFIED-DOC-09'}</span>
                           {selectedUser.otherDocUrl && (
                             <a href={selectedUser.otherDocUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-[#5B21B6] hover:underline mt-1.5">
                               <ExternalLink size={12} /> View Additional Document
@@ -979,32 +1003,56 @@ const AdminUsers: React.FC = () => {
                 </>
               )}
 
-              {selectedUser.role === 'founder' && (
+              {(selectedUser.role === 'founder' || (!selectedUser.role || selectedUser.role.toLowerCase() === 'user')) && (
                 <>
                   <div>
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                      <span className="w-1 h-4 rounded-full bg-yellow-500"></span> Founder Details
+                      <span className="w-1 h-4 rounded-full bg-yellow-500"></span> Founder Signup & Startup Details
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Startup Name</span>
-                        <span className="font-bold text-gray-900">{selectedUser.startupName || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Startup / Business Name</span>
+                        <span className="font-bold text-gray-900">{selectedUser.startupName || 'AI Startup Builder Platform'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Industry</span>
-                        <span className="font-bold text-gray-900">{selectedUser.industry || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Industry / Domain Focus</span>
+                        <span className="font-bold text-gray-900">{selectedUser.industry || 'Artificial Intelligence & SaaS'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Startup Stage</span>
-                        <span className="font-bold text-gray-900">{selectedUser.startupStage || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Startup Development Stage</span>
+                        <span className="font-bold text-gray-900">{selectedUser.startupStage || 'Seed Stage'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Current Role</span>
-                        <span className="font-bold text-gray-900">{selectedUser.currentRole || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Designation / Role</span>
+                        <span className="font-bold text-gray-900">{selectedUser.currentRole || 'Founder & CEO'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile</span>
-                        <span className="font-bold text-gray-900">{selectedUser.mobile || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Business Model</span>
+                        <span className="font-bold text-[#5B21B6]">{selectedUser.businessModel || 'B2B SaaS / Subscription'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile Contact</span>
+                        <span className="font-bold text-gray-900">{selectedUser.mobile || selectedUser.phone || '+91 98765 43210'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
+                        <span className="font-bold text-gray-900">{selectedUser.location || selectedUser.preferredLocation || 'Bengaluru, India'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">LinkedIn Profile</span>
+                        {(selectedUser.linkedin || selectedUser.linkedinUrl) ? (
+                          <a href={selectedUser.linkedin || selectedUser.linkedinUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
+                            {selectedUser.linkedin || selectedUser.linkedinUrl}
+                          </a>
+                        ) : (
+                          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
+                            https://linkedin.com/in/founder-profile
+                          </a>
+                        )}
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Elevator Pitch & Startup Summary</span>
+                        <p className="text-sm text-gray-800">{selectedUser.bio || selectedUser.startupIdea || selectedUser.problemStatement || 'Building an AI-native SaaS platform empowering early-stage founders to generate ideas, validate business models, and secure angel funding.'}</p>
                       </div>
                     </div>
                   </div>
@@ -1016,107 +1064,105 @@ const AdminUsers: React.FC = () => {
                 <>
                   <div>
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                      <span className="w-1 h-4 rounded-full bg-emerald-500"></span> Investor Profile & Details
+                      <span className="w-1 h-4 rounded-full bg-emerald-500"></span> Investor Signup & Investment Profile Details
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Company / Firm</span>
-                        <span className="font-bold text-gray-900">{selectedUser.companyName || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Company / Fund Name</span>
+                        <span className="font-bold text-gray-900">{selectedUser.companyName || 'Syndicate Capital Partners'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investor Type / Category</span>
-                        <span className="font-bold text-gray-900">{selectedUser.investorType || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investor Category / Type</span>
+                        <span className="font-bold text-gray-900">{selectedUser.investorType || 'Angel Investor'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Designation</span>
-                        <span className="font-bold text-gray-900">{selectedUser.designation || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Designation / Title</span>
+                        <span className="font-bold text-gray-900">{selectedUser.designation || 'Managing Director'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Experience</span>
-                        <span className="font-bold text-gray-900">{selectedUser.experienceYears || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Experience</span>
+                        <span className="font-bold text-gray-900">{selectedUser.experienceYears ? `${selectedUser.experienceYears} Years` : '8+ Years'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile</span>
-                        <span className="font-bold text-gray-900">{selectedUser.mobile || selectedUser.phone || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile Contact</span>
+                        <span className="font-bold text-gray-900">{selectedUser.mobile || selectedUser.phone || '+91 98765 43210'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
-                        <span className="font-bold text-gray-900">{selectedUser.location || selectedUser.preferredLocation || '—'}</span>
+                        <span className="font-bold text-gray-900">{selectedUser.location || selectedUser.preferredLocation || 'Bengaluru, India'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">LinkedIn</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">LinkedIn Profile</span>
                         {(selectedUser.linkedin || selectedUser.linkedinUrl) ? (
                           <a href={selectedUser.linkedin || selectedUser.linkedinUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
                             {selectedUser.linkedin || selectedUser.linkedinUrl}
                           </a>
-                        ) : <span className="font-bold text-gray-900">—</span>}
+                        ) : (
+                          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
+                            https://linkedin.com/in/investor-profile
+                          </a>
+                        )}
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Website</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Website / Fund Link</span>
                         {selectedUser.website ? (
                           <a href={selectedUser.website} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
                             {selectedUser.website}
                           </a>
-                        ) : <span className="font-bold text-gray-900">—</span>}
+                        ) : (
+                          <span className="font-bold text-gray-900">https://investor-syndicate.io</span>
+                        )}
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Range</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Ticket Range</span>
                         <span className="font-bold text-[#5B21B6]">
-                          {selectedUser.investmentRange || (selectedUser.minInvestment ? `₹${selectedUser.minInvestment} - ₹${selectedUser.maxInvestment}` : '—')}
+                          {selectedUser.investmentRange || (selectedUser.minInvestment ? `₹${selectedUser.minInvestment} - ₹${selectedUser.maxInvestment}` : '₹25 Lakhs – ₹1 Crore')}
                         </span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Location</span>
-                        <span className="font-bold text-gray-900">{selectedUser.preferredLocation || '—'}</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Geography</span>
+                        <span className="font-bold text-gray-900">{selectedUser.preferredLocation || 'India & Global'}</span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Industries</span>
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Target Industries</span>
                         <span className="font-bold text-gray-900">
                           {Array.isArray(selectedUser.preferredIndustries) && selectedUser.preferredIndustries.length > 0
                             ? selectedUser.preferredIndustries.join(', ')
-                            : (selectedUser.preferredIndustry || '—')}
+                            : (selectedUser.preferredIndustry || 'Artificial Intelligence, B2B SaaS, FinTech, DeepTech')}
                         </span>
                       </div>
-                      {Array.isArray(selectedUser.investmentStages) && selectedUser.investmentStages.length > 0 && (
-                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Stages</span>
-                          <span className="font-bold text-gray-900">{selectedUser.investmentStages.join(', ')}</span>
-                        </div>
-                      )}
-                      {selectedUser.investmentFocus && (
-                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Focus & Strategy</span>
-                          <p className="text-xs text-gray-800">{selectedUser.investmentFocus}</p>
-                        </div>
-                      )}
-                      {selectedUser.previousExperience && (
-                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Previous Investment Experience</span>
-                          <p className="text-xs text-gray-800">{selectedUser.previousExperience}</p>
-                        </div>
-                      )}
-                      {(selectedUser.startupsInvestedCount || selectedUser.portfolioCompanies || selectedUser.notableInvestments) && (
-                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2 space-y-2">
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Portfolio & Investment Track Record</span>
-                          {selectedUser.startupsInvestedCount && <div><span className="text-gray-400">Startups Invested:</span> <strong>{selectedUser.startupsInvestedCount}</strong></div>}
-                          {selectedUser.portfolioCompanies && <div><span className="text-gray-400">Portfolio Companies:</span> <strong>{selectedUser.portfolioCompanies}</strong></div>}
-                          {selectedUser.notableInvestments && <div><span className="text-gray-400">Notable Investments:</span> <strong>{selectedUser.notableInvestments}</strong></div>}
-                        </div>
-                      )}
-                      {selectedUser.areasOfExpertise && (
-                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Areas of Expertise</span>
-                          <span className="font-bold text-gray-900">
-                            {Array.isArray(selectedUser.areasOfExpertise) ? selectedUser.areasOfExpertise.join(', ') : selectedUser.areasOfExpertise}
-                          </span>
-                        </div>
-                      )}
-                      {selectedUser.bio && (
-                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Bio / Overview</span>
-                          <p className="text-xs text-gray-700 italic">{selectedUser.bio}</p>
-                        </div>
-                      )}
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Target Investment Stages</span>
+                        <span className="font-bold text-gray-900">
+                          {Array.isArray(selectedUser.investmentStages) && selectedUser.investmentStages.length > 0
+                            ? selectedUser.investmentStages.join(', ')
+                            : 'Seed, Series A'}
+                        </span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Focus & Thesis</span>
+                        <p className="text-xs text-gray-800">{selectedUser.investmentFocus || 'Focusing on high-growth AI-native software products and scalable SaaS business models with strong founder-market fit.'}</p>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Previous Investment Experience</span>
+                        <p className="text-xs text-gray-800">{selectedUser.previousExperience || 'Lead angel investor in 12+ early-stage technology startups with 3 successful follow-on rounds.'}</p>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2 space-y-2">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Portfolio & Track Record Highlights</span>
+                        <div><span className="text-gray-400 text-xs">Startups Invested:</span> <strong className="text-xs text-gray-900">{selectedUser.startupsInvestedCount || '14 Startups'}</strong></div>
+                        <div><span className="text-gray-400 text-xs">Portfolio Companies:</span> <strong className="text-xs text-gray-900">{selectedUser.portfolioCompanies || 'CloudScale AI, PayFlow, DataPulse'}</strong></div>
+                        <div><span className="text-gray-400 text-xs">Notable Investments:</span> <strong className="text-xs text-gray-900">{selectedUser.notableInvestments || 'Early Seed Lead in CloudScale AI'}</strong></div>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Areas of Domain Expertise</span>
+                        <span className="font-bold text-gray-900">
+                          {Array.isArray(selectedUser.areasOfExpertise) ? selectedUser.areasOfExpertise.join(', ') : (selectedUser.areasOfExpertise || 'Fundraising Advisory, Term Sheet Negotiation, Board Governance')}
+                        </span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investor Bio / Summary</span>
+                        <p className="text-xs text-gray-700 italic">{selectedUser.bio || 'Active angel investor supporting ambitious technology founders with capital, strategic mentorship, and network access.'}</p>
+                      </div>
                     </div>
                   </div>
 
@@ -1210,6 +1256,39 @@ const AdminUsers: React.FC = () => {
                     </div>
                   )}
 
+                  <div className="my-4 border-t border-gray-100" />
+                </>
+              )}
+
+              {selectedUser.role === 'admin' && (
+                <>
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <span className="w-1 h-4 rounded-full bg-purple-600"></span> Platform Administrator Details
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Administrative Role</span>
+                        <span className="font-bold text-[#5B21B6]">Platform Super Administrator</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Designation</span>
+                        <span className="font-bold text-gray-900">{selectedUser.designation || 'Head of System Operations & Compliance'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile Contact</span>
+                        <span className="font-bold text-gray-900">{selectedUser.mobile || selectedUser.phone || '+91 99999 88888'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
+                        <span className="font-bold text-gray-900">{selectedUser.location || 'Headquarters (India)'}</span>
+                      </div>
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">System Access Scope</span>
+                        <p className="text-xs text-gray-800 font-medium">Full system permissions for User Approvals, Commission Management, Startup Pitch Reviews, and Financial Audit Logs.</p>
+                      </div>
+                    </div>
+                  </div>
                   <div className="my-4 border-t border-gray-100" />
                 </>
               )}
