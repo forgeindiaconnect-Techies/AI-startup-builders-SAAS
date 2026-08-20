@@ -162,7 +162,6 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'AI Builder',               icon: Lightbulb,       path: '/dashboard/founder/ai-builder' },
         { name: 'Originality & Plagiarism', icon: ShieldCheck,     path: '/dashboard/founder/originality-check' },
         { name: 'Mentors',                  icon: GraduationCap,   path: '/dashboard/founder/mentors' },
-        { name: 'Mentor Reviews',           icon: Star,            path: '/dashboard/founder/mentor-reviews' },
         { name: 'Investor Marketplace',    icon: Building2,       path: '/dashboard/founder/investors' },
         { name: 'Subscription',             icon: CreditCard,      path: '/dashboard/founder/billing' },
         { name: 'Documents',                icon: File,            path: '/dashboard/founder/documents' },

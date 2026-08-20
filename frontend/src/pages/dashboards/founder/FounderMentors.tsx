@@ -9,6 +9,7 @@ import {
 import { getStartups, addNotification } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
 import { useChat } from '../../../context/ChatContext';
+import FounderMentorReviews from './FounderMentorReviews';
 import {
   getMentors, getMentorProfile, getMentorAvailability, createMentorBooking,
   getMyBookings, cancelBooking, rescheduleBooking, getBookingFeedback, acceptMentorSession,
@@ -55,7 +56,7 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
 };
 
 // ─── Types ────────────────────────────────────────────────────────
-type TabId = 'mentors' | 'bookings' | 'completed';
+type TabId = 'mentors' | 'bookings' | 'completed' | 'reviews';
 type BookingStep = 'startup' | 'topic' | 'confirm' | 'success';
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -1205,6 +1206,7 @@ const FounderMentors: React.FC = () => {
     { id: 'mentors', label: 'Available Mentors', icon: GraduationCap },
     { id: 'bookings', label: 'My Bookings', icon: Calendar },
     { id: 'completed', label: 'Completed Sessions', icon: CheckCircle2 },
+    { id: 'reviews', label: 'Mentor Reviews & Ratings', icon: Star },
   ];
 
   return (
@@ -1410,6 +1412,13 @@ const FounderMentors: React.FC = () => {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── Mentor Reviews & Ratings ── */}
+          {tab === 'reviews' && (
+            <div>
+              <FounderMentorReviews />
             </div>
           )}
         </>

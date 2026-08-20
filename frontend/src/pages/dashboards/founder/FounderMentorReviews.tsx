@@ -325,6 +325,14 @@ const FounderMentorReviews: React.FC = () => {
                       <p className="text-sm text-gray-500 mt-0.5">
                         <span className="font-semibold text-gray-700">Startup:</span> {startupName} • <span className="font-semibold text-gray-700">Topic:</span> {booking.topic}
                       </p>
+                      <div className="flex items-center gap-3 mt-1.5 text-xs">
+                        <span className="text-gray-500 font-medium">
+                          Session Fee: <strong className="text-gray-900">{Number(booking.sessionFee || 0) > 0 ? `₹${Number(booking.sessionFee).toLocaleString('en-IN')}` : 'Free'}</strong>
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                          {booking.paymentStatus === 'paid' ? 'Paid / Settled' : 'Completed Session'}
+                        </span>
+                      </div>
                     </div>
 
                     {existingReview ? (
