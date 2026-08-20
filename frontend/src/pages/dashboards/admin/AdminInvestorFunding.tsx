@@ -26,7 +26,7 @@ const AdminInvestorFunding: React.FC = () => {
   const adminName = user?.fullName || 'Admin';
 
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'All' | 'offer_received' | 'accepted' | 'rejected' | 'funded' | 'payment_submitted' | 'under_verification'>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'completed' | 'rejected'>('All');
   
   // Selected transaction for details modal
   const [selectedTx, setSelectedTx] = useState<FundingOffer | null>(null);
@@ -69,7 +69,16 @@ const AdminInvestorFunding: React.FC = () => {
         (o.investorCompany && o.investorCompany.toLowerCase().includes(search.toLowerCase())) ||
         (o.id || o._id || '').toLowerCase().includes(search.toLowerCase());
 
-      const matchesTab = statusFilter === 'All' || o.status === statusFilter;
+      let matchesTab = false;
+      if (statusFilter === 'All') {
+        matchesTab = true;
+      } else if (statusFilter === 'completed') {
+        // Show all completed deals + offers with details completed / submitted / accepted
+        matchesTab = ['completed', 'funded', 'payment_submitted', 'under_verification', 'accepted'].includes(o.status) || !!o.paymentStatus || !!o.paymentMethod;
+      } else if (statusFilter === 'rejected') {
+        matchesTab = o.status === 'rejected' || o.status === 'failed';
+      }
+
       return matchesSearch && matchesTab;
     });
   }, [offers, search, statusFilter]);
@@ -77,8 +86,6 @@ const AdminInvestorFunding: React.FC = () => {
   // Summary Metrics calculations
   const summary = useMemo(() => {
     let totalTransactions = offers.length;
-    let pendingVerification = 0;
-    let approvedFunding = 0;
     let completedFunding = 0;
     let totalAmount = 0;
     let totalCommission = 0;
@@ -89,19 +96,13 @@ const AdminInvestorFunding: React.FC = () => {
       const commAmt = o.commissionAmount ?? Math.round(o.offerAmount * (rate / 100));
       totalCommission += commAmt;
 
-      if (o.status === 'offer_received' || o.status === 'counter_offer') {
-        pendingVerification += 1;
-      } else if (o.status === 'accepted') {
-        approvedFunding += 1;
-      } else if (o.status === 'funded' || o.status === 'completed') {
+      if (['completed', 'funded', 'payment_submitted', 'under_verification', 'accepted'].includes(o.status) || o.paymentStatus || o.paymentMethod) {
         completedFunding += 1;
       }
     });
 
     return {
       totalTransactions,
-      pendingVerification,
-      approvedFunding,
       completedFunding,
       totalAmount,
       totalCommission
@@ -381,20 +382,22 @@ const AdminInvestorFunding: React.FC = () => {
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Under Verification</span>
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><Clock size={18} /></div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Completed / Verified</span>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><CheckCircle2 size={18} /></div>
           </div>
-          <p className="text-2xl font-black text-amber-600">{summary.pendingVerification}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Pending admin review</p>
+          <p className="text-2xl font-black text-emerald-600">{summary.completedFunding}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Verified completed deals</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Completed Deals</span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><CheckCircle2 size={18} /></div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Completed Ratio</span>
+            <div className="p-2 bg-purple-50 text-[#5B21B6] rounded-xl"><TrendingUp size={18} /></div>
           </div>
-          <p className="text-2xl font-black text-emerald-600">{summary.completedFunding}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Funded &amp; verified</p>
+          <p className="text-2xl font-black text-[#5B21B6]">
+            {summary.totalTransactions > 0 ? Math.round((summary.completedFunding / summary.totalTransactions) * 100) : 100}%
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">Success completion rate</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
@@ -420,20 +423,17 @@ const AdminInvestorFunding: React.FC = () => {
           />
         </div>
 
-        <div className="flex gap-1 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+        <div className="flex gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
           {[
             { id: 'All', label: 'All Transactions' },
-            { id: 'payment_submitted', label: 'Payment Submitted' },
-            { id: 'under_verification', label: 'Under Review' },
-            { id: 'accepted', label: 'Accepted Deals' },
             { id: 'completed', label: 'Completed' },
             { id: 'rejected', label: 'Rejected' },
           ].map(t => (
             <button
               key={t.id}
               onClick={() => setStatusFilter(t.id as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                statusFilter === t.id ? 'bg-[#5B21B6] text-white shadow-xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                statusFilter === t.id ? 'bg-[#5B21B6] text-white shadow-md' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
               }`}
             >
               {t.label}
