@@ -4,7 +4,7 @@ import {
   IndianRupee, ArrowUpRight, Clock, Wallet, CheckCircle2, 
   AlertCircle, X, ShieldCheck, Eye, CreditCard, Landmark, 
   Send, Calendar, FileText, ChevronRight, Upload, Info, 
-  FileCheck, FileQuestion, BookOpen, ExternalLink
+  FileCheck, FileQuestion, BookOpen, ExternalLink, Coins
 } from 'lucide-react';
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer } from '../../../context/FundingContext';
@@ -17,7 +17,7 @@ const InvestorTransactions: React.FC = () => {
   const { offers, loading, refreshOffers, sendOffer } = useFunding();
   const { user } = useAuth();
   
-  const [activeTab, setActiveTab] = useState<'funding' | 'transactions'>('funding');
+  const [activeTab, setActiveTab] = useState<'funding' | 'transactions' | 'commission'>('funding');
   
   // Selected funding offer for details modal
   const [selectedFunding, setSelectedFunding] = useState<FundingOffer | null>(null);
@@ -102,11 +102,15 @@ const InvestorTransactions: React.FC = () => {
     let totalCommitted = 0;
     let pendingFunding = 0;
     let completedInvestments = 0;
+    let totalCommissionPaid = 0;
 
     investorOffers.forEach(o => {
       // Exclude rejected/failed deals from committed total
       if (o.status !== 'rejected' && o.status !== 'failed') {
         totalCommitted += o.offerAmount;
+        const rate = o.commissionRate ?? 2;
+        const commAmt = o.commissionAmount ?? Math.round(o.offerAmount * (rate / 100));
+        totalCommissionPaid += commAmt;
       }
       
       // Pending funding: accepted by founder, payment submitted, or under verification, but not fully closed
@@ -128,6 +132,7 @@ const InvestorTransactions: React.FC = () => {
       pendingFunding,
       completedInvestments,
       remainingLimit,
+      totalCommissionPaid,
       totalTransactionsCount: transactions.length
     };
   }, [investorOffers, transactions]);
@@ -511,6 +516,16 @@ const InvestorTransactions: React.FC = () => {
           >
             <FileText size={16} /> Transactions History ({metrics.totalTransactionsCount})
           </button>
+          <button
+            onClick={() => setActiveTab('commission')}
+            className={`py-3 px-5 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${
+              activeTab === 'commission'
+                ? 'border-[#5B21B6] text-[#5B21B6]'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Coins size={16} /> Commission History ({investorOffers.length})
+          </button>
         </div>
         {activeTab === 'funding' && investorOffers.length > 0 && (
           <button
@@ -718,6 +733,110 @@ const InvestorTransactions: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Commission History Tab */}
+      {activeTab === 'commission' && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden font-sans">
+          {investorOffers.length === 0 ? (
+            <div className="p-12 text-center text-gray-400">
+              <Coins size={40} className="mx-auto mb-3 text-gray-300" />
+              <p className="font-bold text-gray-700 text-base">No Commission Records Available</p>
+              <p className="text-xs text-gray-400 mt-1">Platform commissions for your investments will be recorded here.</p>
+            </div>
+          ) : (
+            <div>
+              {/* Commission Summary Banner */}
+              <div className="p-6 bg-gradient-to-br from-purple-50 via-white to-emerald-50/40 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#5B21B6] bg-purple-100/80 px-2.5 py-1 rounded-full">
+                    Investor Platform Commission Ledger
+                  </span>
+                  <h3 className="text-lg font-black text-gray-900 mt-1">Platform Commission Breakdown</h3>
+                  <p className="text-xs text-gray-500">
+                    Overview of admin platform commissions fixed and processed for your investments.
+                  </p>
+                </div>
+                <div className="flex gap-4 items-center bg-white p-3.5 rounded-2xl border border-purple-100 shadow-2xs">
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase block">Total Platform Fees</span>
+                    <strong className="text-emerald-700 text-base font-black">₹{metrics.totalCommissionPaid.toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div className="h-8 w-px bg-gray-200" />
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase block">Investment Deals</span>
+                    <strong className="text-gray-900 text-base font-black">{investorOffers.length}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Commission Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-4">Transaction ID</th>
+                      <th className="px-6 py-4">Startup</th>
+                      <th className="px-6 py-4">Founder</th>
+                      <th className="px-6 py-4">Investment Amount</th>
+                      <th className="px-6 py-4">Commission Rate (%)</th>
+                      <th className="px-6 py-4">Platform Commission (₹)</th>
+                      <th className="px-6 py-4">Commission Status</th>
+                      <th className="px-6 py-4">Date</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-sm font-medium">
+                    {investorOffers.map(c => {
+                      const commRate = c.commissionRate ?? 2;
+                      const commAmount = c.commissionAmount ?? Math.round(c.offerAmount * (commRate / 100));
+                      const commStatus = c.commissionStatus || 'Sent to Admin';
+                      const txId = c.transactionId || `TXN-2026-${String(c.id || c._id || '0000').slice(-4).toUpperCase()}`;
+
+                      return (
+                        <tr key={c.id || c._id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-6 py-4 font-mono font-bold text-gray-600">{txId}</td>
+                          <td className="px-6 py-4 font-bold text-gray-900">{c.startupName}</td>
+                          <td className="px-6 py-4 font-semibold text-gray-700">{c.founderName}</td>
+                          <td className="px-6 py-4 font-extrabold text-gray-900">₹{c.offerAmount.toLocaleString('en-IN')}</td>
+                          <td className="px-6 py-4 font-bold text-[#5B21B6]">
+                            <span className="px-2.5 py-0.5 bg-purple-50 text-[#5B21B6] border border-purple-100 rounded-full text-xs">
+                              {commRate}%
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 font-black text-emerald-700 text-base">
+                            ₹{commAmount.toLocaleString('en-IN')}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                              commStatus === 'Collected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                              commStatus === 'Fixed' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
+                              commStatus === 'Sent to Admin' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                              'bg-amber-50 text-amber-700 border border-amber-200'
+                            }`}>
+                              {commStatus}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-gray-500 text-xs">
+                            {new Date(c.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button
+                              onClick={() => setSelectedTx(c)}
+                              className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] rounded-lg font-bold text-xs border border-purple-200 transition-colors flex items-center gap-1 shadow-2xs ml-auto cursor-pointer"
+                            >
+                              <Eye size={12} /> View Details
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -946,6 +1065,22 @@ const InvestorTransactions: React.FC = () => {
                 <div className="text-right">
                   <span className="text-[10px] text-gray-500 font-bold block uppercase">Instrument / Equity</span>
                   <p className="text-sm font-extrabold text-gray-800">{selectedTx.instrument} for {selectedTx.equityPercentage}%</p>
+                </div>
+              </div>
+
+              {/* Platform Commission Summary */}
+              <div className="bg-emerald-50/60 border border-emerald-100 p-4 rounded-2xl flex justify-between items-center text-xs">
+                <div>
+                  <span className="text-[10px] text-emerald-800 font-bold block uppercase">Platform Commission ({selectedTx.commissionRate ?? 2}%)</span>
+                  <strong className="text-lg font-black text-emerald-700">
+                    ₹{(selectedTx.commissionAmount ?? Math.round(selectedTx.offerAmount * ((selectedTx.commissionRate ?? 2) / 100))).toLocaleString('en-IN')}
+                  </strong>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-gray-500 font-bold block uppercase">Commission Status</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 inline-block mt-0.5">
+                    {selectedTx.commissionStatus || 'Sent to Admin'}
+                  </span>
                 </div>
               </div>
 
@@ -1510,12 +1645,6 @@ const InvestorTransactions: React.FC = () => {
                       onChange={(e) => setCommitmentAmount(e.target.value)}
                       className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
                     />
-                    {Number(commitmentAmount) > 0 && (
-                      <div className="mt-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-[10px] flex items-center justify-between text-emerald-800 font-bold">
-                        <span>Auto-Calculated Commission (1%):</span>
-                        <span className="font-extrabold text-emerald-700 text-xs">₹{Math.round(Number(commitmentAmount) * 0.01).toLocaleString('en-IN')}</span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Investment Type */}

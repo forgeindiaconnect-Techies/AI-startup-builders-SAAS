@@ -29,8 +29,6 @@ export interface IAgreementDetails {
   supportingDocuments?: string;
   supportingDocumentsName?: string;
   specialClauses?: string;
-  commissionPercentage?: number;
-  commissionAmount?: number;
   version: string;
   createdAt: string;
   createdBy: string;
@@ -55,8 +53,6 @@ export interface IFundingOffer extends Document {
   investorEmail?: string;
   investorAddress?: string;
   offerAmount: number;
-  commissionPercentage?: number;
-  commissionAmount?: number;
   currency: string;
   equityPercentage: number;
   valuationCap: number;
@@ -86,6 +82,11 @@ export interface IFundingOffer extends Document {
   fundingRound?: string;
   expectedInvestmentDate?: string;
   commitmentNotes?: string;
+  commissionRate?: number;
+  commissionAmount?: number;
+  commissionStatus?: 'Pending' | 'Fixed' | 'Sent to Admin' | 'Collected';
+  commissionNotes?: string;
+  commissionUpdatedAt?: string;
   agreementAcknowledged?: boolean;
   agreementId?: string;
   agreementVersion?: string;
@@ -121,8 +122,6 @@ const FundingOfferSchema: Schema = new Schema(
     investorEmail: { type: String },
     investorAddress: { type: String },
     offerAmount: { type: Number, required: true },
-    commissionPercentage: { type: Number, default: 1 },
-    commissionAmount: { type: Number, default: 0 },
     currency: { type: String, default: 'INR' },
     equityPercentage: { type: Number, required: true },
     valuationCap: { type: Number, default: 0 },
@@ -156,6 +155,11 @@ const FundingOfferSchema: Schema = new Schema(
     fundingRound: { type: String, default: 'Seed' },
     expectedInvestmentDate: { type: String, default: '' },
     commitmentNotes: { type: String, default: '' },
+    commissionRate: { type: Number, default: 2 },
+    commissionAmount: { type: Number, default: 0 },
+    commissionStatus: { type: String, default: 'Pending' },
+    commissionNotes: { type: String, default: '' },
+    commissionUpdatedAt: { type: String, default: '' },
     agreementAcknowledged: { type: Boolean, default: false },
     agreementId: { type: String, default: '' },
     agreementVersion: { type: String, default: 'v1.0' },

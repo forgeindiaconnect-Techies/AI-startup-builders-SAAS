@@ -634,6 +634,11 @@ export const createFundingOffer = async (offerData: any) => {
     fundingRound: offerData.fundingRound || 'Seed',
     expectedInvestmentDate: offerData.expectedInvestmentDate || '',
     commitmentNotes: offerData.commitmentNotes || '',
+    commissionRate: offerData.commissionRate || 2,
+    commissionAmount: offerData.commissionAmount || Math.round((offerData.offerAmount || 0) * 0.02),
+    commissionStatus: offerData.commissionStatus || 'Pending',
+    commissionNotes: offerData.commissionNotes || '',
+    commissionUpdatedAt: offerData.commissionUpdatedAt || '',
     agreementAcknowledged: offerData.agreementAcknowledged || false,
     history: offerData.history || [
       {
