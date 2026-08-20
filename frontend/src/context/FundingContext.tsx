@@ -31,6 +31,8 @@ export interface IAgreementDetails {
   supportingDocuments?: string;
   supportingDocumentsName?: string;
   specialClauses?: string;
+  commissionPercentage?: number;
+  commissionAmount?: number;
   version: string;
   createdAt: string;
   createdBy: string;
@@ -58,6 +60,8 @@ export interface FundingOffer {
   investorEmail?: string;
   investorAddress?: string;
   offerAmount: number;
+  commissionPercentage?: number;
+  commissionAmount?: number;
   currency: string;
   equityPercentage: number;
   valuationCap: number;

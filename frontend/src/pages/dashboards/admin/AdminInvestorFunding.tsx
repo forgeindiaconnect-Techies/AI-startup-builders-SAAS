@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { 
   Wallet, ShieldCheck, CheckCircle2, AlertCircle, Search, 
   X, Mail, Building, MapPin, Calendar, FileText, Landmark,
-  TrendingUp, Clock, HelpCircle, Ban, RefreshCw, FileDown, Eye
+  TrendingUp, Clock, HelpCircle, Ban, RefreshCw, FileDown, Eye,
+  Calculator, Percent, IndianRupee
 } from 'lucide-react';
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer } from '../../../context/FundingContext';
@@ -29,6 +30,11 @@ const AdminInvestorFunding: React.FC = () => {
   
   // Selected transaction for details modal
   const [selectedTx, setSelectedTx] = useState<FundingOffer | null>(null);
+  
+  // Commission Modal & Calculator state
+  const [showCommissionModal, setShowCommissionModal] = useState(false);
+  const [calcInputAmount, setCalcInputAmount] = useState<number>(10000000);
+  const [globalCommissionPct, setGlobalCommissionPct] = useState<number>(1.0);
   
   // Actions states
   const [actionLoading, setActionLoading] = useState(false);
@@ -63,14 +69,17 @@ const AdminInvestorFunding: React.FC = () => {
     let approvedFunding = 0;
     let completedFunding = 0;
     let totalAmount = 0;
+    let totalCommission = 0;
 
     offers.forEach(o => {
       totalAmount += o.offerAmount;
+      const pct = o.commissionPercentage ?? 1.0;
+      totalCommission += (o.offerAmount * pct) / 100;
       if (o.status === 'offer_received' || o.status === 'counter_offer') {
         pendingVerification += 1;
       } else if (o.status === 'accepted') {
         approvedFunding += 1;
-      } else if (o.status === 'funded') {
+      } else if (o.status === 'funded' || o.status === 'completed') {
         completedFunding += 1;
       }
     });
@@ -80,7 +89,8 @@ const AdminInvestorFunding: React.FC = () => {
       pendingVerification,
       approvedFunding,
       completedFunding,
-      totalAmount
+      totalAmount,
+      totalCommission
     };
   }, [offers]);
 
@@ -261,16 +271,25 @@ const AdminInvestorFunding: React.FC = () => {
             <Wallet className="text-[#6C4CF1]" size={28} /> Investor Funding Transactions
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Oversee all investment allocations, compliance tracking, and platforms commissions.
+            Oversee all investment allocations, compliance tracking, and platform commissions.
           </p>
         </div>
-        <button 
-          onClick={() => { refreshOffers(); showToast('Data refreshed successfully!'); }}
-          className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all self-start sm:self-center flex items-center gap-1.5 font-bold cursor-pointer"
-          title="Refresh Data"
-        >
-          <RefreshCw size={14} /> Refresh
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-center">
+          <button 
+            onClick={() => setShowCommissionModal(true)}
+            className="p-2.5 bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] hover:from-[#5B21B6] hover:to-[#4C1D95] text-white rounded-xl transition-all flex items-center gap-2 font-black shadow-md cursor-pointer text-xs"
+            title="Manage Commission & Calculator"
+          >
+            <Calculator size={15} /> Commission Calculator
+          </button>
+          <button 
+            onClick={() => { refreshOffers(); showToast('Data refreshed successfully!'); }}
+            className="p-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all flex items-center gap-1.5 font-bold cursor-pointer text-xs"
+            title="Refresh Data"
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
+        </div>
       </div>
 
       {/* Summary Section */}
@@ -306,7 +325,7 @@ const AdminInvestorFunding: React.FC = () => {
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs bg-gradient-to-br from-purple-50 to-white">
           <p className="text-[10px] font-extrabold text-[#6C4CF1] uppercase tracking-wider">Total Funding Amount</p>
           <h3 className="text-xl font-black text-[#6C4CF1] mt-1">
-            ${summary.totalAmount.toLocaleString()}
+            ₹{summary.totalAmount.toLocaleString('en-IN')}
           </h3>
         </div>
       </div>
@@ -357,25 +376,28 @@ const AdminInvestorFunding: React.FC = () => {
                 <th className="p-4">Founder</th>
                 <th className="p-4">Startup</th>
                 <th className="p-4">Investment Amount</th>
+                <th className="p-4">Commission (₹)</th>
                 <th className="p-4">Investment Type</th>
                 <th className="p-4">Funding Date</th>
                 <th className="p-4">Status</th>
-                <th className="p-4 text-right">Action</th>
+                <th className="p-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-gray-400">Loading funding transactions...</td>
+                  <td colSpan={11} className="p-8 text-center text-gray-400">Loading funding transactions...</td>
                 </tr>
               ) : filteredOffers.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="p-8 text-center text-gray-400">No funding transactions found.</td>
+                  <td colSpan={11} className="p-8 text-center text-gray-400">No funding transactions found.</td>
                 </tr>
               ) : (
                 filteredOffers.map((o) => {
                   const txId = o.transactionId || `TXN-2026-${String(o.id || o._id || '0000').slice(-4).toUpperCase()}`;
                   const commitmentId = o.commitmentId || `FC-2026-${String(o.id || o._id || '0000').slice(-4).toUpperCase()}`;
+                  const commPct = o.commissionPercentage ?? 1.0;
+                  const commAmount = Math.round((o.offerAmount * commPct) / 100);
                   return (
                     <tr key={o.id || o._id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="p-4 font-mono font-bold text-gray-600 truncate max-w-[120px]">
@@ -388,6 +410,11 @@ const AdminInvestorFunding: React.FC = () => {
                       <td className="p-4 font-bold text-gray-900">{o.founderName}</td>
                       <td className="p-4 font-bold text-gray-900">{o.startupName}</td>
                       <td className="p-4 font-black text-gray-900">{o.currency === 'INR' ? '₹' : '$'}{o.offerAmount.toLocaleString()}</td>
+                      <td className="p-4">
+                        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[10px] font-black inline-flex items-center gap-1">
+                          ₹{commAmount.toLocaleString('en-IN')} <span className="text-[9px] font-bold text-emerald-600">({commPct}%)</span>
+                        </span>
+                      </td>
                       <td className="p-4">
                         <span className="px-2 py-1 bg-purple-50 text-[#6C4CF1] border border-purple-100 rounded-lg text-[10px] font-bold">
                           {o.instrument || 'SAFE'}
@@ -414,12 +441,21 @@ const AdminInvestorFunding: React.FC = () => {
                         </span>
                       </td>
                       <td className="p-4 text-right">
-                        <button
-                          onClick={() => { setSelectedTx(o); setShowActionBox(null); setAdminNoteInput(''); }}
-                          className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#6C4CF1] font-bold rounded-lg border border-purple-100 text-[10px] transition-colors cursor-pointer"
-                        >
-                          View Details
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => { setSelectedTx(o); setShowActionBox(null); setAdminNoteInput(''); }}
+                            className="px-2.5 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#6C4CF1] font-bold rounded-lg border border-purple-100 text-[10px] transition-colors cursor-pointer"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            onClick={() => { setCalcInputAmount(o.offerAmount); setShowCommissionModal(true); }}
+                            className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-extrabold rounded-lg border border-emerald-200 text-[10px] transition-colors cursor-pointer flex items-center gap-1"
+                            title="Open Commission Calculator"
+                          >
+                            <Percent size={11} /> Commission
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -699,10 +735,16 @@ const AdminInvestorFunding: React.FC = () => {
                     {new Date(selectedTx.updatedAt).toLocaleString()}
                   </span>
                 </div>
-                <div className="flex justify-between text-gray-500 pb-0.5">
-                  <span>Calculated Platform Commission (2.0%):</span>
-                  <span className="text-emerald-600 font-black text-sm">
-                    {selectedTx.currency === 'INR' ? '₹' : '$'}{(selectedTx.offerAmount * 0.02).toLocaleString()}
+                <div className="flex justify-between items-center text-gray-500 pb-0.5 bg-emerald-50/80 p-3 rounded-xl border border-emerald-100">
+                  <div className="flex items-center gap-1.5">
+                    <Percent size={14} className="text-emerald-700" />
+                    <span className="font-extrabold text-emerald-900 text-xs">
+                      Calculated Platform Commission ({selectedTx.commissionPercentage ?? 1.0}%):
+                    </span>
+                  </div>
+                  <span className="text-emerald-700 font-black text-sm">
+                    {selectedTx.currency === 'INR' ? '₹' : '$'}
+                    {Math.round((selectedTx.offerAmount * (selectedTx.commissionPercentage ?? 1.0)) / 100).toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
@@ -877,6 +919,183 @@ const AdminInvestorFunding: React.FC = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* PLATFORM COMMISSION MANAGER & CALCULATOR MODAL */}
+      {showCommissionModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto font-sans text-xs">
+          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl relative p-6 sm:p-8 animate-in zoom-in-95 text-left my-8">
+            <button
+              onClick={() => setShowCommissionModal(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Modal Header */}
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 pr-10">
+              <div className="p-3 bg-gradient-to-br from-[#6C4CF1] to-[#5B21B6] text-white rounded-2xl shadow-md">
+                <Calculator size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-gray-900">Admin Commission Manager &amp; Calculator</h2>
+                <p className="text-xs text-gray-500">Calculate platform commissions dynamically for any investor funding amount</p>
+              </div>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+              <div className="bg-purple-50/60 border border-purple-100 p-3.5 rounded-2xl">
+                <span className="text-[9px] font-extrabold text-[#6C4CF1] uppercase tracking-wider block">Total Funding Volume</span>
+                <strong className="text-gray-900 text-base font-black mt-0.5 block">₹{summary.totalAmount.toLocaleString('en-IN')}</strong>
+              </div>
+              <div className="bg-emerald-50/60 border border-emerald-100 p-3.5 rounded-2xl">
+                <span className="text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider block">Est. Platform Commission</span>
+                <strong className="text-emerald-700 text-base font-black mt-0.5 block">₹{Math.round(summary.totalCommission).toLocaleString('en-IN')}</strong>
+              </div>
+              <div className="bg-amber-50/60 border border-amber-100 p-3.5 rounded-2xl">
+                <span className="text-[9px] font-extrabold text-amber-700 uppercase tracking-wider block">Default Rate</span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <input
+                    type="number"
+                    value={globalCommissionPct}
+                    onChange={(e) => setGlobalCommissionPct(Number(e.target.value))}
+                    step={0.1}
+                    min={0}
+                    max={100}
+                    className="w-16 px-2 py-0.5 bg-white border border-amber-300 rounded-lg text-xs font-black text-amber-900 focus:outline-none"
+                  />
+                  <span className="font-extrabold text-amber-800">%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Interactive Calculator Box */}
+            <div className="bg-gradient-to-r from-purple-900 via-[#5B21B6] to-[#6C4CF1] text-white p-6 rounded-3xl space-y-4 shadow-xl mb-6">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-widest text-purple-200 flex items-center gap-1.5">
+                  <Percent size={14} /> Live Investment Commission Calculator
+                </span>
+                <span className="px-2.5 py-0.5 bg-emerald-400 text-purple-950 font-black text-[9px] rounded-full uppercase">
+                  Auto Calculated
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-extrabold text-purple-200 uppercase tracking-wider mb-1">Enter Funding Amount (₹)</label>
+                  <div className="relative">
+                    <IndianRupee size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-300" />
+                    <input
+                      type="number"
+                      value={calcInputAmount}
+                      onChange={(e) => setCalcInputAmount(Number(e.target.value))}
+                      placeholder="e.g. 100000"
+                      min={0}
+                      className="w-full pl-9 pr-3 py-2.5 bg-white/10 border border-white/20 rounded-xl font-black text-white placeholder-purple-300/60 text-sm focus:outline-none focus:ring-2 focus:ring-white/40"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-extrabold text-purple-200 uppercase tracking-wider mb-1">Select Commission Rate</label>
+                  <div className="flex items-center gap-1.5">
+                    {[1, 2, 3, 5].map((pct) => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => setGlobalCommissionPct(pct)}
+                        className={`flex-1 py-2.5 rounded-xl font-black text-xs transition-all cursor-pointer ${
+                          globalCommissionPct === pct ? 'bg-white text-[#5B21B6] shadow-md' : 'bg-white/10 hover:bg-white/20 text-white'
+                        }`}
+                      >
+                        {pct}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Calculated Outputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/10">
+                <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/15">
+                  <span className="text-[9px] font-extrabold text-purple-200 uppercase tracking-wider block">Calculated Commission ({globalCommissionPct}%)</span>
+                  <strong className="text-emerald-300 text-lg font-black mt-0.5 block">
+                    ₹{Math.round((calcInputAmount * globalCommissionPct) / 100).toLocaleString('en-IN')}
+                  </strong>
+                  <span className="text-[9px] text-purple-200 mt-0.5 block">
+                    {calcInputAmount >= 100000 ? `(${(Math.round((calcInputAmount * globalCommissionPct) / 100) / 100000).toFixed(2)} Lakhs)` : 'Platform Cut'}
+                  </span>
+                </div>
+
+                <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-2xl border border-white/15">
+                  <span className="text-[9px] font-extrabold text-purple-200 uppercase tracking-wider block">Net Disbursed to Founder</span>
+                  <strong className="text-white text-lg font-black mt-0.5 block">
+                    ₹{(calcInputAmount - Math.round((calcInputAmount * globalCommissionPct) / 100)).toLocaleString('en-IN')}
+                  </strong>
+                  <span className="text-[9px] text-purple-200 mt-0.5 block">
+                    (Gross Investment - Platform Cut)
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Amount Presets */}
+              <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[10px]">
+                <span className="font-bold text-purple-200">Quick Amounts:</span>
+                <button type="button" onClick={() => setCalcInputAmount(100000)} className="px-2 py-1 bg-white/15 hover:bg-white/25 text-white rounded-lg font-bold cursor-pointer">₹1 Lakh (100k)</button>
+                <button type="button" onClick={() => setCalcInputAmount(1000000)} className="px-2 py-1 bg-white/15 hover:bg-white/25 text-white rounded-lg font-bold cursor-pointer">₹10 Lakhs (1M)</button>
+                <button type="button" onClick={() => setCalcInputAmount(5000000)} className="px-2 py-1 bg-white/15 hover:bg-white/25 text-white rounded-lg font-bold cursor-pointer">₹50 Lakhs (5M)</button>
+                <button type="button" onClick={() => setCalcInputAmount(10000000)} className="px-2 py-1 bg-white/15 hover:bg-white/25 text-white rounded-lg font-bold cursor-pointer">₹1 Crore / 100 Lakhs</button>
+                <button type="button" onClick={() => setCalcInputAmount(100000000)} className="px-2 py-1 bg-white/15 hover:bg-white/25 text-white rounded-lg font-bold cursor-pointer">₹10 Crores (100000 Lakhs)</button>
+              </div>
+            </div>
+
+            {/* Table of active deals commission summary */}
+            <div className="space-y-2">
+              <h4 className="font-bold text-gray-900 uppercase text-[10px] tracking-wider text-[#6C4CF1]">
+                Active Investment Deals Commission Log
+              </h4>
+              <div className="max-h-[160px] overflow-y-auto border border-gray-200 rounded-2xl">
+                <table className="w-full text-left text-[11px]">
+                  <thead className="bg-gray-50 text-gray-400 font-extrabold uppercase text-[9px] sticky top-0">
+                    <tr>
+                      <th className="p-2.5">Startup</th>
+                      <th className="p-2.5">Investor</th>
+                      <th className="p-2.5">Amount</th>
+                      <th className="p-2.5">Rate</th>
+                      <th className="p-2.5 text-right">Calculated Commission</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 font-semibold text-gray-700">
+                    {offers.map(o => {
+                      const commPct = o.commissionPercentage ?? globalCommissionPct;
+                      const commAmt = Math.round((o.offerAmount * commPct) / 100);
+                      return (
+                        <tr key={o.id || o._id} className="hover:bg-gray-50">
+                          <td className="p-2.5 font-bold text-gray-900">{o.startupName}</td>
+                          <td className="p-2.5">{o.investorName}</td>
+                          <td className="p-2.5 font-mono">₹{o.offerAmount.toLocaleString('en-IN')}</td>
+                          <td className="p-2.5">{commPct}%</td>
+                          <td className="p-2.5 text-right font-black text-emerald-700">₹{commAmt.toLocaleString('en-IN')}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCommissionModal(false)}
+                className="px-6 py-2.5 bg-[#6C4CF1] hover:bg-[#5B21B6] text-white font-bold rounded-xl text-xs shadow-md cursor-pointer transition-all"
+              >
+                Close Calculator
+              </button>
+            </div>
           </div>
         </div>
       )}

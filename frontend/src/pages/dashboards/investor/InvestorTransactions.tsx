@@ -1510,6 +1510,12 @@ const InvestorTransactions: React.FC = () => {
                       onChange={(e) => setCommitmentAmount(e.target.value)}
                       className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
                     />
+                    {Number(commitmentAmount) > 0 && (
+                      <div className="mt-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-[10px] flex items-center justify-between text-emerald-800 font-bold">
+                        <span>Auto-Calculated Commission (1%):</span>
+                        <span className="font-extrabold text-emerald-700 text-xs">₹{Math.round(Number(commitmentAmount) * 0.01).toLocaleString('en-IN')}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Investment Type */}

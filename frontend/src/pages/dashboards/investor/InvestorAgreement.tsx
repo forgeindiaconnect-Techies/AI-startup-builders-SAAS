@@ -4,7 +4,8 @@ import {
   FileText, CheckCircle2, X, AlertCircle, Clock,
   ChevronDown, ShieldCheck, Pen,
   Building2, IndianRupee, Calendar, User,
-  ScrollText, Lock, Unlock, Bell, Upload, Eye, FileDown, ArrowRight
+  ScrollText, Lock, Unlock, Bell, Upload, Eye, FileDown, ArrowRight,
+  Calculator, Percent, Coins
 } from 'lucide-react';
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer, IAgreementDetails } from '../../../context/FundingContext';
@@ -779,11 +780,21 @@ const InvestorAgreement: React.FC = () => {
   const [directEquity, setDirectEquity] = useState(10);
   const [directValuation, setDirectValuation] = useState(50000000);
   const [directInstrument, setDirectInstrument] = useState('SAFE');
+  const [directCommissionPercentage, setDirectCommissionPercentage] = useState(1);
+  const [showCommissionBreakdownModal, setShowCommissionBreakdownModal] = useState(false);
   const [directTerms, setDirectTerms] = useState('This agreement outlines the investment parameters. Capital will be utilized for product engineering and guide onboarding pilot launches.');
   const [directMilestones, setDirectMilestones] = useState('1. Delivery of core mobile beta MVP.\n2. Onboarding first 50 verified guides.');
   const [directAgreeTerms, setDirectAgreeTerms] = useState(false);
   const [showDirectTermsModal, setShowDirectTermsModal] = useState(false);
   const [directSigned, setDirectSigned] = useState(false);
+
+  const directCommissionAmount = useMemo(() => {
+    return Math.round((directAmount * directCommissionPercentage) / 100);
+  }, [directAmount, directCommissionPercentage]);
+
+  const directNetDisbursement = useMemo(() => {
+    return directAmount - directCommissionAmount;
+  }, [directAmount, directCommissionAmount]);
 
   const handleCreateDirectAgreement = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -819,6 +830,8 @@ const InvestorAgreement: React.FC = () => {
         investorCompany: user?.company || 'Capital Partners',
         investorEmail: (user?.email || '').toLowerCase(),
         offerAmount: directAmount,
+        commissionPercentage: directCommissionPercentage,
+        commissionAmount: directCommissionAmount,
         currency: 'INR',
         equityPercentage: directEquity,
         valuationCap: directValuation,
@@ -842,6 +855,8 @@ const InvestorAgreement: React.FC = () => {
           agreementDate: new Date().toISOString().split('T')[0],
           agreementExpiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
           offerAmount: directAmount,
+          commissionPercentage: directCommissionPercentage,
+          commissionAmount: directCommissionAmount,
           currency: 'INR',
           equityPercentage: directEquity,
           preMoneyValuation: directValuation - directAmount,
@@ -1461,7 +1476,7 @@ const InvestorAgreement: React.FC = () => {
           {/* Investment Parameters Row */}
           <div>
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-1">
-              <IndianRupee size={9} /> Investment Parameters
+              <IndianRupee size={9} /> Investment Parameters &amp; Commission Calculation
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
@@ -1515,6 +1530,94 @@ const InvestorAgreement: React.FC = () => {
                 </select>
               </div>
             </div>
+
+            {/* Auto-Calculated Commission Card */}
+            <div className="mt-4 p-4 bg-gradient-to-r from-purple-50/90 via-indigo-50/70 to-purple-50/90 border border-purple-200 rounded-2xl space-y-3 shadow-2xs">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-purple-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-[#5B21B6] text-white rounded-lg shadow-xs">
+                    <Calculator size={14} />
+                  </div>
+                  <div>
+                    <span className="text-xs font-black text-[#5B21B6] uppercase tracking-wider block">
+                      Platform Commission &amp; Allocation Breakdown
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-medium">
+                      Auto-calculates commission for any added investment amount
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-extrabold text-gray-500 uppercase">Rate:</span>
+                  {[1, 2, 3, 5].map((pct) => (
+                    <button
+                      key={pct}
+                      type="button"
+                      onClick={() => setDirectCommissionPercentage(pct)}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all cursor-pointer ${
+                        directCommissionPercentage === pct
+                          ? 'bg-[#5B21B6] text-white shadow-xs'
+                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                      }`}
+                    >
+                      {pct}%
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setShowCommissionBreakdownModal(true)}
+                    className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 rounded-lg text-[10px] font-black flex items-center gap-1 cursor-pointer transition-all ml-1"
+                  >
+                    <Percent size={11} /> Commission Info
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="bg-white p-3 rounded-xl border border-purple-100 shadow-2xs">
+                  <span className="text-[9px] font-extrabold text-gray-400 uppercase tracking-wider block">Added Amount</span>
+                  <strong className="text-gray-900 text-sm font-black mt-0.5 block">
+                    ₹{directAmount.toLocaleString('en-IN')}
+                  </strong>
+                  <span className="text-[9px] text-purple-600 font-semibold mt-0.5 block">
+                    {directAmount >= 10000000 ? `(${(directAmount / 10000000).toFixed(2)} Cr)` : directAmount >= 100000 ? `(${(directAmount / 100000).toFixed(2)} Lakhs)` : ''}
+                  </span>
+                </div>
+
+                <div className="bg-white p-3 rounded-xl border border-emerald-200 shadow-2xs relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-1.5 h-full bg-emerald-500" />
+                  <span className="text-[9px] font-extrabold text-emerald-600 uppercase tracking-wider block flex items-center justify-between">
+                    <span>Calculated Commission ({directCommissionPercentage}%)</span>
+                    <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[8px] font-black">AUTO</span>
+                  </span>
+                  <strong className="text-emerald-700 text-sm font-black mt-0.5 block">
+                    ₹{directCommissionAmount.toLocaleString('en-IN')}
+                  </strong>
+                  <span className="text-[9px] text-gray-500 font-medium mt-0.5 block">
+                    {directCommissionAmount >= 100000 ? `(${(directCommissionAmount / 100000).toFixed(2)} Lakhs)` : `₹${directCommissionAmount.toLocaleString('en-IN')} fee`}
+                  </span>
+                </div>
+
+                <div className="bg-white p-3 rounded-xl border border-purple-100 shadow-2xs">
+                  <span className="text-[9px] font-extrabold text-gray-400 uppercase tracking-wider block">Net Disbursed to Startup</span>
+                  <strong className="text-[#5B21B6] text-sm font-black mt-0.5 block">
+                    ₹{directNetDisbursement.toLocaleString('en-IN')}
+                  </strong>
+                  <span className="text-[9px] text-gray-500 font-medium mt-0.5 block">
+                    (Gross Investment - Platform Cut)
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Amount Presets */}
+              <div className="flex items-center gap-2 pt-1 flex-wrap text-[10px]">
+                <span className="font-bold text-gray-500">Quick Amounts:</span>
+                <button type="button" onClick={() => setDirectAmount(100000)} className="px-2.5 py-1 bg-white hover:bg-purple-100 text-purple-900 rounded-lg border border-purple-200 font-bold cursor-pointer transition-colors">₹1 Lakh (100k)</button>
+                <button type="button" onClick={() => setDirectAmount(1000000)} className="px-2.5 py-1 bg-white hover:bg-purple-100 text-purple-900 rounded-lg border border-purple-200 font-bold cursor-pointer transition-colors">₹10 Lakhs (1M)</button>
+                <button type="button" onClick={() => setDirectAmount(5000000)} className="px-2.5 py-1 bg-white hover:bg-purple-100 text-purple-900 rounded-lg border border-purple-200 font-bold cursor-pointer transition-colors">₹50 Lakhs (5M)</button>
+                <button type="button" onClick={() => setDirectAmount(10000000)} className="px-2.5 py-1 bg-white hover:bg-purple-100 text-purple-900 rounded-lg border border-purple-200 font-bold cursor-pointer transition-colors">₹1 Crore / 100 Lakhs</button>
+              </div>
+            </div>
           </div>
 
           {/* Commercial Terms Row */}
@@ -1552,7 +1655,7 @@ const InvestorAgreement: React.FC = () => {
               <p className="text-[9px] font-black text-[#5B21B6] uppercase tracking-widest mb-3 flex items-center gap-1">
                 <Eye size={9} /> Live Agreement Preview
               </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[10px]">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-[10px]">
                 <div className="bg-white rounded-xl p-2.5 border border-purple-100/60">
                   <p className="text-gray-400 font-bold uppercase">Startup</p>
                   <p className="font-extrabold text-gray-900 mt-0.5 truncate">{directStartupName}</p>
@@ -1560,6 +1663,10 @@ const InvestorAgreement: React.FC = () => {
                 <div className="bg-white rounded-xl p-2.5 border border-purple-100/60">
                   <p className="text-gray-400 font-bold uppercase">Amount</p>
                   <p className="font-extrabold text-[#5B21B6] mt-0.5">₹{directAmount.toLocaleString('en-IN')}</p>
+                </div>
+                <div className="bg-white rounded-xl p-2.5 border border-emerald-100 bg-emerald-50/30">
+                  <p className="text-emerald-700 font-bold uppercase">Commission ({directCommissionPercentage}%)</p>
+                  <p className="font-extrabold text-emerald-800 mt-0.5">₹{directCommissionAmount.toLocaleString('en-IN')}</p>
                 </div>
                 <div className="bg-white rounded-xl p-2.5 border border-purple-100/60">
                   <p className="text-gray-400 font-bold uppercase">Equity</p>
@@ -1742,6 +1849,73 @@ const InvestorAgreement: React.FC = () => {
           </div>
         </div>
       </form>
+
+      {/* Commission Breakdown Information Modal */}
+      {showCommissionBreakdownModal && (
+        <div className="fixed inset-0 z-[180] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl relative text-left animate-in zoom-in-95">
+            <button
+              onClick={() => setShowCommissionBreakdownModal(false)}
+              className="absolute top-5 right-5 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+            
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="p-2.5 bg-gradient-to-br from-[#5B21B6] to-[#6C4CF1] text-white rounded-xl shadow-md">
+                <Calculator size={18} />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-gray-900">Platform Commission Calculation</h3>
+                <p className="text-xs text-gray-500">Live Breakdown for Investment Amounts</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="bg-purple-50/70 border border-purple-100 p-4 rounded-2xl space-y-2">
+                <div className="flex justify-between items-center border-b border-purple-100 pb-2">
+                  <span className="text-gray-600 font-semibold">Added Investment Amount:</span>
+                  <strong className="text-gray-900 text-sm font-black">₹{directAmount.toLocaleString('en-IN')}</strong>
+                </div>
+                <div className="flex justify-between items-center border-b border-purple-100 pb-2">
+                  <span className="text-gray-600 font-semibold">Selected Commission Rate:</span>
+                  <strong className="text-[#5B21B6] font-black">{directCommissionPercentage}%</strong>
+                </div>
+                <div className="flex justify-between items-center border-b border-purple-100 pb-2">
+                  <span className="text-emerald-700 font-bold">Auto-Calculated Commission:</span>
+                  <strong className="text-emerald-700 text-sm font-black">₹{directCommissionAmount.toLocaleString('en-IN')}</strong>
+                </div>
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-gray-600 font-semibold">Net Disbursed to Startup:</span>
+                  <strong className="text-[#5B21B6] text-sm font-black">₹{directNetDisbursement.toLocaleString('en-IN')}</strong>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-800 space-y-1">
+                <p className="font-bold flex items-center gap-1">
+                  <Percent size={12} /> Calculation Formula:
+                </p>
+                <p className="font-mono text-[10px]">
+                  Commission = (Investment Amount × Commission Rate) ÷ 100
+                </p>
+                <p className="text-[10px] text-amber-700 pt-1">
+                  e.g., For ₹100,000 (1 Lakh) @ 1% = ₹1,000 commission. For ₹10,000,000 (100 Lakhs / 1 Cr) @ 1% = ₹100,000 (1 Lakh) commission.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCommissionBreakdownModal(false)}
+                className="px-5 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold rounded-xl text-xs shadow-sm cursor-pointer transition-all"
+              >
+                Got It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Terms & Conditions Guidelines Modal */}
       {showDirectTermsModal && (
