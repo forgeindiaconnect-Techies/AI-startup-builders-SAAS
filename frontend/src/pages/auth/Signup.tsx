@@ -63,7 +63,6 @@ const emptyForm: FormData = {
 // ── Role Definitions ──────────────────────────────────────────────────────────
 const ROLES: { id: UserRole; title: string; icon: React.FC<any>; color: string; bg: string; desc: string }[] = [
   { id: 'founder',  title: 'Founder',  icon: Rocket,        color: 'text-purple-700', bg: 'bg-purple-100', desc: 'Build your startup with AI-powered tools and mentor guidance.' },
-  { id: 'investor', title: 'Investor', icon: TrendingUp,    color: 'text-amber-700',  bg: 'bg-amber-100',  desc: 'Discover promising startups and grow your investment portfolio.' },
 ];
 
 const EXPERTISE_OPTIONS = [
