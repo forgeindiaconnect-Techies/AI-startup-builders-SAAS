@@ -1059,10 +1059,22 @@ const InvestorTransactions: React.FC = () => {
               {/* Platform Commission Summary */}
               <div className="bg-emerald-50/60 border border-emerald-100 p-4 rounded-2xl flex justify-between items-center text-xs">
                 <div>
-                  <span className="text-[10px] text-emerald-800 font-bold block uppercase">Platform Commission ({selectedTx.commissionRate ?? 2}%)</span>
-                  <strong className="text-lg font-black text-emerald-700">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-emerald-800 font-bold uppercase">Platform Commission ({selectedTx.commissionRate ?? 2}%)</span>
+                    {selectedTx.commissionFixedBy && (
+                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold rounded-full border border-emerald-200">
+                        Fixed by Admin ({selectedTx.commissionFixedBy})
+                      </span>
+                    )}
+                  </div>
+                  <strong className="text-lg font-black text-emerald-700 block mt-0.5">
                     ₹{(selectedTx.commissionAmount ?? Math.round(selectedTx.offerAmount * ((selectedTx.commissionRate ?? 2) / 100))).toLocaleString('en-IN')}
                   </strong>
+                  {selectedTx.commissionNotes && (
+                    <p className="text-[11px] text-emerald-800/90 font-semibold mt-1 bg-emerald-100/50 px-2.5 py-1 rounded-lg border border-emerald-200/60">
+                      Audit Note: {selectedTx.commissionNotes}
+                    </p>
+                  )}
                 </div>
               </div>
 

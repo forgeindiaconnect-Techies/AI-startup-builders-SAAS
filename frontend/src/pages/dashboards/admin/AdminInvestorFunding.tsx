@@ -100,7 +100,10 @@ const AdminInvestorFunding: React.FC = () => {
   // Open Fix Platform Commission Modal
   const openCommissionModal = (tx: FundingOffer) => {
     const defaultRate = tx.commissionRate ?? 2;
-    const defaultAmount = tx.commissionAmount ?? Math.round(tx.offerAmount * (defaultRate / 100));
+    const calcAmount = Math.round(tx.offerAmount * (defaultRate / 100));
+    const defaultAmount = (tx.commissionAmount !== undefined && tx.commissionAmount !== null && tx.commissionAmount > 0)
+      ? tx.commissionAmount
+      : calcAmount;
     setCommissionModalTx(tx);
     setCommissionRateInput(defaultRate);
     setCommissionAmountInput(String(defaultAmount));
@@ -127,8 +130,9 @@ const AdminInvestorFunding: React.FC = () => {
       const updates = {
         commissionRate: rate,
         commissionAmount: amount,
-        commissionNotes: commissionNotesInput,
+        commissionNotes: commissionNotesInput || `Platform commission fixed by Admin for investment of ₹${commissionModalTx.offerAmount.toLocaleString('en-IN')}`,
         commissionUpdatedAt: new Date().toISOString(),
+        commissionFixedBy: adminName,
         history: [...(commissionModalTx.history || []), historyEntry],
         updatedAt: new Date().toISOString(),
       };

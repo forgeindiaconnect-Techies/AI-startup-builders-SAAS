@@ -92,6 +92,7 @@ export interface FundingOffer {
   commissionStatus?: 'Pending' | 'Fixed' | 'Sent to Admin' | 'Collected';
   commissionNotes?: string;
   commissionUpdatedAt?: string;
+  commissionFixedBy?: string;
   agreementId?: string;
   agreementVersion?: string;
   investorSignedAt?: string;
