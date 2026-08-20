@@ -334,7 +334,7 @@ const FounderInvestorMarketplace: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-gray-100 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-gray-100 text-xs">
           <div>
             <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Investor Category</label>
             <select
@@ -343,16 +343,6 @@ const FounderInvestorMarketplace: React.FC = () => {
               className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#5B21B6]"
             >
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-[10px] font-black text-gray-400 uppercase mb-1">Industry Focus</label>
-            <select
-              value={selectedIndustry}
-              onChange={(e) => setSelectedIndustry(e.target.value)}
-              className="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg font-bold text-gray-700 outline-none focus:ring-2 focus:ring-[#5B21B6]"
-            >
-              {INDUSTRIES.map((i) => <option key={i} value={i}>{i}</option>)}
             </select>
           </div>
           <div>
