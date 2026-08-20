@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, CheckCircle2, XCircle, Clock, Eye,
-  ShieldCheck, X, ExternalLink, FileText, UserCheck, Building2, Download, Printer,
+  ShieldCheck, X, ExternalLink, FileText, UserCheck, Building2,
 } from 'lucide-react';
 import {
   getDocuments, updateDocument,
@@ -28,51 +28,78 @@ const AdminDocumentVerification: React.FC = () => {
   const isInvestorDocument = (d: any) => d.ownerRole === 'Investor' || d.documentType?.startsWith('investor_') || d.category === 'Investor Verification' || d.documentSection === 'Investor Verification';
 
   const refreshDocs = useCallback(async () => {
+    let localDocs: any[] = [];
+    try {
+      const stored = localStorage.getItem('ai_startup_builder_documents');
+      if (stored) localDocs = JSON.parse(stored);
+    } catch (e) {}
+
     const fetched = (await getDocuments()) || [];
 
-    const hasInvestorDocs = fetched.some((d: any) => isInvestorDocument(d));
-    let combined = [...fetched];
+    const docMap = new Map<string, any>();
 
-    if (!hasInvestorDocs) {
-      const demoInvestorDocs = [
-        {
-          id: 'doc_inv_101',
-          ownerName: 'Rakesh - Accredited Investor',
-          ownerEmail: 'forgeindiaconnectfic@gmail.com',
-          ownerRole: 'Investor',
-          documentLabel: 'Accredited Investor & PAN Card Proof',
-          documentDescription: 'PAN Ref: ABCDE1234F • Accredited Individual Investor Proof & Bank Net Worth Certificate',
-          category: 'Investor Verification',
-          documentType: 'investor_accreditation',
-          fileName: 'Rakesh_Accreditation_PAN_Proof.pdf',
-          status: 'Pending Verification',
-          verificationStatus: 'pending_verification',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'doc_inv_102',
-          ownerName: 'Venture Capital Capital Partners',
-          ownerEmail: 'investments@venturecapital.com',
-          ownerRole: 'Investor',
-          documentLabel: 'SEBI Registration & Firm Articles of Association',
-          documentDescription: 'SEBI Reg No: IN/VC/2026/0998 • Institutional Fund Verification & Tax Certificate',
-          category: 'Investor Verification',
-          documentType: 'investor_sebi_reg',
-          fileName: 'VC_Fund_SEBI_Registration.pdf',
-          status: 'Verified',
-          verificationStatus: 'verified',
-          verificationNote: 'Institutional SEBI registration and fund tax status verified by Admin.',
-          verifiedAt: new Date(Date.now() - 86400000).toISOString(),
-          createdAt: new Date(Date.now() - 172800000).toISOString(),
-          updatedAt: new Date(Date.now() - 86400000).toISOString(),
-        }
-      ];
-      combined = [...demoInvestorDocs, ...combined];
-      try {
-        localStorage.setItem('ai_startup_builder_documents', JSON.stringify(combined));
-      } catch (e) {}
-    }
+    const defaultInvestorDocs = [
+      {
+        id: 'doc_inv_101',
+        ownerName: 'Rakesh - Accredited Investor',
+        ownerEmail: 'forgeindiaconnectfic@gmail.com',
+        ownerRole: 'Investor',
+        documentLabel: 'Accredited Investor & PAN Card Proof',
+        documentDescription: 'PAN Ref: ABCDE1234F • Accredited Individual Investor Proof & Bank Net Worth Certificate',
+        category: 'Investor Verification',
+        documentType: 'investor_accreditation',
+        fileName: 'Rakesh_Accreditation_PAN_Proof.pdf',
+        status: 'Pending Verification',
+        verificationStatus: 'pending_verification',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      {
+        id: 'doc_inv_102',
+        ownerName: 'Venture Capital Capital Partners',
+        ownerEmail: 'investments@venturecapital.com',
+        ownerRole: 'Investor',
+        documentLabel: 'SEBI Registration & Firm Articles of Association',
+        documentDescription: 'SEBI Reg No: IN/VC/2026/0998 • Institutional Fund Verification & Tax Certificate',
+        category: 'Investor Verification',
+        documentType: 'investor_sebi_reg',
+        fileName: 'VC_Fund_SEBI_Registration.pdf',
+        status: 'Verified',
+        verificationStatus: 'verified',
+        verificationNote: 'Institutional SEBI registration and fund tax status verified by Admin.',
+        verifiedAt: new Date(Date.now() - 86400000).toISOString(),
+        createdAt: new Date(Date.now() - 172800000).toISOString(),
+        updatedAt: new Date(Date.now() - 86400000).toISOString(),
+      }
+    ];
+
+    defaultInvestorDocs.forEach(d => docMap.set(d.id, d));
+
+    localDocs.forEach(d => {
+      const key = d.id || d._id;
+      if (key) {
+        docMap.set(key, { ...(docMap.get(key) || {}), ...d });
+      }
+    });
+
+    fetched.forEach(d => {
+      const key = d.id || d._id;
+      if (key) {
+        const existing = docMap.get(key) || {};
+        docMap.set(key, {
+          ...d,
+          status: existing.status || d.status,
+          verificationStatus: existing.verificationStatus || d.verificationStatus,
+          verificationNote: existing.verificationNote || d.verificationNote,
+          verifiedAt: existing.verifiedAt || d.verifiedAt,
+        });
+      }
+    });
+
+    const combined = Array.from(docMap.values());
+    try {
+      localStorage.setItem('ai_startup_builder_documents', JSON.stringify(combined));
+    } catch (e) {}
 
     setAllDocsList(combined);
   }, []);
@@ -87,42 +114,55 @@ const AdminDocumentVerification: React.FC = () => {
   const currentTabDocs = activeTab === 'mentor' ? mentorDocs : investorDocs;
 
   const handleVerify = async (docId: string) => {
-    try {
-      await updateDocument(docId, {
-        status: 'Verified',
-        verificationStatus: 'verified',
-        verificationNote: `${activeTab === 'mentor' ? 'Mentor' : 'Investor'} document verified by admin`,
-        verifiedAt: new Date().toISOString(),
-      });
-    } catch (e) {}
-
-    setAllDocsList(prev => prev.map(d => d.id === docId ? {
-      ...d,
+    const updateObj = {
       status: 'Verified',
       verificationStatus: 'verified',
       verificationNote: `${activeTab === 'mentor' ? 'Mentor' : 'Investor'} document verified by admin`,
       verifiedAt: new Date().toISOString(),
-    } : d));
+    };
+
+    try {
+      await updateDocument(docId, updateObj);
+    } catch (e) {}
+
+    setAllDocsList(prev => {
+      const next = prev.map(d => (d.id === docId || d._id === docId) ? { ...d, ...updateObj } : d);
+      try {
+        localStorage.setItem('ai_startup_builder_documents', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    if (previewDoc && (previewDoc.id === docId || previewDoc._id === docId)) {
+      setPreviewDoc((prev: any) => prev ? { ...prev, ...updateObj } : null);
+    }
   };
 
   const handleReject = async () => {
     if (!rejectModal.doc) return;
-    try {
-      await updateDocument(rejectModal.doc.id, {
-        status: 'Rejected',
-        verificationStatus: 'rejected',
-        verificationNote: rejectModal.reason || 'Document rejected by admin. Please re-upload valid proof.',
-        verifiedAt: new Date().toISOString(),
-      });
-    } catch (e) {}
-
-    setAllDocsList(prev => prev.map(d => d.id === rejectModal.doc.id ? {
-      ...d,
+    const docId = rejectModal.doc.id || rejectModal.doc._id;
+    const updateObj = {
       status: 'Rejected',
       verificationStatus: 'rejected',
       verificationNote: rejectModal.reason || 'Document rejected by admin. Please re-upload valid proof.',
       verifiedAt: new Date().toISOString(),
-    } : d));
+    };
+
+    try {
+      await updateDocument(docId, updateObj);
+    } catch (e) {}
+
+    setAllDocsList(prev => {
+      const next = prev.map(d => (d.id === docId || d._id === docId) ? { ...d, ...updateObj } : d);
+      try {
+        localStorage.setItem('ai_startup_builder_documents', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    if (previewDoc && (previewDoc.id === docId || previewDoc._id === docId)) {
+      setPreviewDoc((prev: any) => prev ? { ...prev, ...updateObj } : null);
+    }
 
     setRejectModal({ doc: null, reason: '' });
   };
@@ -189,7 +229,7 @@ const AdminDocumentVerification: React.FC = () => {
                 <h3 style="margin-top:0; color:#1e293b; font-size:16px;">Proof Information & Attributes</h3>
                 <p style="font-size:14px; color:#475569; line-height:1.6; max-width:550px; margin:12px auto 0;">${doc.documentDescription || 'Official verification proof document uploaded and recorded on the platform.'}</p>
                 <div style="font-size:12px; color:#64748b; font-family:monospace; margin-top:20px; background:#ffffff; padding:10px 16px; border-radius:8px; border:1px solid #e2e8f0; display:inline-block;">
-                  Document Ref ID: ${doc.id} | Timestamp: ${new Date(doc.updatedAt || doc.createdAt || Date.now()).toLocaleString('en-IN')}
+                  Document Ref ID: ${doc.id || doc._id} | Timestamp: ${new Date(doc.updatedAt || doc.createdAt || Date.now()).toLocaleString('en-IN')}
                 </div>
               </div>
 
@@ -369,9 +409,10 @@ const AdminDocumentVerification: React.FC = () => {
                   const docStatus = doc.status || (doc.verificationStatus === 'verified' ? 'Verified' : doc.verificationStatus === 'rejected' ? 'Rejected' : 'Pending Verification');
                   const statusClass = STATUS_COLORS[docStatus.toLowerCase()] || STATUS_COLORS['pending'];
                   const roleLabel = activeTab === 'mentor' ? 'Mentor' : 'Investor';
+                  const isPending = (docStatus === 'Pending Verification' || doc.verificationStatus === 'pending_verification' || docStatus === 'pending');
 
                   return (
-                    <tr key={doc.id} className="hover:bg-gray-50/80 transition-colors">
+                    <tr key={doc.id || doc._id} className="hover:bg-gray-50/80 transition-colors">
                       {/* Name & Email */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2.5">
@@ -436,10 +477,10 @@ const AdminDocumentVerification: React.FC = () => {
                             <Eye size={13} /> View Proof
                           </button>
 
-                          {(docStatus === 'Pending Verification' || doc.verificationStatus === 'pending_verification' || docStatus === 'pending') && (
+                          {isPending && (
                             <>
                               <button
-                                onClick={() => handleVerify(doc.id)}
+                                onClick={() => handleVerify(doc.id || doc._id)}
                                 title="Approve & Verify Document"
                                 className="p-1 text-[#5B21B6] hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
                               >
@@ -542,7 +583,7 @@ const AdminDocumentVerification: React.FC = () => {
                     Official Document Proof Certificate
                   </span>
                   <span className="text-[10px] text-gray-400 font-mono">
-                    Ref ID: {previewDoc.id}
+                    Ref ID: {previewDoc.id || previewDoc._id}
                   </span>
                 </div>
                 <p className="text-xs font-bold text-gray-900 leading-relaxed">
@@ -557,13 +598,13 @@ const AdminDocumentVerification: React.FC = () => {
               {/* Status & Notes */}
               <div>
                 <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1">Verification Status</p>
-                <span className={`text-xs font-bold px-3 py-1 rounded-full border inline-flex items-center gap-1 ${STATUS_COLORS[(previewDoc.status || '').toLowerCase()] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
-                  {previewDoc.status}
+                <span className={`text-xs font-bold px-3 py-1 rounded-full border inline-flex items-center gap-1 ${STATUS_COLORS[(previewDoc.status || previewDoc.verificationStatus || '').toLowerCase()] || 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                  {previewDoc.status || (previewDoc.verificationStatus === 'verified' ? 'Verified' : previewDoc.verificationStatus === 'rejected' ? 'Rejected' : 'Pending Verification')}
                 </span>
               </div>
 
               {previewDoc.verificationNote && (
-                <div className={`p-3.5 rounded-xl border ${previewDoc.verificationStatus === 'rejected' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+                <div className={`p-3.5 rounded-xl border ${previewDoc.verificationStatus === 'rejected' || previewDoc.status === 'Rejected' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
                   <p className="text-[10px] font-extrabold uppercase tracking-wider mb-1">Admin Verification Note</p>
                   <p className="text-xs font-semibold">{previewDoc.verificationNote}</p>
                 </div>
@@ -603,19 +644,13 @@ const AdminDocumentVerification: React.FC = () => {
                 {(previewDoc.status === 'Pending Verification' || previewDoc.verificationStatus === 'pending_verification' || previewDoc.status === 'pending') && (
                   <>
                     <button
-                      onClick={() => {
-                        handleVerify(previewDoc.id);
-                        setPreviewDoc(null);
-                      }}
+                      onClick={() => handleVerify(previewDoc.id || previewDoc._id)}
                       className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
                     >
                       <CheckCircle2 size={15} /> Verify Document
                     </button>
                     <button
-                      onClick={() => {
-                        setRejectModal({ doc: previewDoc, reason: '' });
-                        setPreviewDoc(null);
-                      }}
+                      onClick={() => setRejectModal({ doc: previewDoc, reason: '' })}
                       className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
                     >
                       <XCircle size={15} /> Reject
