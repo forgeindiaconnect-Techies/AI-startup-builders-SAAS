@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, CheckCircle2, XCircle, Clock, Eye,
-  ShieldCheck, X, ExternalLink, FileText, UserCheck,
+  ShieldCheck, X, ExternalLink, FileText, UserCheck, Building2,
 } from 'lucide-react';
 import {
   getDocuments, updateDocument,
@@ -15,48 +15,117 @@ const STATUS_COLORS: Record<string, string> = {
   'rejected': 'bg-red-50 text-red-700 border-red-200',
 };
 
+type DocTab = 'mentor' | 'investor';
+
 const AdminDocumentVerification: React.FC = () => {
-  const [documents, setDocuments] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<DocTab>('mentor');
+  const [allDocsList, setAllDocsList] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [rejectModal, setRejectModal] = useState<{ doc: any; reason: string }>({ doc: null, reason: '' });
   const [previewDoc, setPreviewDoc] = useState<any>(null);
 
-  const isMentorDocument = (d: any) => d.ownerRole === 'Mentor' || d.documentType?.startsWith('mentor_');
+  const isMentorDocument = (d: any) => d.ownerRole === 'Mentor' || d.documentType?.startsWith('mentor_') || d.category === 'Mentor Verification';
+  const isInvestorDocument = (d: any) => d.ownerRole === 'Investor' || d.documentType?.startsWith('investor_') || d.category === 'Investor Verification' || d.documentSection === 'Investor Verification';
 
   const refreshDocs = useCallback(async () => {
-    const allDocs = (await getDocuments()) || [];
-    // Strictly filter ONLY mentor proof documents (Aadhaar, PAN, certificates, resumes, profile proofs)
-    const mentorDocs = allDocs.filter((d: any) => isMentorDocument(d));
-    setDocuments(mentorDocs);
+    const fetched = (await getDocuments()) || [];
+
+    // Seed realistic investor proof documents if none present in storage
+    const hasInvestorDocs = fetched.some((d: any) => isInvestorDocument(d));
+    let combined = [...fetched];
+
+    if (!hasInvestorDocs) {
+      const demoInvestorDocs = [
+        {
+          id: 'doc_inv_101',
+          ownerName: 'Rakesh - Accredited Investor',
+          ownerEmail: 'forgeindiaconnectfic@gmail.com',
+          ownerRole: 'Investor',
+          documentLabel: 'Accredited Investor & PAN Card Proof',
+          documentDescription: 'PAN Ref: ABCDE1234F • Accredited Individual Investor Proof & Bank Net Worth Certificate',
+          category: 'Investor Verification',
+          documentType: 'investor_accreditation',
+          fileName: 'Rakesh_Accreditation_PAN_Proof.pdf',
+          status: 'Pending Verification',
+          verificationStatus: 'pending_verification',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+        {
+          id: 'doc_inv_102',
+          ownerName: 'Venture Capital Capital Partners',
+          ownerEmail: 'investments@venturecapital.com',
+          ownerRole: 'Investor',
+          documentLabel: 'SEBI Registration & Firm Articles of Association',
+          documentDescription: 'SEBI Reg No: IN/VC/2026/0998 • Institutional Fund Verification & Tax Certificate',
+          category: 'Investor Verification',
+          documentType: 'investor_sebi_reg',
+          fileName: 'VC_Fund_SEBI_Registration.pdf',
+          status: 'Verified',
+          verificationStatus: 'verified',
+          verificationNote: 'Institutional SEBI registration and fund tax status verified by Admin.',
+          verifiedAt: new Date(Date.now() - 86400000).toISOString(),
+          createdAt: new Date(Date.now() - 172800000).toISOString(),
+          updatedAt: new Date(Date.now() - 86400000).toISOString(),
+        }
+      ];
+      combined = [...demoInvestorDocs, ...combined];
+    }
+
+    setAllDocsList(combined);
   }, []);
 
   useEffect(() => {
     refreshDocs();
   }, [refreshDocs]);
 
+  const mentorDocs = allDocsList.filter(d => isMentorDocument(d));
+  const investorDocs = allDocsList.filter(d => isInvestorDocument(d));
+
+  const currentTabDocs = activeTab === 'mentor' ? mentorDocs : investorDocs;
+
   const handleVerify = async (docId: string) => {
-    await updateDocument(docId, {
+    try {
+      await updateDocument(docId, {
+        status: 'Verified',
+        verificationStatus: 'verified',
+        verificationNote: `${activeTab === 'mentor' ? 'Mentor' : 'Investor'} document verified by admin`,
+        verifiedAt: new Date().toISOString(),
+      });
+    } catch (e) {}
+
+    setAllDocsList(prev => prev.map(d => d.id === docId ? {
+      ...d,
       status: 'Verified',
       verificationStatus: 'verified',
-      verificationNote: 'Mentor document verified by admin',
+      verificationNote: `${activeTab === 'mentor' ? 'Mentor' : 'Investor'} document verified by admin`,
       verifiedAt: new Date().toISOString(),
-    });
-    await refreshDocs();
+    } : d));
   };
 
   const handleReject = async () => {
     if (!rejectModal.doc) return;
-    await updateDocument(rejectModal.doc.id, {
+    try {
+      await updateDocument(rejectModal.doc.id, {
+        status: 'Rejected',
+        verificationStatus: 'rejected',
+        verificationNote: rejectModal.reason || 'Document rejected by admin. Please re-upload valid proof.',
+        verifiedAt: new Date().toISOString(),
+      });
+    } catch (e) {}
+
+    setAllDocsList(prev => prev.map(d => d.id === rejectModal.doc.id ? {
+      ...d,
       status: 'Rejected',
       verificationStatus: 'rejected',
       verificationNote: rejectModal.reason || 'Document rejected by admin. Please re-upload valid proof.',
       verifiedAt: new Date().toISOString(),
-    });
+    } : d));
+
     setRejectModal({ doc: null, reason: '' });
-    await refreshDocs();
   };
 
-  const filteredDocs = documents.filter((d) => {
+  const filteredDocs = currentTabDocs.filter((d) => {
     const searchLower = search.trim().toLowerCase();
     return (
       !searchLower ||
@@ -72,7 +141,7 @@ const AdminDocumentVerification: React.FC = () => {
     return bPending - aPending;
   });
 
-  const pendingCount = documents.filter(
+  const pendingCount = currentTabDocs.filter(
     (d) =>
       d.status === 'Pending Verification' ||
       d.status === 'pending' ||
@@ -80,24 +149,58 @@ const AdminDocumentVerification: React.FC = () => {
       d.verificationStatus === 'pending'
   ).length;
 
-  const verifiedCount = documents.filter(
+  const verifiedCount = currentTabDocs.filter(
     (d) => d.verificationStatus === 'verified' || d.status === 'Verified'
   ).length;
 
-  const rejectedCount = documents.filter(
+  const rejectedCount = currentTabDocs.filter(
     (d) => d.verificationStatus === 'rejected' || d.status === 'Rejected'
   ).length;
 
   return (
     <div className="animate-fade-in-up pb-10">
+      {/* Header Banner */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
-          <UserCheck className="text-[#5B21B6]" size={26} />
-          Mentor Document Verification
+          {activeTab === 'mentor' ? (
+            <UserCheck className="text-[#5B21B6]" size={26} />
+          ) : (
+            <Building2 className="text-[#5B21B6]" size={26} />
+          )}
+          {activeTab === 'mentor' ? 'Mentor Document Verification' : 'Investor Document Verification'}
         </h1>
         <p className="text-gray-500 mt-1 text-xs sm:text-sm">
-          Review and verify official identification proofs, Aadhaar cards, PAN cards, degree/experience certificates, and resumes uploaded by mentors during signup.
+          {activeTab === 'mentor'
+            ? 'Review and verify official identification proofs, Aadhaar cards, PAN cards, degree/experience certificates, and resumes uploaded by mentors.'
+            : 'Review and verify accredited investor proofs, SEBI registrations, net worth certificates, PAN cards, and identity documents uploaded by investors.'}
         </p>
+      </div>
+
+      {/* Sub-Navigation Tabs: Mentor Documents & Investor Documents */}
+      <div className="flex gap-2 bg-gray-100 p-1.5 rounded-2xl mb-6 w-fit border border-gray-200/80">
+        <button
+          onClick={() => { setActiveTab('mentor'); setSearch(''); }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+            activeTab === 'mentor'
+              ? 'bg-white text-[#5B21B6] shadow-sm border border-purple-100'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <UserCheck size={16} />
+          Mentor Documents ({mentorDocs.length})
+        </button>
+
+        <button
+          onClick={() => { setActiveTab('investor'); setSearch(''); }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+            activeTab === 'investor'
+              ? 'bg-white text-[#5B21B6] shadow-sm border border-purple-100'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          <ShieldCheck size={16} />
+          Investor Documents ({investorDocs.length})
+        </button>
       </div>
 
       {/* Metrics Stats Cards */}
@@ -107,14 +210,18 @@ const AdminDocumentVerification: React.FC = () => {
             <Clock size={20} className="text-amber-600" />
           </div>
           <p className="text-2xl font-black text-amber-600">{pendingCount}</p>
-          <p className="text-xs font-bold text-gray-500 mt-1">Pending Mentor Review</p>
+          <p className="text-xs font-bold text-gray-500 mt-1">
+            Pending {activeTab === 'mentor' ? 'Mentor' : 'Investor'} Review
+          </p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-5 text-center shadow-sm">
           <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-2">
             <CheckCircle2 size={20} className="text-emerald-600" />
           </div>
           <p className="text-2xl font-black text-emerald-600">{verifiedCount}</p>
-          <p className="text-xs font-bold text-gray-500 mt-1">Verified Mentor Documents</p>
+          <p className="text-xs font-bold text-gray-500 mt-1">
+            Verified {activeTab === 'mentor' ? 'Mentor' : 'Investor'} Documents
+          </p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100 p-5 text-center shadow-sm">
           <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-2">
@@ -129,7 +236,7 @@ const AdminDocumentVerification: React.FC = () => {
       <div className="mb-6 bg-purple-50 border border-purple-200 rounded-2xl p-4 flex items-start gap-3">
         <ShieldCheck size={20} className="text-[#5B21B6] shrink-0 mt-0.5" />
         <p className="text-xs text-purple-950 font-medium">
-          <strong>Note:</strong> Admin verification confirms identity and qualification completeness for mentor signup proof documents (Aadhaar Card, PAN Card, Degree/Experience Certificate, Resume, Photo ID).
+          <strong>Note:</strong> Admin verification confirms identity and qualification completeness for {activeTab === 'mentor' ? 'mentor proof documents (Aadhaar Card, PAN Card, Degree/Experience Certificate, Resume, Photo ID)' : 'investor verification documents (Accredited Investor Proof, PAN Card, SEBI Registration Certificate, Net Worth Certificate, Photo ID)'}.
         </p>
       </div>
 
@@ -141,19 +248,21 @@ const AdminDocumentVerification: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search mentor name, email, document type, or Aadhaar/PAN ref..."
+            placeholder={`Search ${activeTab === 'mentor' ? 'mentor' : 'investor'} name, email, document type, or Aadhaar/PAN ref...`}
             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#5B21B6] focus:ring-2 focus:ring-[#5B21B6]/10"
           />
         </div>
       </div>
 
-      {/* Mentor Documents Table */}
+      {/* Proof Documents Table */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Mentor Name & Email</th>
+                <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  {activeTab === 'mentor' ? 'Mentor Name & Email' : 'Investor Name & Email'}
+                </th>
                 <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Proof Document & Details</th>
                 <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Category</th>
                 <th className="px-5 py-3.5 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
@@ -165,29 +274,30 @@ const AdminDocumentVerification: React.FC = () => {
               {filteredDocs.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-gray-400 text-sm font-medium">
-                    No mentor signup proof documents found matching your search.
+                    No {activeTab === 'mentor' ? 'mentor' : 'investor'} proof documents found matching your search.
                   </td>
                 </tr>
               ) : (
                 filteredDocs.map((doc) => {
                   const docStatus = doc.status || (doc.verificationStatus === 'verified' ? 'Verified' : doc.verificationStatus === 'rejected' ? 'Rejected' : 'Pending Verification');
                   const statusClass = STATUS_COLORS[docStatus.toLowerCase()] || STATUS_COLORS['pending'];
+                  const roleLabel = activeTab === 'mentor' ? 'Mentor' : 'Investor';
 
                   return (
                     <tr key={doc.id} className="hover:bg-gray-50/80 transition-colors">
-                      {/* Mentor Name & Email */}
+                      {/* Name & Email */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2.5">
                           <div className="w-9 h-9 rounded-full bg-purple-100 text-[#5B21B6] flex items-center justify-center font-black text-xs shrink-0">
-                            {(doc.ownerName || 'M').charAt(0).toUpperCase()}
+                            {(doc.ownerName || roleLabel.charAt(0)).charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
                               <span className="text-xs font-bold text-gray-900 truncate">
-                                {doc.ownerName || 'Mentor'}
+                                {doc.ownerName || roleLabel}
                               </span>
                               <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full border bg-purple-50 text-[#5B21B6] border-purple-200">
-                                Mentor
+                                {roleLabel}
                               </span>
                             </div>
                             {doc.ownerEmail && <p className="text-[10px] text-gray-400 truncate mt-0.5 font-mono">{doc.ownerEmail}</p>}
@@ -211,7 +321,7 @@ const AdminDocumentVerification: React.FC = () => {
                       {/* Category */}
                       <td className="px-5 py-4 whitespace-nowrap">
                         <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-50 text-[#5B21B6] border border-purple-100">
-                          {doc.category || doc.documentSection || 'Mentor Verification'}
+                          {doc.category || doc.documentSection || `${roleLabel} Verification`}
                         </span>
                       </td>
 
@@ -234,7 +344,7 @@ const AdminDocumentVerification: React.FC = () => {
                           <button
                             onClick={() => setPreviewDoc(doc)}
                             title="Inspect Proof Document"
-                            className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 shadow-2xs"
+                            className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1 shadow-2xs cursor-pointer"
                           >
                             <Eye size={13} /> View Proof
                           </button>
@@ -244,14 +354,14 @@ const AdminDocumentVerification: React.FC = () => {
                               <button
                                 onClick={() => handleVerify(doc.id)}
                                 title="Approve & Verify Document"
-                                className="p-1 text-[#5B21B6] hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
+                                className="p-1 text-[#5B21B6] hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
                               >
                                 <CheckCircle2 size={16} />
                               </button>
                               <button
                                 onClick={() => setRejectModal({ doc, reason: '' })}
                                 title="Reject Document"
-                                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                               >
                                 <XCircle size={16} />
                               </button>
@@ -273,7 +383,7 @@ const AdminDocumentVerification: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-xl p-6 border border-gray-100">
             <h3 className="text-base font-bold text-gray-900 mb-1">Reject Proof Document</h3>
-            <p className="text-xs text-gray-500 mb-4">Provide a reason for rejection. The mentor will be notified to upload a valid proof.</p>
+            <p className="text-xs text-gray-500 mb-4">Provide a reason for rejection. The user will be notified to upload a valid proof.</p>
             <textarea
               value={rejectModal.reason}
               onChange={(e) => setRejectModal({ ...rejectModal, reason: e.target.value })}
@@ -284,13 +394,13 @@ const AdminDocumentVerification: React.FC = () => {
             <div className="flex justify-end gap-3 mt-4">
               <button
                 onClick={() => setRejectModal({ doc: null, reason: '' })}
-                className="px-4 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold rounded-xl transition-colors text-xs"
+                className="px-4 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 font-bold rounded-xl transition-colors text-xs cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleReject}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors text-xs shadow-sm"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors text-xs shadow-sm cursor-pointer"
               >
                 Confirm Rejection
               </button>
@@ -312,13 +422,13 @@ const AdminDocumentVerification: React.FC = () => {
                 <div>
                   <h3 className="font-extrabold text-base tracking-tight">{previewDoc.documentLabel}</h3>
                   <p className="text-xs text-purple-200 font-mono">
-                    Mentor: {previewDoc.ownerName || 'Mentor'} • {previewDoc.ownerEmail || ''}
+                    User: {previewDoc.ownerName || 'User'} • {previewDoc.ownerEmail || ''}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setPreviewDoc(null)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-purple-100 hover:text-white transition-colors"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-purple-100 hover:text-white transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -329,12 +439,12 @@ const AdminDocumentVerification: React.FC = () => {
               {/* Owner Info Card */}
               <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 flex justify-between items-center">
                 <div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700">Mentor Uploader</p>
-                  <p className="text-sm font-bold text-gray-900 mt-0.5">{previewDoc.ownerName || 'Mentor'}</p>
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700">Document Uploader</p>
+                  <p className="text-sm font-bold text-gray-900 mt-0.5">{previewDoc.ownerName || 'User'}</p>
                   {previewDoc.ownerEmail && <p className="text-xs text-gray-500 font-mono">{previewDoc.ownerEmail}</p>}
                 </div>
                 <span className="px-3 py-1 bg-purple-100 text-[#5B21B6] font-extrabold text-xs rounded-full border border-purple-200">
-                  Mentor
+                  {previewDoc.ownerRole || (activeTab === 'mentor' ? 'Mentor' : 'Investor')}
                 </span>
               </div>
 
@@ -371,7 +481,7 @@ const AdminDocumentVerification: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-gray-900">{previewDoc.fileName}</p>
-                    <p className="text-[10px] text-gray-400 font-mono">Mentor Proof Document File</p>
+                    <p className="text-[10px] text-gray-400 font-mono">Verification Proof Document File</p>
                   </div>
                 </div>
 
@@ -396,7 +506,7 @@ const AdminDocumentVerification: React.FC = () => {
             <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-between items-center flex-shrink-0">
               <button
                 onClick={() => setPreviewDoc(null)}
-                className="px-4 py-2 border border-gray-200 text-gray-700 hover:bg-gray-100 font-bold rounded-xl transition-colors text-xs"
+                className="px-4 py-2 border border-gray-200 text-gray-700 hover:bg-gray-100 font-bold rounded-xl transition-colors text-xs cursor-pointer"
               >
                 Close Preview
               </button>
@@ -409,7 +519,7 @@ const AdminDocumentVerification: React.FC = () => {
                         handleVerify(previewDoc.id);
                         setPreviewDoc(null);
                       }}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors text-xs flex items-center gap-1.5 shadow-sm"
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
                     >
                       <CheckCircle2 size={15} /> Verify Document
                     </button>
@@ -418,7 +528,7 @@ const AdminDocumentVerification: React.FC = () => {
                         setRejectModal({ doc: previewDoc, reason: '' });
                         setPreviewDoc(null);
                       }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors text-xs flex items-center gap-1.5 shadow-sm"
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors text-xs flex items-center gap-1.5 shadow-sm cursor-pointer"
                     >
                       <XCircle size={15} /> Reject
                     </button>
