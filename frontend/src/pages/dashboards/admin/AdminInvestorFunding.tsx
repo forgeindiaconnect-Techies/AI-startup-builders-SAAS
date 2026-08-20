@@ -35,7 +35,6 @@ const AdminInvestorFunding: React.FC = () => {
   const [commissionModalTx, setCommissionModalTx] = useState<FundingOffer | null>(null);
   const [commissionRateInput, setCommissionRateInput] = useState<number>(2);
   const [commissionAmountInput, setCommissionAmountInput] = useState<string>('');
-  const [commissionStatusInput, setCommissionStatusInput] = useState<'Fixed' | 'Sent to Admin' | 'Collected' | 'Pending'>('Sent to Admin');
   const [commissionNotesInput, setCommissionNotesInput] = useState<string>('');
 
   // Actions states
@@ -105,7 +104,6 @@ const AdminInvestorFunding: React.FC = () => {
     setCommissionModalTx(tx);
     setCommissionRateInput(defaultRate);
     setCommissionAmountInput(String(defaultAmount));
-    setCommissionStatusInput(tx.commissionStatus || 'Sent to Admin');
     setCommissionNotesInput(tx.commissionNotes || `Platform commission set for investment of ₹${tx.offerAmount.toLocaleString('en-IN')}`);
   };
 
@@ -122,14 +120,13 @@ const AdminInvestorFunding: React.FC = () => {
         action: 'commission_fixed',
         performedBy: adminName,
         role: 'Admin',
-        message: `Admin fixed platform commission to ₹${amount.toLocaleString('en-IN')} (${rate}%) [Status: ${commissionStatusInput}].`,
+        message: `Admin fixed platform commission to ₹${amount.toLocaleString('en-IN')} (${rate}%).`,
         createdAt: new Date().toISOString(),
       };
 
       const updates = {
         commissionRate: rate,
         commissionAmount: amount,
-        commissionStatus: commissionStatusInput,
         commissionNotes: commissionNotesInput,
         commissionUpdatedAt: new Date().toISOString(),
         history: [...(commissionModalTx.history || []), historyEntry],
@@ -143,7 +140,7 @@ const AdminInvestorFunding: React.FC = () => {
         await addNotification({
           userId: commissionModalTx.investorId,
           title: `Platform Commission Fixed 💼`,
-          message: `Admin fixed platform commission for ${commissionModalTx.startupName} investment: ₹${amount.toLocaleString('en-IN')} (${rate}%). Status: ${commissionStatusInput}`,
+          message: `Admin fixed platform commission for ${commissionModalTx.startupName} investment: ₹${amount.toLocaleString('en-IN')} (${rate}%).`,
           type: 'funding',
           actionUrl: '/dashboard/investor/transactions',
           isRead: false,
@@ -151,7 +148,7 @@ const AdminInvestorFunding: React.FC = () => {
         });
       }
 
-      showToast(`Platform Commission fixed to ₹${amount.toLocaleString('en-IN')} (${rate}%) [Status: ${commissionStatusInput}]!`);
+      showToast(`Platform Commission fixed to ₹${amount.toLocaleString('en-IN')} (${rate}%)!`);
       await refreshOffers();
       setCommissionModalTx(null);
 
@@ -439,7 +436,6 @@ const AdminInvestorFunding: React.FC = () => {
                 <th className="p-4">Startup</th>
                 <th className="p-4">Investment Amount</th>
                 <th className="p-4">Platform Commission</th>
-                <th className="p-4">Commission Status</th>
                 <th className="p-4">Investment Type</th>
                 <th className="p-4">Funding Date</th>
                 <th className="p-4">Status</th>
@@ -449,11 +445,11 @@ const AdminInvestorFunding: React.FC = () => {
             <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={11} className="p-8 text-center text-gray-400">Loading funding transactions...</td>
+                  <td colSpan={10} className="p-8 text-center text-gray-400">Loading funding transactions...</td>
                 </tr>
               ) : filteredOffers.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="p-8 text-center text-gray-400">No funding transactions found.</td>
+                  <td colSpan={10} className="p-8 text-center text-gray-400">No funding transactions found.</td>
                 </tr>
               ) : (
                 filteredOffers.map((o) => {
@@ -461,7 +457,6 @@ const AdminInvestorFunding: React.FC = () => {
                   const commitmentId = o.commitmentId || `FC-2026-${String(o.id || o._id || '0000').slice(-4).toUpperCase()}`;
                   const commRate = o.commissionRate ?? 2;
                   const commAmount = o.commissionAmount ?? Math.round(o.offerAmount * (commRate / 100));
-                  const commStatus = o.commissionStatus || 'Sent to Admin';
 
                   return (
                     <tr key={o.id || o._id} className="hover:bg-gray-50/50 transition-colors">
@@ -478,16 +473,6 @@ const AdminInvestorFunding: React.FC = () => {
                       <td className="p-4 font-black text-emerald-700">
                         ₹{commAmount.toLocaleString('en-IN')}
                         <span className="block text-[9px] font-bold text-gray-400">({commRate}%)</span>
-                      </td>
-                      <td className="p-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
-                          commStatus === 'Collected' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                          commStatus === 'Fixed' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                          commStatus === 'Sent to Admin' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                          'bg-amber-50 text-amber-700 border-amber-200'
-                        }`}>
-                          {commStatus}
-                        </span>
                       </td>
                       <td className="p-4">
                         <span className="px-2 py-1 bg-purple-50 text-[#6C4CF1] border border-purple-100 rounded-lg text-[10px] font-bold">
@@ -1093,21 +1078,6 @@ const AdminInvestorFunding: React.FC = () => {
                 <p className="text-[10px] text-gray-400 mt-1">
                   Auto-calculated: ₹{Math.round(commissionModalTx.offerAmount * ((commissionRateInput || 0) / 100)).toLocaleString('en-IN')} (for ₹{commissionModalTx.offerAmount.toLocaleString('en-IN')})
                 </p>
-              </div>
-
-              {/* Commission Status */}
-              <div>
-                <label className="block text-gray-700 font-bold mb-1">Commission Status</label>
-                <select
-                  value={commissionStatusInput}
-                  onChange={(e) => setCommissionStatusInput(e.target.value as any)}
-                  className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white font-bold text-gray-800 outline-none focus:ring-2 focus:ring-[#6C4CF1]"
-                >
-                  <option value="Sent to Admin">Sent to Admin (Platform Fee Received)</option>
-                  <option value="Fixed">Fixed (Commission Approved by Admin)</option>
-                  <option value="Collected">Collected (Disbursed to Admin Account)</option>
-                  <option value="Pending">Pending (Awaiting Payment Processing)</option>
-                </select>
               </div>
 
               {/* Commission Audit Notes */}

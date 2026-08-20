@@ -784,7 +784,6 @@ const InvestorTransactions: React.FC = () => {
                       <th className="px-6 py-4">Investment Amount</th>
                       <th className="px-6 py-4">Commission Rate (%)</th>
                       <th className="px-6 py-4">Platform Commission (₹)</th>
-                      <th className="px-6 py-4">Commission Status</th>
                       <th className="px-6 py-4">Date</th>
                       <th className="px-6 py-4 text-right">Actions</th>
                     </tr>
@@ -793,7 +792,6 @@ const InvestorTransactions: React.FC = () => {
                     {investorOffers.map(c => {
                       const commRate = c.commissionRate ?? 2;
                       const commAmount = c.commissionAmount ?? Math.round(c.offerAmount * (commRate / 100));
-                      const commStatus = c.commissionStatus || 'Sent to Admin';
                       const txId = c.transactionId || `TXN-2026-${String(c.id || c._id || '0000').slice(-4).toUpperCase()}`;
 
                       return (
@@ -809,16 +807,6 @@ const InvestorTransactions: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 font-black text-emerald-700 text-base">
                             ₹{commAmount.toLocaleString('en-IN')}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                              commStatus === 'Collected' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                              commStatus === 'Fixed' ? 'bg-purple-50 text-purple-700 border border-purple-200' :
-                              commStatus === 'Sent to Admin' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
-                              'bg-amber-50 text-amber-700 border border-amber-200'
-                            }`}>
-                              {commStatus}
-                            </span>
                           </td>
                           <td className="px-6 py-4 text-gray-500 text-xs">
                             {new Date(c.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -1075,12 +1063,6 @@ const InvestorTransactions: React.FC = () => {
                   <strong className="text-lg font-black text-emerald-700">
                     ₹{(selectedTx.commissionAmount ?? Math.round(selectedTx.offerAmount * ((selectedTx.commissionRate ?? 2) / 100))).toLocaleString('en-IN')}
                   </strong>
-                </div>
-                <div className="text-right">
-                  <span className="text-[10px] text-gray-500 font-bold block uppercase">Commission Status</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 inline-block mt-0.5">
-                    {selectedTx.commissionStatus || 'Sent to Admin'}
-                  </span>
                 </div>
               </div>
 
