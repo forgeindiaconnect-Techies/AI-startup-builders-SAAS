@@ -459,12 +459,6 @@ const AdminInvestorFunding: React.FC = () => {
             Monitor investor payment commitments, verify transfer proofs, fix platform commissions, and manage manual &amp; QR payment options.
           </p>
         </div>
-        <button
-          onClick={() => refreshOffers()}
-          className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold text-xs rounded-xl shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh Offers
-        </button>
       </div>
 
       {/* Summary Metrics */}

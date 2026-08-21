@@ -213,11 +213,6 @@ const FounderFundingTransactions: React.FC = () => {
           </h1>
           <p className="text-sm text-gray-500 mt-1">View investor commitments and manage funding offers.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => refreshOffers()} className="p-2.5 bg-white border border-gray-200 text-gray-500 hover:text-[#5B21B6] rounded-xl transition-colors cursor-pointer" title="Refresh">
-            <RefreshCw size={15} />
-          </button>
-        </div>
       </div>
 
       {/* Metrics */}

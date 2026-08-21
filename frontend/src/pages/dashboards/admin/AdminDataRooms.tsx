@@ -31,12 +31,6 @@ const AdminDataRooms: React.FC = () => {
             Monitor startup due diligence rooms, review uploaded documents, audit investor access permissions, and check AI readiness.
           </p>
         </div>
-        <button
-          onClick={loadDataRooms}
-          className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold rounded-xl text-xs flex items-center gap-1.5"
-        >
-          <RefreshCw size={14} /> Refresh Governance
-        </button>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">

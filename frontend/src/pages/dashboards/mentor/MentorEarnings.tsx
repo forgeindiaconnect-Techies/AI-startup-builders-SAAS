@@ -168,12 +168,6 @@ const MentorEarnings: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Earnings & Payouts</h1>
           <p className="text-gray-500 mt-1">Track your session income, request withdrawals, and monitor payout status.</p>
         </div>
-        <button
-          onClick={fetchEarnings}
-          className="flex items-center gap-2 px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors shadow-sm"
-        >
-          <RefreshCw size={14} /> Refresh
-        </button>
       </div>
 
       {/* Top 5 Metrics Cards */}
