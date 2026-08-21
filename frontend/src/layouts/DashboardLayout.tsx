@@ -35,6 +35,7 @@ import FounderInvestorMessages from '../pages/dashboards/founder/FounderInvestor
 import FounderInvestorMeetings from '../pages/dashboards/founder/FounderInvestorMeetings';
 import FounderFundingTransactions from '../pages/dashboards/founder/FounderFundingTransactions';
 import FounderInvestorProfile from '../pages/dashboards/founder/FounderInvestorProfile';
+import FounderInvestorAgreement from '../pages/dashboards/founder/FounderInvestorAgreement';
 
 import MentorDashboard from '../pages/dashboards/MentorDashboard';
 import MentorReviews from '../pages/dashboards/mentor/MentorReviews';
@@ -78,30 +79,31 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/founder/plagiarism': FounderOriginalityCheck,
     '/dashboard/founder/mentors': FounderMentors,
     '/dashboard/founder/mentor-reviews': FounderMentorReviews,
-    '/dashboard/founder/investors': FounderInvestorHub,
-    '/dashboard/founder/investor-marketplace': FounderInvestorHub,
+    '/dashboard/founder/investors': FounderInvestorMarketplace,
+    '/dashboard/founder/investor-marketplace': FounderInvestorMarketplace,
     '/dashboard/founder/investors/:investorId': FounderInvestorProfile,
-    '/dashboard/founder/investment-requests': FounderInvestorHub,
-    '/dashboard/founder/messages': FounderInvestorHub,
-    '/dashboard/founder/meetings': FounderInvestorHub,
-    '/dashboard/founder/agreement': FounderInvestorHub,
-    '/dashboard/founder/funding-transactions': FounderInvestorHub,
-    '/dashboard/founder/funding': FounderInvestorHub,
+    '/dashboard/founder/investment-requests': FounderInvestmentRequests,
+    '/dashboard/founder/messages': FounderInvestorMessages,
+    '/dashboard/founder/meetings': FounderInvestorMeetings,
+    '/dashboard/founder/agreement': FounderInvestorAgreement,
+    '/dashboard/founder/funding-transactions': FounderFundingTransactions,
+    '/dashboard/founder/funding': FounderFundingTransactions,
 
-    '/founder/investors': FounderInvestorHub,
-    '/founder/investor-marketplace': FounderInvestorHub,
+    '/founder/investors': FounderInvestorMarketplace,
+    '/founder/investor-marketplace': FounderInvestorMarketplace,
     '/founder/investors/:investorId': FounderInvestorProfile,
-    '/founder/investment-requests': FounderInvestorHub,
-    '/founder/messages': FounderInvestorHub,
-    '/founder/meetings': FounderInvestorHub,
-    '/founder/agreement': FounderInvestorHub,
-    '/founder/funding-transactions': FounderInvestorHub,
-    '/founder/funding': FounderInvestorHub,
+    '/founder/investment-requests': FounderInvestmentRequests,
+    '/founder/messages': FounderInvestorMessages,
+    '/founder/meetings': FounderInvestorMeetings,
+    '/founder/agreement': FounderInvestorAgreement,
+    '/founder/funding-transactions': FounderFundingTransactions,
+    '/founder/funding': FounderFundingTransactions,
     '/dashboard/founder/billing': FounderBilling,
     '/dashboard/founder/documents': FounderDocuments,
     '/dashboard/founder/learning-videos': FounderLearningVideos,
     '/dashboard/founder/notifications': SharedNotifications,
     '/dashboard/founder/profile-billing': FounderProfileBilling,
+    '/dashboard/founder/inbox': SharedInbox,
   },
   mentor: {
     '/dashboard/mentor': MentorDashboard,
@@ -376,6 +378,9 @@ const DashboardLayout: React.FC = () => {
   const handleNavigate = (targetPath: string) => {
     const allowed = resolveAllowed(targetPath);
     navigate(allowed);
+    const mainElem = document.querySelector('main');
+    if (mainElem) mainElem.scrollTop = 0;
+    window.scrollTo(0, 0);
   };
 
   const handleLogout = () => { logout(); navigate('/login', { replace: true }); };
