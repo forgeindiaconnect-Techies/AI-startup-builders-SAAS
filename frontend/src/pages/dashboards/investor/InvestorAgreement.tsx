@@ -115,7 +115,7 @@ const AgreementTrackingModal: React.FC<{
   onSignAgreement?: (offer: FundingOffer) => void;
   onCancelAgreement?: (offer: FundingOffer) => void;
 }> = ({ offer, onClose, onSignAgreement, onCancelAgreement }) => {
-  const details = offer.agreementDetails || {} as any;
+  const details: any = offer.agreementDetails || {};
   const versions = offer.agreementVersions || [];
   const auditTrail = offer.agreementAuditTrail || [];
   const isFullySigned = offer.agreementStatus === 'Fully Signed';
@@ -123,7 +123,7 @@ const AgreementTrackingModal: React.FC<{
 
   return createPortal(
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-purple-100 overflow-hidden">
+      <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-gray-200 overflow-hidden text-left font-sans">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white p-6 flex justify-between items-center relative">
           <div>
@@ -341,8 +341,7 @@ const InvestorAgreement: React.FC = () => {
   const { user } = useAuth();
   const { offers, loading, refreshOffers, updateOfferDetails } = useFunding();
 
-  // Mode Selection State
-  // 'selection' | 'manual' | 'template'
+  // Mode Selection State ('selection' | 'manual' | 'template')
   const [creationMode, setCreationMode] = useState<'selection' | 'manual' | 'template'>('selection');
 
   // Modals & Overlay state
@@ -716,40 +715,40 @@ const InvestorAgreement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white font-sans antialiased pb-20">
+    <div className="animate-fade-in-up pb-16 font-sans">
       <InvestorSubNav activeTab="agreement" />
 
       {/* Main Toast */}
       {toast && (
         <div className={`fixed top-5 right-5 z-50 px-5 py-3 rounded-2xl shadow-2xl font-bold text-xs flex items-center gap-2 border transition-all ${
-          toast.type === 'error' ? 'bg-red-500 text-white border-red-400' : 'bg-emerald-500 text-white border-emerald-400'
+          toast.type === 'error' ? 'bg-rose-600 text-white border-rose-500' : 'bg-emerald-600 text-white border-emerald-500'
         }`}>
           {toast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle2 size={16} />}
           {toast.msg}
         </div>
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         
-        {/* Top Header Title */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-gradient-to-r from-purple-950/80 via-slate-900 to-indigo-950/80 p-6 rounded-3xl border border-purple-800/40 shadow-xl">
+        {/* Top Header Banner — Clean Light Theme */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl border border-gray-200/80 shadow-sm">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+              <span className="bg-purple-100 text-[#5B21B6] border border-purple-200 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
                 Investor Agreement Suite
               </span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-2">
-              <FileText className="text-purple-400" size={28} /> Create & Manage Investment Agreements
+            <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2.5">
+              <FileText className="text-[#5B21B6]" size={28} /> Create & Manage Investment Agreements
             </h1>
-            <p className="text-slate-400 text-xs mt-1">
+            <p className="text-gray-500 text-xs mt-1 font-medium">
               Select between Manual Drafting or Admin-Approved Template Mode to generate, review, and dispatch binding agreements.
             </p>
           </div>
           {creationMode !== 'selection' && (
             <button
               onClick={() => setCreationMode('selection')}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-purple-200 border border-purple-500/30 font-bold text-xs rounded-xl flex items-center gap-2 transition self-start md:self-auto"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 font-bold text-xs rounded-xl flex items-center gap-2 transition self-start md:self-auto"
             >
               <RefreshCw size={14} /> Change Creation Mode
             </button>
@@ -758,75 +757,75 @@ const InvestorAgreement: React.FC = () => {
 
         {/* ─── SECTION 1: AGREEMENT CREATION SELECTION ─────────────────────────────── */}
         {creationMode === 'selection' && (
-          <div className="bg-slate-800/60 border border-slate-700/60 rounded-3xl p-8 mb-12 shadow-2xl backdrop-blur-md">
+          <div className="bg-white border border-gray-200/80 rounded-3xl p-8 mb-12 shadow-sm">
             <div className="text-center max-w-2xl mx-auto mb-8">
-              <span className="bg-indigo-500/20 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+              <span className="bg-purple-100 text-[#5B21B6] text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-purple-200">
                 Step 1 of 2
               </span>
-              <h2 className="text-2xl font-black text-white mt-3">Choose How You Want to Create the Agreement</h2>
-              <p className="text-slate-400 text-sm mt-1">
+              <h2 className="text-2xl font-black text-gray-900 mt-3">Choose How You Want to Create the Agreement</h2>
+              <p className="text-gray-500 text-sm mt-1">
                 Select your preferred agreement creation mode below to get started.
               </p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {/* Option A — Manual Agreement */}
-              <div className="bg-slate-900/90 border-2 border-slate-700 hover:border-purple-500 rounded-3xl p-6 transition-all duration-300 flex flex-col justify-between group hover:shadow-2xl hover:shadow-purple-500/10">
+              <div className="bg-gray-50/60 border-2 border-gray-200 hover:border-purple-600 rounded-3xl p-6 transition-all duration-300 flex flex-col justify-between group hover:shadow-xl hover:bg-white">
                 <div>
-                  <div className="w-14 h-14 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <div className="w-14 h-14 rounded-2xl bg-purple-100 text-[#5B21B6] border border-purple-200 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                     <Pen size={26} />
                   </div>
-                  <span className="text-xs font-extrabold uppercase text-purple-400 tracking-wider">Option A</span>
-                  <h3 className="text-xl font-black text-white mt-1 mb-2">Manual Agreement</h3>
-                  <p className="text-slate-400 text-xs leading-relaxed mb-6">
+                  <span className="text-xs font-extrabold uppercase text-purple-700 tracking-wider">Option A</span>
+                  <h3 className="text-xl font-black text-gray-900 mt-1 mb-2">Manual Agreement</h3>
+                  <p className="text-gray-500 text-xs leading-relaxed mb-6">
                     Create your own agreement manually using the required investment and commercial details. Ideal when you have custom external legal terms or uploaded contracts.
                   </p>
-                  <ul className="space-y-2 text-xs text-slate-300 mb-6">
+                  <ul className="space-y-2 text-xs text-gray-700 font-semibold mb-6">
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-purple-400" /> Auto-fill verified deal information
+                      <CheckCircle2 size={14} className="text-purple-600" /> Auto-fill verified deal information
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-purple-400" /> Full custom agreement content editor
+                      <CheckCircle2 size={14} className="text-purple-600" /> Full custom agreement content editor
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-purple-400" /> Upload agreement document (.pdf, .doc, .docx)
+                      <CheckCircle2 size={14} className="text-purple-600" /> Upload agreement document (.pdf, .doc, .docx)
                     </li>
                   </ul>
                 </div>
                 <button
                   onClick={() => setCreationMode('manual')}
-                  className="w-full py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-2xl shadow-lg transition flex items-center justify-center gap-2 group-hover:bg-purple-500"
+                  className="w-full py-3.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold text-xs uppercase tracking-wider rounded-2xl shadow-md transition flex items-center justify-center gap-2"
                 >
                   Create Manually <ArrowRight size={16} />
                 </button>
               </div>
 
               {/* Option B — Use Agreement Template */}
-              <div className="bg-slate-900/90 border-2 border-slate-700 hover:border-indigo-500 rounded-3xl p-6 transition-all duration-300 flex flex-col justify-between group hover:shadow-2xl hover:shadow-indigo-500/10">
+              <div className="bg-gray-50/60 border-2 border-gray-200 hover:border-indigo-600 rounded-3xl p-6 transition-all duration-300 flex flex-col justify-between group hover:shadow-xl hover:bg-white">
                 <div>
-                  <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                  <div className="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-700 border border-indigo-200 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
                     <Layers3 size={26} />
                   </div>
-                  <span className="text-xs font-extrabold uppercase text-indigo-400 tracking-wider">Option B</span>
-                  <h3 className="text-xl font-black text-white mt-1 mb-2">Use Agreement Template</h3>
-                  <p className="text-slate-400 text-xs leading-relaxed mb-6">
+                  <span className="text-xs font-extrabold uppercase text-indigo-700 tracking-wider">Option B</span>
+                  <h3 className="text-xl font-black text-gray-900 mt-1 mb-2">Use Agreement Template</h3>
+                  <p className="text-gray-500 text-xs leading-relaxed mb-6">
                     Choose an approved agreement template and automatically populate it with your startup, business category, and investment details.
                   </p>
-                  <ul className="space-y-2 text-xs text-slate-300 mb-6">
+                  <ul className="space-y-2 text-xs text-gray-700 font-semibold mb-6">
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-indigo-400" /> Automatic Business Category detection
+                      <CheckCircle2 size={14} className="text-indigo-600" /> Automatic Business Category detection
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-indigo-400" /> Admin-controlled approved legal template library
+                      <CheckCircle2 size={14} className="text-indigo-600" /> Admin-controlled approved legal template library
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-indigo-400" /> Template-specific field customization
+                      <CheckCircle2 size={14} className="text-indigo-600" /> Template-specific field customization
                     </li>
                   </ul>
                 </div>
                 <button
                   onClick={() => setCreationMode('template')}
-                  className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-2xl shadow-lg transition flex items-center justify-center gap-2 group-hover:bg-indigo-500"
+                  className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs uppercase tracking-wider rounded-2xl shadow-md transition flex items-center justify-center gap-2"
                 >
                   Use Template <Sparkles size={16} />
                 </button>
@@ -837,29 +836,29 @@ const InvestorAgreement: React.FC = () => {
 
         {/* ─── SECTION 2: MANUAL AGREEMENT FLOW ──────────────────────────────────── */}
         {creationMode === 'manual' && (
-          <div className="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 md:p-8 mb-12 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-700/80 pb-4 mb-6">
+          <div className="bg-white border border-gray-200/80 rounded-3xl p-6 md:p-8 mb-12 shadow-sm">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
               <div>
-                <span className="bg-purple-500/20 text-purple-300 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full">
+                <span className="bg-purple-100 text-[#5B21B6] text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border border-purple-200">
                   Manual Agreement Flow
                 </span>
-                <h2 className="text-xl font-black text-white mt-1">Manual Agreement Draft</h2>
+                <h2 className="text-xl font-black text-gray-900 mt-1">Manual Agreement Draft</h2>
               </div>
               <button
                 onClick={() => setCreationMode('selection')}
-                className="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-bold bg-slate-700/50 px-3 py-1.5 rounded-xl"
+                className="text-xs text-gray-600 hover:text-gray-900 flex items-center gap-1 font-bold bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200"
               >
                 Back to Selection
               </button>
             </div>
 
             {/* Select Deal / Startup */}
-            <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-700 mb-6">
-              <label className="block text-xs font-bold uppercase text-purple-400 mb-2">Select Startup / Deal</label>
+            <div className="bg-gray-50/80 p-5 rounded-2xl border border-gray-200 mb-6">
+              <label className="block text-xs font-extrabold uppercase text-purple-700 mb-2">Select Startup / Deal</label>
               <select
                 value={selectedStartupId}
                 onChange={e => handleSelectStartupDeal(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm font-semibold text-white focus:outline-none focus:border-purple-500"
+                className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm font-semibold text-gray-900 focus:outline-none focus:border-purple-600"
               >
                 <option value="">Select a Startup Deal...</option>
                 {availableStartups.map(s => (
@@ -873,11 +872,11 @@ const InvestorAgreement: React.FC = () => {
             {/* Deal Parties */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                  <User size={16} className="text-purple-400" /> Deal Parties
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                  <User size={16} className="text-purple-600" /> Deal Parties
                 </h3>
                 {autoFilled && (
-                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1">
                     <CheckCircle2 size={12} /> Auto-filled from Deal
                   </span>
                 )}
@@ -885,101 +884,101 @@ const InvestorAgreement: React.FC = () => {
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Startup Name *</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Startup Name *</label>
                   <input
                     type="text"
                     value={startupName}
                     onChange={e => setStartupName(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-semibold text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Founder Name *</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Founder Name *</label>
                   <input
                     type="text"
                     value={founderName}
                     onChange={e => setFounderName(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-semibold text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Founder Email *</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Founder Email *</label>
                   <input
                     type="email"
                     value={founderEmail}
                     onChange={e => setFounderEmail(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-semibold text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Investor Name</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Investor Name</label>
                   <input
                     type="text"
                     value={investorName}
                     onChange={e => setInvestorName(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-semibold text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Investor Email</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Investor Email</label>
                   <input
                     type="email"
                     value={investorEmail}
                     onChange={e => setInvestorEmail(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-semibold text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Deal ID</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Deal ID</label>
                   <input
                     type="text"
                     value={dealId}
                     onChange={e => setDealId(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-semibold text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
               </div>
             </div>
 
             {/* Investment Parameters */}
-            <div className="mb-8 border-t border-slate-700/80 pt-6">
-              <h3 className="text-sm font-black text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                <IndianRupee size={16} className="text-purple-400" /> Investment Parameters
+            <div className="mb-8 border-t border-gray-200 pt-6">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <IndianRupee size={16} className="text-purple-600" /> Investment Parameters
               </h3>
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Investment Amount (₹) *</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Investment Amount (₹) *</label>
                   <input
                     type="number"
                     value={investmentAmount}
                     onChange={e => setInvestmentAmount(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-bold text-emerald-400 focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-bold text-emerald-700 focus:bg-white focus:border-purple-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Equity Stake (%) *</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Equity Stake (%) *</label>
                   <input
                     type="number"
                     value={equityPercentage}
                     onChange={e => setEquityPercentage(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-bold text-purple-300 focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-bold text-[#5B21B6] focus:bg-white focus:border-purple-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Pre-Money Valuation (₹)</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Pre-Money Valuation (₹)</label>
                   <input
                     type="number"
                     value={valuation}
                     onChange={e => setValuation(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-semibold text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Funding Instrument</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Funding Instrument</label>
                   <select
                     value={fundingInstrument}
                     onChange={e => setFundingInstrument(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-semibold text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
                   >
                     <option value="Equity">Equity</option>
                     <option value="SAFE">SAFE</option>
@@ -988,79 +987,79 @@ const InvestorAgreement: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Investment Type</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Investment Type</label>
                   <input
                     type="text"
                     value={investmentType}
                     onChange={e => setInvestmentType(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-semibold text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Valuation Cap (₹)</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Valuation Cap (₹)</label>
                   <input
                     type="number"
                     value={valuationCap}
                     onChange={e => setValuationCap(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-semibold text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
               </div>
             </div>
 
             {/* Commercial Terms */}
-            <div className="mb-8 border-t border-slate-700/80 pt-6">
-              <h3 className="text-sm font-black text-white uppercase tracking-wider mb-4 flex items-center gap-2">
-                <ScrollText size={16} className="text-purple-400" /> Commercial Terms
+            <div className="mb-8 border-t border-gray-200 pt-6">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <ScrollText size={16} className="text-purple-600" /> Commercial Terms
               </h3>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Investment Terms *</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Investment Terms *</label>
                   <textarea
                     rows={3}
                     value={investmentTerms}
                     onChange={e => setInvestmentTerms(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-normal text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-normal text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Milestones / Conditions</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Milestones / Conditions</label>
                   <textarea
                     rows={3}
                     value={milestones}
                     onChange={e => setMilestones(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-normal text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-normal text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Use of Funds</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Use of Funds</label>
                   <textarea
                     rows={2}
                     value={useOfFunds}
                     onChange={e => setUseOfFunds(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-normal text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-normal text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">Investor Rights</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Investor Rights</label>
                   <textarea
                     rows={2}
                     value={investorRights}
                     onChange={e => setInvestorRights(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs font-normal text-white focus:border-purple-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-normal text-gray-900 focus:bg-white focus:border-purple-600"
                   />
                 </div>
               </div>
             </div>
 
             {/* Manual Agreement Document & Editor */}
-            <div className="mb-8 border-t border-slate-700/80 pt-6">
-              <h3 className="text-sm font-black text-white uppercase tracking-wider mb-3 flex items-center gap-2">
-                <FileCode size={16} className="text-purple-400" /> Manual Agreement Document
+            <div className="mb-8 border-t border-gray-200 pt-6">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <FileCode size={16} className="text-purple-600" /> Manual Agreement Document
               </h3>
               
               <div className="mb-4">
-                <label className="block text-[11px] font-extrabold text-slate-300 uppercase mb-1">
+                <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">
                   Agreement Content Editor (Enter / Paste legal clauses)
                 </label>
                 <textarea
@@ -1068,20 +1067,20 @@ const InvestorAgreement: React.FC = () => {
                   value={agreementContent}
                   onChange={e => setAgreementContent(e.target.value)}
                   placeholder="Paste or draft your custom agreement clauses here..."
-                  className="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 text-xs font-mono text-slate-200 focus:border-purple-500 leading-relaxed"
+                  className="w-full bg-gray-50 border border-gray-300 rounded-2xl p-4 text-xs font-mono text-gray-900 focus:bg-white focus:border-purple-600 leading-relaxed"
                 />
               </div>
 
-              <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-700 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div>
-                  <span className="text-xs font-bold text-white flex items-center gap-2">
-                    <Upload size={14} className="text-purple-400" /> Upload Agreement Document (Supported: PDF, DOC, DOCX)
+                  <span className="text-xs font-bold text-gray-900 flex items-center gap-2">
+                    <Upload size={14} className="text-purple-600" /> Upload Agreement Document (Supported: PDF, DOC, DOCX)
                   </span>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-gray-500 mt-0.5">
                     {uploadedDocumentName ? `Uploaded: ${uploadedDocumentName}` : 'No document uploaded yet.'}
                   </p>
                 </div>
-                <label className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs rounded-xl cursor-pointer transition">
+                <label className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold text-xs rounded-xl cursor-pointer transition">
                   Choose File
                   <input type="file" accept=".pdf,.doc,.docx" onChange={handleFileUpload} className="hidden" />
                 </label>
@@ -1089,17 +1088,17 @@ const InvestorAgreement: React.FC = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex justify-between items-center pt-4 border-t border-slate-700">
+            <div className="flex justify-between items-center pt-4 border-t border-gray-200">
               <button
                 onClick={() => setShowFullPreviewModal(true)}
-                className="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl flex items-center gap-2 transition"
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl border border-gray-300 flex items-center gap-2 transition"
               >
                 <Eye size={14} /> Preview Manual Agreement
               </button>
 
               <button
                 onClick={handleGenerateAgreement}
-                className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg flex items-center gap-2 transition"
+                className="px-6 py-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center gap-2 transition"
               >
                 <Send size={14} /> Generate & Send Agreement
               </button>
@@ -1109,29 +1108,29 @@ const InvestorAgreement: React.FC = () => {
 
         {/* ─── SECTION 3: TEMPLATE AGREEMENT FLOW ─────────────────────────────────── */}
         {creationMode === 'template' && (
-          <div className="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 md:p-8 mb-12 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-700/80 pb-4 mb-6">
+          <div className="bg-white border border-gray-200/80 rounded-3xl p-6 md:p-8 mb-12 shadow-sm">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
               <div>
-                <span className="bg-indigo-500/20 text-indigo-300 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full">
+                <span className="bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full">
                   Template Agreement Flow
                 </span>
-                <h2 className="text-xl font-black text-white mt-1">Admin-Approved Agreement Template</h2>
+                <h2 className="text-xl font-black text-gray-900 mt-1">Admin-Approved Agreement Template</h2>
               </div>
               <button
                 onClick={() => setCreationMode('selection')}
-                className="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-bold bg-slate-700/50 px-3 py-1.5 rounded-xl"
+                className="text-xs text-gray-600 hover:text-gray-900 flex items-center gap-1 font-bold bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200"
               >
                 Back to Selection
               </button>
             </div>
 
             {/* STEP 1: Select Startup / Deal */}
-            <div className="mb-6 bg-slate-900/90 p-5 rounded-2xl border border-slate-700">
-              <h3 className="text-xs font-extrabold uppercase text-indigo-400 mb-2">Step 1 — Select Startup / Deal</h3>
+            <div className="mb-6 bg-gray-50/80 p-5 rounded-2xl border border-gray-200">
+              <h3 className="text-xs font-extrabold uppercase text-indigo-700 mb-2">Step 1 — Select Startup / Deal</h3>
               <select
                 value={selectedStartupId}
                 onChange={e => handleSelectStartupDeal(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-sm font-semibold text-white focus:outline-none focus:border-indigo-500"
+                className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm font-semibold text-gray-900 focus:outline-none focus:border-indigo-600"
               >
                 <option value="">Select Startup / Deal...</option>
                 {availableStartups.map(s => (
@@ -1143,44 +1142,44 @@ const InvestorAgreement: React.FC = () => {
             </div>
 
             {/* STEP 2: Business / Industry Selection */}
-            <div className="mb-6 bg-slate-900/90 p-5 rounded-2xl border border-slate-700">
+            <div className="mb-6 bg-gray-50/80 p-5 rounded-2xl border border-gray-200">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-extrabold uppercase text-indigo-400">Step 2 — Business / Industry Category</h3>
-                <span className="bg-indigo-500/20 text-indigo-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                <h3 className="text-xs font-extrabold uppercase text-indigo-700">Step 2 — Business / Industry Category</h3>
+                <span className="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-indigo-200">
                   Verified Startup Category: {verifiedCategory}
                 </span>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4 items-center">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 mb-1">Registered Category</label>
+                  <label className="block text-[11px] font-bold text-gray-700 mb-1">Registered Category</label>
                   <select
                     value={businessCategory}
                     onChange={e => setBusinessCategory(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-white focus:border-indigo-500"
+                    className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900 focus:border-indigo-600"
                   >
                     {ALL_BUSINESS_CATEGORIES.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
                   </select>
                 </div>
-                <div className="p-3 bg-slate-800/60 rounded-xl border border-slate-700/80 text-xs text-slate-300">
-                  <span className="font-extrabold text-white">Category Protection Active:</span> Only templates approved for <strong>{businessCategory}</strong> or General fallback will be loaded.
+                <div className="p-3 bg-white rounded-xl border border-gray-200 text-xs text-gray-700">
+                  <span className="font-extrabold text-gray-900">Category Protection Active:</span> Only templates approved for <strong>{businessCategory}</strong> or General fallback will be loaded.
                 </div>
               </div>
             </div>
 
             {/* STEP 3 & 4: Select Agreement Template Dropdown & General Types */}
-            <div className="mb-8 bg-slate-900/90 p-5 rounded-2xl border border-slate-700">
-              <h3 className="text-xs font-extrabold uppercase text-indigo-400 mb-3">Step 3 & 4 — Select Agreement Template</h3>
+            <div className="mb-8 bg-gray-50/80 p-5 rounded-2xl border border-gray-200">
+              <h3 className="text-xs font-extrabold uppercase text-indigo-700 mb-3">Step 3 & 4 — Select Agreement Template</h3>
               
               <div className="grid md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 mb-1">Standard Agreement Type</label>
+                  <label className="block text-[11px] font-bold text-gray-700 mb-1">Standard Agreement Type</label>
                   <select
                     value={agreementType}
                     onChange={e => setAgreementType(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-semibold text-white focus:border-indigo-500"
+                    className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:border-indigo-600"
                   >
                     {STANDARD_AGREEMENT_TYPES.map(t => (
                       <option key={t} value={t}>{t}</option>
@@ -1189,11 +1188,11 @@ const InvestorAgreement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-300 mb-1">Approved Template Dropdown</label>
+                  <label className="block text-[11px] font-bold text-gray-700 mb-1">Approved Template Dropdown</label>
                   <select
                     value={selectedTemplateId}
                     onChange={e => handleSelectTemplate(e.target.value)}
-                    className="w-full bg-slate-800 border border-indigo-500/80 rounded-xl p-3 text-xs font-bold text-indigo-300 focus:outline-none"
+                    className="w-full bg-white border border-indigo-500 rounded-xl p-3 text-xs font-bold text-indigo-900 focus:outline-none"
                   >
                     <option value="">Choose Approved Template...</option>
                     {availableTemplates.map(tmpl => (
@@ -1207,11 +1206,11 @@ const InvestorAgreement: React.FC = () => {
 
               {/* STEP 11: Fallback if no specific template exists */}
               {availableTemplates.length === 0 && (
-                <div className="p-4 bg-amber-950/40 border border-amber-500/30 rounded-2xl text-amber-200 text-xs">
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs">
                   <div className="font-extrabold text-sm mb-1 flex items-center gap-2">
-                    <AlertTriangle size={16} className="text-amber-400" /> No Business-Specific Template Available
+                    <AlertTriangle size={16} className="text-amber-600" /> No Business-Specific Template Available
                   </div>
-                  <p className="mb-3 text-amber-300/90">
+                  <p className="mb-3 text-amber-800">
                     No custom template was found specifically registered for business category <strong>{businessCategory}</strong>.
                   </p>
                   <div className="flex gap-3">
@@ -1221,13 +1220,13 @@ const InvestorAgreement: React.FC = () => {
                         const generalTmpl = getAgreementTemplates().find(t => t.businessCategory === 'General');
                         if (generalTmpl) handleSelectTemplate(generalTmpl.id);
                       }}
-                      className="px-3.5 py-1.5 bg-amber-500 text-slate-950 font-extrabold text-xs rounded-xl hover:bg-amber-400 transition"
+                      className="px-3.5 py-1.5 bg-amber-500 text-white font-extrabold text-xs rounded-xl hover:bg-amber-600 transition"
                     >
                       Use General Investment Template
                     </button>
                     <button
                       onClick={() => setCreationMode('manual')}
-                      className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-bold text-xs rounded-xl transition"
+                      className="px-3.5 py-1.5 bg-white hover:bg-gray-100 text-amber-900 border border-amber-300 font-bold text-xs rounded-xl transition"
                     >
                       Custom Agreement (Manual Mode)
                     </button>
@@ -1238,12 +1237,12 @@ const InvestorAgreement: React.FC = () => {
 
             {/* STEP 7: TEMPLATE-SPECIFIC FIELDS */}
             {loadedTemplate && (
-              <div className="mb-8 bg-slate-900/90 p-5 rounded-2xl border border-indigo-500/30">
-                <div className="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                    <Sparkles size={16} className="text-indigo-400" /> Template-Specific Parameters ({agreementType})
+              <div className="mb-8 bg-gray-50/80 p-5 rounded-2xl border border-indigo-200">
+                <div className="flex items-center justify-between border-b border-gray-200 pb-3 mb-4">
+                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles size={16} className="text-indigo-600" /> Template-Specific Parameters ({agreementType})
                   </h3>
-                  <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-300">
                     Auto-filled from Deal
                   </span>
                 </div>
@@ -1252,48 +1251,48 @@ const InvestorAgreement: React.FC = () => {
                 {agreementType === 'SAFE Agreement' && (
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Investment Amount (₹)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Investment Amount (₹)</label>
                       <input
                         type="number"
                         value={investmentAmount}
                         onChange={e => setInvestmentAmount(Number(e.target.value))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-emerald-400"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-emerald-700"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Valuation Cap (₹)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Valuation Cap (₹)</label>
                       <input
                         type="number"
                         value={valuationCap}
                         onChange={e => setValuationCap(Number(e.target.value))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-purple-300"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-[#5B21B6]"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Discount Rate (%)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Discount Rate (%)</label>
                       <input
                         type="number"
                         value={discount}
                         onChange={e => setDiscount(Number(e.target.value))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-white"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900"
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Conversion Event Trigger</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Conversion Event Trigger</label>
                       <input
                         type="text"
                         value={conversionEvent}
                         onChange={e => setConversionEvent(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs text-white"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs text-gray-900"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Pro-Rata Rights</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Pro-Rata Rights</label>
                       <input
                         type="text"
                         value={proRataRights}
                         onChange={e => setProRataRights(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs text-white"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs text-gray-900"
                       />
                     </div>
                   </div>
@@ -1303,57 +1302,57 @@ const InvestorAgreement: React.FC = () => {
                 {agreementType === 'Convertible Note' && (
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Principal Amount (₹)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Principal Amount (₹)</label>
                       <input
                         type="number"
                         value={investmentAmount}
                         onChange={e => setInvestmentAmount(Number(e.target.value))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-emerald-400"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-emerald-700"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Interest Rate (%)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Interest Rate (%)</label>
                       <input
                         type="number"
                         value={interestRate}
                         onChange={e => setInterestRate(Number(e.target.value))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-white"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Maturity Date</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Maturity Date</label>
                       <input
                         type="date"
                         value={maturityDate}
                         onChange={e => setMaturityDate(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-white"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Valuation Cap (₹)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Valuation Cap (₹)</label>
                       <input
                         type="number"
                         value={valuationCap}
                         onChange={e => setValuationCap(Number(e.target.value))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-purple-300"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-[#5B21B6]"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Discount Rate (%)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Discount Rate (%)</label>
                       <input
                         type="number"
                         value={discount}
                         onChange={e => setDiscount(Number(e.target.value))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-white"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Conversion Trigger</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Conversion Trigger</label>
                       <input
                         type="text"
                         value={conversionEvent}
                         onChange={e => setConversionEvent(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs text-white"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs text-gray-900"
                       />
                     </div>
                   </div>
@@ -1363,30 +1362,30 @@ const InvestorAgreement: React.FC = () => {
                 {agreementType === 'Equity Investment Agreement' && (
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Investment Amount (₹)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Investment Amount (₹)</label>
                       <input
                         type="number"
                         value={investmentAmount}
                         onChange={e => setInvestmentAmount(Number(e.target.value))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-emerald-400"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-emerald-700"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Equity Allocation (%)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Equity Allocation (%)</label>
                       <input
                         type="number"
                         value={equityPercentage}
                         onChange={e => setEquityPercentage(Number(e.target.value))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-purple-300"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-[#5B21B6]"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Post-Money Valuation (₹)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Post-Money Valuation (₹)</label>
                       <input
                         type="number"
                         value={valuation}
                         onChange={e => setValuation(Number(e.target.value))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-white"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900"
                       />
                     </div>
                   </div>
@@ -1396,30 +1395,30 @@ const InvestorAgreement: React.FC = () => {
                 {agreementType === 'Term Sheet' && (
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Proposed Investment (₹)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Proposed Investment (₹)</label>
                       <input
                         type="number"
                         value={investmentAmount}
                         onChange={e => setInvestmentAmount(Number(e.target.value))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-emerald-400"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-emerald-700"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Proposed Valuation (₹)</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Proposed Valuation (₹)</label>
                       <input
                         type="number"
                         value={valuation}
                         onChange={e => setValuation(Number(e.target.value))}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-white"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-300 mb-1">Proposed Closing Date</label>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Proposed Closing Date</label>
                       <input
                         type="date"
                         value={proposedClosingDate}
                         onChange={e => setProposedClosingDate(e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-white"
+                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900"
                       />
                     </div>
                   </div>
@@ -1428,43 +1427,43 @@ const InvestorAgreement: React.FC = () => {
             )}
 
             {/* STEP 12: LIVE AGREEMENT PREVIEW CARD */}
-            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/40 rounded-2xl p-6 mb-8 shadow-xl">
-              <div className="flex items-center justify-between border-b border-indigo-500/30 pb-4 mb-4">
-                <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                  <Eye size={16} className="text-indigo-400" /> Live Agreement Preview
+            <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 border border-purple-200 rounded-2xl p-6 mb-8 shadow-sm">
+              <div className="flex items-center justify-between border-b border-purple-200 pb-4 mb-4">
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                  <Eye size={16} className="text-[#5B21B6]" /> Live Agreement Preview
                 </h3>
-                <span className="text-[11px] font-bold text-indigo-300 bg-indigo-500/20 px-3 py-1 rounded-full">
+                <span className="text-[11px] font-bold text-[#5B21B6] bg-purple-100 px-3 py-1 rounded-full border border-purple-200">
                   Updates Automatically
                 </span>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-                  <span className="text-slate-400 uppercase text-[10px] font-bold">Startup</span>
-                  <div className="font-extrabold text-white text-sm mt-0.5">{startupName}</div>
+                <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                  <span className="text-gray-400 uppercase text-[10px] font-bold">Startup</span>
+                  <div className="font-extrabold text-gray-900 text-sm mt-0.5">{startupName}</div>
                 </div>
-                <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-                  <span className="text-slate-400 uppercase text-[10px] font-bold">Founder</span>
-                  <div className="font-extrabold text-white text-sm mt-0.5">{founderName}</div>
+                <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                  <span className="text-gray-400 uppercase text-[10px] font-bold">Founder</span>
+                  <div className="font-extrabold text-gray-900 text-sm mt-0.5">{founderName}</div>
                 </div>
-                <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-                  <span className="text-slate-400 uppercase text-[10px] font-bold">Investment Amount</span>
-                  <div className="font-extrabold text-emerald-400 text-sm mt-0.5">₹{investmentAmount.toLocaleString('en-IN')}</div>
+                <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                  <span className="text-gray-400 uppercase text-[10px] font-bold">Investment Amount</span>
+                  <div className="font-extrabold text-emerald-700 text-sm mt-0.5">₹{investmentAmount.toLocaleString('en-IN')}</div>
                 </div>
-                <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-                  <span className="text-slate-400 uppercase text-[10px] font-bold">Equity Stake</span>
-                  <div className="font-extrabold text-purple-300 text-sm mt-0.5">{equityPercentage}%</div>
+                <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                  <span className="text-gray-400 uppercase text-[10px] font-bold">Equity Stake</span>
+                  <div className="font-extrabold text-[#5B21B6] text-sm mt-0.5">{equityPercentage}%</div>
                 </div>
               </div>
 
               {loadedTemplate && (
-                <div className="mt-4 p-4 bg-slate-950/70 rounded-xl border border-slate-800 text-xs space-y-2">
-                  <div className="font-bold text-indigo-300 uppercase tracking-wider text-[11px]">
+                <div className="mt-4 p-4 bg-white rounded-xl border border-gray-200 text-xs space-y-2">
+                  <div className="font-bold text-[#5B21B6] uppercase tracking-wider text-[11px]">
                     Template Clauses ({loadedTemplate.name})
                   </div>
                   {loadedTemplate.clauses.slice(0, 3).map((c, i) => (
-                    <div key={i} className="text-slate-300">
-                      <span className="font-semibold text-white">• {c.title}:</span> {c.content.slice(0, 100)}...
+                    <div key={i} className="text-gray-700">
+                      <span className="font-semibold text-gray-900">• {c.title}:</span> {c.content.slice(0, 100)}...
                     </div>
                   ))}
                 </div>
@@ -1473,19 +1472,19 @@ const InvestorAgreement: React.FC = () => {
               <div className="flex flex-wrap gap-3 mt-6">
                 <button
                   onClick={() => setShowFullPreviewModal(true)}
-                  className="px-4 py-2 bg-indigo-900/70 hover:bg-indigo-800 text-indigo-200 border border-indigo-500/40 font-bold text-xs rounded-xl flex items-center gap-1.5 transition"
+                  className="px-4 py-2 bg-white hover:bg-gray-100 text-[#5B21B6] border border-purple-300 font-bold text-xs rounded-xl flex items-center gap-1.5 transition"
                 >
                   <Eye size={14} /> Preview Full Agreement
                 </button>
                 <button
                   onClick={() => generateInvestmentContractFile({ startupName, founderName, investorName, offerAmount: investmentAmount, equityPercentage, agreementType, businessCategory })}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center gap-1.5 transition"
+                  className="px-4 py-2 bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold text-xs rounded-xl flex items-center gap-1.5 transition"
                 >
                   <FileDown size={14} /> Download Draft
                 </button>
                 <button
                   onClick={handleGenerateAgreement}
-                  className="ml-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg flex items-center gap-2 transition"
+                  className="ml-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center gap-2 transition"
                 >
                   <Sparkles size={14} /> Generate Agreement
                 </button>
@@ -1496,51 +1495,51 @@ const InvestorAgreement: React.FC = () => {
 
         {/* ─── SECTION 14 & 15: AGREEMENT READY FOR REVIEW & SEND CONFIRMATION MODAL ─── */}
         {showSendConfirmation && (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-purple-500/40 rounded-3xl max-w-lg w-full p-6 shadow-2xl text-white">
-              <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-4">
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white border border-gray-200 rounded-3xl max-w-lg w-full p-6 shadow-2xl text-gray-900 text-left">
+              <div className="w-12 h-12 rounded-2xl bg-purple-100 text-[#5B21B6] flex items-center justify-center mb-4">
                 <Send size={24} />
               </div>
 
               <h3 className="text-xl font-black mb-2">Send Agreement to Founder</h3>
-              <p className="text-slate-300 text-xs mb-6">
+              <p className="text-gray-600 text-xs mb-6">
                 “You are about to send this agreement to the Founder for review and signature.”
               </p>
 
-              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-2 text-xs mb-6">
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-2 text-xs mb-6">
                 <div className="flex justify-between">
-                  <span className="text-slate-400 font-bold">Founder:</span>
-                  <span className="font-extrabold text-white">{founderName} ({founderEmail})</span>
+                  <span className="text-gray-500 font-bold">Founder:</span>
+                  <span className="font-extrabold text-gray-900">{founderName} ({founderEmail})</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400 font-bold">Startup:</span>
-                  <span className="font-extrabold text-white">{startupName}</span>
+                  <span className="text-gray-500 font-bold">Startup:</span>
+                  <span className="font-extrabold text-gray-900">{startupName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400 font-bold">Agreement Type:</span>
-                  <span className="font-extrabold text-indigo-300">{agreementType}</span>
+                  <span className="text-gray-500 font-bold">Agreement Type:</span>
+                  <span className="font-extrabold text-indigo-700">{agreementType}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400 font-bold">Investment Amount:</span>
-                  <span className="font-extrabold text-emerald-400">₹{investmentAmount.toLocaleString('en-IN')}</span>
+                  <span className="text-gray-500 font-bold">Investment Amount:</span>
+                  <span className="font-extrabold text-emerald-700">₹{investmentAmount.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400 font-bold">Equity Stake:</span>
-                  <span className="font-extrabold text-purple-300">{equityPercentage}%</span>
+                  <span className="text-gray-500 font-bold">Equity Stake:</span>
+                  <span className="font-extrabold text-[#5B21B6]">{equityPercentage}%</span>
                 </div>
               </div>
 
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowSendConfirmation(false)}
-                  className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 font-bold text-xs rounded-xl transition text-slate-300"
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 font-bold text-xs rounded-xl transition text-gray-700"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleConfirmAndSend}
                   disabled={actionLoading}
-                  className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-white"
+                  className="flex-1 py-3 bg-[#5B21B6] hover:bg-[#4C1D95] font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition flex items-center justify-center gap-2 text-white"
                 >
                   {actionLoading ? 'Dispatching...' : 'Confirm & Send'}
                 </button>
@@ -1551,23 +1550,23 @@ const InvestorAgreement: React.FC = () => {
 
         {/* ─── FULL PREVIEW MODAL ─────────────────────────────────────────────────── */}
         {showFullPreviewModal && (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-3xl w-full max-h-[85vh] flex flex-col p-6 shadow-2xl text-white">
-              <div className="flex justify-between items-center border-b border-slate-700 pb-4 mb-4">
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white border border-gray-200 rounded-3xl max-w-3xl w-full max-h-[85vh] flex flex-col p-6 shadow-2xl text-gray-900 text-left">
+              <div className="flex justify-between items-center border-b border-gray-200 pb-4 mb-4">
                 <h3 className="text-lg font-black flex items-center gap-2">
-                  <ScrollText className="text-purple-400" size={20} /> Full Legal Agreement Draft Preview
+                  <ScrollText className="text-[#5B21B6]" size={20} /> Full Legal Agreement Draft Preview
                 </h3>
-                <button onClick={() => setShowFullPreviewModal(false)} className="text-slate-400 hover:text-white">
+                <button onClick={() => setShowFullPreviewModal(false)} className="text-gray-400 hover:text-gray-600">
                   <X size={20} />
                 </button>
               </div>
-              <div className="overflow-y-auto flex-1 p-4 bg-slate-950 rounded-2xl font-mono text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+              <div className="overflow-y-auto flex-1 p-4 bg-gray-50 rounded-2xl font-mono text-xs text-gray-800 leading-relaxed whitespace-pre-wrap border border-gray-200">
                 {agreementContent || investmentTerms || 'Agreement document content...'}
               </div>
-              <div className="pt-4 border-t border-slate-700 flex justify-end">
+              <div className="pt-4 border-t border-gray-200 flex justify-end">
                 <button
                   onClick={() => setShowFullPreviewModal(false)}
-                  className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl"
+                  className="px-5 py-2 bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs rounded-xl"
                 >
                   Close Preview
                 </button>
@@ -1580,21 +1579,21 @@ const InvestorAgreement: React.FC = () => {
         <div className="mt-12">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-black text-white flex items-center gap-2">
-                <FileCheck className="text-emerald-400" size={22} /> Active & Dispatched Investment Agreements
+              <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
+                <FileCheck className="text-emerald-600" size={22} /> Active & Dispatched Investment Agreements
               </h2>
-              <p className="text-slate-400 text-xs mt-0.5">
+              <p className="text-gray-500 text-xs mt-0.5">
                 Track agreement status, version logs, founder countersignatures, and funding locking.
               </p>
             </div>
-            <span className="bg-slate-800 text-slate-300 text-xs font-bold px-3 py-1 rounded-full border border-slate-700">
+            <span className="bg-gray-100 text-gray-700 text-xs font-bold px-3 py-1 rounded-full border border-gray-200">
               {activeAgreements.length} Total Agreements
             </span>
           </div>
 
           <div className="grid gap-4">
             {activeAgreements.length === 0 ? (
-              <div className="bg-slate-800/40 border border-slate-700/60 rounded-3xl p-8 text-center text-slate-400 text-xs">
+              <div className="bg-white border border-dashed border-gray-300 rounded-3xl p-8 text-center text-gray-500 text-xs">
                 No active agreements found. Create your first agreement using Manual or Template mode above.
               </div>
             ) : (
@@ -1606,46 +1605,46 @@ const InvestorAgreement: React.FC = () => {
                 return (
                   <div
                     key={offer.id || offer._id || offer.agreementId}
-                    className="bg-slate-800/80 border border-slate-700 hover:border-purple-500/60 rounded-3xl p-6 transition-all shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6"
+                    className="bg-white border border-gray-200 hover:border-purple-300 rounded-3xl p-6 transition-all shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6"
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="bg-purple-500/20 text-purple-300 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full uppercase">
+                        <span className="bg-purple-100 text-[#5B21B6] font-extrabold text-[10px] px-2.5 py-0.5 rounded-full uppercase border border-purple-200">
                           {offer.agreementId || `AGR-2026-${(offer.id || '').slice(-4)}`}
                         </span>
-                        <span className="bg-slate-700 text-slate-300 font-bold text-[10px] px-2.5 py-0.5 rounded-full">
+                        <span className="bg-gray-100 text-gray-700 font-bold text-[10px] px-2.5 py-0.5 rounded-full border border-gray-200">
                           Ver {offer.agreementVersion || 'v1.0'}
                         </span>
                         <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
-                          isFullySigned ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'
+                          isFullySigned ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white'
                         }`}>
                           {offer.agreementStatus || 'Sent to Founder'}
                         </span>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                          isLocked ? 'bg-amber-950 text-amber-300 border border-amber-500/40' : 'bg-emerald-950 text-emerald-300 border border-emerald-500/40'
+                          isLocked ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                         }`}>
                           {isLocked ? <Lock size={10} /> : <Unlock size={10} />}
                           {isLocked ? 'Funding Locked' : 'Funding Enabled'}
                         </span>
                       </div>
 
-                      <h3 className="text-lg font-black text-white">{offer.startupName}</h3>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Founder: <strong className="text-white">{offer.founderName}</strong> • Category: <span className="text-indigo-300 font-semibold">{offer.businessCategory || details.businessCategory || 'FinTech'}</span>
+                      <h3 className="text-lg font-black text-gray-900">{offer.startupName}</h3>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Founder: <strong className="text-gray-900">{offer.founderName}</strong> • Category: <span className="text-indigo-700 font-semibold">{offer.businessCategory || details.businessCategory || 'FinTech'}</span>
                       </p>
 
                       <div className="flex gap-6 mt-3 text-xs">
                         <div>
-                          <span className="text-slate-400 block text-[10px] uppercase font-bold">Amount</span>
-                          <span className="font-extrabold text-emerald-400">₹{(offer.offerAmount || 0).toLocaleString('en-IN')}</span>
+                          <span className="text-gray-400 block text-[10px] uppercase font-bold">Amount</span>
+                          <span className="font-extrabold text-emerald-700">₹{(offer.offerAmount || 0).toLocaleString('en-IN')}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400 block text-[10px] uppercase font-bold">Equity</span>
-                          <span className="font-extrabold text-purple-300">{offer.equityPercentage}%</span>
+                          <span className="text-gray-400 block text-[10px] uppercase font-bold">Equity</span>
+                          <span className="font-extrabold text-[#5B21B6]">{offer.equityPercentage}%</span>
                         </div>
                         <div>
-                          <span className="text-slate-400 block text-[10px] uppercase font-bold">Instrument</span>
-                          <span className="font-extrabold text-slate-200">{offer.instrument || details.fundingType || 'SAFE'}</span>
+                          <span className="text-gray-400 block text-[10px] uppercase font-bold">Instrument</span>
+                          <span className="font-extrabold text-gray-800">{offer.instrument || details.fundingType || 'SAFE'}</span>
                         </div>
                       </div>
                     </div>
@@ -1653,7 +1652,7 @@ const InvestorAgreement: React.FC = () => {
                     <div className="flex flex-wrap md:flex-col gap-2 min-w-[180px]">
                       <button
                         onClick={() => setSelectedOfferForTrack(offer)}
-                        className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2"
+                        className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl shadow-sm border border-gray-200 transition flex items-center justify-center gap-2"
                       >
                         <ScrollText size={14} /> Audit Trail & History
                       </button>
@@ -1664,7 +1663,7 @@ const InvestorAgreement: React.FC = () => {
                             setShowSignOverlay(offer);
                             setSigName(user?.fullName || offer.investorName);
                           }}
-                          className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs rounded-xl shadow transition flex items-center justify-center gap-2"
+                          className="px-4 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-black text-xs rounded-xl shadow transition flex items-center justify-center gap-2"
                         >
                           <Pen size={14} /> Sign Agreement
                         </button>
@@ -1681,33 +1680,33 @@ const InvestorAgreement: React.FC = () => {
 
       {/* ─── DIGITAL SIGNATURE OVERLAY MODAL ────────────────────────────────────── */}
       {showSignOverlay && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-purple-500/40 rounded-3xl max-w-md w-full p-6 shadow-2xl text-white">
-            <div className="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-200 rounded-3xl max-w-md w-full p-6 shadow-2xl text-gray-900 text-left">
+            <div className="flex justify-between items-center border-b border-gray-200 pb-3 mb-4">
               <h3 className="font-black text-base flex items-center gap-2">
-                <Pen size={18} className="text-purple-400" /> Digital Countersignature Execution
+                <Pen size={18} className="text-purple-600" /> Digital Countersignature Execution
               </h3>
-              <button onClick={() => setShowSignOverlay(null)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowSignOverlay(null)} className="text-gray-400 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>
 
-            <p className="text-xs text-slate-300 mb-4">
+            <p className="text-xs text-gray-600 mb-4">
               Enter your legal full name below to sign agreement <strong>{showSignOverlay.agreementId}</strong>.
             </p>
 
             <div className="mb-4">
-              <label className="block text-[11px] font-extrabold uppercase text-slate-300 mb-1">Full Legal Name</label>
+              <label className="block text-[11px] font-extrabold uppercase text-gray-700 mb-1">Full Legal Name</label>
               <input
                 type="text"
                 value={sigName}
                 onChange={e => setSigName(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-600 rounded-xl p-3 text-xs font-bold text-white focus:border-purple-500"
+                className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900 focus:bg-white focus:border-purple-600"
               />
             </div>
 
             <div className="mb-6">
-              <label className="block text-[11px] font-extrabold uppercase text-slate-300 mb-2">Signature Style</label>
+              <label className="block text-[11px] font-extrabold uppercase text-gray-700 mb-2">Signature Style</label>
               <div className="grid grid-cols-2 gap-2">
                 {SIGNATURE_STYLES.map((st, idx) => (
                   <button
@@ -1715,7 +1714,7 @@ const InvestorAgreement: React.FC = () => {
                     type="button"
                     onClick={() => setSigFont(idx)}
                     className={`p-3 rounded-xl border text-center transition ${
-                      sigFont === idx ? 'bg-purple-900/60 border-purple-400 text-purple-200' : 'bg-slate-800 border-slate-700 text-slate-400'
+                      sigFont === idx ? 'bg-purple-50 border-purple-500 text-purple-900' : 'bg-gray-50 border-gray-200 text-gray-600'
                     }`}
                   >
                     <span style={st.style}>{sigName || 'Signature'}</span>
@@ -1727,7 +1726,7 @@ const InvestorAgreement: React.FC = () => {
             <button
               onClick={handleExecuteInvestorSignature}
               disabled={actionLoading || !sigName.trim()}
-              className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition flex items-center justify-center gap-2"
+              className="w-full py-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition flex items-center justify-center gap-2"
             >
               {actionLoading ? 'Signing...' : 'Execute Digital Signature'}
             </button>
