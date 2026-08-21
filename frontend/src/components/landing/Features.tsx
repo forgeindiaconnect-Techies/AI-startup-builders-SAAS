@@ -311,7 +311,11 @@ const Features: React.FC = () => {
     }
   ];
 
-  const handleCardClick = (index: number) => {
+  const handleCardClick = (index: number, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setSelectedFeature(index);
     if (index === 4 && !matchingResult && !isMatching) {
       setConnectedMentors([]);
@@ -1073,7 +1077,8 @@ const Features: React.FC = () => {
           {features.map((feature, index) => (
             <button 
               key={index} 
-              onClick={() => handleCardClick(index)}
+              type="button"
+              onClick={(e) => handleCardClick(index, e)}
               className="text-left bg-white border-2 hover:shadow-lg hover:-translate-y-1 rounded-2xl p-8 transition-all duration-300 group flex flex-col justify-between h-full cursor-pointer"
               style={{ borderColor: `${feature.themeColor}20` }}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${feature.themeColor}60`; }}
@@ -1110,7 +1115,11 @@ const Features: React.FC = () => {
             
             {/* Close button */}
             <button 
-              onClick={() => setSelectedFeature(null)}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setSelectedFeature(null);
+              }}
               className="absolute top-4 right-4 z-20 p-2 bg-slate-950/80 hover:bg-slate-850 text-slate-400 hover:text-white rounded-full border border-slate-800 transition-colors"
             >
               <X size={16} />
