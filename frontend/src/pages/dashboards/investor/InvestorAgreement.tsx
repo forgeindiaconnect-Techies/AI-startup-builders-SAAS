@@ -417,83 +417,62 @@ const InvestorAgreement: React.FC = () => {
     const loadData = async () => {
       try {
         const sysStartups = await getStartups();
-        const initialDeals = [
-          {
-            id: 'deal_tourists',
-            startupName: 'Tourists',
-            category: 'Travel / Tourism',
-            founderName: 'Renu',
-            founderEmail: 'renu@startup.com',
-            dealId: 'DEAL-94821',
-            offerAmount: 5000000,
-            equityPercentage: 10,
-            valuation: 50000000,
-            dealStatus: 'Deal Finalized',
-            instrument: 'SAFE'
-          },
-          {
-            id: 'deal_finpay',
-            startupName: 'FinPay',
-            category: 'FinTech',
-            founderName: 'Vikram',
-            founderEmail: 'vikram@finpay.io',
-            dealId: 'DEAL-83742',
-            offerAmount: 7500000,
-            equityPercentage: 8,
-            valuation: 93750000,
-            dealStatus: 'Offer Accepted',
-            instrument: 'Equity Investment Agreement'
-          },
-          {
-            id: 'deal_healthplus',
-            startupName: 'HealthPlus',
-            category: 'HealthTech',
-            founderName: 'Ananya',
-            founderEmail: 'ananya@healthplus.in',
-            dealId: 'DEAL-61923',
-            offerAmount: 6000000,
-            equityPercentage: 12,
-            valuation: 50000000,
-            dealStatus: 'Deal Finalized',
-            instrument: 'Convertible Note'
-          },
-          {
-            id: 'deal_edusmart',
-            startupName: 'EduSmart',
-            category: 'EdTech',
-            founderName: 'Arjun',
-            founderEmail: 'arjun@edusmart.org',
-            dealId: 'DEAL-74198',
-            offerAmount: 4000000,
-            equityPercentage: 15,
-            valuation: 26666666,
-            dealStatus: 'Offer Accepted',
-            instrument: 'Term Sheet'
-          }
-        ];
+        
+        const mapToDeal = (s: any) => ({
+          id: s.id || s._id || `deal_${Math.random()}`,
+          startupName: s.startupName || s.name || s.title || 'Startup',
+          category: s.businessCategory || s.category || s.industry || (s.startupName?.toLowerCase().includes('it') ? 'FinTech' : s.startupName?.toLowerCase().includes('bakery') ? 'FinTech' : 'Travel / Tourism'),
+          founderName: s.founderName || s.founder || 'Renu',
+          founderEmail: s.founderEmail || s.email || 'renu@startup.com',
+          dealId: s.dealId || s.commitmentId || s.agreementId || `DEAL-${Math.floor(10000 + Math.random() * 90000)}`,
+          offerAmount: s.offerAmount || s.investmentAmount || s.fundingAmount || 5000000,
+          equityPercentage: s.equityPercentage || s.equity || 10,
+          valuation: s.valuation || s.valuationCap || s.preMoneyValuation || 50000000,
+          dealStatus: s.dealStatus || s.agreementStatus || (s.status === 'accepted' ? 'Offer Accepted' : 'Deal Finalized'),
+          instrument: s.instrument || s.fundingType || 'SAFE'
+        });
 
-        // Merge existing user offers into authorized deals list
+        const mergedDeals: any[] = [];
+        const seenNames = new Set<string>();
+
+        // 1. First add existing active offers/agreements ("IT startup", "bakery", etc.)
         if (offers && offers.length > 0) {
           offers.forEach(o => {
-            if (!initialDeals.some(d => d.startupName.toLowerCase() === o.startupName.toLowerCase())) {
-              initialDeals.push({
-                id: o.id || o._id || `deal_${Date.now()}`,
-                startupName: o.startupName,
-                category: o.businessCategory || 'FinTech',
-                founderName: o.founderName,
-                founderEmail: o.founderEmail || 'founder@platform.com',
-                dealId: o.commitmentId || `DEAL-${Math.floor(10000 + Math.random() * 90000)}`,
-                offerAmount: o.offerAmount,
-                equityPercentage: o.equityPercentage,
-                valuation: o.valuationCap || 50000000,
-                dealStatus: o.status === 'accepted' ? 'Offer Accepted' : 'Deal Finalized',
-                instrument: o.instrument || 'SAFE'
-              });
+            const norm = mapToDeal(o);
+            if (!seenNames.has(norm.startupName.toLowerCase())) {
+              seenNames.add(norm.startupName.toLowerCase());
+              mergedDeals.push(norm);
             }
           });
         }
 
-        setAuthorizedDeals(initialDeals);
+        // 2. Next add system startups
+        if (sysStartups && sysStartups.length > 0) {
+          sysStartups.forEach(s => {
+            const norm = mapToDeal(s);
+            if (norm.startupName && norm.startupName !== 'Startup' && !seenNames.has(norm.startupName.toLowerCase())) {
+              seenNames.add(norm.startupName.toLowerCase());
+              mergedDeals.push(norm);
+            }
+          });
+        }
+
+        // 3. Next add seed reference deals if not present
+        const seedDeals = [
+          { id: 'deal_tourists', startupName: 'Tourists', category: 'Travel / Tourism', founderName: 'Renu', founderEmail: 'renu@startup.com', dealId: 'DEAL-94821', offerAmount: 5000000, equityPercentage: 10, valuation: 50000000, dealStatus: 'Deal Finalized', instrument: 'SAFE' },
+          { id: 'deal_finpay', startupName: 'FinPay', category: 'FinTech', founderName: 'Vikram', founderEmail: 'vikram@finpay.io', dealId: 'DEAL-83742', offerAmount: 7500000, equityPercentage: 8, valuation: 93750000, dealStatus: 'Offer Accepted', instrument: 'Equity Investment Agreement' },
+          { id: 'deal_healthplus', startupName: 'HealthPlus', category: 'HealthTech', founderName: 'Ananya', founderEmail: 'ananya@healthplus.in', dealId: 'DEAL-61923', offerAmount: 6000000, equityPercentage: 12, valuation: 50000000, dealStatus: 'Deal Finalized', instrument: 'Convertible Note' },
+          { id: 'deal_edusmart', startupName: 'EduSmart', category: 'EdTech', founderName: 'Arjun', founderEmail: 'arjun@edusmart.org', dealId: 'DEAL-74198', offerAmount: 4000000, equityPercentage: 15, valuation: 26666666, dealStatus: 'Offer Accepted', instrument: 'Term Sheet' }
+        ];
+
+        seedDeals.forEach(sd => {
+          if (!seenNames.has(sd.startupName.toLowerCase())) {
+            seenNames.add(sd.startupName.toLowerCase());
+            mergedDeals.push(sd);
+          }
+        });
+
+        setAuthorizedDeals(mergedDeals);
       } catch (e) {
         setAuthorizedDeals([]);
       }
@@ -926,6 +905,23 @@ const InvestorAgreement: React.FC = () => {
             {/* Select Deal / Startup */}
             <div className="bg-gray-50/80 p-5 rounded-2xl border border-gray-200 mb-6">
               <label className="block text-xs font-extrabold uppercase text-purple-700 mb-2">Select Startup / Deal</label>
+              
+              <select
+                value={selectedStartupId}
+                onChange={e => {
+                  const selected = authorizedDeals.find(d => d.id === e.target.value || d.startupName === e.target.value);
+                  if (selected) handleSelectStartupDeal(selected);
+                }}
+                className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-extrabold text-gray-900 focus:outline-none focus:border-purple-600 mb-4 shadow-sm"
+              >
+                <option value="">Select Startup / Deal...</option>
+                {authorizedDeals.map(deal => (
+                  <option key={deal.id} value={deal.id}>
+                    {deal.startupName} — Founder: {deal.founderName} (Category: {deal.category})
+                  </option>
+                ))}
+              </select>
+
               <div className="grid md:grid-cols-2 gap-3">
                 {authorizedDeals.map(deal => (
                   <button
@@ -934,7 +930,7 @@ const InvestorAgreement: React.FC = () => {
                     onClick={() => handleSelectStartupDeal(deal)}
                     className={`p-4 rounded-2xl border text-left transition ${
                       selectedStartupId === deal.id
-                        ? 'bg-purple-50 border-purple-500 shadow-sm'
+                        ? 'bg-purple-50 border-purple-500 shadow-sm ring-2 ring-purple-500/20'
                         : 'bg-white border-gray-200 hover:border-purple-300'
                     }`}
                   >
@@ -1210,6 +1206,22 @@ const InvestorAgreement: React.FC = () => {
             <div className="mb-8 bg-gray-50/80 p-5 rounded-2xl border border-gray-200">
               <h3 className="text-xs font-extrabold uppercase text-indigo-700 mb-3">Step 1 — Select Authorized Startup / Deal</h3>
               
+              <select
+                value={selectedStartupId}
+                onChange={e => {
+                  const selected = authorizedDeals.find(d => d.id === e.target.value || d.startupName === e.target.value);
+                  if (selected) handleSelectStartupDeal(selected);
+                }}
+                className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-extrabold text-gray-900 focus:outline-none focus:border-indigo-600 mb-4 shadow-sm"
+              >
+                <option value="">Select Startup / Deal...</option>
+                {authorizedDeals.map(deal => (
+                  <option key={deal.id} value={deal.id}>
+                    {deal.startupName} — Founder: {deal.founderName} (Category: {deal.category})
+                  </option>
+                ))}
+              </select>
+
               <div className="grid md:grid-cols-2 gap-4">
                 {authorizedDeals.map(deal => (
                   <div
@@ -1217,7 +1229,7 @@ const InvestorAgreement: React.FC = () => {
                     onClick={() => handleSelectStartupDeal(deal)}
                     className={`p-4 rounded-2xl border cursor-pointer transition ${
                       selectedStartupId === deal.id
-                        ? 'bg-indigo-50/90 border-indigo-600 shadow-md'
+                        ? 'bg-indigo-50/90 border-indigo-600 shadow-md ring-2 ring-indigo-500/20'
                         : 'bg-white border-gray-200 hover:border-indigo-300'
                     }`}
                   >
