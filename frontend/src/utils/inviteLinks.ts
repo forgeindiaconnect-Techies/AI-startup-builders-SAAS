@@ -69,16 +69,26 @@ export const INITIAL_DEMO_INVITES: MentorInvite[] = [
 export function getInvites(): MentorInvite[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
+    let list: MentorInvite[] = [];
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DEMO_INVITES));
-      return INITIAL_DEMO_INVITES;
+      list = INITIAL_DEMO_INVITES;
+    } else {
+      const parsed = JSON.parse(raw);
+      list = Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_DEMO_INVITES;
     }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length === 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DEMO_INVITES));
-      return INITIAL_DEMO_INVITES;
+    const now = new Date();
+    let updated = false;
+    list = list.map((inv) => {
+      if (inv.status !== 'used' && inv.status !== 'disabled' && inv.expiryDate && new Date(inv.expiryDate) < now) {
+        if (inv.status !== 'expired') updated = true;
+        return { ...inv, status: 'expired' };
+      }
+      return inv;
+    });
+    if (updated) {
+      saveInvites(list);
     }
-    return parsed;
+    return list;
   } catch {
     return INITIAL_DEMO_INVITES;
   }

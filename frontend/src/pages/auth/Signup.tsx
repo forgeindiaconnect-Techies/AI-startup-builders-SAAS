@@ -553,6 +553,23 @@ const Signup: React.FC = () => {
         });
         const json = await res.json();
         if (json.success && json.invite) {
+          const inv = json.invite;
+          const invStatus = inv.status;
+          const expDate = inv.expiresAt || inv.expiryDate;
+          const isExpired = invStatus === 'expired' || (expDate && new Date(expDate) < new Date());
+
+          if (invStatus === 'used' || invStatus === 'disabled' || isExpired) {
+            if (!cancelled) {
+              setInviteValid(false);
+              setApiError(
+                isExpired ? 'This mentor invite link has expired. Once the expiry date passes, the invite link is disabled.' :
+                invStatus === 'used' ? 'This mentor invite link has already been used.' :
+                'This mentor invite link has been disabled.'
+              );
+            }
+            return;
+          }
+
           if (!cancelled) {
             setInviteValid(true);
             setInviteData(json.invite);
@@ -567,10 +584,12 @@ const Signup: React.FC = () => {
         }
         if (!cancelled && !applyLocalFallback()) {
           setInviteValid(false);
+          setApiError('This mentor invite link has expired or is invalid.');
         }
       } catch {
         if (!cancelled && !applyLocalFallback()) {
           setInviteValid(false);
+          setApiError('This mentor invite link has expired or is invalid.');
         }
       }
     };

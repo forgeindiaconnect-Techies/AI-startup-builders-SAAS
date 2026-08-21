@@ -97,10 +97,38 @@ export const getInviteByToken = async (req: Request, res: Response) => {
     const mentorInv = await MentorInvite.findOne({ inviteToken: token });
 
     if (mentorInv) {
-      if (mentorInv.status === 'active' && mentorInv.expiresAt < new Date()) {
+      if (mentorInv.status === 'active' && mentorInv.expiresAt && mentorInv.expiresAt < new Date()) {
         mentorInv.status = 'expired';
         await mentorInv.save();
       }
+
+      if (mentorInv.status === 'expired') {
+        return res.status(400).json({
+          success: false,
+          error: 'expired',
+          message: 'This mentor invite link has expired. Please ask the admin for a new invite link.',
+          invite: toInviteJson(mentorInv)
+        });
+      }
+
+      if (mentorInv.status === 'used') {
+        return res.status(400).json({
+          success: false,
+          error: 'used',
+          message: 'This mentor invite link has already been used.',
+          invite: toInviteJson(mentorInv)
+        });
+      }
+
+      if (mentorInv.status === 'disabled') {
+        return res.status(400).json({
+          success: false,
+          error: 'disabled',
+          message: 'This mentor invite link has been disabled.',
+          invite: toInviteJson(mentorInv)
+        });
+      }
+
       return res.json({ success: true, type: 'mentor', invite: toInviteJson(mentorInv) });
     }
 
@@ -253,7 +281,16 @@ export const deleteInvite = async (req: Request, res: Response) => {
 
 export const listInvites = async (_req: Request, res: Response) => {
   try {
+    const now = new Date();
     const mentorInvites = await MentorInvite.find().sort({ createdAt: -1 });
+
+    for (const inv of mentorInvites) {
+      if (inv.status === 'active' && inv.expiresAt && inv.expiresAt < now) {
+        inv.status = 'expired';
+        await inv.save();
+      }
+    }
+
     const investorInvites = await InvestorInvite.find().sort({ createdAt: -1 });
 
     const formattedInvestorInvites = investorInvites.map(inv => ({
