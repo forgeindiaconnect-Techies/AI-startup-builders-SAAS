@@ -18,6 +18,16 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   
+  // Load remembered email on mount
+  React.useEffect(() => {
+    const savedEmail = localStorage.getItem('remembered_email');
+    const rememberFlag = localStorage.getItem('remember_me_flag') === 'true';
+    if (savedEmail && rememberFlag && !isAdminLogin) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, [isAdminLogin]);
+
   // Toast notification state
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' | 'warning' } | null>(null);
 
@@ -42,6 +52,15 @@ const Login: React.FC = () => {
       const result = await login(email.trim(), password);
       
       if (result.success) {
+        // Save or clear Remember Me preference
+        if (rememberMe) {
+          localStorage.setItem('remembered_email', email.trim());
+          localStorage.setItem('remember_me_flag', 'true');
+        } else {
+          localStorage.removeItem('remembered_email');
+          localStorage.removeItem('remember_me_flag');
+        }
+
         const targetRole = result.role || 'founder';
 
 
