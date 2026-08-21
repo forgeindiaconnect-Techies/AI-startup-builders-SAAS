@@ -316,21 +316,11 @@ const Features: React.FC = () => {
       e.preventDefault();
       e.stopPropagation();
     }
-    if (selectedFeature === index) {
-      setSelectedFeature(null);
-      return;
-    }
     setSelectedFeature(index);
     if (index === 4 && !matchingResult && !isMatching) {
       setConnectedMentors([]);
       setMatchingResult(false);
     }
-    setTimeout(() => {
-      const el = document.getElementById('simulator-static-panel');
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    }, 50);
   };
 
   const renderModalContent = () => {
@@ -381,10 +371,9 @@ const Features: React.FC = () => {
 
             <div className="flex justify-end pt-2">
               <button 
-                type="button"
-                onClick={(e) => { e.preventDefault(); runAIAnalysis(); }}
+                onClick={runAIAnalysis}
                 disabled={isAnalyzing}
-                className="px-6 py-3 bg-gradient-to-r from-amber-550 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg transition-all flex items-center gap-2 hover:scale-[1.02] disabled:opacity-50 cursor-pointer"
+                className="px-6 py-3 bg-gradient-to-r from-amber-550 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold rounded-xl shadow-lg transition-all flex items-center gap-2 hover:scale-[1.02] disabled:opacity-50"
               >
                 {isAnalyzing ? (
                   <>
@@ -463,13 +452,13 @@ const Features: React.FC = () => {
         return (
           <div className="space-y-6">
             <h4 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
-              <Target className="text-purple-400 animate-bounce" size={24} /> Strategic SWOT Matrix Sandbox
+              <Target className="text-purple-400" size={24} /> Interactive SWOT Matrix Planner
             </h4>
             <p className="text-slate-400 text-sm">
-              Dynamically add or modify strategic vectors. Our internal analyzer balances internal strengths against market threats.
+              Define and customize your startup's strategic positioning. Click the delete icons to remove items, or use the inputs below to add new SWOT points.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Strengths */}
               <div className="bg-slate-950 p-5 rounded-2xl border border-emerald-900/30 space-y-4">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-2">
@@ -483,7 +472,7 @@ const Features: React.FC = () => {
                   {swotStrengths.map((str, idx) => (
                     <li key={idx} className="text-xs text-slate-300 flex justify-between items-start gap-2 bg-slate-900/50 p-2.5 rounded-xl border border-slate-800/80 hover:border-emerald-500/30 transition-colors">
                       <span className="leading-relaxed">{str}</span>
-                      <button type="button" onClick={(e) => { e.preventDefault(); removeSwotItem('S', idx); }} className="text-slate-500 hover:text-red-400 transition-colors shrink-0">
+                      <button onClick={() => removeSwotItem('S', idx)} className="text-slate-500 hover:text-red-400 transition-colors shrink-0">
                         <Trash2 size={13} />
                       </button>
                     </li>
@@ -495,10 +484,10 @@ const Features: React.FC = () => {
                     placeholder="Add strength..." 
                     value={swotInput.S}
                     onChange={e => setSwotInput({ ...swotInput, S: e.target.value })}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSwotItem('S'); } }}
+                    onKeyDown={e => e.key === 'Enter' && addSwotItem('S')}
                     className="flex-1 bg-slate-900 border border-slate-800 focus:border-emerald-500 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
                   />
-                  <button type="button" onClick={(e) => { e.preventDefault(); addSwotItem('S'); }} className="p-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors cursor-pointer">
+                  <button onClick={() => addSwotItem('S')} className="p-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors">
                     <Plus size={15} />
                   </button>
                 </div>
@@ -517,7 +506,7 @@ const Features: React.FC = () => {
                   {swotWeaknesses.map((str, idx) => (
                     <li key={idx} className="text-xs text-slate-300 flex justify-between items-start gap-2 bg-slate-900/50 p-2.5 rounded-xl border border-slate-800/80 hover:border-red-500/30 transition-colors">
                       <span className="leading-relaxed">{str}</span>
-                      <button type="button" onClick={(e) => { e.preventDefault(); removeSwotItem('W', idx); }} className="text-slate-500 hover:text-red-400 transition-colors shrink-0">
+                      <button onClick={() => removeSwotItem('W', idx)} className="text-slate-500 hover:text-red-400 transition-colors shrink-0">
                         <Trash2 size={13} />
                       </button>
                     </li>
@@ -529,10 +518,10 @@ const Features: React.FC = () => {
                     placeholder="Add weakness..." 
                     value={swotInput.W}
                     onChange={e => setSwotInput({ ...swotInput, W: e.target.value })}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSwotItem('W'); } }}
+                    onKeyDown={e => e.key === 'Enter' && addSwotItem('W')}
                     className="flex-1 bg-slate-900 border border-slate-800 focus:border-red-500 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
                   />
-                  <button type="button" onClick={(e) => { e.preventDefault(); addSwotItem('W'); }} className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors cursor-pointer">
+                  <button onClick={() => addSwotItem('W')} className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">
                     <Plus size={15} />
                   </button>
                 </div>
@@ -551,7 +540,7 @@ const Features: React.FC = () => {
                   {swotOpportunities.map((str, idx) => (
                     <li key={idx} className="text-xs text-slate-300 flex justify-between items-start gap-2 bg-slate-900/50 p-2.5 rounded-xl border border-slate-800/80 hover:border-blue-500/30 transition-colors">
                       <span className="leading-relaxed">{str}</span>
-                      <button type="button" onClick={(e) => { e.preventDefault(); removeSwotItem('O', idx); }} className="text-slate-500 hover:text-red-400 transition-colors shrink-0">
+                      <button onClick={() => removeSwotItem('O', idx)} className="text-slate-500 hover:text-red-400 transition-colors shrink-0">
                         <Trash2 size={13} />
                       </button>
                     </li>
@@ -563,10 +552,10 @@ const Features: React.FC = () => {
                     placeholder="Add opportunity..." 
                     value={swotInput.O}
                     onChange={e => setSwotInput({ ...swotInput, O: e.target.value })}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSwotItem('O'); } }}
+                    onKeyDown={e => e.key === 'Enter' && addSwotItem('O')}
                     className="flex-1 bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
                   />
-                  <button type="button" onClick={(e) => { e.preventDefault(); addSwotItem('O'); }} className="p-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors cursor-pointer">
+                  <button onClick={() => addSwotItem('O')} className="p-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
                     <Plus size={15} />
                   </button>
                 </div>
@@ -585,7 +574,7 @@ const Features: React.FC = () => {
                   {swotThreats.map((str, idx) => (
                     <li key={idx} className="text-xs text-slate-300 flex justify-between items-start gap-2 bg-slate-900/50 p-2.5 rounded-xl border border-slate-800/80 hover:border-orange-500/30 transition-colors">
                       <span className="leading-relaxed">{str}</span>
-                      <button type="button" onClick={(e) => { e.preventDefault(); removeSwotItem('T', idx); }} className="text-slate-500 hover:text-red-400 transition-colors shrink-0">
+                      <button onClick={() => removeSwotItem('T', idx)} className="text-slate-500 hover:text-red-400 transition-colors shrink-0">
                         <Trash2 size={13} />
                       </button>
                     </li>
@@ -597,10 +586,10 @@ const Features: React.FC = () => {
                     placeholder="Add threat..." 
                     value={swotInput.T}
                     onChange={e => setSwotInput({ ...swotInput, T: e.target.value })}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSwotItem('T'); } }}
+                    onKeyDown={e => e.key === 'Enter' && addSwotItem('T')}
                     className="flex-1 bg-slate-900 border border-slate-800 focus:border-orange-500 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
                   />
-                  <button type="button" onClick={(e) => { e.preventDefault(); addSwotItem('T'); }} className="p-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors cursor-pointer">
+                  <button onClick={() => addSwotItem('T')} className="p-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors">
                     <Plus size={15} />
                   </button>
                 </div>
@@ -613,84 +602,197 @@ const Features: React.FC = () => {
         const year1Rev = Math.round(aov * 10 * 12 * 1.2);
         const year2Rev = Math.round(year1Rev * (1 + growth / 100 * 2.5));
         const year3Rev = Math.round(year2Rev * (1 + growth / 100 * 2));
-        const arr = year3Rev;
-        const netProfit = Math.round(arr * (margin / 100));
+        const year1Profit = Math.round(year1Rev * margin / 100);
+        const year2Profit = Math.round(year2Rev * margin / 100);
+        const year3Profit = Math.round(year3Rev * margin / 100);
+
+        const formatCurrency = (val: number) => {
+          return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+        };
+
+        const maxVal = Math.max(year3Rev, 1);
+        const y1Height = Math.max((year1Rev / maxVal) * 100, 10);
+        const y2Height = Math.max((year2Rev / maxVal) * 100, 20);
+        const y3Height = 100;
+
+        const y1ProfitHeight = Math.max((year1Profit / maxVal) * 100, 5);
+        const y2ProfitHeight = Math.max((year2Profit / maxVal) * 100, 10);
+        const y3ProfitHeight = Math.max((year3Profit / maxVal) * 100, 25);
+
+        const cac = Math.round(5000 / growth);
+        const ltv = aov * 15;
+        const ltvCacRatio = (ltv / cac).toFixed(1);
 
         return (
           <div className="space-y-6">
             <h4 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
-              <TrendingUp className="text-emerald-400 animate-pulse" size={24} /> Financial Unit Economics & Projections
+              <TrendingUp className="text-emerald-400" size={24} /> Dynamic Unit Economics Forecaster
             </h4>
             <p className="text-slate-400 text-sm">
-              Adjust key revenue inputs to dynamically recalculate 3-year projections, margins, and projected Run-rate ARR.
+              Adjust sliders below to modify key startup economic drivers. The dashboard calculates 3-year revenue scaling, gross margins, and LTV:CAC ratios in real-time.
             </p>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 bg-slate-950 p-6 rounded-2xl border border-slate-800">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-950 p-5 rounded-2xl border border-slate-800">
               <div className="space-y-5">
                 <div>
-                  <div className="flex justify-between text-xs font-bold mb-2">
-                    <span className="text-slate-400">Average Order Value (AOV)</span>
-                    <span className="text-emerald-400 font-mono">₹{aov}</span>
+                  <div className="flex justify-between text-xs font-bold text-slate-400 mb-1.5 uppercase">
+                    <span>Average Ticket Size (AOV)</span>
+                    <span className="text-emerald-400 font-black">{formatCurrency(aov)}</span>
                   </div>
                   <input 
                     type="range" 
                     min={100} 
-                    max={10000} 
-                    step={100} 
+                    max={5000} 
+                    step={50}
                     value={aov} 
-                    onChange={e => setAov(Number(e.target.value))}
-                    className="w-full accent-emerald-500 bg-slate-900 h-2 rounded-lg cursor-pointer"
+                    onChange={e => setAov(parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                   />
                 </div>
-
                 <div>
-                  <div className="flex justify-between text-xs font-bold mb-2">
-                    <span className="text-slate-400">Monthly Growth Rate</span>
-                    <span className="text-emerald-400 font-mono">{growth}%</span>
+                  <div className="flex justify-between text-xs font-bold text-slate-400 mb-1.5 uppercase">
+                    <span>MoM Growth Rate</span>
+                    <span className="text-emerald-400 font-black">{growth}%</span>
                   </div>
                   <input 
                     type="range" 
                     min={1} 
                     max={50} 
                     value={growth} 
-                    onChange={e => setGrowth(Number(e.target.value))}
-                    className="w-full accent-emerald-500 bg-slate-900 h-2 rounded-lg cursor-pointer"
+                    onChange={e => setGrowth(parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                   />
                 </div>
-
                 <div>
-                  <div className="flex justify-between text-xs font-bold mb-2">
-                    <span className="text-slate-400">Gross Profit Margin</span>
-                    <span className="text-emerald-400 font-mono">{margin}%</span>
+                  <div className="flex justify-between text-xs font-bold text-slate-400 mb-1.5 uppercase">
+                    <span>Gross Operating Margin</span>
+                    <span className="text-emerald-400 font-black">{margin}%</span>
                   </div>
                   <input 
                     type="range" 
-                    min={10} 
-                    max={95} 
+                    min={20} 
+                    max={90} 
                     value={margin} 
-                    onChange={e => setMargin(Number(e.target.value))}
-                    className="w-full accent-emerald-500 bg-slate-900 h-2 rounded-lg cursor-pointer"
+                    onChange={e => setMargin(parseInt(e.target.value))}
+                    className="w-full h-1.5 bg-slate-850 rounded-lg appearance-none cursor-pointer accent-emerald-500"
                   />
                 </div>
               </div>
 
-              <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase">Year 1 Projected Revenue</span>
-                  <div className="text-xl font-black text-white mt-2">₹{year1Rev.toLocaleString('en-IN')}</div>
-                  <span className="text-[10px] text-emerald-400 font-bold mt-2">Initial Launch Phase</span>
+              {/* Economic KPI Summaries */}
+              <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-905 rounded-xl border border-slate-800 flex flex-col justify-between">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Estimated CAC</span>
+                  <div className="text-2xl font-black text-white mt-1">{formatCurrency(cac)}</div>
+                  <span className="text-[10px] text-slate-400 mt-2 block">Acquisition cost scale</span>
+                </div>
+                <div className="p-4 bg-slate-905 rounded-xl border border-slate-800 flex flex-col justify-between">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block">Estimated LTV</span>
+                  <div className="text-2xl font-black text-white mt-1">{formatCurrency(ltv)}</div>
+                  <span className="text-[10px] text-emerald-400 font-bold mt-2 block flex items-center gap-1">
+                    LTV:CAC Ratio: {ltvCacRatio}x
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Custom Bar Chart */}
+            <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">3-Year Projections (Revenue vs Net Profit)</span>
+              
+              <div className="h-44 flex items-end gap-10 md:gap-16 justify-center border-b border-slate-800 pb-2 relative">
+                
+                {/* Year 1 */}
+                <div className="flex flex-col items-center w-16">
+                  <div className="w-full flex items-end gap-1 h-36">
+                    <div 
+                      style={{ height: `${y1Height}%` }} 
+                      className="w-1/2 bg-emerald-500 hover:bg-emerald-450 rounded-t-md transition-all duration-300 relative group cursor-pointer"
+                    >
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white font-bold text-[10px] px-1.5 py-0.5 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-xl">
+                        {formatCurrency(year1Rev)}
+                      </div>
+                    </div>
+                    <div 
+                      style={{ height: `${y1ProfitHeight}%` }} 
+                      className="w-1/2 bg-teal-500 hover:bg-teal-450 rounded-t-md transition-all duration-300 relative group cursor-pointer"
+                    >
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white font-bold text-[10px] px-1.5 py-0.5 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-xl">
+                        {formatCurrency(year1Profit)}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-400 mt-2">Year 1</span>
                 </div>
 
-                <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase">Year 2 Revenue (Scale)</span>
-                  <div className="text-xl font-black text-white mt-2">₹{year2Rev.toLocaleString('en-IN')}</div>
-                  <span className="text-[10px] text-emerald-400 font-bold mt-2">Expansion Phase</span>
+                {/* Year 2 */}
+                <div className="flex flex-col items-center w-16">
+                  <div className="w-full flex items-end gap-1 h-36">
+                    <div 
+                      style={{ height: `${y2Height}%` }} 
+                      className="w-1/2 bg-emerald-500 hover:bg-emerald-450 rounded-t-md transition-all duration-300 relative group cursor-pointer"
+                    >
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white font-bold text-[10px] px-1.5 py-0.5 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-xl">
+                        {formatCurrency(year2Rev)}
+                      </div>
+                    </div>
+                    <div 
+                      style={{ height: `${y2ProfitHeight}%` }} 
+                      className="w-1/2 bg-teal-500 hover:bg-teal-450 rounded-t-md transition-all duration-300 relative group cursor-pointer"
+                    >
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white font-bold text-[10px] px-1.5 py-0.5 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-xl">
+                        {formatCurrency(year2Profit)}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-400 mt-2">Year 2</span>
                 </div>
 
-                <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase">Year 3 ARR Target</span>
-                  <div className="text-xl font-black text-emerald-400 mt-2">₹{year3Rev.toLocaleString('en-IN')}</div>
-                  <span className="text-[10px] text-emerald-400 font-bold mt-2">Est. Net Profit: ₹{netProfit.toLocaleString('en-IN')}</span>
+                {/* Year 3 */}
+                <div className="flex flex-col items-center w-16">
+                  <div className="w-full flex items-end gap-1 h-36">
+                    <div 
+                      style={{ height: `${y3Height}%` }} 
+                      className="w-1/2 bg-emerald-500 hover:bg-emerald-450 rounded-t-md transition-all duration-300 relative group cursor-pointer"
+                    >
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white font-bold text-[10px] px-1.5 py-0.5 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-xl">
+                        {formatCurrency(year3Rev)}
+                      </div>
+                    </div>
+                    <div 
+                      style={{ height: `${y3ProfitHeight}%` }} 
+                      className="w-1/2 bg-teal-500 hover:bg-teal-450 rounded-t-md transition-all duration-300 relative group cursor-pointer"
+                    >
+                      <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-slate-900 text-white font-bold text-[10px] px-1.5 py-0.5 rounded border border-slate-700 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-xl">
+                        {formatCurrency(year3Profit)}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-400 mt-2">Year 3</span>
+                </div>
+              </div>
+
+              {/* Legend & Details */}
+              <div className="flex justify-between items-center text-xs text-slate-400 pt-1">
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-emerald-500 rounded"></span> Gross Revenue</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 bg-teal-500 rounded"></span> Net Operating Profit</span>
+                </div>
+                <div className="text-[10px] text-slate-500 italic">Hover bars to view values</div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t border-slate-900">
+                <div className="p-3 bg-slate-900/40 rounded-xl border border-slate-900 text-center">
+                  <div className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Year 1 Profit</div>
+                  <div className="text-xs text-emerald-450 font-bold">{formatCurrency(year1Profit)}</div>
+                </div>
+                <div className="p-3 bg-slate-900/40 rounded-xl border border-slate-900 text-center">
+                  <div className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Year 2 Profit</div>
+                  <div className="text-xs text-emerald-450 font-bold">{formatCurrency(year2Profit)}</div>
+                </div>
+                <div className="p-3 bg-slate-900/40 rounded-xl border border-slate-900 text-center">
+                  <div className="text-[10px] text-slate-500 font-bold uppercase mb-0.5">Year 3 Profit</div>
+                  <div className="text-xs text-emerald-450 font-bold">{formatCurrency(year3Profit)}</div>
                 </div>
               </div>
             </div>
@@ -713,9 +815,8 @@ const Features: React.FC = () => {
                 {slides.map((slide, idx) => (
                   <button 
                     key={idx}
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); setActiveSlide(idx); }}
-                    className={`text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 flex items-center justify-between gap-2 border cursor-pointer ${
+                    onClick={() => setActiveSlide(idx)}
+                    className={`text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 flex items-center justify-between gap-2 border ${
                       activeSlide === idx 
                         ? 'bg-blue-500/20 text-blue-300 border-blue-500/50 shadow-md shadow-blue-500/5' 
                         : 'bg-slate-950 border-slate-800/80 text-slate-400 hover:text-slate-200'
@@ -746,18 +847,16 @@ const Features: React.FC = () => {
                   </span>
                   <div className="flex gap-2">
                     <button 
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); setActiveSlide(prev => Math.max(prev - 1, 0)); }}
+                      onClick={() => setActiveSlide(prev => Math.max(prev - 1, 0))}
                       disabled={activeSlide === 0}
-                      className="p-2 bg-slate-900 hover:bg-slate-850 text-white rounded-lg border border-slate-800 transition-colors disabled:opacity-40 cursor-pointer"
+                      className="p-2 bg-slate-900 hover:bg-slate-850 text-white rounded-lg border border-slate-800 transition-colors disabled:opacity-40"
                     >
                       <ArrowLeft size={14} />
                     </button>
                     <button 
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); setActiveSlide(prev => Math.min(prev + 1, slides.length - 1)); }}
+                      onClick={() => setActiveSlide(prev => Math.min(prev + 1, slides.length - 1))}
                       disabled={activeSlide === slides.length - 1}
-                      className="p-2 bg-slate-900 hover:bg-slate-850 text-white rounded-lg border border-slate-800 transition-colors disabled:opacity-40 cursor-pointer"
+                      className="p-2 bg-slate-900 hover:bg-slate-850 text-white rounded-lg border border-slate-800 transition-colors disabled:opacity-40"
                     >
                       <ArrowRight size={14} />
                     </button>
@@ -786,9 +885,8 @@ const Features: React.FC = () => {
                 <h5 className="text-base font-bold text-white">Registry Ready for Scanning</h5>
                 <p className="text-slate-400 text-xs max-w-sm mx-auto">Click below to parse matching matrices with Patagonia leaders, YC founders, and logistics executives.</p>
                 <button 
-                  type="button"
-                  onClick={(e) => { e.preventDefault(); startMentorMatch(); }}
-                  className="px-6 py-2.5 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95 text-sm cursor-pointer"
+                  onClick={startMentorMatch}
+                  className="px-6 py-2.5 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white font-bold rounded-xl shadow-lg transition-transform active:scale-95 text-sm"
                 >
                   Find Matching Mentors
                 </button>
@@ -807,9 +905,8 @@ const Features: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-bold text-slate-400">AI RECOMMENDED MATCHES (3 FOUND)</span>
                   <button 
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); startMentorMatch(); }}
-                    className="text-xs text-pink-400 hover:text-pink-300 font-bold flex items-center gap-1.5 cursor-pointer"
+                    onClick={startMentorMatch}
+                    className="text-xs text-pink-400 hover:text-pink-300 font-bold flex items-center gap-1.5"
                   >
                     <RefreshCw size={12} /> Rescan Database
                   </button>
@@ -841,13 +938,11 @@ const Features: React.FC = () => {
                           </div>
                           
                           <button 
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
+                            onClick={() => {
                               if (isConnected) return;
                               setConnectedMentors([...connectedMentors, index]);
                             }}
-                            className={`w-full py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                            className={`w-full py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 ${
                               isConnected 
                                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default' 
                                 : 'bg-pink-550 hover:bg-pink-600 text-white shadow-md'
@@ -932,9 +1027,8 @@ const Features: React.FC = () => {
                     return (
                       <button 
                         key={idx}
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); toggleChecklistItem(idx); }}
-                        className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer ${
+                        onClick={() => toggleChecklistItem(idx)}
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-left text-xs font-bold transition-all ${
                           isChecked 
                             ? 'bg-slate-905 border-orange-500/20 text-white' 
                             : 'bg-slate-905/40 border-slate-850 text-slate-500 hover:text-slate-400'
@@ -975,91 +1069,96 @@ const Features: React.FC = () => {
             Everything you need to build from <span className="text-[#7C3AED]">idea to funding</span>
           </h3>
           <p className="text-[#6B7280] text-lg">
-            Six powerful AI tools — each with an interactive simulator. Click any card to try it live on the page.
+            Six powerful AI tools — each with an interactive simulator. Click any card to try it live and see real mock outputs for your startup.
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => {
-            const isSelected = selectedFeature === index;
-            return (
-              <button 
-                key={index} 
-                type="button"
-                onClick={(e) => handleCardClick(index, e)}
-                className={`text-left bg-white border-2 hover:shadow-lg hover:-translate-y-1 rounded-2xl p-8 transition-all duration-300 group flex flex-col justify-between h-full cursor-pointer relative select-none ${
-                  isSelected ? 'ring-4 ring-purple-500/20 shadow-xl' : ''
-                }`}
-                style={{ borderColor: isSelected ? feature.themeColor : `${feature.themeColor}30` }}
-                onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = `${feature.themeColor}80`; }}
-                onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLElement).style.borderColor = `${feature.themeColor}30`; }}
+          {features.map((feature, index) => (
+            <button 
+              key={index} 
+              type="button"
+              onClick={(e) => handleCardClick(index, e)}
+              className="text-left bg-white border-2 hover:shadow-lg hover:-translate-y-1 rounded-2xl p-8 transition-all duration-300 group flex flex-col justify-between h-full cursor-pointer"
+              style={{ borderColor: `${feature.themeColor}20` }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${feature.themeColor}60`; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = `${feature.themeColor}20`; }}
+            >
+              <div>
+                <div 
+                  className="w-14 h-14 rounded-xl border shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
+                  style={{ backgroundColor: `${feature.themeColor}15`, borderColor: `${feature.themeColor}30` }}
+                >
+                  {feature.icon}
+                </div>
+                <h4 className="text-xl font-bold text-[#1F2937] mb-3">{feature.title}</h4>
+                <p className="text-[#6B7280] leading-relaxed text-sm mb-6">
+                  {feature.description}
+                </p>
+              </div>
+              <div 
+                className="flex items-center justify-between text-xs font-bold transition-colors mt-auto pt-2 border-t"
+                style={{ color: feature.themeColor, borderColor: `${feature.themeColor}20` }}
               >
-                <div>
-                  <div className="flex justify-between items-start mb-6">
-                    <div 
-                      className="w-14 h-14 rounded-xl border shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-                      style={{ backgroundColor: `${feature.themeColor}15`, borderColor: `${feature.themeColor}30` }}
-                    >
-                      {feature.icon}
-                    </div>
-                    {isSelected && (
-                      <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full text-white bg-[#5B21B6] shadow-sm animate-pulse">
-                        Active Simulator
-                      </span>
-                    )}
-                  </div>
-                  <h4 className="text-xl font-bold text-[#1F2937] mb-3">{feature.title}</h4>
-                  <p className="text-[#6B7280] leading-relaxed text-sm mb-6">
-                    {feature.description}
-                  </p>
-                </div>
-                <div 
-                  className="flex items-center justify-between text-xs font-bold transition-colors mt-auto pt-2 border-t"
-                  style={{ color: feature.themeColor, borderColor: `${feature.themeColor}20` }}
-                >
-                  <span>{isSelected ? 'Hide Simulator' : 'Try Simulator'}</span>
-                  <ChevronRight size={14} className={`transition-transform ${isSelected ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
-                </div>
-              </button>
-            );
-          })}
+                <span>Try Simulator</span>
+                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* Inline Static Interactive Simulator Panel */}
-        {selectedFeature !== null && (
-          <div id="simulator-static-panel" className="mt-12 bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 md:p-10 text-white shadow-2xl animate-fade-in-up">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-6 mb-8">
-              <div className="flex items-center gap-3">
-                <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white border shadow-md"
-                  style={{ backgroundColor: `${features[selectedFeature].themeColor}20`, borderColor: `${features[selectedFeature].themeColor}40` }}
-                >
+      {/* Dynamic Overlay Modal with "Super Model" design combinations */}
+      {selectedFeature !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in-scale">
+          <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-[28px] shadow-2xl overflow-hidden flex flex-col lg:flex-row text-white max-h-[90vh] lg:max-h-[85vh]">
+            
+            {/* Close button */}
+            <button 
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setSelectedFeature(null);
+              }}
+              className="absolute top-4 right-4 z-20 p-2 bg-slate-950/80 hover:bg-slate-850 text-slate-400 hover:text-white rounded-full border border-slate-800 transition-colors"
+            >
+              <X size={16} />
+            </button>
+
+            {/* Left Panel: Glowing gradient thematic banner */}
+            <div className={`lg:w-1/3 bg-gradient-to-br ${features[selectedFeature].gradient} p-8 flex flex-col justify-between relative overflow-hidden shrink-0`}>
+              {/* Background ambient lighting */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/20 rounded-full blur-2xl -ml-10 -mb-10"></div>
+
+              <div className="space-y-4 relative z-10">
+                <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 text-white px-2.5 py-1 rounded-md w-fit block backdrop-blur-sm">
+                  {features[selectedFeature].badge}
+                </span>
+                <div className="w-14 h-14 bg-white/10 border border-white/20 rounded-2xl flex items-center justify-center text-white shadow-lg backdrop-blur-sm">
                   {features[selectedFeature].icon}
                 </div>
-                <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-white/10 text-slate-300 px-2.5 py-0.5 rounded-md">
-                    {features[selectedFeature].badge} • Live Interactive Simulator
-                  </span>
-                  <h3 className="text-2xl font-black text-white mt-0.5">{features[selectedFeature].title}</h3>
-                </div>
+                <h3 className="text-2xl font-black leading-tight text-white">{features[selectedFeature].title}</h3>
               </div>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setSelectedFeature(null);
-                }}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
-              >
-                <X size={14} /> Close Simulator
-              </button>
+              <div className="space-y-3 relative z-10 pt-8 lg:pt-0">
+                <p className="text-white/80 text-xs leading-relaxed">
+                  {features[selectedFeature].description}
+                </p>
+                <div className="text-[10px] text-white/50 font-bold uppercase tracking-wider">
+                  Interactive Platform Sandbox
+                </div>
+              </div>
             </div>
 
-            {renderModalContent()}
+            {/* Right Panel: Scrollable main simulator panel */}
+            <div className="flex-1 bg-slate-900 p-6 md:p-8 overflow-y-auto max-h-[60vh] lg:max-h-none">
+              {renderModalContent()}
+            </div>
+
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 };
