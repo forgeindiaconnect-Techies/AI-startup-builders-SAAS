@@ -5,7 +5,7 @@ import {
   ChevronDown, ShieldCheck, Pen,
   Building2, IndianRupee, Calendar, User,
   ScrollText, Lock, Unlock, Bell, Upload, Eye, FileDown, ArrowRight, Copy,
-  Sparkles, FileCode, Check, AlertTriangle, Layers, RefreshCw, Layers3, Send, Download, FileCheck, Info
+  Sparkles, FileCode, Check, AlertTriangle, Layers, RefreshCw, Layers3, Send, Download, FileCheck, Info, Tag
 } from 'lucide-react';
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer, IAgreementDetails } from '../../../context/FundingContext';
@@ -135,9 +135,12 @@ const AgreementTrackingModal: React.FC<{
                 Version {offer.agreementVersion || 'v1.0'}
               </span>
               <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
-                isFullySigned ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'
+                isFullySigned ? 'bg-emerald-500 text-white' :
+                offer.agreementStatus === 'Pending Admin Approval' ? 'bg-amber-500 text-white' :
+                offer.agreementStatus === 'Approved — Sent to Founder' ? 'bg-blue-500 text-white' :
+                'bg-purple-600 text-white'
               }`}>
-                {offer.agreementStatus || 'Sent to Founder'}
+                {offer.agreementStatus || 'Pending Admin Approval'}
               </span>
             </div>
             <h2 className="text-xl font-black text-white flex items-center gap-2">
@@ -169,11 +172,11 @@ const AgreementTrackingModal: React.FC<{
             )}
             <div>
               <div className="font-extrabold text-sm flex items-center gap-2">
-                Funding Status: {isFundingLocked ? 'LOCKED (Pending Signatures)' : 'ENABLED (Fully Signed & Executed)'}
+                Funding Status: {isFundingLocked ? 'LOCKED (Pending Admin Approval & Signatures)' : 'ENABLED (Fully Signed & Executed)'}
               </div>
               <p className="text-xs text-slate-600">
                 {isFundingLocked
-                  ? 'Funding execution remains locked until both Founder and Investor complete digital countersignatures.'
+                  ? 'Funding execution remains locked until Admin approves and both Founder and Investor complete digital countersignatures.'
                   : 'All signatures verified. Escrow and direct funding execution is unlocked and active.'}
               </p>
             </div>
@@ -314,7 +317,7 @@ const AgreementTrackingModal: React.FC<{
             <Download size={14} /> Download Agreement Text
           </button>
           <div className="flex gap-3">
-            {!offer.investorSignedAt && onSignAgreement && (
+            {offer.agreementStatus === 'Approved — Sent to Founder' && !offer.investorSignedAt && onSignAgreement && (
               <button
                 onClick={() => onSignAgreement(offer)}
                 className="px-5 py-2.5 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center gap-2 transition"
@@ -364,7 +367,7 @@ const InvestorAgreement: React.FC = () => {
   const [founderEmail, setFounderEmail] = useState('renu@startup.com');
   const [investorName, setInvestorName] = useState(user?.fullName || 'Angel Investor');
   const [investorEmail, setInvestorEmail] = useState(user?.email || 'investor@platform.com');
-  const [dealId, setDealId] = useState(`DEAL-${Math.floor(10000 + Math.random() * 90000)}`);
+  const [dealId, setDealId] = useState('DEAL-94821');
   
   // Business Category & Template Selection
   const [businessCategory, setBusinessCategory] = useState('Travel / Tourism');
@@ -406,73 +409,143 @@ const InvestorAgreement: React.FC = () => {
   const [autoFilled, setAutoFilled] = useState(true);
   const [showFullPreviewModal, setShowFullPreviewModal] = useState(false);
 
-  // Available startups list from system
-  const [availableStartups, setAvailableStartups] = useState<any[]>([]);
+  // Available authorized startups/deals list
+  const [authorizedDeals, setAuthorizedDeals] = useState<any[]>([]);
 
   useEffect(() => {
-    // Load registered startups for selection dropdown
+    // Load authorized startups & deals for the Investor
     const loadData = async () => {
       try {
-        const startups = await getStartups();
-        if (startups && startups.length > 0) {
-          setAvailableStartups(startups);
-        } else {
-          setAvailableStartups([
-            { id: 'st_tourists', name: 'Tourists', founderName: 'Renu', founderEmail: 'renu@startup.com', category: 'Travel / Tourism', stage: 'Seed', valuation: 50000000 },
-            { id: 'st_payflow', name: 'PayFlow Tech', founderName: 'Vikram', founderEmail: 'vikram@payflow.io', category: 'FinTech', stage: 'Series A', valuation: 120000000 },
-            { id: 'st_cloudai', name: 'CloudScale AI', founderName: 'Ananya', founderEmail: 'ananya@cloudscale.ai', category: 'SaaS', stage: 'Seed', valuation: 80000000 }
-          ]);
+        const sysStartups = await getStartups();
+        const initialDeals = [
+          {
+            id: 'deal_tourists',
+            startupName: 'Tourists',
+            category: 'Travel / Tourism',
+            founderName: 'Renu',
+            founderEmail: 'renu@startup.com',
+            dealId: 'DEAL-94821',
+            offerAmount: 5000000,
+            equityPercentage: 10,
+            valuation: 50000000,
+            dealStatus: 'Deal Finalized',
+            instrument: 'SAFE'
+          },
+          {
+            id: 'deal_finpay',
+            startupName: 'FinPay',
+            category: 'FinTech',
+            founderName: 'Vikram',
+            founderEmail: 'vikram@finpay.io',
+            dealId: 'DEAL-83742',
+            offerAmount: 7500000,
+            equityPercentage: 8,
+            valuation: 93750000,
+            dealStatus: 'Offer Accepted',
+            instrument: 'Equity Investment Agreement'
+          },
+          {
+            id: 'deal_healthplus',
+            startupName: 'HealthPlus',
+            category: 'HealthTech',
+            founderName: 'Ananya',
+            founderEmail: 'ananya@healthplus.in',
+            dealId: 'DEAL-61923',
+            offerAmount: 6000000,
+            equityPercentage: 12,
+            valuation: 50000000,
+            dealStatus: 'Deal Finalized',
+            instrument: 'Convertible Note'
+          },
+          {
+            id: 'deal_edusmart',
+            startupName: 'EduSmart',
+            category: 'EdTech',
+            founderName: 'Arjun',
+            founderEmail: 'arjun@edusmart.org',
+            dealId: 'DEAL-74198',
+            offerAmount: 4000000,
+            equityPercentage: 15,
+            valuation: 26666666,
+            dealStatus: 'Offer Accepted',
+            instrument: 'Term Sheet'
+          }
+        ];
+
+        // Merge existing user offers into authorized deals list
+        if (offers && offers.length > 0) {
+          offers.forEach(o => {
+            if (!initialDeals.some(d => d.startupName.toLowerCase() === o.startupName.toLowerCase())) {
+              initialDeals.push({
+                id: o.id || o._id || `deal_${Date.now()}`,
+                startupName: o.startupName,
+                category: o.businessCategory || 'FinTech',
+                founderName: o.founderName,
+                founderEmail: o.founderEmail || 'founder@platform.com',
+                dealId: o.commitmentId || `DEAL-${Math.floor(10000 + Math.random() * 90000)}`,
+                offerAmount: o.offerAmount,
+                equityPercentage: o.equityPercentage,
+                valuation: o.valuationCap || 50000000,
+                dealStatus: o.status === 'accepted' ? 'Offer Accepted' : 'Deal Finalized',
+                instrument: o.instrument || 'SAFE'
+              });
+            }
+          });
         }
+
+        setAuthorizedDeals(initialDeals);
       } catch (e) {
-        setAvailableStartups([]);
+        setAuthorizedDeals([]);
       }
     };
     loadData();
-  }, []);
+  }, [offers]);
 
-  // Filter templates based on selected Business Category & Agreement Type
+  // Filter templates based strictly on selected Business Category
   const availableTemplates = useMemo(() => {
-    return getTemplatesForCategoryAndType(businessCategory, creationMode === 'template' ? agreementType : undefined);
-  }, [businessCategory, agreementType, creationMode]);
+    return getTemplatesForCategoryAndType(businessCategory);
+  }, [businessCategory]);
 
   // Handle Startup/Deal Selection
-  const handleSelectStartupDeal = (startupId: string) => {
-    setSelectedStartupId(startupId);
-    const selected = availableStartups.find(s => s.id === startupId || s.name === startupId);
-    if (selected) {
-      setStartupName(selected.name || 'Tourists');
-      setFounderName(selected.founderName || selected.founder || 'Renu');
-      setFounderEmail(selected.founderEmail || 'renu@startup.com');
-      const cat = selected.category || selected.businessCategory || 'Travel / Tourism';
-      setBusinessCategory(cat);
-      setVerifiedCategory(cat);
-      if (selected.valuation) setValuation(selected.valuation);
-      setAutoFilled(true);
-      showToast(`Selected ${selected.name} — Auto-filled startup and category (${cat}).`);
-    }
+  const handleSelectStartupDeal = (dealItem: any) => {
+    setSelectedStartupId(dealItem.id);
+    setStartupName(dealItem.startupName);
+    setFounderName(dealItem.founderName);
+    setFounderEmail(dealItem.founderEmail);
+    setDealId(dealItem.dealId);
+    
+    // STEP 2: DYNAMIC BUSINESS IDENTIFICATION
+    const cat = dealItem.category || 'Travel / Tourism';
+    setBusinessCategory(cat);
+    setVerifiedCategory(cat);
+    
+    // Auto-fill deal numbers
+    if (dealItem.offerAmount) setInvestmentAmount(dealItem.offerAmount);
+    if (dealItem.equityPercentage) setEquityPercentage(dealItem.equityPercentage);
+    if (dealItem.valuation) setValuation(dealItem.valuation);
+    if (dealItem.instrument) setFundingInstrument(dealItem.instrument);
+
+    setAutoFilled(true);
+    showToast(`Selected ${dealItem.startupName} — Identified Category: ${cat}. Auto-filled deal data.`);
   };
 
-  // Handle Template Selection from Dropdown
-  const handleSelectTemplate = (templateId: string) => {
-    setSelectedTemplateId(templateId);
-    const tmpl = getAgreementTemplates().find(t => t.id === templateId);
-    if (tmpl) {
-      setLoadedTemplate(tmpl);
-      setAgreementType(tmpl.agreementType);
-      
-      // Build composite agreement content from template clauses
-      const compositeContent = tmpl.clauses.map(c => `ARTICLE: ${c.title.toUpperCase()}\n${c.content}`).join('\n\n');
-      setAgreementContent(compositeContent);
-      
-      // Auto fill standard investment terms from clauses if available
-      const termsClause = tmpl.clauses.find(c => c.title.toLowerCase().includes('terms') || c.title.toLowerCase().includes('parties'));
-      if (termsClause) setInvestmentTerms(termsClause.content);
+  // Handle Template Selection from Card / Dropdown
+  const handleSelectTemplate = (tmpl: IAgreementTemplate) => {
+    setSelectedTemplateId(tmpl.id);
+    setLoadedTemplate(tmpl);
+    setAgreementType(tmpl.agreementType);
+    
+    // STEP 6: AUTOMATIC TEMPLATE LOADING
+    const compositeContent = tmpl.clauses.map(c => `ARTICLE: ${c.title.toUpperCase()}\n${c.content}`).join('\n\n');
+    setAgreementContent(compositeContent);
+    
+    const termsClause = tmpl.clauses.find(c => c.title.toLowerCase().includes('terms') || c.title.toLowerCase().includes('parties'));
+    if (termsClause) setInvestmentTerms(termsClause.content);
 
-      const rightsClause = tmpl.clauses.find(c => c.title.toLowerCase().includes('rights'));
-      if (rightsClause) setInvestorRights(rightsClause.content);
+    const rightsClause = tmpl.clauses.find(c => c.title.toLowerCase().includes('rights'));
+    if (rightsClause) setInvestorRights(rightsClause.content);
 
-      showToast(`Loaded Template: "${tmpl.name}" (Version ${tmpl.version})`);
-    }
+    showToast(`Loaded Template: "${tmpl.name}" (v${tmpl.version})`);
   };
 
   // Handle File Upload (.pdf, .doc, .docx)
@@ -512,7 +585,7 @@ const InvestorAgreement: React.FC = () => {
   // Action: Generate Agreement (Status -> Draft)
   const handleGenerateAgreement = () => {
     if (!startupName.trim() || !founderName.trim() || !founderEmail.trim()) {
-      alert('Please select or specify Deal Parties (Startup Name, Founder Name, Founder Email).');
+      alert('Please select a valid authorized Startup / Deal.');
       return;
     }
     if (investmentAmount <= 0) {
@@ -522,7 +595,7 @@ const InvestorAgreement: React.FC = () => {
     setShowSendConfirmation(true);
   };
 
-  // Action: Confirm & Dispatch Agreement to Founder
+  // Action: Confirm & Send Agreement to Admin for Approval (Status -> Pending Admin Approval)
   const handleConfirmAndSend = async () => {
     setShowSendConfirmation(false);
     setActionLoading(true);
@@ -602,25 +675,25 @@ const InvestorAgreement: React.FC = () => {
         instrument: fundingInstrument,
         discount,
         expiresInDays: 30,
-        investorMessage: `Dispatched formal Investment Agreement (${generatedAgreementId}) under category ${businessCategory}.`,
+        investorMessage: `Submitted Investment Agreement (${generatedAgreementId}) under category ${businessCategory} for Admin Approval.`,
         status: 'accepted',
         agreementId: generatedAgreementId,
         agreementVersion: agreementVer,
-        agreementStatus: 'Sent to Founder',
+        agreementStatus: 'Pending Admin Approval',
         creationMethod: creationMode === 'template' ? 'template' : 'manual',
         businessCategory,
         agreementType,
         templateId: selectedTemplateId,
         templateVersion: agreementVer,
-        fundingLockStatus: 'locked', // STRICTLY LOCKED UNTIL FULLY SIGNED
+        fundingLockStatus: 'locked', // LOCKED UNTIL BOTH PARTIES SIGN AFTER APPROVAL
         agreementDetails: detailsObj,
         agreementVersions: [],
         agreementAuditTrail: [
           {
-            action: 'Created & Sent to Founder',
+            action: 'Submitted for Admin Approval',
             performedBy: user?.fullName || 'Investor',
             role: 'Investor',
-            notes: `Agreement ${generatedAgreementId} generated via ${creationMode.toUpperCase()} mode. Status set to Sent to Founder.`,
+            notes: `Agreement ${generatedAgreementId} submitted by Investor. Pending Admin Approval.`,
             timestamp: new Date().toISOString()
           }
         ]
@@ -628,33 +701,22 @@ const InvestorAgreement: React.FC = () => {
 
       await updateOfferDetails(generatedAgreementId, offerPayload);
 
-      // Add Founder Notification
-      await addNotification({
-        userId: founderIdToUse,
-        title: '✍️ New Investment Agreement Received',
-        message: `${user?.fullName || 'Investor'} sent Investment Agreement ${generatedAgreementId} for ${startupName} (₹${investmentAmount.toLocaleString('en-IN')}). Please review and sign.`,
-        type: 'funding',
-        actionUrl: '/dashboard/founder/agreement',
-        isRead: false,
-        createdAt: new Date().toISOString()
-      });
-
-      // Add Admin Notification
+      // STEP 12 & Requirement 17: Agreement Submitted Notification
       await addNotification({
         userId: 'admin',
-        title: '📄 Investment Agreement Dispatched',
-        message: `Agreement ${generatedAgreementId}: ${user?.fullName || 'Investor'} → ${founderName} (${startupName}). Status: Sent to Founder. Funding: Locked.`,
+        title: 'Agreement Submitted',
+        message: `Investor submitted an investment agreement for approval. (Ref: ${generatedAgreementId}, Startup: ${startupName})`,
         type: 'funding',
         actionUrl: '/dashboard/admin/investor-funding',
         isRead: false,
         createdAt: new Date().toISOString()
       });
 
-      showToast(`Agreement ${generatedAgreementId} successfully sent to ${founderName}! Status: Sent to Founder.`);
+      showToast(`Agreement ${generatedAgreementId} submitted for Admin Approval! Status: Pending Admin Approval.`);
       setCreationMode('selection');
       await refreshOffers();
     } catch (err: any) {
-      showToast(err.message || 'Error dispatching agreement.', 'error');
+      showToast(err.message || 'Error submitting agreement.', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -672,7 +734,7 @@ const InvestorAgreement: React.FC = () => {
         action: 'Investor Signed',
         performedBy: user?.fullName || 'Investor',
         role: 'Investor',
-        notes: isFullySigned ? 'Investor executed countersignature. Agreement is fully execution-active. Funding unlocked.' : 'Signed agreement draft',
+        notes: isFullySigned ? 'Investor executed countersignature. Agreement is fully signed. Funding status enabled.' : 'Signed agreement draft',
         timestamp: new Date().toISOString()
       };
 
@@ -687,22 +749,31 @@ const InvestorAgreement: React.FC = () => {
 
       if (isFullySigned) {
         updates.status = 'payment_pending';
-      }
 
-      await updateOfferDetails(offerId, updates);
-
-      if (isFullySigned) {
+        // Requirement 17: Fully Signed Notification
         await addNotification({
-          userId: offer.founderId,
-          title: '🤝 Agreement Fully Executed & Funding Unlocked',
-          message: `The Investment Agreement for ${offer.startupName} is now fully signed by both parties. Escrow payment is unlocked!`,
+          userId: 'admin',
+          title: 'Fully Signed',
+          message: `Investment agreement ${offer.agreementId || offer.id} is fully signed.`,
           type: 'funding',
-          actionUrl: '/dashboard/founder/agreement',
+          actionUrl: '/dashboard/admin/investor-funding',
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+      } else {
+        // Requirement 17: Investor Signed Notification
+        await addNotification({
+          userId: 'admin',
+          title: 'Investor Signed',
+          message: `Investor signed investment agreement ${offer.agreementId || offer.id}.`,
+          type: 'funding',
+          actionUrl: '/dashboard/admin/investor-funding',
           isRead: false,
           createdAt: new Date().toISOString()
         });
       }
 
+      await updateOfferDetails(offerId, updates);
       showToast('Agreement signed successfully!');
       setShowSignOverlay(null);
       setSelectedOfferForTrack(null);
@@ -730,7 +801,7 @@ const InvestorAgreement: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         
-        {/* Top Header Banner — Clean Light Theme */}
+        {/* Top Header Banner */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white p-6 rounded-3xl border border-gray-200/80 shadow-sm">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -742,7 +813,7 @@ const InvestorAgreement: React.FC = () => {
               <FileText className="text-[#5B21B6]" size={28} /> Create & Manage Investment Agreements
             </h1>
             <p className="text-gray-500 text-xs mt-1 font-medium">
-              Select between Manual Drafting or Admin-Approved Template Mode to generate, review, and dispatch binding agreements.
+              Create an investment agreement manually or use an approved template to generate and submit for Admin approval.
             </p>
           </div>
           {creationMode !== 'selection' && (
@@ -778,7 +849,7 @@ const InvestorAgreement: React.FC = () => {
                   <span className="text-xs font-extrabold uppercase text-purple-700 tracking-wider">Option A</span>
                   <h3 className="text-xl font-black text-gray-900 mt-1 mb-2">Manual Agreement</h3>
                   <p className="text-gray-500 text-xs leading-relaxed mb-6">
-                    Create your own agreement manually using the required investment and commercial details. Ideal when you have custom external legal terms or uploaded contracts.
+                    Create your own agreement manually using the required investment and commercial details.
                   </p>
                   <ul className="space-y-2 text-xs text-gray-700 font-semibold mb-6">
                     <li className="flex items-center gap-2">
@@ -809,14 +880,14 @@ const InvestorAgreement: React.FC = () => {
                   <span className="text-xs font-extrabold uppercase text-indigo-700 tracking-wider">Option B</span>
                   <h3 className="text-xl font-black text-gray-900 mt-1 mb-2">Use Agreement Template</h3>
                   <p className="text-gray-500 text-xs leading-relaxed mb-6">
-                    Choose an approved agreement template and automatically populate it with your startup, business category, and investment details.
+                    Choose an approved agreement template and automatically populate it with your startup and investment details.
                   </p>
                   <ul className="space-y-2 text-xs text-gray-700 font-semibold mb-6">
                     <li className="flex items-center gap-2">
                       <CheckCircle2 size={14} className="text-indigo-600" /> Automatic Business Category detection
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-indigo-600" /> Admin-controlled approved legal template library
+                      <CheckCircle2 size={14} className="text-indigo-600" /> Dynamic category-matched template filtering
                     </li>
                     <li className="flex items-center gap-2">
                       <CheckCircle2 size={14} className="text-indigo-600" /> Template-specific field customization
@@ -855,18 +926,29 @@ const InvestorAgreement: React.FC = () => {
             {/* Select Deal / Startup */}
             <div className="bg-gray-50/80 p-5 rounded-2xl border border-gray-200 mb-6">
               <label className="block text-xs font-extrabold uppercase text-purple-700 mb-2">Select Startup / Deal</label>
-              <select
-                value={selectedStartupId}
-                onChange={e => handleSelectStartupDeal(e.target.value)}
-                className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm font-semibold text-gray-900 focus:outline-none focus:border-purple-600"
-              >
-                <option value="">Select a Startup Deal...</option>
-                {availableStartups.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} — Founder: {s.founderName || s.founder} ({s.category || 'Travel / Tourism'})
-                  </option>
+              <div className="grid md:grid-cols-2 gap-3">
+                {authorizedDeals.map(deal => (
+                  <button
+                    key={deal.id}
+                    type="button"
+                    onClick={() => handleSelectStartupDeal(deal)}
+                    className={`p-4 rounded-2xl border text-left transition ${
+                      selectedStartupId === deal.id
+                        ? 'bg-purple-50 border-purple-500 shadow-sm'
+                        : 'bg-white border-gray-200 hover:border-purple-300'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="font-extrabold text-gray-900 text-sm">{deal.startupName}</span>
+                      <span className="bg-purple-100 text-[#5B21B6] text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        {deal.dealStatus}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">Business: <strong className="text-gray-800">{deal.category}</strong> • Founder: {deal.founderName}</p>
+                    <div className="mt-2 text-xs font-bold text-emerald-700">₹{deal.offerAmount?.toLocaleString('en-IN')} at {deal.equityPercentage}% Equity</div>
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
 
             {/* Deal Parties */}
@@ -884,25 +966,25 @@ const InvestorAgreement: React.FC = () => {
 
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Startup Name *</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Startup Name (Protected)</label>
                   <input
                     type="text"
+                    disabled
                     value={startupName}
-                    onChange={e => setStartupName(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
+                    className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-gray-700 cursor-not-allowed"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Founder Name *</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Founder Name (Protected)</label>
                   <input
                     type="text"
+                    disabled
                     value={founderName}
-                    onChange={e => setFounderName(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
+                    className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-gray-700 cursor-not-allowed"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Founder Email *</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Founder Email</label>
                   <input
                     type="email"
                     value={founderEmail}
@@ -929,12 +1011,12 @@ const InvestorAgreement: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Deal ID</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Deal ID (Protected)</label>
                   <input
                     type="text"
+                    disabled
                     value={dealId}
-                    onChange={e => setDealId(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
+                    className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-gray-700 cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -947,30 +1029,30 @@ const InvestorAgreement: React.FC = () => {
               </h3>
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Investment Amount (₹) *</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Approved Investment Amount (₹)</label>
                   <input
                     type="number"
+                    disabled
                     value={investmentAmount}
-                    onChange={e => setInvestmentAmount(Number(e.target.value))}
-                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-bold text-emerald-700 focus:bg-white focus:border-purple-600"
+                    className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-emerald-700 cursor-not-allowed"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Equity Stake (%) *</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Approved Equity Stake (%)</label>
                   <input
                     type="number"
+                    disabled
                     value={equityPercentage}
-                    onChange={e => setEquityPercentage(Number(e.target.value))}
-                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-bold text-[#5B21B6] focus:bg-white focus:border-purple-600"
+                    className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-[#5B21B6] cursor-not-allowed"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Pre-Money Valuation (₹)</label>
+                  <label className="block text-[11px] font-extrabold text-gray-700 uppercase mb-1">Verified Pre-Money Valuation (₹)</label>
                   <input
                     type="number"
+                    disabled
                     value={valuation}
-                    onChange={e => setValuation(Number(e.target.value))}
-                    className="w-full bg-gray-50 border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:bg-white focus:border-purple-600"
+                    className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-gray-700 cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -1100,7 +1182,7 @@ const InvestorAgreement: React.FC = () => {
                 onClick={handleGenerateAgreement}
                 className="px-6 py-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center gap-2 transition"
               >
-                <Send size={14} /> Generate & Send Agreement
+                <Send size={14} /> Generate & Submit for Approval
               </button>
             </div>
           </div>
@@ -1114,7 +1196,7 @@ const InvestorAgreement: React.FC = () => {
                 <span className="bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full">
                   Template Agreement Flow
                 </span>
-                <h2 className="text-xl font-black text-gray-900 mt-1">Admin-Approved Agreement Template</h2>
+                <h2 className="text-xl font-black text-gray-900 mt-1">Select Startup & Approved Agreement Template</h2>
               </div>
               <button
                 onClick={() => setCreationMode('selection')}
@@ -1125,127 +1207,183 @@ const InvestorAgreement: React.FC = () => {
             </div>
 
             {/* STEP 1: Select Startup / Deal */}
-            <div className="mb-6 bg-gray-50/80 p-5 rounded-2xl border border-gray-200">
-              <h3 className="text-xs font-extrabold uppercase text-indigo-700 mb-2">Step 1 — Select Startup / Deal</h3>
-              <select
-                value={selectedStartupId}
-                onChange={e => handleSelectStartupDeal(e.target.value)}
-                className="w-full bg-white border border-gray-300 rounded-xl p-3 text-sm font-semibold text-gray-900 focus:outline-none focus:border-indigo-600"
-              >
-                <option value="">Select Startup / Deal...</option>
-                {availableStartups.map(s => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} — Founder: {s.founderName || s.founder} (Category: {s.category || 'Travel / Tourism'})
-                  </option>
+            <div className="mb-8 bg-gray-50/80 p-5 rounded-2xl border border-gray-200">
+              <h3 className="text-xs font-extrabold uppercase text-indigo-700 mb-3">Step 1 — Select Authorized Startup / Deal</h3>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                {authorizedDeals.map(deal => (
+                  <div
+                    key={deal.id}
+                    onClick={() => handleSelectStartupDeal(deal)}
+                    className={`p-4 rounded-2xl border cursor-pointer transition ${
+                      selectedStartupId === deal.id
+                        ? 'bg-indigo-50/90 border-indigo-600 shadow-md'
+                        : 'bg-white border-gray-200 hover:border-indigo-300'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <span className="text-xs font-black text-indigo-900 uppercase tracking-wider">{deal.startupName}</span>
+                        <span className="ml-2 text-[10px] font-bold text-gray-500">ID: {deal.dealId}</span>
+                      </div>
+                      <span className="bg-indigo-100 text-indigo-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full">
+                        {deal.dealStatus}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mt-2">
+                      <div><span className="text-gray-400 font-bold">Business:</span> <strong className="text-gray-900">{deal.category}</strong></div>
+                      <div><span className="text-gray-400 font-bold">Founder:</span> <strong className="text-gray-900">{deal.founderName}</strong></div>
+                      <div><span className="text-gray-400 font-bold">Investment:</span> <strong className="text-emerald-700 font-extrabold">₹{deal.offerAmount?.toLocaleString('en-IN')}</strong></div>
+                      <div><span className="text-gray-400 font-bold">Equity:</span> <strong className="text-[#5B21B6] font-extrabold">{deal.equityPercentage}%</strong></div>
+                    </div>
+                  </div>
                 ))}
-              </select>
+              </div>
             </div>
 
-            {/* STEP 2: Business / Industry Selection */}
-            <div className="mb-6 bg-gray-50/80 p-5 rounded-2xl border border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-extrabold uppercase text-indigo-700">Step 2 — Business / Industry Category</h3>
-                <span className="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-indigo-200">
-                  Verified Startup Category: {verifiedCategory}
+            {/* STEP 2: DYNAMIC BUSINESS IDENTIFICATION */}
+            {selectedStartupId && (
+              <div className="mb-8 bg-indigo-50/50 p-5 rounded-2xl border border-indigo-200 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-indigo-700 tracking-wider">Step 2 — Dynamic Business Category Identification</span>
+                  <div className="text-base font-black text-indigo-950 mt-0.5 flex items-center gap-2">
+                    <Tag size={18} className="text-indigo-600" /> Business Category: <span className="bg-indigo-600 text-white px-3 py-0.5 rounded-full text-xs">{businessCategory}</span>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-indigo-800 bg-white px-3 py-1.5 rounded-xl border border-indigo-200 shadow-sm">
+                  ✓ Identified from Verified Deal
                 </span>
               </div>
+            )}
 
-              <div className="grid md:grid-cols-2 gap-4 items-center">
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-1">Registered Category</label>
-                  <select
-                    value={businessCategory}
-                    onChange={e => setBusinessCategory(e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900 focus:border-indigo-600"
-                  >
-                    {ALL_BUSINESS_CATEGORIES.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="p-3 bg-white rounded-xl border border-gray-200 text-xs text-gray-700">
-                  <span className="font-extrabold text-gray-900">Category Protection Active:</span> Only templates approved for <strong>{businessCategory}</strong> or General fallback will be loaded.
-                </div>
-              </div>
-            </div>
-
-            {/* STEP 3 & 4: Select Agreement Template Dropdown & General Types */}
-            <div className="mb-8 bg-gray-50/80 p-5 rounded-2xl border border-gray-200">
-              <h3 className="text-xs font-extrabold uppercase text-indigo-700 mb-3">Step 3 & 4 — Select Agreement Template</h3>
-              
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-1">Standard Agreement Type</label>
-                  <select
-                    value={agreementType}
-                    onChange={e => setAgreementType(e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-semibold text-gray-900 focus:border-indigo-600"
-                  >
-                    {STANDARD_AGREEMENT_TYPES.map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
+            {/* STEP 3, 4 & 5: DYNAMIC TEMPLATE FILTERING & SELECTION */}
+            {selectedStartupId && (
+              <div className="mb-8 bg-gray-50/80 p-5 rounded-2xl border border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-xs font-extrabold uppercase text-indigo-700">Step 3 & 5 — Select Agreement Template</h3>
+                    <p className="text-xs text-gray-500">Filtered specifically for business category: <strong>{businessCategory}</strong></p>
+                  </div>
+                  {availableTemplates.length > 0 && (
+                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      {availableTemplates.length} Relevant Template(s) Found
+                    </span>
+                  )}
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-1">Approved Template Dropdown</label>
-                  <select
-                    value={selectedTemplateId}
-                    onChange={e => handleSelectTemplate(e.target.value)}
-                    className="w-full bg-white border border-indigo-500 rounded-xl p-3 text-xs font-bold text-indigo-900 focus:outline-none"
-                  >
-                    <option value="">Choose Approved Template...</option>
+                {/* STEP 4: TEMPLATE FALLBACK IF NONE SPECIFIC */}
+                {availableTemplates.length === 0 ? (
+                  <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs">
+                    <div className="font-extrabold text-sm mb-1 flex items-center gap-2">
+                      <AlertTriangle size={16} className="text-amber-600" /> No business-specific template is available.
+                    </div>
+                    <p className="mb-3 text-amber-800">
+                      No custom template was found specifically registered for category <strong>{businessCategory}</strong>. You can use a standard investment agreement template.
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          setBusinessCategory('General');
+                        }}
+                        className="px-4 py-2 bg-amber-500 text-white font-extrabold text-xs rounded-xl hover:bg-amber-600 transition"
+                      >
+                        Use Standard Investment Template
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-4">
                     {availableTemplates.map(tmpl => (
-                      <option key={tmpl.id} value={tmpl.id}>
-                        {tmpl.name} ({tmpl.businessCategory}) — v{tmpl.version}
-                      </option>
+                      <div
+                        key={tmpl.id}
+                        className={`p-5 rounded-2xl border transition-all flex flex-col justify-between ${
+                          selectedTemplateId === tmpl.id
+                            ? 'bg-white border-indigo-600 shadow-md ring-2 ring-indigo-500/20'
+                            : 'bg-white border-gray-200 hover:border-indigo-300'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="font-extrabold text-gray-900 text-sm">{tmpl.name}</span>
+                            <span className="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              v{tmpl.version}
+                            </span>
+                          </div>
+                          <div className="text-[11px] font-bold text-purple-800 mb-1">{tmpl.agreementType}</div>
+                          <p className="text-xs text-gray-500 leading-relaxed mb-4">{tmpl.description || 'Pre-approved agreement template.'}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectTemplate(tmpl)}
+                          className={`w-full py-2.5 font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-1.5 ${
+                            selectedTemplateId === tmpl.id
+                              ? 'bg-indigo-600 text-white shadow-sm'
+                              : 'bg-gray-100 hover:bg-indigo-50 text-indigo-700 border border-gray-200'
+                          }`}
+                        >
+                          {selectedTemplateId === tmpl.id ? <Check size={14} /> : null}
+                          {selectedTemplateId === tmpl.id ? 'Template Selected' : 'Select Template'}
+                        </button>
+                      </div>
                     ))}
-                  </select>
-                </div>
+                  </div>
+                )}
               </div>
+            )}
 
-              {/* STEP 11: Fallback if no specific template exists */}
-              {availableTemplates.length === 0 && (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs">
-                  <div className="font-extrabold text-sm mb-1 flex items-center gap-2">
-                    <AlertTriangle size={16} className="text-amber-600" /> No Business-Specific Template Available
-                  </div>
-                  <p className="mb-3 text-amber-800">
-                    No custom template was found specifically registered for business category <strong>{businessCategory}</strong>.
-                  </p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        setBusinessCategory('General');
-                        const generalTmpl = getAgreementTemplates().find(t => t.businessCategory === 'General');
-                        if (generalTmpl) handleSelectTemplate(generalTmpl.id);
-                      }}
-                      className="px-3.5 py-1.5 bg-amber-500 text-white font-extrabold text-xs rounded-xl hover:bg-amber-600 transition"
-                    >
-                      Use General Investment Template
-                    </button>
-                    <button
-                      onClick={() => setCreationMode('manual')}
-                      className="px-3.5 py-1.5 bg-white hover:bg-gray-100 text-amber-900 border border-amber-300 font-bold text-xs rounded-xl transition"
-                    >
-                      Custom Agreement (Manual Mode)
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* STEP 7: TEMPLATE-SPECIFIC FIELDS */}
+            {/* STEP 7 & 8: AUTO-FILL & TEMPLATE-SPECIFIC FIELDS */}
             {loadedTemplate && (
               <div className="mb-8 bg-gray-50/80 p-5 rounded-2xl border border-indigo-200">
                 <div className="flex items-center justify-between border-b border-gray-200 pb-3 mb-4">
                   <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                    <Sparkles size={16} className="text-indigo-600" /> Template-Specific Parameters ({agreementType})
+                    <Sparkles size={16} className="text-indigo-600" /> Template Parameters ({agreementType})
                   </h3>
                   <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-300">
                     Auto-filled from Deal
                   </span>
                 </div>
+
+                {/* PROTECTED DEAL FIELDS BANNER */}
+                <div className="p-3 bg-white rounded-xl border border-gray-200 text-xs text-gray-600 mb-4 flex justify-between items-center">
+                  <div>
+                    <span className="font-extrabold text-gray-900">Protected Verified Deal Fields:</span> Startup: <strong>{startupName}</strong> | Founder: <strong>{founderName}</strong> | Amount: <strong>₹{investmentAmount.toLocaleString('en-IN')}</strong> | Equity: <strong>{equityPercentage}%</strong>
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase">Protected</span>
+                </div>
+
+                {/* EQUITY INVESTMENT FIELDS */}
+                {agreementType === 'Equity Investment Agreement' && (
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Approved Investment Amount (₹)</label>
+                      <input
+                        type="number"
+                        disabled
+                        value={investmentAmount}
+                        className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-emerald-700 cursor-not-allowed"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Approved Equity Stake (%)</label>
+                      <input
+                        type="number"
+                        disabled
+                        value={equityPercentage}
+                        className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-[#5B21B6] cursor-not-allowed"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Verified Post-Money Valuation (₹)</label>
+                      <input
+                        type="number"
+                        disabled
+                        value={valuation}
+                        className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-gray-700 cursor-not-allowed"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* SAFE SPECIFIC FIELDS */}
                 {agreementType === 'SAFE Agreement' && (
@@ -1254,9 +1392,9 @@ const InvestorAgreement: React.FC = () => {
                       <label className="block text-[11px] font-bold text-gray-700 mb-1">Investment Amount (₹)</label>
                       <input
                         type="number"
+                        disabled
                         value={investmentAmount}
-                        onChange={e => setInvestmentAmount(Number(e.target.value))}
-                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-emerald-700"
+                        className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-emerald-700 cursor-not-allowed"
                       />
                     </div>
                     <div>
@@ -1286,15 +1424,6 @@ const InvestorAgreement: React.FC = () => {
                         className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs text-gray-900"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Pro-Rata Rights</label>
-                      <input
-                        type="text"
-                        value={proRataRights}
-                        onChange={e => setProRataRights(e.target.value)}
-                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs text-gray-900"
-                      />
-                    </div>
                   </div>
                 )}
 
@@ -1305,9 +1434,9 @@ const InvestorAgreement: React.FC = () => {
                       <label className="block text-[11px] font-bold text-gray-700 mb-1">Principal Amount (₹)</label>
                       <input
                         type="number"
+                        disabled
                         value={investmentAmount}
-                        onChange={e => setInvestmentAmount(Number(e.target.value))}
-                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-emerald-700"
+                        className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-emerald-700 cursor-not-allowed"
                       />
                     </div>
                     <div>
@@ -1346,48 +1475,6 @@ const InvestorAgreement: React.FC = () => {
                         className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Conversion Trigger</label>
-                      <input
-                        type="text"
-                        value={conversionEvent}
-                        onChange={e => setConversionEvent(e.target.value)}
-                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs text-gray-900"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* EQUITY INVESTMENT FIELDS */}
-                {agreementType === 'Equity Investment Agreement' && (
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Investment Amount (₹)</label>
-                      <input
-                        type="number"
-                        value={investmentAmount}
-                        onChange={e => setInvestmentAmount(Number(e.target.value))}
-                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-emerald-700"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Equity Allocation (%)</label>
-                      <input
-                        type="number"
-                        value={equityPercentage}
-                        onChange={e => setEquityPercentage(Number(e.target.value))}
-                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-[#5B21B6]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-gray-700 mb-1">Post-Money Valuation (₹)</label>
-                      <input
-                        type="number"
-                        value={valuation}
-                        onChange={e => setValuation(Number(e.target.value))}
-                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900"
-                      />
-                    </div>
                   </div>
                 )}
 
@@ -1398,18 +1485,18 @@ const InvestorAgreement: React.FC = () => {
                       <label className="block text-[11px] font-bold text-gray-700 mb-1">Proposed Investment (₹)</label>
                       <input
                         type="number"
+                        disabled
                         value={investmentAmount}
-                        onChange={e => setInvestmentAmount(Number(e.target.value))}
-                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-emerald-700"
+                        className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-emerald-700 cursor-not-allowed"
                       />
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-gray-700 mb-1">Proposed Valuation (₹)</label>
                       <input
                         type="number"
+                        disabled
                         value={valuation}
-                        onChange={e => setValuation(Number(e.target.value))}
-                        className="w-full bg-white border border-gray-300 rounded-xl p-3 text-xs font-bold text-gray-900"
+                        className="w-full bg-gray-100 border border-gray-200 rounded-xl p-3 text-xs font-bold text-gray-700 cursor-not-allowed"
                       />
                     </div>
                     <div>
@@ -1426,7 +1513,7 @@ const InvestorAgreement: React.FC = () => {
               </div>
             )}
 
-            {/* STEP 12: LIVE AGREEMENT PREVIEW CARD */}
+            {/* STEP 9: LIVE AGREEMENT PREVIEW CARD */}
             <div className="bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 border border-purple-200 rounded-2xl p-6 mb-8 shadow-sm">
               <div className="flex items-center justify-between border-b border-purple-200 pb-4 mb-4">
                 <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider flex items-center gap-2">
@@ -1459,11 +1546,11 @@ const InvestorAgreement: React.FC = () => {
               {loadedTemplate && (
                 <div className="mt-4 p-4 bg-white rounded-xl border border-gray-200 text-xs space-y-2">
                   <div className="font-bold text-[#5B21B6] uppercase tracking-wider text-[11px]">
-                    Template Clauses ({loadedTemplate.name})
+                    Loaded Template Sections ({loadedTemplate.name})
                   </div>
-                  {loadedTemplate.clauses.slice(0, 3).map((c, i) => (
+                  {loadedTemplate.clauses.map((c, i) => (
                     <div key={i} className="text-gray-700">
-                      <span className="font-semibold text-gray-900">• {c.title}:</span> {c.content.slice(0, 100)}...
+                      <span className="font-semibold text-gray-900">• {c.title}:</span> {c.content.slice(0, 120)}...
                     </div>
                   ))}
                 </div>
@@ -1493,7 +1580,7 @@ const InvestorAgreement: React.FC = () => {
           </div>
         )}
 
-        {/* ─── SECTION 14 & 15: AGREEMENT READY FOR REVIEW & SEND CONFIRMATION MODAL ─── */}
+        {/* ─── STEP 11: INVESTOR SENDS AGREEMENT (CONFIRMATION MODAL) ──────────────── */}
         {showSendConfirmation && (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white border border-gray-200 rounded-3xl max-w-lg w-full p-6 shadow-2xl text-gray-900 text-left">
@@ -1501,19 +1588,19 @@ const InvestorAgreement: React.FC = () => {
                 <Send size={24} />
               </div>
 
-              <h3 className="text-xl font-black mb-2">Send Agreement to Founder</h3>
+              <h3 className="text-xl font-black mb-2">Submit Agreement for Admin Approval</h3>
               <p className="text-gray-600 text-xs mb-6">
-                “You are about to send this agreement to the Founder for review and signature.”
+                “You are about to send this investment agreement to Admin for review. Once approved by Admin, it will be sent to the Founder for signature.”
               </p>
 
               <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-2 text-xs mb-6">
                 <div className="flex justify-between">
-                  <span className="text-gray-500 font-bold">Founder:</span>
-                  <span className="font-extrabold text-gray-900">{founderName} ({founderEmail})</span>
-                </div>
-                <div className="flex justify-between">
                   <span className="text-gray-500 font-bold">Startup:</span>
                   <span className="font-extrabold text-gray-900">{startupName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 font-bold">Founder:</span>
+                  <span className="font-extrabold text-gray-900">{founderName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500 font-bold">Agreement Type:</span>
@@ -1541,7 +1628,7 @@ const InvestorAgreement: React.FC = () => {
                   disabled={actionLoading}
                   className="flex-1 py-3 bg-[#5B21B6] hover:bg-[#4C1D95] font-black text-xs uppercase tracking-wider rounded-xl shadow-md transition flex items-center justify-center gap-2 text-white"
                 >
-                  {actionLoading ? 'Dispatching...' : 'Confirm & Send'}
+                  {actionLoading ? 'Submitting...' : 'Confirm & Send'}
                 </button>
               </div>
             </div>
@@ -1583,7 +1670,7 @@ const InvestorAgreement: React.FC = () => {
                 <FileCheck className="text-emerald-600" size={22} /> Active & Dispatched Investment Agreements
               </h2>
               <p className="text-gray-500 text-xs mt-0.5">
-                Track agreement status, version logs, founder countersignatures, and funding locking.
+                Track agreement status, version logs, admin approvals, and funding locking.
               </p>
             </div>
             <span className="bg-gray-100 text-gray-700 text-xs font-bold px-3 py-1 rounded-full border border-gray-200">
@@ -1608,7 +1695,7 @@ const InvestorAgreement: React.FC = () => {
                     className="bg-white border border-gray-200 hover:border-purple-300 rounded-3xl p-6 transition-all shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6"
                   >
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <span className="bg-purple-100 text-[#5B21B6] font-extrabold text-[10px] px-2.5 py-0.5 rounded-full uppercase border border-purple-200">
                           {offer.agreementId || `AGR-2026-${(offer.id || '').slice(-4)}`}
                         </span>
@@ -1616,9 +1703,12 @@ const InvestorAgreement: React.FC = () => {
                           Ver {offer.agreementVersion || 'v1.0'}
                         </span>
                         <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
-                          isFullySigned ? 'bg-emerald-600 text-white' : 'bg-amber-600 text-white'
+                          isFullySigned ? 'bg-emerald-600 text-white' :
+                          offer.agreementStatus === 'Pending Admin Approval' ? 'bg-amber-600 text-white' :
+                          offer.agreementStatus === 'Approved — Sent to Founder' ? 'bg-blue-600 text-white' :
+                          'bg-purple-600 text-white'
                         }`}>
-                          {offer.agreementStatus || 'Sent to Founder'}
+                          {offer.agreementStatus || 'Pending Admin Approval'}
                         </span>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
                           isLocked ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
@@ -1657,7 +1747,7 @@ const InvestorAgreement: React.FC = () => {
                         <ScrollText size={14} /> Audit Trail & History
                       </button>
 
-                      {!offer.investorSignedAt && (
+                      {offer.agreementStatus === 'Approved — Sent to Founder' && !offer.investorSignedAt && (
                         <button
                           onClick={() => {
                             setShowSignOverlay(offer);

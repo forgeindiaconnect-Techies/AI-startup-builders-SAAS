@@ -881,23 +881,23 @@ const FounderInvestorAgreement: React.FC = () => {
         createdAt: new Date().toISOString(),
       });
 
-      // Notify Admin
+      // Notify Admin — Requirement 17: Founder Signed
       await addNotification({
         userId: 'admin',
-        title: 'Founder Signed Investment Agreement',
-        message: `Founder ${offer.founderName} signed agreement Ref: ${offer.agreementId}.`,
+        title: 'Founder Signed',
+        message: `Founder signed investment agreement ${offer.agreementId || offer.id}.`,
         type: 'funding',
         actionUrl: '/dashboard/admin/investor-funding',
         isRead: false,
         createdAt: new Date().toISOString(),
       });
 
-      // System notification for admin if fully signed
+      // Requirement 17: Fully Signed
       if (isInvestorSignedAlready) {
         await addNotification({
           userId: 'admin',
-          title: 'Agreement Fully Signed',
-          message: `Agreement ID ${offer.agreementId} is fully signed by both parties. Funding release unlocked.`,
+          title: 'Fully Signed',
+          message: `Investment agreement ${offer.agreementId || offer.id} is fully signed.`,
           type: 'funding',
           actionUrl: '/dashboard/admin/investor-funding',
           isRead: false,

@@ -65,7 +65,6 @@ import AdminAnalytics from '../pages/dashboards/admin/AdminAnalytics';
 import AdminPlatformSettings from '../pages/dashboards/admin/AdminPlatformSettings';
 import AdminMentorEarnings from '../pages/dashboards/admin/AdminMentorEarnings';
 import AdminInvestorFunding from '../pages/dashboards/admin/AdminInvestorFunding';
-import AdminAgreementTemplates from '../pages/dashboards/admin/AdminAgreementTemplates';
 import AdminProfile from '../pages/dashboards/admin/AdminProfile';
 
 const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
@@ -145,7 +144,6 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/admin/inbox': SharedInbox,
     '/dashboard/admin/mentor-earnings': AdminMentorEarnings,
     '/dashboard/admin/investor-funding': AdminInvestorFunding,
-    '/dashboard/admin/templates': AdminAgreementTemplates,
     '/dashboard/admin/profile': AdminProfile,
   },
 };
@@ -216,7 +214,6 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'AI Analytics',            icon: BarChart2,       path: '/dashboard/admin/analytics' },
         { name: 'Mentor Earnings',         icon: IndianRupee,     path: '/dashboard/admin/mentor-earnings' },
         { name: 'Investor Funding',         icon: Wallet,          path: '/dashboard/admin/investor-funding' },
-        { name: 'Agreement Templates',     icon: FileText,        path: '/dashboard/admin/templates' },
         { name: 'Notifications',           icon: Bell,            path: '/dashboard/admin/notifications' },
         { name: 'Profile',                 icon: UserCog,         path: '/dashboard/admin/profile' },
       ],

@@ -93,7 +93,6 @@ import AdminDocumentVerification from './pages/dashboards/admin/AdminDocumentVer
 import AdminInviteLinks        from './pages/dashboards/admin/AdminInviteLinks';
 import AdminMentorEarnings     from './pages/dashboards/admin/AdminMentorEarnings';
 import AdminInvestorFunding    from './pages/dashboards/admin/AdminInvestorFunding';
-import AdminAgreementTemplates from './pages/dashboards/admin/AdminAgreementTemplates';
 
 import SharedNotifications from './pages/dashboards/founder/FounderNotifications';
 import SharedHelp          from './pages/dashboards/founder/FounderHelp';
@@ -211,7 +210,6 @@ function App() {
                     <Route path="help"              element={<SharedHelp />} />
                     <Route path="mentor-earnings"    element={<AdminMentorEarnings />} />
                     <Route path="investor-funding"   element={<AdminInvestorFunding />} />
-                    <Route path="templates"          element={<AdminAgreementTemplates />} />
                   </Route>
 
                   {/* ───────────── MENTOR ───────────── */}

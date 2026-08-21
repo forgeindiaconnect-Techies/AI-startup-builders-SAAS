@@ -292,40 +292,138 @@ const AdminInvestorFunding: React.FC = () => {
             createdAt: new Date().toISOString(),
           });
         }
-        showToast('Clarification request sent to investor and founder!');
       } else if (actionType === 'reject') {
+        const isAgreementPending = selectedTx.agreementStatus === 'Pending Admin Approval';
+        const rejectionReason = adminNoteInput.trim() || 'Agreement terms require revision by Investor.';
+        
         const historyEntry = {
-          action: 'rejected_by_admin',
+          action: isAgreementPending ? 'agreement_rejected_by_admin' : 'rejected_by_admin',
           performedBy: adminName,
           role: 'Admin',
-          message: `Admin rejected funding deal/payment. Reason: ${adminNoteInput || 'Non-compliance'}`,
+          message: isAgreementPending 
+            ? `Admin rejected investment agreement. Reason: ${rejectionReason}`
+            : `Admin rejected funding deal/payment. Reason: ${rejectionReason}`,
           createdAt: new Date().toISOString(),
         };
-        const updates = {
+
+        const auditTrail = selectedTx.agreementAuditTrail || [];
+        auditTrail.push({
+          action: 'Rejected by Admin',
+          performedBy: adminName,
+          role: 'Admin',
+          notes: `Rejection Reason: ${rejectionReason}`,
+          timestamp: new Date().toISOString()
+        });
+
+        const updates: any = {
           status: 'rejected' as const,
           verificationStatus: 'Rejected',
-          adminNote: adminNoteInput || 'Funding transaction rejected by Admin.',
+          agreementStatus: isAgreementPending ? 'Admin Rejected' : selectedTx.agreementStatus,
+          adminNote: rejectionReason,
+          agreementAuditTrail: auditTrail,
           history: [...selectedTx.history, historyEntry],
           updatedAt: new Date().toISOString(),
         };
         await updateFundingOffer(txId, updates);
-        showToast('Funding transaction rejected.', 'error');
+
+        // Notify Investor of Rejection
+        if (selectedTx.investorId) {
+          await addNotification({
+            userId: selectedTx.investorId,
+            title: `❌ Investment Agreement Rejected by Admin`,
+            message: `Investment agreement ${selectedTx.agreementId || ''} for ${selectedTx.startupName} was rejected by Admin. Reason: ${rejectionReason}`,
+            type: 'funding',
+            actionUrl: '/dashboard/investor/agreement',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          });
+        }
+
+        // Admin Notification Log
+        await addNotification({
+          userId: 'admin',
+          title: 'Agreement Rejected',
+          message: `Investment agreement ${selectedTx.agreementId || ''} was rejected. Reason: ${rejectionReason}`,
+          type: 'funding',
+          actionUrl: '/dashboard/admin/investor-funding',
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+
+        showToast('Agreement/Funding rejected and notification sent.', 'error');
       } else if (actionType === 'approve') {
+        const isAgreementPending = selectedTx.agreementStatus === 'Pending Admin Approval' || !selectedTx.agreementStatus || selectedTx.agreementStatus === 'Draft';
+        
         const historyEntry = {
-          action: 'approved_by_admin',
+          action: isAgreementPending ? 'agreement_approved_by_admin' : 'approved_by_admin',
           performedBy: adminName,
           role: 'Admin',
-          message: 'Admin reactivated funding deal.',
+          message: isAgreementPending ? 'Admin approved investment agreement and dispatched to Founder.' : 'Admin reactivated funding deal.',
           createdAt: new Date().toISOString(),
         };
-        const updates = {
-          status: 'under_verification' as const,
-          verificationStatus: 'Under Review',
+
+        const auditTrail = selectedTx.agreementAuditTrail || [];
+        auditTrail.push({
+          action: 'Approved by Admin',
+          performedBy: adminName,
+          role: 'Admin',
+          notes: 'Agreement approved and dispatched to Founder for signature.',
+          timestamp: new Date().toISOString()
+        });
+
+        const updates: any = {
+          verificationStatus: 'Approved',
+          agreementStatus: 'Approved — Sent to Founder',
+          fundingLockStatus: 'locked',
+          agreementAuditTrail: auditTrail,
           history: [...selectedTx.history, historyEntry],
           updatedAt: new Date().toISOString(),
         };
+
+        if (selectedTx.status === 'rejected') {
+          updates.status = 'accepted';
+        }
+
         await updateFundingOffer(txId, updates);
-        showToast('Funding deal reactivated!');
+
+        // Notify Founder
+        if (selectedTx.founderId) {
+          await addNotification({
+            userId: selectedTx.founderId,
+            title: `✍️ New Investment Agreement Received`,
+            message: `Admin approved the investment agreement for ${selectedTx.startupName} (₹${selectedTx.offerAmount.toLocaleString('en-IN')}). Please review and sign.`,
+            type: 'funding',
+            actionUrl: '/dashboard/founder/agreement',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          });
+        }
+
+        // Notify Investor
+        if (selectedTx.investorId) {
+          await addNotification({
+            userId: selectedTx.investorId,
+            title: `✅ Agreement Approved by Admin`,
+            message: `Investment agreement ${selectedTx.agreementId || ''} has been approved by Admin and sent to Founder.`,
+            type: 'funding',
+            actionUrl: '/dashboard/investor/agreement',
+            isRead: false,
+            createdAt: new Date().toISOString(),
+          });
+        }
+
+        // Admin Log Notification
+        await addNotification({
+          userId: 'admin',
+          title: 'Agreement Approved',
+          message: `Investment agreement ${selectedTx.agreementId || ''} has been approved.`,
+          type: 'funding',
+          actionUrl: '/dashboard/admin/investor-funding',
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+
+        showToast('Investment agreement approved and sent to Founder!');
       }
 
       await refreshOffers();
