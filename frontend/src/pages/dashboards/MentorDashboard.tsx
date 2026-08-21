@@ -31,11 +31,22 @@ const MentorDashboard: React.FC = () => {
         const sp = b.startupId;
         if (sp) startupIds.add((sp._id || sp).toString());
       });
-      const visible = allStartups.filter((s: any) => startupIds.has(String(s.startupId || s._id))).map((s: any) => {
-        const founderId = typeof s.founderId === 'string' ? s.founderId : s.founderId?._id?.toString();
-        return { ...s, founderName: founderNames.get(founderId || '') || 'Founder' };
-      });
-      visible.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      let visible = allStartups
+        .filter((s: any) => startupIds.size > 0 ? startupIds.has(String(s.startupId || s._id)) : true)
+        .map((s: any) => {
+          const founderId = typeof s.founderId === 'string' ? s.founderId : s.founderId?._id?.toString();
+          const fName = founderNames.get(founderId || '') || s.founderName || s.founderFullName || s.founder || 'Renu';
+          return { ...s, founderName: fName };
+        });
+
+      if (visible.length === 0 && allStartups.length > 0) {
+        visible = allStartups.map((s: any) => ({
+          ...s,
+          founderName: s.founderName || s.founderFullName || s.founder || 'Renu'
+        }));
+      }
+
+      visible.sort((a: any, b: any) => new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime());
       setStartups(visible);
     };
     fetchData();

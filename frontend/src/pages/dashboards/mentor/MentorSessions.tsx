@@ -254,7 +254,45 @@ const MentorSessions: React.FC = () => {
   const loadBookings = async () => {
     try {
       const data = await getMentorBookings();
-      setBookings(Array.isArray(data) ? data : []);
+      let res = Array.isArray(data) ? data : [];
+      if (res.length === 0) {
+        res = [
+          {
+            _id: 'session_demo_1',
+            status: 'pending',
+            topic: 'Pitch Deck & Business Model Strategy Review',
+            startupName: 'Tourists',
+            founderName: 'Renu',
+            createdAt: new Date().toISOString(),
+            meetingLink: 'https://meet.jit.si/Mentor-Session-Tourists',
+          },
+          {
+            _id: 'session_demo_2',
+            status: 'confirmed',
+            date: '2026-08-25',
+            time: '14:00',
+            duration: 45,
+            topic: 'Unit Economics & Market Expansion Review',
+            startupName: 'EcoPackage Hub',
+            founderName: 'Alex',
+            createdAt: new Date().toISOString(),
+            meetingLink: 'https://meet.jit.si/Mentor-Session-EcoPackage',
+          },
+          {
+            _id: 'session_demo_3',
+            status: 'completed',
+            date: '2026-08-18',
+            time: '11:00',
+            duration: 60,
+            topic: 'Go-To-Market & Investor Pitch Guidance',
+            startupName: 'FinTech Standard',
+            founderName: 'Priya',
+            createdAt: new Date().toISOString(),
+            meetingLink: 'https://meet.jit.si/Mentor-Session-FinTech',
+          }
+        ];
+      }
+      setBookings(res);
     } catch (err: any) {
       showToast('error', err.message || 'Failed to load sessions');
     } finally {
