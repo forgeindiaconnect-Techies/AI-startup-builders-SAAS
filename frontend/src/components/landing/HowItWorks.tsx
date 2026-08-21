@@ -20,46 +20,46 @@ const HowItWorks: React.FC = () => {
   ];
 
   return (
-    <section id="how-it-works" className="py-14 md:py-16 bg-[#F8FAFC]">
+    <section id="how-it-works" className="py-20 bg-[#F8FAFC]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div className="text-center max-w-3xl mx-auto mb-8 reveal">
-          <h2 className="text-[#5B21B6] font-bold tracking-wide uppercase text-sm mb-2">Workflow</h2>
-          <h3 className="text-2xl md:text-4xl font-bold text-[#1F2937] mb-3">
+        <div className="text-center max-w-3xl mx-auto mb-12 reveal">
+          <h2 className="text-[#5B21B6] font-bold tracking-wide uppercase text-sm mb-3">Workflow</h2>
+          <h3 className="text-3xl md:text-4xl font-bold text-[#1F2937] mb-4">
             From napkin sketch to <span className="text-[#7C3AED]">Series A</span>
           </h3>
-          <p className="text-[#6B7280] text-base">
+          <p className="text-[#6B7280] text-lg">
             We've streamlined the entire startup journey into a simple, automated workflow that guides you every step of the way.
           </p>
         </div>
 
-        {/* Visual Workflow Image - Height Reduced and Optimized */}
-        <div className="mb-10 reveal delay-200 flex justify-center">
-          <div className="relative w-full max-w-4xl rounded-2xl overflow-hidden shadow-lg border border-gray-200 max-h-[340px] md:max-h-[380px]">
+        {/* Visual Workflow Image - Full Uncropped View */}
+        <div className="mb-16 reveal delay-200 flex justify-center">
+          <div className="relative w-full max-w-5xl rounded-2xl overflow-hidden shadow-xl border border-gray-200">
             <img 
               src="/assets/workflow.png" 
               alt="Platform Workflow" 
-              className="w-full h-full object-cover object-top"
+              className="w-full h-auto"
               onError={(e) => {
-                e.currentTarget.src = "https://placehold.co/1200x500/F3F4F6/1F2937?text=Workflow+Diagram";
+                e.currentTarget.src = "https://placehold.co/1200x600/F3F4F6/1F2937?text=Workflow+Diagram";
               }}
             />
           </div>
         </div>
 
         {/* Steps Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
           {steps.map((step, index) => (
             <div key={index} className={`reveal delay-${(index + 1) * 100} relative`}>
-              <div className={`${boxColors[index].bg} ${boxColors[index].border} rounded-xl p-4 h-full border shadow-sm hover:shadow-md transition-shadow relative z-10`}>
-                <div className={`${boxColors[index].numColor} font-black text-4xl mb-2 -mt-1 -ml-1`}>{step.num}</div>
-                <h4 className="text-base font-bold text-[#1F2937] mb-1">{step.title}</h4>
-                <p className="text-xs text-[#6B7280] leading-relaxed">{step.desc}</p>
+              <div className={`${boxColors[index].bg} ${boxColors[index].border} rounded-xl p-6 h-full border shadow-sm hover:shadow-md transition-shadow relative z-10`}>
+                <div className={`${boxColors[index].numColor} font-black text-5xl mb-4 -mt-2 -ml-2`}>{step.num}</div>
+                <h4 className="text-lg font-bold text-[#1F2937] mb-2">{step.title}</h4>
+                <p className="text-sm text-[#6B7280] leading-relaxed">{step.desc}</p>
               </div>
               
               {/* Connector line */}
               {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-1/2 -right-2 w-4 h-0.5 bg-gray-200 z-0"></div>
+                <div className="hidden lg:block absolute top-1/2 -right-3 w-6 h-0.5 bg-gray-200 z-0"></div>
               )}
             </div>
           ))}
