@@ -1069,7 +1069,7 @@ const Features: React.FC = () => {
             Everything you need to build from <span className="text-[#7C3AED]">idea to funding</span>
           </h3>
           <p className="text-[#6B7280] text-lg">
-            Six powerful AI tools — each with an interactive simulator. Click any card to try it live and see real mock outputs for your startup.
+            Six powerful AI tools designed to help you build, evaluate, and scale your startup idea.
           </p>
         </div>
 
@@ -1092,16 +1092,9 @@ const Features: React.FC = () => {
                   {feature.icon}
                 </div>
                 <h4 className="text-xl font-bold text-[#1F2937] mb-3">{feature.title}</h4>
-                <p className="text-[#6B7280] leading-relaxed text-sm mb-6">
+                <p className="text-[#6B7280] leading-relaxed text-sm">
                   {feature.description}
                 </p>
-              </div>
-              <div 
-                className="flex items-center justify-between text-xs font-bold transition-colors mt-auto pt-2 border-t"
-                style={{ color: feature.themeColor, borderColor: `${feature.themeColor}20` }}
-              >
-                <span>Try Simulator</span>
-                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </div>
             </button>
           ))}
