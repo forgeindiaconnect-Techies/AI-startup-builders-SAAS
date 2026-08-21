@@ -206,6 +206,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
     {
       items: [
         { name: 'Overview',                icon: LayoutDashboard, path: '/dashboard/admin' },
+        { name: 'AI Analytics',            icon: BarChart2,       path: '/dashboard/admin/analytics' },
         { name: 'Manage Users',            icon: Users,           path: '/dashboard/admin/users' },
         { name: 'Investor Management',     icon: TrendingUp,      path: '/dashboard/admin/investors' },
         { name: 'Mentor Management',       icon: Link2,           path: '/dashboard/admin/invite-links' },
@@ -213,7 +214,6 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Approvals',               icon: ShieldCheck,     path: '/dashboard/admin/approvals-hub' },
         { name: 'Doc Verification',        icon: File,            path: '/dashboard/admin/document-verification' },
         { name: 'Subscriptions & Payments',icon: CreditCard,      path: '/dashboard/admin/sub-payments' },
-        { name: 'AI Analytics',            icon: BarChart2,       path: '/dashboard/admin/analytics' },
         { name: 'Mentor Earnings',         icon: IndianRupee,     path: '/dashboard/admin/mentor-earnings' },
         { name: 'Investor Funding',         icon: Wallet,          path: '/dashboard/admin/investor-funding' },
         { name: 'Notifications',           icon: Bell,            path: '/dashboard/admin/notifications' },
