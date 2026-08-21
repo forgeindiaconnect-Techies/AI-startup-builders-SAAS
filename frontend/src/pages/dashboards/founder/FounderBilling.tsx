@@ -169,10 +169,16 @@ const FounderBilling: React.FC = () => {
     return () => clearInterval(interval);
   }, [user?.trialEndDate]);
 
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('premium_startup_builder');
   const currentPlanName: string = user?.plan || 'none';
   const currentStatus: string = user?.subscriptionStatus || 'none';
 
-  const handleUpgradeClick = (plan: typeof PLANS[0]) => {
+  const handleUpgradeClick = (plan: typeof PLANS[0], e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setSelectedPlanId(plan.id);
     if (plan.disabled || currentPlanName === plan.id) return;
     setTargetPlan(plan);
     setTransactionId('');
@@ -359,15 +365,17 @@ const FounderBilling: React.FC = () => {
       <div className="grid md:grid-cols-3 gap-6 mb-12">
         {PLANS.map((plan) => {
           const isCurrent = currentPlanName === plan.id;
+          const isSelected = selectedPlanId === plan.id;
           const Icon = plan.icon;
           return (
             <div
               key={plan.id}
-              className={`group relative bg-white rounded-[20px] flex flex-col transition-all duration-300 ${
-                plan.popular
-                  ? 'border-2 border-amber-400 shadow-xl shadow-amber-500/10'
-                  : 'border border-gray-200 shadow-sm hover:shadow-lg hover:-translate-y-1'
-              } ${isCurrent ? 'ring-2 ring-purple-500 ring-offset-2' : ''}`}
+              onClick={(e) => handleUpgradeClick(plan, e)}
+              className={`group relative bg-white rounded-[20px] flex flex-col transition-all duration-200 cursor-pointer select-none ${
+                isSelected || isCurrent
+                  ? 'border-2 border-purple-600 shadow-xl shadow-purple-500/15 ring-2 ring-purple-500/20'
+                  : 'border border-gray-200 shadow-sm hover:border-purple-300'
+              }`}
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-full tracking-wider shadow-sm text-center whitespace-nowrap">
@@ -415,9 +423,10 @@ const FounderBilling: React.FC = () => {
                 </ul>
 
                 <button
-                  onClick={() => handleUpgradeClick(plan)}
+                  type="button"
+                  onClick={(e) => handleUpgradeClick(plan, e)}
                   disabled={plan.disabled || isCurrent}
-                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
+                  className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-200 focus:outline-none ${
                     isCurrent
                       ? 'bg-gray-100 text-gray-400 cursor-default'
                       : plan.buttonStyle
