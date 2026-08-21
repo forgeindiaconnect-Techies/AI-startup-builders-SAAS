@@ -1166,11 +1166,13 @@ const FounderInvestorAgreement: React.FC = () => {
                 <tr className="bg-gray-50 border-b border-gray-100 text-gray-400 font-bold uppercase text-[10px] tracking-wider">
                   <th className="px-5 py-3.5">Agreement ID</th>
                   <th className="px-5 py-3.5">Startup</th>
+                  <th className="px-5 py-3.5">Category</th>
                   <th className="px-5 py-3.5">Investor</th>
-                  <th className="px-5 py-3.5">Investment Amount</th>
-                  <th className="px-5 py-3.5">Equity %</th>
-                  <th className="px-5 py-3.5">Date Received</th>
+                  <th className="px-5 py-3.5">Amount</th>
+                  <th className="px-5 py-3.5">Equity</th>
+                  <th className="px-5 py-3.5">Version</th>
                   <th className="px-5 py-3.5">Status</th>
+                  <th className="px-5 py-3.5">Funding Lock</th>
                   <th className="px-5 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
@@ -1179,19 +1181,30 @@ const FounderInvestorAgreement: React.FC = () => {
                   const offerId = o.id || o._id || '';
                   const status = o.agreementStatus;
                   const agreementId = o.agreementId || `AGR-2026-${offerId.slice(-4).toUpperCase()}`;
+                  const category = o.businessCategory || o.agreementDetails?.businessCategory || 'FinTech';
+                  const isFullySigned = status === 'Fully Signed';
+                  const isLocked = o.fundingLockStatus === 'locked' || !isFullySigned;
 
                   return (
                     <tr key={offerId} className="hover:bg-gray-50/80 transition-colors">
                       <td className="px-5 py-4 font-mono font-bold text-[#5B21B6] text-[11px]">{agreementId}</td>
                       <td className="px-5 py-4 font-bold text-gray-900">{o.startupName}</td>
+                      <td className="px-5 py-4 font-extrabold text-indigo-600 text-xs">{category}</td>
                       <td className="px-5 py-4">
                         <p className="font-semibold text-gray-700">{o.investorName}</p>
                         <p className="text-[10px] text-gray-400">{o.investorCompany}</p>
                       </td>
                       <td className="px-5 py-4 font-extrabold text-[#5B21B6]">₹{o.offerAmount.toLocaleString('en-IN')}</td>
                       <td className="px-5 py-4 font-bold text-gray-900">{o.equityPercentage}%</td>
-                      <td className="px-5 py-4 text-gray-500">{o.agreementDetails?.agreementDate ? fmtDate(o.agreementDetails.agreementDate) : fmtDate(o.createdAt)}</td>
+                      <td className="px-5 py-4 font-bold text-slate-600">{o.agreementVersion || o.agreementDetails?.version || 'v1.0'}</td>
                       <td className="px-5 py-4">{getStatusBadge(o)}</td>
+                      <td className="px-5 py-4">
+                        <span className={`px-2.5 py-1 rounded-full font-bold text-[10px] ${
+                          isLocked ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                        }`}>
+                          {isLocked ? '🔒 Locked' : '🔓 Unlocked'}
+                        </span>
+                      </td>
                       <td className="px-5 py-4 text-right">
                         <div className="flex gap-2 justify-end">
                           {status === 'Fully Signed' ? (

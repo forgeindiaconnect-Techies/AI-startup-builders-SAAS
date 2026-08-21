@@ -14,6 +14,7 @@ export interface IAgreementDetails {
   equityPercentage: number;
   preMoneyValuation?: number;
   postMoneyValuation?: number;
+  valuation?: number;
   fundingType?: string;
   investmentType?: string;
   expectedFundingDate?: string;
@@ -31,6 +32,26 @@ export interface IAgreementDetails {
   supportingDocuments?: string;
   supportingDocumentsName?: string;
   specialClauses?: string;
+  
+  // Template & Manual Creation fields
+  creationMethod?: 'manual' | 'template';
+  businessCategory?: string;
+  templateId?: string;
+  templateName?: string;
+  templateVersion?: string;
+  agreementType?: string;
+  agreementContent?: string;
+  
+  // Template Specific Parameters
+  valuationCap?: number;
+  discount?: number;
+  interestRate?: number;
+  maturityDate?: string;
+  conversionEvent?: string;
+  proRataRights?: string;
+  proposedClosingDate?: string;
+  shareTerms?: string;
+
   version: string;
   createdAt: string;
   createdBy: string;
@@ -108,6 +129,12 @@ export interface FundingOffer {
   };
   agreementId?: string;
   agreementVersion?: string;
+  creationMethod?: 'manual' | 'template';
+  businessCategory?: string;
+  agreementType?: string;
+  templateId?: string;
+  templateVersion?: string;
+  fundingLockStatus?: 'locked' | 'unlocked';
   investorSignedAt?: string;
   investorSignatureName?: string;
   investorSignatureFontIndex?: number;
