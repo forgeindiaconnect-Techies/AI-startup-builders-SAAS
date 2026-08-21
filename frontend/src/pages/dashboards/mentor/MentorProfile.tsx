@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Save, CheckCircle2, Clock, ShieldAlert, Lock, Globe, Briefcase, MapPin, Star, Loader2 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { API_URL } from '../../../config/api';
+import { saveUserProfileOverride } from '../../../utils/localStorageHelper';
 
 export interface MentorProfileData {
   id: string;
@@ -187,6 +188,20 @@ const MentorProfile: React.FC = () => {
     }
 
     try {
+      const targetEmail = user?.email || form.email || '';
+      saveUserProfileOverride(targetEmail, {
+        fullName: form.name,
+        name: form.name,
+        mobile: form.phone,
+        phone: form.phone,
+        location: form.location,
+        expertise: form.expertise,
+        experienceYears: form.experienceYears,
+        linkedin: form.linkedin,
+        bio: form.bio,
+        updatedAt: new Date().toISOString()
+      });
+
       const stored = localStorage.getItem('ai_startup_builder_mentor_profiles');
       let profiles: any[] = [];
       if (stored) {
@@ -202,6 +217,7 @@ const MentorProfile: React.FC = () => {
 
       localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(profiles));
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('user_profile_updated'));
       window.dispatchEvent(new Event('mentor_profile_updated'));
       setSaving(false);
       window.alert("✅ Profile settings saved successfully! Your profile details are now visible to the Admin Dashboard.");

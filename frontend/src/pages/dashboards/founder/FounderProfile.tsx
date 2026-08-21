@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Save, CheckCircle2, Clock, ShieldAlert, Mail, Phone, User, Pencil } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
-import { addNotification } from '../../../utils/localStorageHelper';
+import { addNotification, saveUserProfileOverride } from '../../../utils/localStorageHelper';
+import { API_URL } from '../../../config/api';
 
 const FounderProfile: React.FC = () => {
-  const { user } = useAuth();
+  const { user, checkAuth, getToken } = useAuth();
 
   const [form, setForm] = useState({
     name: '',
@@ -62,35 +63,61 @@ const FounderProfile: React.FC = () => {
     );
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
+      // 1. Save to central user overrides map for Admin Users dashboard
+      const targetEmail = form.email || user?.email || '';
+      saveUserProfileOverride(targetEmail, {
+        fullName: form.name,
+        name: form.name,
+        email: form.email,
+        mobile: form.phone,
+        phone: form.phone,
+        updatedAt: new Date().toISOString()
+      });
+
+      // 2. Try persisting to backend API
+      const token = getToken ? getToken() : null;
+      if (token) {
+        try {
+          await fetch(`${API_URL}/auth/me`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+              fullName: form.name,
+              mobile: form.phone,
+              email: form.email
+            })
+          });
+          if (checkAuth) await checkAuth();
+        } catch (err) {}
+      }
+
+      // 3. Save to founder profiles key in localStorage
       const key = `ai_startup_builder_founder_profiles`;
       const stored = localStorage.getItem(key);
       let profiles: any[] = stored ? JSON.parse(stored) : [];
       const myId = user?.id || '';
       const updatedEntry = { ...form, id: myId, updatedAt: new Date().toISOString() };
-      const idx = profiles.findIndex((p: any) => p.id === myId);
+      const idx = profiles.findIndex((p: any) => p.id === myId || p.email === targetEmail);
       if (idx >= 0) profiles[idx] = { ...profiles[idx], ...updatedEntry };
       else profiles.push(updatedEntry);
       localStorage.setItem(key, JSON.stringify(profiles));
+
       const updatedNotifs = addNotification({
         id: `notification_${Date.now()}`,
         userId: 'admin',
-        title: 'Profile Updated',
-        message: `${form.name || 'A user'} updated their profile. Mobile Number: ${form.phone || '—'} | Email: ${form.email || '—'}`,
+        title: 'Founder Profile Updated',
+        message: `${form.name || 'Founder'} updated their profile. Mobile: ${form.phone || '—'} | Email: ${form.email || '—'}`,
         type: 'profile_update',
         isRead: false,
-        actionUrl: `/dashboard/admin/notifications`,
+        actionUrl: `/dashboard/admin/users`,
         createdAt: new Date().toISOString()
       });
-      // Sync every notification consumer (ChatContext, FundingContext, notification pages)
-      // with a real StorageEvent so the stale in-memory state cannot wipe this notification.
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'ai_startup_builder_notifications',
-        newValue: JSON.stringify(updatedNotifs),
-      }));
+
       window.dispatchEvent(new Event('storage'));
-      window.alert('Profile settings saved successfully! Your details are now visible to the Admin Dashboard.');
+      window.dispatchEvent(new Event('user_profile_updated'));
+      window.alert('Profile settings saved successfully! Your details are now updated in the Admin Dashboard.');
       setIsEditing(false);
     } catch (e) {
       window.alert('Error saving profile settings.');

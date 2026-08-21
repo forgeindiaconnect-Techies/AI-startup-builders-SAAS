@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, UserRound, ShieldCheck, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import { saveUserProfileOverride } from '../../../utils/localStorageHelper';
 
 export interface InvestorProfileData {
   id: string;
@@ -13,8 +14,9 @@ export interface InvestorProfileData {
   sectorsOfInterest: string;
   investmentThesis: string;
   verificationStatus: 'pending' | 'Verified' | 'Rejected';
+  kycDocumentName?: string;
+  kycDocumentBase64?: string;
 }
-export const InvestorProfileData = {};
 
 const defaultProfile: InvestorProfileData = {
   id: '',
@@ -68,6 +70,21 @@ const InvestorProfileDetails: React.FC = () => {
 
   const handleSave = () => {
     try {
+      const targetEmail = profile.email || user?.email || '';
+      saveUserProfileOverride(targetEmail, {
+        fullName: profile.investorName,
+        name: profile.investorName,
+        email: profile.email,
+        mobile: profile.phone,
+        phone: profile.phone,
+        location: profile.address,
+        investorType: profile.investorType,
+        investmentRange: profile.typicalCheckSize,
+        preferredIndustries: profile.sectorsOfInterest,
+        investmentThesis: profile.investmentThesis,
+        updatedAt: new Date().toISOString()
+      });
+
       const stored = localStorage.getItem('ai_startup_builder_investor_profiles');
       let profiles: InvestorProfileData[] = [];
       if (stored) {
@@ -82,6 +99,7 @@ const InvestorProfileDetails: React.FC = () => {
       }
       localStorage.setItem('ai_startup_builder_investor_profiles', JSON.stringify(profiles));
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('user_profile_updated'));
       window.dispatchEvent(new Event('investor_kyc_updated'));
       window.alert("✅ Investor Profile & KYC details saved successfully! All details and documents are synced with Admin Investor Approvals.");
     } catch (e) {

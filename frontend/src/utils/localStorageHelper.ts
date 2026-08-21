@@ -535,6 +535,34 @@ export const addNotification = async (notification: any) => {
   return notification;
 };
 
+export const USER_OVERRIDES_KEY = 'ai_startup_builder_user_overrides';
+
+export const saveUserProfileOverride = (email: string, updates: Record<string, any>) => {
+  if (!email) return;
+  const cleanEmail = email.trim().toLowerCase();
+  try {
+    const stored = JSON.parse(localStorage.getItem(USER_OVERRIDES_KEY) || '{}');
+    stored[cleanEmail] = {
+      ...(stored[cleanEmail] || {}),
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(USER_OVERRIDES_KEY, JSON.stringify(stored));
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('user_profile_updated'));
+  } catch (err) {
+    console.error('Error saving user profile override', err);
+  }
+};
+
+export const getUserProfileOverrides = (): Record<string, any> => {
+  try {
+    return JSON.parse(localStorage.getItem(USER_OVERRIDES_KEY) || '{}');
+  } catch {
+    return {};
+  }
+};
+
 export const getUsers = async (): Promise<any[]> => {
   try {
     const res = await fetch(`${API_URL}/auth/users`, { headers: authHeaders() });

@@ -85,6 +85,81 @@ const getUserOverridesMap = (): Record<string, { status?: string; approvalStatus
   }
 };
 
+const getCombinedProfileOverride = (emailKey: string, uId?: string) => {
+  let combined: any = {};
+  
+  // 1. Central user overrides
+  try {
+    const overrides = JSON.parse(localStorage.getItem(USER_OVERRIDES_KEY) || '{}');
+    if (emailKey && overrides[emailKey]) {
+      combined = { ...combined, ...overrides[emailKey] };
+    }
+  } catch {}
+
+  // 2. Founder profiles
+  try {
+    const founderProfiles: any[] = JSON.parse(localStorage.getItem('ai_startup_builder_founder_profiles') || '[]');
+    const found = founderProfiles.find((p: any) => p.id === uId || (p.email && p.email.trim().toLowerCase() === emailKey));
+    if (found) {
+      if (found.name || found.fullName) {
+        combined.fullName = found.name || found.fullName;
+        combined.name = found.name || found.fullName;
+      }
+      if (found.email) combined.email = found.email;
+      if (found.phone || found.mobile) {
+        combined.mobile = found.phone || found.mobile;
+        combined.phone = found.phone || found.mobile;
+      }
+    }
+  } catch {}
+
+  // 3. Mentor profiles
+  try {
+    const mentorProfiles: any[] = JSON.parse(localStorage.getItem('ai_startup_builder_mentor_profiles') || '[]');
+    const found = mentorProfiles.find((p: any) => p.id === uId || (p.email && p.email.trim().toLowerCase() === emailKey) || (p.name && p.name.trim().toLowerCase() === emailKey));
+    if (found) {
+      if (found.name || found.fullName) {
+        combined.fullName = found.name || found.fullName;
+        combined.name = found.name || found.fullName;
+      }
+      if (found.email) combined.email = found.email;
+      if (found.phone || found.mobile) {
+        combined.mobile = found.phone || found.mobile;
+        combined.phone = found.phone || found.mobile;
+      }
+      if (found.location) combined.location = found.location;
+      if (found.expertise) combined.expertise = found.expertise;
+      if (found.experienceYears) combined.experienceYears = found.experienceYears;
+      if (found.linkedin) combined.linkedin = found.linkedin;
+      if (found.bio) combined.bio = found.bio;
+    }
+  } catch {}
+
+  // 4. Investor profiles
+  try {
+    const investorProfiles: any[] = JSON.parse(localStorage.getItem('ai_startup_builder_investor_profiles') || '[]');
+    const found = investorProfiles.find((p: any) => p.id === uId || (p.email && p.email.trim().toLowerCase() === emailKey));
+    if (found) {
+      if (found.investorName || found.name || found.fullName) {
+        combined.fullName = found.investorName || found.name || found.fullName;
+        combined.name = found.investorName || found.name || found.fullName;
+      }
+      if (found.email) combined.email = found.email;
+      if (found.phone || found.mobile) {
+        combined.mobile = found.phone || found.mobile;
+        combined.phone = found.phone || found.mobile;
+      }
+      if (found.address || found.location) combined.location = found.address || found.location;
+      if (found.investorType) combined.investorType = found.investorType;
+      if (found.typicalCheckSize) combined.investmentRange = found.typicalCheckSize;
+      if (found.sectorsOfInterest) combined.preferredIndustries = found.sectorsOfInterest;
+      if (found.investmentThesis) combined.investmentThesis = found.investmentThesis;
+    }
+  } catch {}
+
+  return combined;
+};
+
 const AdminUsers: React.FC = () => {
   const { user: currentUser, getAllUsers, deleteUser, approveUser, rejectUser, updateUserStatus, updateUserApproval, refreshUsers, getTokenRole } = useAuth();
   const [search, setSearch] = useState('');
@@ -179,33 +254,38 @@ const AdminUsers: React.FC = () => {
       const appData = findAppData(emailKey, userName);
       const leadData = findLeadData(emailKey, userName);
       const userOverride = overrides[emailKey] || {};
+      const profileOverride = getCombinedProfileOverride(emailKey, u.id || u._id);
 
       const initialStatus = u.status || 'active';
       const initialApproval = u.approvalStatus || (appData.status === 'APPROVED' ? 'approved' : appData.status === 'REJECTED' ? 'rejected' : 'approved');
 
       return {
         ...u,
-        status: userOverride.status || initialStatus,
-        approvalStatus: userOverride.approvalStatus || initialApproval,
-        mobile: u.mobile || appData.mobile || leadData.phone || '',
-        location: u.location || appData.location || leadData.location || '',
-        companyName: u.companyName || appData.companyName || leadData.companyName || '',
-        designation: u.designation || appData.designation || leadData.designation || '',
-        investorType: u.investorType || appData.investorType || appData.investorCategory || leadData.investorType || '',
-        experienceYears: u.experienceYears || appData.experienceYears || leadData.experienceYears || '',
-        linkedin: u.linkedin || appData.linkedinUrl || appData.linkedin || leadData.linkedinUrl || '',
-        website: u.website || appData.website || leadData.website || '',
-        bio: u.bio || appData.bio || leadData.adminNotes || '',
-        preferredIndustries: (u.preferredIndustries && u.preferredIndustries.length > 0) ? u.preferredIndustries : (appData.preferredIndustries || leadData.interestedIndustries || []),
+        name: profileOverride.fullName || profileOverride.name || u.name || u.fullName,
+        fullName: profileOverride.fullName || profileOverride.name || u.fullName || u.name,
+        email: profileOverride.email || u.email,
+        status: userOverride.status || profileOverride.status || initialStatus,
+        approvalStatus: userOverride.approvalStatus || profileOverride.approvalStatus || initialApproval,
+        mobile: profileOverride.mobile || profileOverride.phone || u.mobile || u.phone || appData.mobile || leadData.phone || '',
+        phone: profileOverride.phone || profileOverride.mobile || u.phone || u.mobile || appData.mobile || leadData.phone || '',
+        location: profileOverride.location || u.location || appData.location || leadData.location || '',
+        companyName: profileOverride.companyName || u.companyName || appData.companyName || leadData.companyName || '',
+        designation: profileOverride.designation || u.designation || appData.designation || leadData.designation || '',
+        investorType: profileOverride.investorType || u.investorType || appData.investorType || appData.investorCategory || leadData.investorType || '',
+        experienceYears: profileOverride.experienceYears || u.experienceYears || appData.experienceYears || leadData.experienceYears || '',
+        linkedin: profileOverride.linkedin || u.linkedin || appData.linkedinUrl || appData.linkedin || leadData.linkedinUrl || '',
+        website: profileOverride.website || u.website || appData.website || leadData.website || '',
+        bio: profileOverride.bio || u.bio || appData.bio || leadData.adminNotes || '',
+        preferredIndustries: (profileOverride.preferredIndustries) ? profileOverride.preferredIndustries : ((u.preferredIndustries && u.preferredIndustries.length > 0) ? u.preferredIndustries : (appData.preferredIndustries || leadData.interestedIndustries || [])),
         investmentStages: (u.investmentStages && u.investmentStages.length > 0) ? u.investmentStages : (appData.investmentStages || leadData.investmentStage || []),
-        investmentRange: u.investmentRange || appData.investmentRange || leadData.investmentRange || '',
+        investmentRange: profileOverride.investmentRange || u.investmentRange || appData.investmentRange || leadData.investmentRange || '',
         preferredLocation: u.preferredLocation || appData.preferredLocation || '',
         investmentFocus: u.investmentFocus || appData.investmentFocus || '',
         previousExperience: u.previousExperience || appData.previousExperience || '',
         startupsInvestedCount: u.startupsInvestedCount || appData.startupsInvestedCount || '',
         portfolioCompanies: u.portfolioCompanies || appData.portfolioCompanies || '',
         notableInvestments: u.notableInvestments || appData.notableInvestments || '',
-        areasOfExpertise: u.areasOfExpertise || appData.areasOfExpertise || '',
+        areasOfExpertise: profileOverride.expertise || u.areasOfExpertise || appData.areasOfExpertise || '',
         kycDocUrl: u.kycDocUrl || appData.kycDocUrl || '',
         kycDocName: u.kycDocName || appData.kycDocName || '',
         panTaxDocUrl: u.panTaxDocUrl || appData.panTaxDocUrl || '',
@@ -323,6 +403,7 @@ const AdminUsers: React.FC = () => {
     loadUsers(true);
     const handleStorageChange = () => loadUsers(true);
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('user_profile_updated', handleStorageChange);
     window.addEventListener('investor_invites_updated', handleStorageChange);
 
     if (getTokenRole() !== 'admin') return;
@@ -330,6 +411,7 @@ const AdminUsers: React.FC = () => {
     return () => {
       clearInterval(interval);
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('user_profile_updated', handleStorageChange);
       window.removeEventListener('investor_invites_updated', handleStorageChange);
     };
   }, []);
