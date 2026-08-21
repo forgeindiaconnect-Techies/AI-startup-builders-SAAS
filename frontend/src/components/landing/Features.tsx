@@ -1074,84 +1074,72 @@ const Features: React.FC = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <button 
-              key={index} 
-              type="button"
-              onClick={(e) => handleCardClick(index, e)}
-              className="text-left bg-white border-2 hover:shadow-lg hover:-translate-y-1 rounded-2xl p-8 transition-all duration-300 group flex flex-col justify-between h-full cursor-pointer"
-              style={{ borderColor: `${feature.themeColor}20` }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = `${feature.themeColor}60`; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = `${feature.themeColor}20`; }}
-            >
-              <div>
-                <div 
-                  className="w-14 h-14 rounded-xl border shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300"
-                  style={{ backgroundColor: `${feature.themeColor}15`, borderColor: `${feature.themeColor}30` }}
-                >
-                  {feature.icon}
+          {features.map((feature, index) => {
+            const isSelected = selectedFeature === index;
+            return (
+              <button 
+                key={index} 
+                type="button"
+                onClick={(e) => handleCardClick(index, e)}
+                className={`text-left bg-white border-2 rounded-2xl p-8 transition-colors duration-200 group flex flex-col justify-between h-full cursor-pointer select-none ${
+                  isSelected 
+                    ? 'shadow-md ring-2 ring-purple-500/20' 
+                    : 'shadow-sm hover:shadow-md'
+                }`}
+                style={{ borderColor: isSelected ? feature.themeColor : `${feature.themeColor}30` }}
+              >
+                <div>
+                  <div 
+                    className="w-14 h-14 rounded-xl border shadow-sm flex items-center justify-center mb-6"
+                    style={{ backgroundColor: `${feature.themeColor}15`, borderColor: `${feature.themeColor}30` }}
+                  >
+                    {feature.icon}
+                  </div>
+                  <h4 className="text-xl font-bold text-[#1F2937] mb-3">{feature.title}</h4>
+                  <p className="text-[#6B7280] leading-relaxed text-sm">
+                    {feature.description}
+                  </p>
                 </div>
-                <h4 className="text-xl font-bold text-[#1F2937] mb-3">{feature.title}</h4>
-                <p className="text-[#6B7280] leading-relaxed text-sm">
-                  {feature.description}
-                </p>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
-      </div>
 
-      {/* Dynamic Overlay Modal with "Super Model" design combinations */}
-      {selectedFeature !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in-scale">
-          <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-[28px] shadow-2xl overflow-hidden flex flex-col lg:flex-row text-white max-h-[90vh] lg:max-h-[85vh]">
-            
-            {/* Close button */}
-            <button 
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                setSelectedFeature(null);
-              }}
-              className="absolute top-4 right-4 z-20 p-2 bg-slate-950/80 hover:bg-slate-850 text-slate-400 hover:text-white rounded-full border border-slate-800 transition-colors"
-            >
-              <X size={16} />
-            </button>
-
-            {/* Left Panel: Glowing gradient thematic banner */}
-            <div className={`lg:w-1/3 bg-gradient-to-br ${features[selectedFeature].gradient} p-8 flex flex-col justify-between relative overflow-hidden shrink-0`}>
-              {/* Background ambient lighting */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-              <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/20 rounded-full blur-2xl -ml-10 -mb-10"></div>
-
-              <div className="space-y-4 relative z-10">
-                <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 text-white px-2.5 py-1 rounded-md w-fit block backdrop-blur-sm">
-                  {features[selectedFeature].badge}
-                </span>
-                <div className="w-14 h-14 bg-white/10 border border-white/20 rounded-2xl flex items-center justify-center text-white shadow-lg backdrop-blur-sm">
+        {/* Static Inline Interactive Feature Panel directly on the Landing Page */}
+        {selectedFeature !== null && (
+          <div id="static-feature-panel" className="mt-12 bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 md:p-10 text-white shadow-2xl animate-fade-in-up">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-6 mb-8">
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white border shadow-md"
+                  style={{ backgroundColor: `${features[selectedFeature].themeColor}20`, borderColor: `${features[selectedFeature].themeColor}40` }}
+                >
                   {features[selectedFeature].icon}
                 </div>
-                <h3 className="text-2xl font-black leading-tight text-white">{features[selectedFeature].title}</h3>
-              </div>
-
-              <div className="space-y-3 relative z-10 pt-8 lg:pt-0">
-                <p className="text-white/80 text-xs leading-relaxed">
-                  {features[selectedFeature].description}
-                </p>
-                <div className="text-[10px] text-white/50 font-bold uppercase tracking-wider">
-                  Interactive Platform Sandbox
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider bg-white/10 text-slate-300 px-2.5 py-0.5 rounded-md">
+                    {features[selectedFeature].badge} • Interactive Static Feature
+                  </span>
+                  <h3 className="text-2xl font-black text-white mt-0.5">{features[selectedFeature].title}</h3>
                 </div>
               </div>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setSelectedFeature(null);
+                }}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <X size={14} /> Close Section
+              </button>
             </div>
 
-            {/* Right Panel: Scrollable main simulator panel */}
-            <div className="flex-1 bg-slate-900 p-6 md:p-8 overflow-y-auto max-h-[60vh] lg:max-h-none">
-              {renderModalContent()}
-            </div>
-
+            {renderModalContent()}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </section>
   );
 };
