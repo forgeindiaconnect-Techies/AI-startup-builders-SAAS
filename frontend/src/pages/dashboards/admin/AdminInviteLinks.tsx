@@ -313,8 +313,8 @@ const AdminInviteLinks: React.FC = () => {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mentor Invite Links</h1>
-          <p className="text-gray-500 mt-1">Create and manage invite links for mentors. Mentors cannot sign up directly.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Mentor Management</h1>
+          <p className="text-gray-500 mt-1">Create and manage invite links, onboarding, and approvals for mentors.</p>
         </div>
         <div className="flex gap-2">
           <button

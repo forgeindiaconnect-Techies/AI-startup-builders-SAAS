@@ -206,7 +206,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Overview',                icon: LayoutDashboard, path: '/dashboard/admin' },
         { name: 'Manage Users',            icon: Users,           path: '/dashboard/admin/users' },
         { name: 'Investor Management',     icon: TrendingUp,      path: '/dashboard/admin/investors' },
-        { name: 'Invite Links',            icon: Link2,           path: '/dashboard/admin/invite-links' },
+        { name: 'Mentor Management',       icon: Link2,           path: '/dashboard/admin/invite-links' },
         { name: 'Startup Ideas',           icon: Rocket,          path: '/dashboard/admin/startups' },
         { name: 'Approvals',               icon: ShieldCheck,     path: '/dashboard/admin/approvals-hub' },
         { name: 'Doc Verification',        icon: File,            path: '/dashboard/admin/document-verification' },
