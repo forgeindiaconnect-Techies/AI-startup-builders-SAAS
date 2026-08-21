@@ -1074,71 +1074,27 @@ const Features: React.FC = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => {
-            const isSelected = selectedFeature === index;
-            return (
-              <button 
-                key={index} 
-                type="button"
-                onClick={(e) => handleCardClick(index, e)}
-                className={`text-left bg-white border-2 rounded-2xl p-8 transition-colors duration-200 group flex flex-col justify-between h-full cursor-pointer select-none ${
-                  isSelected 
-                    ? 'shadow-md ring-2 ring-purple-500/20' 
-                    : 'shadow-sm hover:shadow-md'
-                }`}
-                style={{ borderColor: isSelected ? feature.themeColor : `${feature.themeColor}30` }}
-              >
-                <div>
-                  <div 
-                    className="w-14 h-14 rounded-xl border shadow-sm flex items-center justify-center mb-6"
-                    style={{ backgroundColor: `${feature.themeColor}15`, borderColor: `${feature.themeColor}30` }}
-                  >
-                    {feature.icon}
-                  </div>
-                  <h4 className="text-xl font-bold text-[#1F2937] mb-3">{feature.title}</h4>
-                  <p className="text-[#6B7280] leading-relaxed text-sm">
-                    {feature.description}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Static Inline Interactive Feature Panel directly on the Landing Page */}
-        {selectedFeature !== null && (
-          <div id="static-feature-panel" className="mt-12 bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 md:p-10 text-white shadow-2xl animate-fade-in-up">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-6 mb-8">
-              <div className="flex items-center gap-3">
+          {features.map((feature, index) => (
+            <div 
+              key={index} 
+              className="text-left bg-white border-2 rounded-2xl p-8 transition-colors duration-200 flex flex-col justify-between h-full shadow-sm hover:shadow-md"
+              style={{ borderColor: `${feature.themeColor}30` }}
+            >
+              <div>
                 <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white border shadow-md"
-                  style={{ backgroundColor: `${features[selectedFeature].themeColor}20`, borderColor: `${features[selectedFeature].themeColor}40` }}
+                  className="w-14 h-14 rounded-xl border shadow-sm flex items-center justify-center mb-6"
+                  style={{ backgroundColor: `${feature.themeColor}15`, borderColor: `${feature.themeColor}30` }}
                 >
-                  {features[selectedFeature].icon}
+                  {feature.icon}
                 </div>
-                <div>
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-white/10 text-slate-300 px-2.5 py-0.5 rounded-md">
-                    {features[selectedFeature].badge} • Interactive Static Feature
-                  </span>
-                  <h3 className="text-2xl font-black text-white mt-0.5">{features[selectedFeature].title}</h3>
-                </div>
+                <h4 className="text-xl font-bold text-[#1F2937] mb-3">{feature.title}</h4>
+                <p className="text-[#6B7280] leading-relaxed text-sm">
+                  {feature.description}
+                </p>
               </div>
-
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setSelectedFeature(null);
-                }}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold border border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
-              >
-                <X size={14} /> Close Section
-              </button>
             </div>
-
-            {renderModalContent()}
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </section>
   );
