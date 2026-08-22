@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell, CheckCheck, Star, Rocket, Info, X, Calendar, ShieldCheck,
-  Tag, ChevronRight, CheckCircle2, Mail, LogIn, User, Megaphone, IndianRupee, MessageSquare, ExternalLink
+  Tag, ChevronRight, CheckCircle2, User, Megaphone, IndianRupee, MessageSquare, ExternalLink
 } from 'lucide-react';
 import { getNotifications } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
@@ -20,6 +20,8 @@ type Notif = {
   type?: string;
   actionUrl?: string;
   targetRole?: string;
+  userId?: string;
+  userEmail?: string;
 };
 
 const initialNotifs: Notif[] = [];
@@ -65,17 +67,50 @@ const formatFullDate = (dateStr: string) => {
 
 // Helper to determine recipient role category for notification item
 const getTargetRole = (n: any): 'founder' | 'mentor' | 'investor' | 'admin' => {
-  if (n.targetRole) return n.targetRole;
-  if (n.role) return n.role;
-  const text = `${n.title || ''} ${n.desc || ''} ${n.message || ''}`.toLowerCase();
+  if (n.targetRole) {
+    const r = String(n.targetRole).toLowerCase();
+    if (r === 'founder' || r === 'investor' || r === 'mentor' || r === 'admin') return r as any;
+  }
+  if (n.role) {
+    const r = String(n.role).toLowerCase();
+    if (r === 'founder' || r === 'investor' || r === 'mentor' || r === 'admin') return r as any;
+  }
+  const text = `${n.title || ''} ${n.desc || ''} ${n.message || ''} ${n.actionUrl || ''}`.toLowerCase();
   
-  if (text.includes('investor') || text.includes('funding offer') || text.includes('term sheet') || text.includes('check size') || text.includes('kyc')) {
+  if (
+    text.includes('/investor') ||
+    text.includes('investor') ||
+    text.includes('investment') ||
+    text.includes('funding offer') ||
+    text.includes('term sheet') ||
+    text.includes('check size') ||
+    text.includes('investor kyc') ||
+    text.includes('deal flow')
+  ) {
     return 'investor';
   }
-  if (text.includes('mentor') || text.includes('withdrawal') || text.includes('session review') || text.includes('mentoring')) {
+  if (
+    text.includes('/mentor') ||
+    text.includes('mentor') ||
+    text.includes('mentoring') ||
+    text.includes('session review') ||
+    text.includes('mentor feedback') ||
+    text.includes('mentor review') ||
+    text.includes('withdrawal')
+  ) {
     return 'mentor';
   }
-  if (text.includes('founder') || text.includes('startup plan') || text.includes('idea submitted') || text.includes('ai builder')) {
+  if (
+    text.includes('/founder') ||
+    text.includes('founder') ||
+    text.includes('startup plan') ||
+    text.includes('idea submitted') ||
+    text.includes('ai builder') ||
+    text.includes('mvp planner') ||
+    text.includes('financial plan') ||
+    text.includes('branding') ||
+    text.includes('pitch deck')
+  ) {
     return 'founder';
   }
   return 'founder';
@@ -85,59 +120,76 @@ const FounderNotifications: React.FC = () => {
   const { user: authUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [allNotifs, setAllNotifs] = useState<Notif[]>([]);
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [selectedNotif, setSelectedNotif] = useState<Notif | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'founder' | 'mentor' | 'investor'>('all');
 
-  const formatDate = (dateStr: string | null | undefined) => {
-    if (!dateStr) return '—';
-    try {
-      return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    } catch { return '—'; }
-  };
+  const path = location.pathname.toLowerCase();
+
+  // Detect current role view context from route or auth role
+  let currentRole: 'founder' | 'investor' | 'mentor' | 'admin' = 'founder';
+  if (path.includes('/dashboard/admin')) {
+    currentRole = 'admin';
+  } else if (path.includes('/dashboard/investor')) {
+    currentRole = 'investor';
+  } else if (path.includes('/dashboard/mentor')) {
+    currentRole = 'mentor';
+  } else if (path.includes('/dashboard/founder')) {
+    currentRole = 'founder';
+  } else if (authUser?.role) {
+    currentRole = authUser.role.toLowerCase() as any;
+  }
+
+  const isAdminView = currentRole === 'admin';
 
   useEffect(() => {
     if (!authUser) return;
 
     const load = async () => {
-      const userRole = (authUser.role || 'founder').toLowerCase();
       const userId = (authUser.id || authUser._id || '').toLowerCase();
       const userEmail = (authUser.email || '').toLowerCase();
 
-      const local = (await getNotifications())
-        .filter((n: any) => {
-          // If explicitly addressed to admin
-          if (userRole === 'admin') return true;
+      const raw = await getNotifications();
 
-          // If addressed specifically by userId or userEmail
-          if (n.userId && (n.userId.toLowerCase() === userId || n.userId.toLowerCase() === userEmail)) return true;
-          if (n.userEmail && n.userEmail.toLowerCase() === userEmail) return true;
-
-          // If matching user role or generic role target
-          const target = getTargetRole(n);
-          if (target === userRole) return true;
-          if (!n.userId || n.userId === 'all') return true;
-
-          return false;
-        })
-        .map((n: any) => ({
-          id: n.id || Date.now(),
-          title: n.title,
-          desc: n.message || n.desc,
+      const mapped: Notif[] = raw.map((n: any) => {
+        const targetRole = getTargetRole(n);
+        return {
+          id: n.id || Date.now() + Math.random(),
+          title: n.title || 'Notification',
+          desc: n.message || n.desc || '',
           time: n.createdAt ? formatRelativeTime(n.createdAt) : (n.time || 'Just now'),
           fullTime: n.createdAt ? formatFullDate(n.createdAt) : (n.time || 'Just now'),
           read: n.isRead !== undefined ? n.isRead : !n.unread,
           type: n.type,
           actionUrl: n.actionUrl,
-          targetRole: getTargetRole(n),
+          targetRole,
+          userId: n.userId ? String(n.userId).toLowerCase() : undefined,
+          userEmail: n.userEmail ? String(n.userEmail).toLowerCase() : undefined,
           ...getTypeStyles(n.type)
-        }));
+        };
+      });
 
-      const combined = [...local, ...initialNotifs];
-      setNotifs(combined);
+      const combined = [...mapped, ...initialNotifs];
+      setAllNotifs(combined);
+
+      // Filter notifications strictly by current dashboard role (unless Admin view)
+      if (!isAdminView) {
+        const roleFiltered = combined.filter((n: Notif) => {
+          // Addressed to specific user
+          if (n.userId && (n.userId === userId || n.userId === userEmail)) return true;
+          if (n.userEmail && n.userEmail === userEmail) return true;
+
+          // Strictly match target role
+          return n.targetRole === currentRole;
+        });
+        setNotifs(roleFiltered);
+      } else {
+        setNotifs(combined);
+      }
 
       if (location.state && location.state.selectedNotifId) {
-        const found = combined.find(x => x.id === location.state.selectedNotifId);
+        const found = combined.find((x: Notif) => x.id === location.state.selectedNotifId);
         if (found) {
           setSelectedNotif(found);
           markOne(found.id);
@@ -152,112 +204,147 @@ const FounderNotifications: React.FC = () => {
       window.removeEventListener('storage', load);
       window.removeEventListener('notifications_updated', load);
     };
-  }, [authUser]);
+  }, [authUser, location.pathname]);
 
   const markAll = () => {
     setNotifs(n => n.map(x => ({ ...x, read: true })));
+    setAllNotifs(n => n.map(x => ({ ...x, read: true })));
   };
 
   const markOne = (id: string | number) => {
     setNotifs(n => n.map(x => x.id === id ? { ...x, read: true } : x));
+    setAllNotifs(n => n.map(x => x.id === id ? { ...x, read: true } : x));
   };
 
   const unread = notifs.filter(n => !n.read).length;
 
-  const founderCount = notifs.filter(n => (n.targetRole || getTargetRole(n)) === 'founder').length;
-  const mentorCount = notifs.filter(n => (n.targetRole || getTargetRole(n)) === 'mentor').length;
-  const investorCount = notifs.filter(n => (n.targetRole || getTargetRole(n)) === 'investor').length;
+  const founderCount = allNotifs.filter(n => n.targetRole === 'founder').length;
+  const mentorCount = allNotifs.filter(n => n.targetRole === 'mentor').length;
+  const investorCount = allNotifs.filter(n => n.targetRole === 'investor').length;
 
-  const filteredNotifs = notifs.filter(n => {
-    if (activeTab === 'all') return true;
-    const category = n.targetRole || getTargetRole(n);
-    return category === activeTab;
-  });
+  const filteredNotifs = isAdminView
+    ? allNotifs.filter(n => {
+        if (activeTab === 'all') return true;
+        return n.targetRole === activeTab;
+      })
+    : notifs;
+
+  const getPageHeaderTitle = () => {
+    switch (currentRole) {
+      case 'admin':    return 'Admin Notification Hub';
+      case 'investor': return 'Investor Notifications';
+      case 'mentor':   return 'Mentor Notifications';
+      case 'founder':  return 'Founder Notifications';
+      default:         return 'Notifications';
+    }
+  };
+
+  const getPageHeaderDesc = () => {
+    switch (currentRole) {
+      case 'admin':    return 'Manage and monitor all platform activity notifications across Founders, Mentors, and Investors.';
+      case 'investor': return 'Stay updated with new startup dealflow, pitch requests, term sheets, and agreements.';
+      case 'mentor':   return 'Stay updated with session requests, startup review requests, and founder feedback.';
+      case 'founder':  return 'Stay updated with your startup milestones, mentor feedback, and investment offers.';
+      default:         return 'Stay updated with your latest activity and platform alerts.';
+    }
+  };
 
   return (
-    <div className="animate-fade-in-up pb-10">
+    <div className="animate-fade-in-up pb-10 font-sans">
 
       {/* ── Page Header ── */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-          <p className="text-gray-500 mt-0.5 text-sm">Stay updated with your latest activity and platform alerts.</p>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl font-extrabold text-gray-900">{getPageHeaderTitle()}</h1>
+            {!isAdminView && (
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${
+                currentRole === 'investor' ? 'bg-emerald-100 text-emerald-700' :
+                currentRole === 'mentor' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+              }`}>
+                {currentRole}
+              </span>
+            )}
+          </div>
+          <p className="text-gray-500 text-sm font-medium">{getPageHeaderDesc()}</p>
         </div>
         {unread > 0 && (
           <button
             onClick={markAll}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-xs cursor-pointer shrink-0"
           >
             <CheckCheck size={16} className="text-[#5B21B6]" /> Mark all read
           </button>
         )}
       </div>
 
-      {/* ── Role Filter Tabs (All, Founder, Mentor, Investor) ── */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-2 mb-6 flex flex-wrap gap-2 shadow-xs">
-        <button
-          type="button"
-          onClick={() => setActiveTab('all')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'all'
-              ? 'bg-[#5B21B6] text-white shadow-md'
-              : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <span>All Notifications</span>
-          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-700'}`}>
-            {notifs.length}
-          </span>
-        </button>
+      {/* ── Admin Multi-Role Filter Tabs (ONLY visible on Admin Dashboard) ── */}
+      {isAdminView && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-2 mb-6 flex flex-wrap gap-2 shadow-xs">
+          <button
+            type="button"
+            onClick={() => setActiveTab('all')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'all'
+                ? 'bg-[#5B21B6] text-white shadow-md'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+          >
+            <span>All Notifications</span>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-700'}`}>
+              {allNotifs.length}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('founder')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'founder'
-              ? 'bg-[#5B21B6] text-white shadow-md'
-              : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <Rocket size={14} />
-          <span>Founder Notifications</span>
-          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'founder' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-700'}`}>
-            {founderCount}
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('founder')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'founder'
+                ? 'bg-[#5B21B6] text-white shadow-md'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+          >
+            <Rocket size={14} />
+            <span>Founder Notifications</span>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'founder' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-700'}`}>
+              {founderCount}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('mentor')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'mentor'
-              ? 'bg-[#5B21B6] text-white shadow-md'
-              : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <User size={14} />
-          <span>Mentor Notifications</span>
-          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'mentor' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'}`}>
-            {mentorCount}
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('mentor')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'mentor'
+                ? 'bg-[#5B21B6] text-white shadow-md'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+          >
+            <User size={14} />
+            <span>Mentor Notifications</span>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'mentor' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'}`}>
+              {mentorCount}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab('investor')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'investor'
-              ? 'bg-[#5B21B6] text-white shadow-md'
-              : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-          }`}
-        >
-          <IndianRupee size={14} />
-          <span>Investor Notifications</span>
-          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'investor' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'}`}>
-            {investorCount}
-          </span>
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('investor')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'investor'
+                ? 'bg-[#5B21B6] text-white shadow-md'
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+          >
+            <IndianRupee size={14} />
+            <span>Investor Notifications</span>
+            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'investor' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700'}`}>
+              {investorCount}
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* ── Unread Banner ── */}
       {unread > 0 && (
@@ -272,10 +359,14 @@ const FounderNotifications: React.FC = () => {
       {/* ── Notification List ── */}
       <div className="space-y-3">
         {filteredNotifs.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-            <Bell size={40} className="mx-auto text-gray-200 mb-3" />
-            <p className="text-gray-500 font-medium">No notifications in this tab</p>
-            <p className="text-gray-400 text-sm mt-1">Select another tab to view other notifications.</p>
+          <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-xs">
+            <Bell size={40} className="mx-auto text-gray-300 mb-3" />
+            <p className="text-gray-700 font-extrabold text-base">No notifications yet</p>
+            <p className="text-gray-400 text-xs mt-1 font-medium">
+              {isAdminView
+                ? 'No notifications found for this tab filter.'
+                : `There are currently no ${currentRole} notifications.`}
+            </p>
           </div>
         ) : (
           filteredNotifs.map(n => {
@@ -316,7 +407,7 @@ const FounderNotifications: React.FC = () => {
                 <div className="flex items-center flex-shrink-0 self-center">
                   <button
                     onClick={(e) => { e.stopPropagation(); markOne(n.id); setSelectedNotif(n); }}
-                    className="w-[80px] px-3 py-1.5 justify-center bg-gray-50 hover:bg-purple-50 text-gray-600 hover:text-[#5B21B6] rounded-lg text-xs font-bold transition-colors flex items-center gap-1 border border-gray-200/80 hover:border-purple-200"
+                    className="w-[80px] px-3 py-1.5 justify-center bg-gray-50 hover:bg-purple-50 text-gray-600 hover:text-[#5B21B6] rounded-lg text-xs font-bold transition-colors flex items-center gap-1 border border-gray-200/80 hover:border-purple-200 cursor-pointer"
                   >
                     View <ChevronRight size={14} />
                   </button>
@@ -330,7 +421,7 @@ const FounderNotifications: React.FC = () => {
       {/* ── Notification Details Modal ── */}
       {selectedNotif && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md overflow-y-auto animate-fade-in"
+          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md overflow-y-auto animate-fade-in"
           onClick={() => setSelectedNotif(null)}
         >
           <div 
@@ -352,7 +443,7 @@ const FounderNotifications: React.FC = () => {
               </div>
               <button
                 onClick={() => setSelectedNotif(null)}
-                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -360,19 +451,6 @@ const FounderNotifications: React.FC = () => {
 
             {/* Modal Body */}
             <div className="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
-              {/* Sender profile if admin */}
-              {authUser && (
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-sm font-black shrink-0">
-                    {(authUser.fullName || '?').charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-900">{authUser.fullName}</p>
-                    <p className="text-[10px] text-gray-500">{authUser.email} · {authUser.role}</p>
-                  </div>
-                </div>
-              )}
-
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${
@@ -402,13 +480,8 @@ const FounderNotifications: React.FC = () => {
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100/60">
                     <span className="text-gray-400 font-medium block">Category</span>
-                    <span className="text-gray-900 font-bold mt-0.5 block">
-                      {selectedNotif.type === 'ai_builder' ? 'Startup Activity'
-                        : selectedNotif.type === 'funding' ? 'Funding & Investments'
-                        : selectedNotif.type === 'mentor_review' ? 'Mentorship'
-                        : selectedNotif.type === 'user_approval' ? 'User Management'
-                        : selectedNotif.type === 'platform' ? 'Platform Update'
-                        : 'General'}
+                    <span className="text-gray-900 font-bold mt-0.5 block capitalize">
+                      {selectedNotif.targetRole || 'general'}
                     </span>
                   </div>
                   <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100/60">
@@ -439,29 +512,29 @@ const FounderNotifications: React.FC = () => {
                     setSelectedNotif(null);
                     navigate(selectedNotif.actionUrl || '/');
                   }}
-                  className="w-full sm:w-auto px-4 py-2 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold text-xs rounded-xl transition-colors shadow-sm"
+                  className="w-full sm:w-auto px-4 py-2 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold text-xs rounded-xl transition-colors shadow-sm cursor-pointer"
                 >
                   <ExternalLink size={13} className="inline mr-1.5 -mt-0.5" />
                   Go to Page
                 </button>
               )}
               <div className={`flex ${selectedNotif.actionUrl ? '' : 'w-full'} flex-col sm:flex-row gap-3 items-center sm:justify-end`}>
-              <button
-                onClick={() => {
-                  const newRead = !selectedNotif.read;
-                  setNotifs(n => n.map(x => x.id === selectedNotif.id ? { ...x, read: newRead } : x));
-                  setSelectedNotif({ ...selectedNotif, read: newRead });
-                }}
-                className="w-full sm:w-auto px-4 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl transition-colors shadow-sm"
-              >
-                {selectedNotif.read ? 'Mark as Unread' : 'Mark as Read'}
-              </button>
-              <button
-                onClick={() => setSelectedNotif(null)}
-                className="w-full sm:w-auto px-6 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl transition-colors shadow-sm"
-              >
-                Close
-              </button>
+                <button
+                  onClick={() => {
+                    const newRead = !selectedNotif.read;
+                    markOne(selectedNotif.id);
+                    setSelectedNotif({ ...selectedNotif, read: newRead });
+                  }}
+                  className="w-full sm:w-auto px-4 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl transition-colors shadow-sm cursor-pointer"
+                >
+                  {selectedNotif.read ? 'Mark as Unread' : 'Mark as Read'}
+                </button>
+                <button
+                  onClick={() => setSelectedNotif(null)}
+                  className="w-full sm:w-auto px-6 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs rounded-xl transition-colors shadow-sm cursor-pointer"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>
