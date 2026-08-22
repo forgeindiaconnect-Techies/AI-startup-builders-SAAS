@@ -38,10 +38,10 @@ const FounderInvestorHub: React.FC = () => {
   const ActiveComponent = currentTab.component;
 
   return (
-    <div className="space-y-6 animate-fade-in-up">
-      {/* Top Tab Bar matching Image 1 due diligence tab style */}
-      <div className="bg-white rounded-2xl border-b border-gray-200 shadow-xs px-4 pt-3 overflow-x-auto">
-        <div className="flex gap-2 min-w-max">
+    <div className="space-y-6 animate-fade-in-up font-sans">
+      {/* Top Navigation Sub-Tabs matching Image 1 exact layout & styling */}
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-2.5 shadow-xs overflow-x-auto">
+        <div className="flex items-center gap-3 min-w-max">
           {INVESTOR_TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = currentTab.id === tab.id;
@@ -49,10 +49,10 @@ const FounderInvestorHub: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => navigate(tab.path)}
-                className={`px-5 py-3 font-bold text-xs rounded-t-xl transition-all flex items-center gap-2 relative ${
+                className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 cursor-pointer ${
                   isActive
-                    ? 'bg-white text-[#6C4CF1] border-t-2 border-l border-r border-[#6C4CF1] border-b-transparent shadow-xs -mb-[1px] font-black'
-                    : 'text-gray-500 hover:text-gray-800 bg-gray-50/60 hover:bg-gray-100/70 border border-transparent font-semibold'
+                    ? 'bg-white text-[#6C4CF1] border-2 border-[#6C4CF1] shadow-xs font-extrabold'
+                    : 'bg-[#F8F9FA] text-gray-500 hover:text-gray-900 hover:bg-gray-100/80 border border-gray-100 font-semibold'
                 }`}
               >
                 <Icon size={16} className={isActive ? 'text-[#6C4CF1]' : 'text-gray-400'} />

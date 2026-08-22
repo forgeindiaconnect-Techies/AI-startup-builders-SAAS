@@ -8,7 +8,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { getInvestorApplications, getInvestorLeads } from '../../../utils/investorInvites';
 import { getStartups } from '../../../utils/localStorageHelper';
 import {
-  saveInvestmentRequest, getStartupVisibilityMap, setStartupInvestorVisibility
+  saveInvestmentRequest, getStartupVisibilityMap, setStartupInvestorVisibility, DEFAULT_APPROVED_INVESTORS
 } from '../../../utils/investorModuleStorage';
 
 import { API_URL } from '../../../config/api';
@@ -193,6 +193,15 @@ const FounderInvestorMarketplace: React.FC = () => {
           verificationStatus: 'APPROVED',
           avatar: lead.fullName ? lead.fullName.charAt(0).toUpperCase() : 'I',
         });
+      }
+    });
+
+    // Ensure default verified investors are included
+    DEFAULT_APPROVED_INVESTORS.forEach((defInv: any) => {
+      const emailKey = (defInv.email || '').trim().toLowerCase();
+      if (!processedEmails.has(emailKey)) {
+        processedEmails.add(emailKey);
+        approvedList.push(defInv);
       }
     });
 
