@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell, CheckCheck, Star, Rocket, Info, X, Calendar, ShieldCheck,
-  Tag, ChevronRight, CheckCircle2, User, Megaphone, IndianRupee, MessageSquare, ExternalLink
+  Tag, ChevronRight, ChevronDown, CheckCircle2, User, Megaphone, IndianRupee, MessageSquare, ExternalLink
 } from 'lucide-react';
 import { getNotifications } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
@@ -206,6 +207,21 @@ const FounderNotifications: React.FC = () => {
     };
   }, [authUser, location.pathname]);
 
+  const handleSelectNotif = (n: Notif, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    markOne(n.id);
+    if (selectedNotif?.id === n.id) {
+      setSelectedNotif(null);
+    } else {
+      setSelectedNotif(n);
+      // Smoothly scroll the card element into view if clicked
+      const cardElem = (e?.currentTarget as HTMLElement)?.closest('.notification-card-item');
+      if (cardElem) {
+        cardElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  };
+
   const markAll = () => {
     setNotifs(n => n.map(x => ({ ...x, read: true })));
     setAllNotifs(n => n.map(x => ({ ...x, read: true })));
@@ -372,56 +388,105 @@ const FounderNotifications: React.FC = () => {
           filteredNotifs.map(n => {
             const Icon = n.icon;
             const roleTag = n.targetRole || getTargetRole(n);
+            const isSelected = selectedNotif?.id === n.id;
             return (
               <div
                 key={n.id}
-                onClick={() => { markOne(n.id); setSelectedNotif(n); }}
-                className={`flex items-start gap-4 p-5 rounded-2xl border transition-all cursor-pointer ${
-                  n.read
-                    ? 'bg-white border-gray-100 opacity-75 hover:opacity-100 hover:border-gray-300'
+                onClick={(e) => handleSelectNotif(n, e)}
+                className={`notification-card-item rounded-2xl border transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-white border-[#5B21B6] ring-2 ring-[#5B21B6]/30 shadow-lg'
+                    : n.read
+                    ? 'bg-white border-gray-100 opacity-80 hover:opacity-100 hover:border-gray-300'
                     : 'bg-white border-[#5B21B6]/30 shadow-sm hover:shadow-md hover:border-[#5B21B6]/50'
                 }`}
               >
-                <div className={`relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${n.bg}`}>
-                  <Icon size={22} className={n.color} />
-                  {!n.read && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#5B21B6] border-2 border-white" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <p className={`text-sm font-bold ${n.read ? 'text-gray-700' : 'text-gray-900'}`}>{n.title}</p>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                        roleTag === 'founder' ? 'bg-purple-100 text-purple-700' :
-                        roleTag === 'mentor' ? 'bg-blue-100 text-blue-700' :
-                        roleTag === 'investor' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {roleTag}
-                      </span>
-                    </div>
-                    <span className="text-[11px] text-gray-400 flex-shrink-0 whitespace-nowrap font-medium">{n.time}</span>
+                <div className="flex items-start gap-4 p-5">
+                  <div className={`relative w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${n.bg}`}>
+                    <Icon size={22} className={n.color} />
+                    {!n.read && (
+                      <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#5B21B6] border-2 border-white" />
+                    )}
                   </div>
-                  <p className="text-sm text-gray-500 mt-0.5 leading-relaxed line-clamp-2">{n.desc}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-sm font-bold ${n.read ? 'text-gray-700' : 'text-gray-900'}`}>{n.title}</p>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          roleTag === 'founder' ? 'bg-purple-100 text-purple-700' :
+                          roleTag === 'mentor' ? 'bg-blue-100 text-blue-700' :
+                          roleTag === 'investor' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-700'
+                        }`}>
+                          {roleTag}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-gray-400 flex-shrink-0 whitespace-nowrap font-medium">{n.time}</span>
+                    </div>
+                    <p className={`text-sm text-gray-600 mt-1 leading-relaxed ${isSelected ? '' : 'line-clamp-2'}`}>{n.desc}</p>
+                  </div>
+                  <div className="flex items-center flex-shrink-0 self-center">
+                    <button
+                      onClick={(e) => handleSelectNotif(n, e)}
+                      className={`w-[90px] px-3 py-1.5 justify-center rounded-lg text-xs font-bold transition-all flex items-center gap-1 border cursor-pointer ${
+                        isSelected
+                          ? 'bg-[#5B21B6] text-white border-[#5B21B6] shadow-sm'
+                          : 'bg-gray-50 hover:bg-purple-50 text-gray-600 hover:text-[#5B21B6] border-gray-200/80 hover:border-purple-200'
+                      }`}
+                    >
+                      {isSelected ? 'Opened' : 'View'} {isSelected ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center flex-shrink-0 self-center">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); markOne(n.id); setSelectedNotif(n); }}
-                    className="w-[80px] px-3 py-1.5 justify-center bg-gray-50 hover:bg-purple-50 text-gray-600 hover:text-[#5B21B6] rounded-lg text-xs font-bold transition-colors flex items-center gap-1 border border-gray-200/80 hover:border-purple-200 cursor-pointer"
-                  >
-                    View <ChevronRight size={14} />
-                  </button>
-                </div>
+
+                {/* Inline Card Details (Immediate Expandable Details directly inside the card) */}
+                {isSelected && (
+                  <div className="px-5 pb-5 pt-2 border-t border-purple-100 bg-purple-50/40 rounded-b-2xl animate-in fade-in slide-in-from-top-1">
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                      <span className="font-semibold flex items-center gap-1 text-purple-900">
+                        <Calendar size={13} className="text-[#5B21B6]" /> Received: {n.fullTime}
+                      </span>
+                      <span className="font-medium text-gray-400">ID: #{String(n.id).slice(-6)}</span>
+                    </div>
+                    <div className="bg-white p-3.5 rounded-xl border border-purple-100 text-xs text-gray-800 leading-relaxed font-medium mb-3">
+                      {n.desc}
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      {n.actionUrl ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedNotif(null);
+                            navigate(n.actionUrl || '/');
+                          }}
+                          className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                        >
+                          <ExternalLink size={13} /> Go to Page
+                        </button>
+                      ) : (
+                        <span />
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedNotif(null);
+                        }}
+                        className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                      >
+                        Hide Details
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })
         )}
       </div>
 
-      {/* ── Notification Details Modal ── */}
-      {selectedNotif && (
+      {/* ── Notification Details Modal (React Portal attached to document.body z-[999999]) ── */}
+      {selectedNotif && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md overflow-y-auto animate-fade-in"
+          className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto animate-fade-in"
           onClick={() => setSelectedNotif(null)}
         >
           <div 
@@ -538,7 +603,8 @@ const FounderNotifications: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
