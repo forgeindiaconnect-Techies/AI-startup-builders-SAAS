@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Play, X, Film, ChevronDown } from 'lucide-react';
 
 const categories = [
@@ -126,13 +127,13 @@ const FounderLearningVideos: React.FC = () => {
   const [language, setLanguage] = useState('all');
   const [selectedVideo, setSelectedVideo] = useState<typeof videos[0] | null>(null);
 
-  const handleSelectVideo = (v: typeof videos[0]) => {
+  const handleSelectVideo = (v: typeof videos[0], e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
     setSelectedVideo(v);
-    // Scroll window and main layout container to top immediately
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    const mainContainer = document.querySelector('main');
-    if (mainContainer) {
-      mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const cardElem = (e?.currentTarget as HTMLElement)?.closest('.video-card-item');
+    if (cardElem) {
+      cardElem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   };
 
@@ -158,48 +159,8 @@ const FounderLearningVideos: React.FC = () => {
         </p>
       </div>
 
-      {/* Featured / Now Playing Banner at Top when Video Selected */}
-      {selectedVideo && (
-        <div className="mb-8 bg-slate-900 rounded-3xl p-4 sm:p-6 text-white shadow-2xl border border-purple-500/30 animate-in fade-in slide-in-from-top-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 bg-red-600 text-white rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5 animate-pulse">
-                <Play size={12} fill="white" /> Now Playing
-              </span>
-              <span className="text-xs text-slate-300 font-semibold">{selectedVideo.category}</span>
-            </div>
-            <button
-              onClick={() => setSelectedVideo(null)}
-              className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-              title="Close Video"
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          <div className="aspect-video w-full max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl bg-black border border-slate-800">
-            <iframe
-              width="100%"
-              height="100%"
-              src={`https://www.youtube.com/embed/${selectedVideo.videoId}?autoplay=1&rel=0&modestbranding=1`}
-              title={selectedVideo.title}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              className="w-full h-full"
-            />
-          </div>
-
-          <div className="mt-4 max-w-4xl mx-auto">
-            <h2 className="text-lg sm:text-xl font-bold text-white leading-snug">{selectedVideo.title}</h2>
-            <p className="text-xs text-slate-300 mt-1 line-clamp-2">{selectedVideo.description}</p>
-          </div>
-        </div>
-      )}
-
       {/* Search & Filter */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-        {/* Search Bar + Language Dropdown */}
         <div className="flex flex-col sm:flex-row gap-3 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -213,7 +174,6 @@ const FounderLearningVideos: React.FC = () => {
             />
           </div>
 
-          {/* Language Dropdown */}
           <div className="relative">
             <select
               value={language}
@@ -228,7 +188,6 @@ const FounderLearningVideos: React.FC = () => {
           </div>
         </div>
 
-        {/* Category Buttons */}
         <div className="flex flex-wrap gap-2">
           {categories.map(c => (
             <button
@@ -246,7 +205,6 @@ const FounderLearningVideos: React.FC = () => {
         </div>
       </div>
 
-      {/* Video Count */}
       <div className="mb-4 flex items-center justify-between">
         <p className="text-sm font-semibold text-gray-500">
           {filtered.length} video{filtered.length !== 1 ? 's' : ''} available
@@ -256,7 +214,6 @@ const FounderLearningVideos: React.FC = () => {
         </span>
       </div>
 
-      {/* Video Grid */}
       {filtered.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
           <Film size={48} className="mx-auto text-gray-300 mb-4" />
@@ -265,66 +222,97 @@ const FounderLearningVideos: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {filtered.map(v => (
-            <div key={v.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg transition-all group flex flex-col justify-between">
-              <div>
-                <div
-                  className="relative aspect-video bg-gray-100 overflow-hidden cursor-pointer"
-                  onClick={() => handleSelectVideo(v)}
-                >
-                  <img
-                    src={`https://i.ytimg.com/vi_webp/${v.videoId}/mqdefault.webp`}
-                    alt={v.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => {
-                      const img = e.target as HTMLImageElement;
-                      if (img.src.includes('vi_webp')) {
-                        img.src = `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`;
-                      } else if (!img.src.includes('placehold.co')) {
-                        img.src = `https://placehold.co/480x360/1F2937/9CA3AF?text=${v.language === 'tamil' ? 'Tamil' : 'English'}+Video`;
-                      }
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                      <Play size={24} className="text-[#5B21B6] ml-0.5" fill="#5B21B6" />
+          {filtered.map(v => {
+            const isPlayingThis = selectedVideo?.id === v.id;
+            return (
+              <div
+                key={v.id}
+                className={`video-card-item bg-white rounded-2xl border shadow-sm overflow-hidden transition-all group flex flex-col justify-between ${
+                  isPlayingThis ? 'border-[#5B21B6] ring-2 ring-[#5B21B6]/30 shadow-xl' : 'border-gray-100 hover:shadow-lg'
+                }`}
+              >
+                <div>
+                  {isPlayingThis ? (
+                    <div className="relative aspect-video bg-black overflow-hidden">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        src={`https://www.youtube.com/embed/${v.videoId}?autoplay=1&rel=0&modestbranding=1`}
+                        title={v.title}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                        className="w-full h-full"
+                      />
                     </div>
+                  ) : (
+                    <div
+                      className="relative aspect-video bg-gray-100 overflow-hidden cursor-pointer"
+                      onClick={(e) => handleSelectVideo(v, e)}
+                    >
+                      <img
+                        src={`https://i.ytimg.com/vi_webp/${v.videoId}/mqdefault.webp`}
+                        alt={v.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          if (img.src.includes('vi_webp')) {
+                            img.src = `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`;
+                          } else if (!img.src.includes('placehold.co')) {
+                            img.src = `https://placehold.co/480x360/1F2937/9CA3AF?text=${v.language === 'tamil' ? 'Tamil' : 'English'}+Video`;
+                          }
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                          <Play size={24} className="text-[#5B21B6] ml-0.5" fill="#5B21B6" />
+                        </div>
+                      </div>
+                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-white/90 text-gray-800 backdrop-blur-sm">
+                        {v.category}
+                      </span>
+                      <span className={`absolute top-2 right-2 px-2 py-0.5 rounded-lg text-[10px] font-bold backdrop-blur-sm ${
+                        v.language === 'tamil' ? 'bg-[#F59E0B]/90 text-white' : 'bg-[#3B82F6]/90 text-white'
+                      }`}>
+                        {v.language === 'tamil' ? 'Tamil' : 'English'}
+                      </span>
+                      <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-black/70 text-white backdrop-blur-sm">
+                        {v.duration}
+                      </span>
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-900 text-sm mb-1.5 line-clamp-2">{v.title}</h3>
+                    <p className="text-xs text-gray-500 line-clamp-2 mb-4">{v.description}</p>
                   </div>
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-white/90 text-gray-800 backdrop-blur-sm">
-                    {v.category}
-                  </span>
-                  <span className={`absolute top-2 right-2 px-2 py-0.5 rounded-lg text-[10px] font-bold backdrop-blur-sm ${
-                    v.language === 'tamil' ? 'bg-[#F59E0B]/90 text-white' : 'bg-[#3B82F6]/90 text-white'
-                  }`}>
-                    {v.language === 'tamil' ? 'Tamil' : 'English'}
-                  </span>
-                  <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-black/70 text-white backdrop-blur-sm">
-                    {v.duration}
-                  </span>
                 </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-gray-900 text-sm mb-1.5 line-clamp-2">{v.title}</h3>
-                  <p className="text-xs text-gray-500 line-clamp-2 mb-4">{v.description}</p>
-                </div>
-              </div>
 
-              <div className="px-4 pb-4">
-                <button
-                  onClick={() => handleSelectVideo(v)}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
-                >
-                  <Play size={14} fill="white" /> Watch Video
-                </button>
+                <div className="px-4 pb-4">
+                  {isPlayingThis ? (
+                    <button
+                      onClick={() => setSelectedVideo(null)}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
+                    >
+                      <X size={14} /> Close Player
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => handleSelectVideo(v, e)}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
+                    >
+                      <Play size={14} fill="white" /> Watch Video
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* High Priority Fullscreen Overlay Modal (z-[9999]) */}
-      {selectedVideo && (
+      {selectedVideo && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in"
+          className="fixed inset-0 z-[999999] flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in"
           onClick={() => setSelectedVideo(null)}
         >
           <div
@@ -374,7 +362,8 @@ const FounderLearningVideos: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
