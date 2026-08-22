@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, Play, X, Film, ChevronDown } from 'lucide-react';
 
 const categories = [
@@ -105,6 +106,7 @@ const InvestorLearningCenter: React.FC = () => {
   const [category, setCategory] = useState('All');
   const [language, setLanguage] = useState('all');
   const [selectedVideo, setSelectedVideo] = useState<typeof videos[0] | null>(null);
+
 
   const filtered = videos.filter(v => {
     if (language !== 'all' && v.language !== language) return false;
@@ -350,7 +352,8 @@ const InvestorLearningCenter: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
