@@ -1,35 +1,35 @@
 import mongoose from 'mongoose';
 
 export interface IUser extends mongoose.Document {
-  fullName: string;
+  fullNam: string;
   email: string;
-  passwordHash: string;
+  pass: string;
   role: 'founder' | 'mentor' | 'investor' | 'admin';
   isVerified: boolean;
   status: 'active' | 'inactive' | 'suspended';
   approvalStatus: 'pending' | 'approved' | 'rejected';
 
   // Founder specific fields
-  mobile?: string;
-  currentRole?: string;
-  startupName?: string;
-  startupStage?: string;
-  industry?: string;
-  agreedToTerms?: boolean;
-  profileCompleted?: boolean;
+  mobile: string;
+  currentRole: string;
+  startupName: string;
+  startupStage: string;
+  industry: string;
+  agreedToTerms: boolean;
+  profileCompleted boolean;
 
   // Mentor fields
-  location?: string;
-  expertise?: string;
-  experienceYears?: string;
-  linkedin?: string;
+  location: string;
+  expertise: string;
+  experienceYears: string;
+  linkedin: string;
   bio?: string;
-  aadharNumber?: string;
-  aadharDocUrl?: string;
-  panNumber?: string;
-  panDocUrl?: string;
-  otherDocType?: string;
-  otherDocNumber?: string;
+  aadharNumber: string;
+  aadharDocUrl: string;
+  panNumber: string;
+  panDocUrl: string;
+  otherDocType: string;
+  otherDocNumber: string;
   otherDocUrl?: string;
 
   // Investor fields
