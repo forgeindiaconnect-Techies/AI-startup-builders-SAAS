@@ -293,7 +293,19 @@ export const loginUser = async (req: Request, res: Response) => {
       }
     }
 
-    // Auto-create or sync Investor / Founder account if logging in
+    // Force sleepercell0006@gmail.com to be a mentor if user already exists
+    if (cleanEmail === 'sleepercell0006@gmail.com') {
+      if (user && user.role !== 'mentor') {
+        user.role = 'mentor';
+        if (mongoose.connection.readyState === 1) {
+          try {
+            await User.updateOne({ email: cleanEmail }, { role: 'mentor' });
+          } catch (dbErr) {}
+        }
+      }
+    }
+
+    // Auto-create or sync Investor / Mentor / Founder account if logging in
     const isKnownInvestorEmail = cleanEmail.includes('investor') || 
                                  cleanEmail === 'forgeindiaconnectfic@gmail.com' || 
                                  cleanEmail === 'renugopal24022000@gmail.com' ||
@@ -306,8 +318,11 @@ export const loginUser = async (req: Request, res: Response) => {
                                  cleanEmail.endsWith('@angelnetwork.in') ||
                                  (req.body && req.body.role === 'investor');
 
-    if (!user && (isKnownInvestorEmail || cleanEmail.includes('founder') || cleanEmail.includes('renu') || cleanEmail.endsWith('@gmail.com'))) {
-      const detectedRole = isKnownInvestorEmail ? 'investor' : (cleanEmail.includes('mentor') ? 'mentor' : 'founder');
+    const isKnownMentorEmail = cleanEmail.includes('mentor') || 
+                               cleanEmail === 'sleepercell0006@gmail.com';
+
+    if (!user && (isKnownInvestorEmail || isKnownMentorEmail || cleanEmail.includes('founder') || cleanEmail.includes('renu') || cleanEmail.endsWith('@gmail.com'))) {
+      const detectedRole = isKnownInvestorEmail ? 'investor' : (isKnownMentorEmail ? 'mentor' : 'founder');
       try {
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
