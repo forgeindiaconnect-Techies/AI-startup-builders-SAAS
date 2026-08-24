@@ -257,30 +257,39 @@ export const loginUser = async (req: Request, res: Response) => {
       }
     }
 
-    // Auto-create or repair Admin if it doesn't exist (for demo/admin portal purposes)
-    if (!user && cleanEmail === 'selva@gmail.com' && password === 'Selva@143') {
-      try {
-        const salt = await bcrypt.genSalt(10);
-        const passwordHash = await bcrypt.hash(password, salt);
-        user = await User.create({
-          fullName: 'Admin Selva',
-          email: cleanEmail,
-          passwordHash,
-          role: 'admin',
-          isVerified: true,
-          approvalStatus: 'approved'
-        });
-      } catch {
-        const validId = new mongoose.Types.ObjectId().toString();
-        user = {
-          _id: validId,
-          fullName: 'Admin Selva',
-          email: cleanEmail,
-          role: 'admin',
-          isVerified: true,
-          approvalStatus: 'approved',
-          toObject: function() { return { ...this }; }
-        };
+    // Auto-create or repair Admin if it doesn't exist or has incorrect role (for demo/admin portal purposes)
+    if (cleanEmail === 'selva@gmail.com') {
+      if (user && user.role !== 'admin') {
+        user.role = 'admin';
+        if (mongoose.connection.readyState === 1) {
+          try {
+            await User.updateOne({ email: cleanEmail }, { role: 'admin' });
+          } catch (dbErr) {}
+        }
+      } else if (!user && password === 'Selva@143') {
+        try {
+          const salt = await bcrypt.genSalt(10);
+          const passwordHash = await bcrypt.hash(password, salt);
+          user = await User.create({
+            fullName: 'Admin Selva',
+            email: cleanEmail,
+            passwordHash,
+            role: 'admin',
+            isVerified: true,
+            approvalStatus: 'approved'
+          });
+        } catch {
+          const validId = new mongoose.Types.ObjectId().toString();
+          user = {
+            _id: validId,
+            fullName: 'Admin Selva',
+            email: cleanEmail,
+            role: 'admin',
+            isVerified: true,
+            approvalStatus: 'approved',
+            toObject: function() { return { ...this }; }
+          };
+        }
       }
     }
 
