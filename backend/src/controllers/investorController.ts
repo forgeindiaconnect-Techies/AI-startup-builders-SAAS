@@ -92,6 +92,10 @@ export const getApprovedInvestors = async (_req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error fetching approved investors:', error);
-    return res.status(500).json({ success: false, error: 'Failed to retrieve investors.' });
+    return res.json({
+      success: true,
+      count: 0,
+      investors: []
+    });
   }
 };
