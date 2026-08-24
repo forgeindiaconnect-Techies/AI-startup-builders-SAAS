@@ -85,7 +85,7 @@ const INITIAL_INVESTOR_APPLICATIONS: InvestorApplication[] = [
     previousExperience: '12 years in VC, led 20+ seed/series A investments across B2B SaaS and AI.',
     startupsInvestedCount: '24',
     portfolioCompanies: 'AI Flow Inc, CloudScale Systems, DataSense Labs',
-    notableInvestments: 'Series A lead in CloudScale (Acquired for $45M)',
+    notableInvestments: 'Series A lead in CloudScale (Acquired for ₹370 Crores)',
     areasOfExpertise: 'GTM Acceleration, Series A/B Syndication, Board Advisory',
     investmentThesis: 'AI infra and workflow automation layers will generate 10x value over non-AI SaaS.',
     kycDocName: 'Vikram_Govt_ID_Passport.pdf',

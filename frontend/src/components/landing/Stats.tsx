@@ -17,7 +17,7 @@ const Stats: React.FC = () => {
           </div>
           
           <div className="reveal delay-200">
-            <div className="text-4xl md:text-5xl font-black text-[#FBBF24] mb-2">$50M+</div>
+            <div className="text-4xl md:text-5xl font-black text-[#FBBF24] mb-2">₹400Cr+</div>
             <div className="text-gray-400 font-medium">Funding Secured</div>
           </div>
           
