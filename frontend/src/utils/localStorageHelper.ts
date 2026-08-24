@@ -613,9 +613,7 @@ export const getFundingOffers = async (founderId?: string, investorId?: string) 
       } catch (err) {}
       return data.data;
     }
-  } catch (e) {
-    console.error('Error fetching funding offers', e);
-  }
+  } catch (e) {}
   // Fallback to localStorage
   try {
     const stored = localStorage.getItem('ai_startup_builder_funding_offers');
@@ -642,9 +640,7 @@ export const createFundingOffer = async (offerData: any) => {
       } catch (err) {}
       return data.data;
     }
-  } catch (e) {
-    console.error('Error creating funding offer', e);
-  }
+  } catch (e) {}
   
   // Offline fallback
   const fallbackOffer = {
@@ -709,9 +705,7 @@ export const updateFundingOffer = async (id: string, updates: any) => {
       } catch (err) {}
       return data.data;
     }
-  } catch (e) {
-    console.error('Error updating funding offer', e);
-  }
+  } catch (e) {}
   
   // Offline fallback
   try {
@@ -1485,10 +1479,9 @@ export const getPaymentRequests = async (founderId?: string) => {
       : `${API_URL}/payments`;
     const res = await fetch(url, { headers: authHeaders() });
     const data = await res.json();
-    if (data.success) return data.payments || data.data || [];
-  } catch (e) {
-    console.error('Error fetching payment requests', e);
-  }
+    if (data && data.success) return data.payments || data.data || [];
+  } catch (e) {}
+  
   // Fallback to localStorage
   try {
     const stored = localStorage.getItem('ai_startup_builder_payments');
@@ -1505,10 +1498,9 @@ export const submitPaymentRequest = async (paymentData: any) => {
       body: JSON.stringify(paymentData)
     });
     const data = await res.json();
-    if (data.success) return data.payment || data.data;
-  } catch (e) {
-    console.error('Error submitting payment', e);
-  }
+    if (data && data.success) return data.payment || data.data;
+  } catch (e) {}
+  
   // Fallback to localStorage
   const stored = localStorage.getItem('ai_startup_builder_payments');
   const current = stored ? JSON.parse(stored) : [];
