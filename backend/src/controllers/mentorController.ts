@@ -967,7 +967,7 @@ export const submitSessionReview = async (req: AuthRequest, res: Response) => {
       const profile = await MentorProfile.findOne({ mentorId: booking.mentorId });
       if (profile) {
         const all = await MentorReview.find({ mentorId: booking.mentorId });
-        const sum = all.reduce((acc, r) => acc + (Number(r.rating) || 5), 0);
+        const sum = all.reduce((acc: number, r: any) => acc + (Number(r.rating) || 5), 0);
         profile.rating = all.length > 0 ? Math.round((sum / all.length) * 10) / 10 : 0;
         profile.reviewsCount = all.length;
         await profile.save();
@@ -1003,7 +1003,7 @@ export const getMentorSessionReviews = async (req: AuthRequest, res: Response) =
     const reviews = await MentorReview.find({ mentorId: req.user!.id })
       .populate('founderId', 'fullName email')
       .sort({ createdAt: -1 });
-    const mapped = reviews.map((r) => {
+    const mapped = reviews.map((r: any) => {
       const obj: any = r.toObject();
       obj.founderName = (r.founderId as any)?.fullName || '';
       obj.founderEmail = (r.founderId as any)?.email || '';

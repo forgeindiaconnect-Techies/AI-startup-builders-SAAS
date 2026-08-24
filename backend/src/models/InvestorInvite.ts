@@ -50,3 +50,4 @@ const investorInviteSchema = new Schema<IInvestorInvite>({
 export const InvestorInvite = model<IInvestorInvite>('InvestorInvite', investorInviteSchema);
 
 
+

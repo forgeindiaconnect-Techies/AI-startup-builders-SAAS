@@ -337,3 +337,53 @@ export const sendMeetingInviteEmail = async ({
     return false;
   }
 };
+
+export const sendMentorInviteEmail = async (options: {
+  mentorName: string;
+  mentorEmail: string;
+  inviteLink: string;
+  message?: string;
+  expertise?: string;
+  expiresAt?: Date;
+}) => {
+  const { mentorName, mentorEmail, inviteLink, message } = options;
+  if (!BREVO_API_KEY) {
+    console.warn('\n⚠️ BREVO_API_KEY not configured in .env');
+    console.warn(`📧 WOULD HAVE SENT MENTOR INVITE EMAIL TO: ${mentorEmail}`);
+    console.warn(`🔗 INVITE URL: ${inviteLink}\n`);
+    return true;
+  }
+
+  const subject = "You're Invited to Join Our Mentor Network - AI Startup Builder";
+  const htmlContent = `
+    <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; border: 1px solid #E5E7EB; border-radius: 16px; background-color: #ffffff;">
+      <h2 style="color: #6C4CF1;">Hello ${mentorName},</h2>
+      <p>You have been invited to join AI Startup Builder as a Mentor.</p>
+      <p><a href="${inviteLink}" style="background-color: #6C4CF1; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 6px; display: inline-block;">Accept Invitation</a></p>
+      ${message ? `<p><strong>Message:</strong> ${message}</p>` : ''}
+    </div>
+  `;
+
+  try {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({
+        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
+        to: [{ email: mentorEmail, name: mentorName }],
+        subject,
+        htmlContent
+      })
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Failed to send mentor invite email:', error);
+    return false;
+  }
+};
+
+

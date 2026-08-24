@@ -1,9 +1,9 @@
+
 import { Request, Response } from 'express';
 import crypto from 'crypto';
-import { MentorInvite, IMentorInvite } from '../models/Invite.js';
 import { InvestorInvite } from '../models/InvestorInvite.js';
-import { sendMentorInviteEmail } from '../utils/sendMentorInviteEmail.js';
-import { sendInvestorInviteEmail, sendMeetingInviteEmail } from '../utils/emailService.js';
+import { MentorInvite, IMentorInvite } from '../models/Invite.js';
+import { sendMentorInviteEmail, sendInvestorInviteEmail, sendMeetingInviteEmail } from '../utils/emailService.js';
 
 const DEFAULT_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
 

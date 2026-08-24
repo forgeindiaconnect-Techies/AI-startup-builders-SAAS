@@ -1,17 +1,18 @@
-import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IMentorReview extends Document {
-  bookingId: mongoose.Types.ObjectId;
-  mentorId: mongoose.Types.ObjectId;
-  founderId: mongoose.Types.ObjectId;
-  startupId: mongoose.Types.ObjectId;
-  startupName: string;
-  topic: string;
+import mongoose, { Schema, model } from 'mongoose';
+
+export interface IMentorReview {
+  bookingId: mongoose.Types.ObjectId | string;
+  mentorId: mongoose.Types.ObjectId | string;
+  founderId: mongoose.Types.ObjectId | string;
+  startupId: mongoose.Types.ObjectId | string;
+  startupName?: string;
+  topic?: string;
   rating: number;
-  reviewText: string;
-  date: string;
-  createdAt: Date;
-  updatedAt: Date;
+  reviewText?: string;
+  date?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const MentorReviewSchema: Schema = new Schema(
@@ -50,4 +51,5 @@ const MentorReviewSchema: Schema = new Schema(
 );
 
 // A founder can review a given completed session only once
-export default mongoose.model<IMentorReview>('MentorReview', MentorReviewSchema);
+export default model<IMentorReview>('MentorReview', MentorReviewSchema);
+
