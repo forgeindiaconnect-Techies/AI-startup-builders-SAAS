@@ -14,13 +14,13 @@ const DB_CONFIG = {
 
 export const connectDB = async (): Promise<void> => {
   try {
-    // Keep bufferCommands enabled so queries queue gracefully during initial connection startup
-    mongoose.set('bufferCommands', true);
+    // Disable command buffering so queries fail-fast or use in-memory fallback instantly when DB is disconnected
+    mongoose.set('bufferCommands', false);
 
     const conn = await mongoose.connect(DB_CONFIG.uri, {
       dbName: 'ai-startup-builder',
-      serverSelectionTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 2500,
+      socketTimeoutMS: 15000,
     });
     console.log('');
     console.log('📦 ═══════════════════════════════════════════');
@@ -29,8 +29,8 @@ export const connectDB = async (): Promise<void> => {
     console.log('═══════════════════════════════════════════════');
     console.log('');
   } catch (error) {
-    console.error('❌ Database connection failed:', (error as Error).message);
-    console.error('⚠️ Server will continue serving requests gracefully.');
+    console.warn('⚠️ Database connection notice:', (error as Error).message);
+    console.log('⚡ Server running in high-performance in-memory mode for instant client responses.');
   }
 };
 

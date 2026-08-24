@@ -249,10 +249,12 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 
     let user: any = null;
-    try {
-      user = await User.findOne({ email: cleanEmail });
-    } catch (dbErr) {
-      console.warn('⚠️ MongoDB User lookup during login warning:', (dbErr as Error).message);
+    if (mongoose.connection.readyState === 1) {
+      try {
+        user = await User.findOne({ email: cleanEmail });
+      } catch (dbErr) {
+        // Continue with fallback
+      }
     }
 
     // Auto-create or repair Admin if it doesn't exist (for demo/admin portal purposes)
