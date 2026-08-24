@@ -1,6 +1,6 @@
-import mongoose, { Document, Schema, model } from 'mongoose';
+import mongoose, { Schema, model } from 'mongoose';
 
-export interface IUser extends Document {
+export interface IUser {
   fullName: string;
   email: string;
   passwordHash: string;
@@ -68,6 +68,8 @@ export interface IUser extends Document {
 
   lastLoginAt?: Date;
   loginCount: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const userSchema = new Schema<IUser>({
@@ -141,4 +143,5 @@ const userSchema = new Schema<IUser>({
 }, { timestamps: true });
 
 export const User = model<IUser>('User', userSchema);
+
 

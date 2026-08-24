@@ -1,6 +1,6 @@
-import mongoose, { Document, Schema, model } from 'mongoose';
+import mongoose, { Schema, model } from 'mongoose';
 
-export interface IInvestorInvite extends Document {
+export interface IInvestorInvite {
   fullName: string;
   email: string;
   phone?: string;
@@ -48,4 +48,5 @@ const investorInviteSchema = new Schema<IInvestorInvite>({
 }, { timestamps: true });
 
 export const InvestorInvite = model<IInvestorInvite>('InvestorInvite', investorInviteSchema);
+
 
