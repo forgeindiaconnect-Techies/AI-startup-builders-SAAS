@@ -102,68 +102,6 @@ const AdminInviteLinks: React.FC = () => {
     });
   };
 
-  const handleInstantCreate = async () => {
-    setShowCreateModal(true);
-    setGeneratedLink(null);
-    setSending(true);
-
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const name = `Mentor ${randomSuffix}`;
-    const email = `mentor_${randomSuffix}@example.com`;
-    const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-    try {
-      const res = await fetch(`${API_URL}/invites/mentor`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mentorName: name,
-          mentorEmail: email,
-          expertise: 'Technology',
-          expiryDate: expiry,
-          message: 'Welcome to AI Startup Builder!',
-        }),
-      });
-      const json = await res.json();
-
-      if (json.success && json.invite) {
-        const serverInvite = json.invite;
-        const invite = storeInvite({
-          id: serverInvite.id,
-          mentorName: serverInvite.mentorName,
-          mentorEmail: serverInvite.mentorEmail,
-          expertise: serverInvite.expertise,
-          inviteToken: serverInvite.inviteToken,
-          inviteUrl: serverInvite.inviteUrl,
-          status: serverInvite.status,
-          createdAt: serverInvite.createdAt,
-          expiryDate: serverInvite.expiryDate || serverInvite.expiresAt,
-          message: serverInvite.message,
-        });
-        setGeneratedLink(invite);
-        setEmailSentStatus(false);
-        loadInvites();
-        showToast('Invite link generated successfully!', 'success');
-        return;
-      }
-      throw new Error('Failed');
-    } catch {
-      const invite = createInvite({
-        mentorName: name,
-        mentorEmail: email,
-        expertise: 'Technology',
-        expiryDate: expiry,
-        message: 'Welcome to AI Startup Builder!',
-      });
-      setGeneratedLink(invite);
-      setEmailSentStatus(false);
-      loadInvites();
-      showToast('Invite link generated locally!', 'success');
-    } finally {
-      setSending(false);
-    }
-  };
-
   const handleCreate = async () => {
     const errs: Record<string, string> = {};
     if (!form.mentorName.trim()) errs.mentorName = 'Mentor name is required';
@@ -380,7 +318,7 @@ const AdminInviteLinks: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={handleInstantCreate}
+            onClick={() => { setShowCreateModal(true); setGeneratedLink(null); setForm({ mentorName: '', mentorEmail: '', expiryDate: '', message: '' }); setFormErrors({}); }}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white font-bold rounded-xl text-sm shadow-md hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all"
           >
             <Plus size={16} /> Create Mentor Invite
