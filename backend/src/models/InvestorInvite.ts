@@ -1,6 +1,6 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema, model } from 'mongoose';
 
-export interface IInvestorInvite extends mongoose.Document {
+export interface IInvestorInvite extends Document {
   fullName: string;
   email: string;
   phone?: string;
@@ -22,7 +22,7 @@ export interface IInvestorInvite extends mongoose.Document {
   acceptedAt?: Date;
 }
 
-const investorInviteSchema = new mongoose.Schema({
+const investorInviteSchema = new Schema<IInvestorInvite>({
   fullName: { type: String, required: true },
   email: { type: String, required: true, lowercase: true, trim: true },
   phone: { type: String },
@@ -47,4 +47,5 @@ const investorInviteSchema = new mongoose.Schema({
   acceptedAt: { type: Date },
 }, { timestamps: true });
 
-export const InvestorInvite = mongoose.model<IInvestorInvite>('InvestorInvite', investorInviteSchema);
+export const InvestorInvite = model<IInvestorInvite>('InvestorInvite', investorInviteSchema);
+

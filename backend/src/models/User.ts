@@ -1,13 +1,13 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema, model } from 'mongoose';
 
-export interface IUser extends mongoose.Document {
+export interface IUser extends Document {
   fullName: string;
   email: string;
   passwordHash: string;
   role: 'founder' | 'mentor' | 'investor' | 'admin';
   isVerified: boolean;
   status: 'active' | 'inactive' | 'suspended';
-  approvalStatus: 'pending' | 'approved' | 'rejected';
+  approvalStatus: 'pending' | 'approved' | 'rejected' | 'PENDING_VERIFICATION' | 'APPROVED' | 'REJECTED';
 
   // Founder specific fields
   mobile?: string;
@@ -54,8 +54,12 @@ export interface IUser extends mongoose.Document {
   investmentThesis?: string;
   kycDocUrl?: string;
   kycDocName?: string;
+  panTaxDocUrl?: string;
+  panTaxDocName?: string;
   orgProofUrl?: string;
   orgProofName?: string;
+  repProofUrl?: string;
+  repProofName?: string;
   supportingDocUrl?: string;
   supportingDocName?: string;
   additionalDocUrl?: string;
@@ -66,7 +70,7 @@ export interface IUser extends mongoose.Document {
   loginCount: number;
 }
 
-const userSchema = new mongoose.Schema({
+const userSchema = new Schema<IUser>({
   fullName: { type: String, required: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   passwordHash: { type: String, required: true },
@@ -136,4 +140,5 @@ const userSchema = new mongoose.Schema({
   loginCount: { type: Number, default: 0 },
 }, { timestamps: true });
 
-export const User = mongoose.model<IUser>('User', userSchema);
+export const User = model<IUser>('User', userSchema);
+
