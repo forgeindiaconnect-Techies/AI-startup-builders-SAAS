@@ -2,6 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IAppDocument extends Document {
   id?: string;
+  docId?: string;
   startupId?: string;
   userId?: string;
   fileName: string;
@@ -19,6 +20,8 @@ export interface IAppDocument extends Document {
 
 const AppDocumentSchema: Schema = new Schema(
   {
+    id: { type: String, default: '' },
+    docId: { type: String, default: '' },
     startupId: { type: String, default: '' },
     userId: { type: String, default: '' },
     fileName: { type: String, required: true },

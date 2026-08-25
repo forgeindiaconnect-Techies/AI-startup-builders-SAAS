@@ -31,6 +31,7 @@ export interface IUser {
   otherDocType?: string;
   otherDocNumber?: string;
   otherDocUrl?: string;
+  resumeUrl?: string;
 
   // Investor fields
   companyName?: string;
@@ -103,6 +104,7 @@ const userSchema = new Schema<IUser>({
   otherDocType: { type: String },
   otherDocNumber: { type: String },
   otherDocUrl: { type: String },
+  resumeUrl: { type: String },
 
   // Investor fields
   companyName: { type: String },
