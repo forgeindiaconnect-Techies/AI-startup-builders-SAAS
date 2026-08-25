@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { IndianRupee, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -131,7 +132,7 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
     });
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
@@ -146,16 +147,17 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
           </button>
         </div>
         
-        <div className="p-6 overflow-y-auto max-h-[70vh]">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+        <div className="p-6 max-h-[70vh] overflow-y-auto space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-2">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Startup Name</label>
               <input 
                 type="text" 
                 value={offerData.startupName}
                 onChange={(e) => setOfferData({...offerData, startupName: e.target.value})}
-                placeholder="e.g. EcoPackage Hub"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                placeholder="Startup Name"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
+                disabled
               />
             </div>
             <div>
@@ -164,43 +166,44 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
                 type="text" 
                 value={offerData.founderName}
                 onChange={(e) => setOfferData({...offerData, founderName: e.target.value})}
-                placeholder="e.g. Sarah Jenkins"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                placeholder="Founder Name"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
+                disabled
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-2">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Investor Name</label>
               <input 
                 type="text" 
                 value={offerData.investorName}
                 onChange={(e) => setOfferData({...offerData, investorName: e.target.value})}
-                placeholder="e.g. David Chen"
+                placeholder={user?.fullName || "Your Name"}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Investor Company Name</label>
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Investor Company</label>
               <input 
                 type="text" 
                 value={offerData.investorCompany}
                 onChange={(e) => setOfferData({...offerData, investorCompany: e.target.value})}
-                placeholder="e.g. DC Ventures"
+                placeholder={(user as any)?.company || "Your Company / Fund Name"}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-2">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Investor Email</label>
               <input 
                 type="email" 
                 value={offerData.investorEmail}
                 onChange={(e) => setOfferData({...offerData, investorEmail: e.target.value})}
-                placeholder="david@dcventures.com"
+                placeholder={user?.email || "investor@example.com"}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
               />
             </div>
@@ -210,20 +213,20 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
                 type="text" 
                 value={offerData.investorAddress}
                 onChange={(e) => setOfferData({...offerData, investorAddress: e.target.value})}
-                placeholder="123 Sand Hill Rd, Menlo Park"
+                placeholder="City, Country"
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-2">
             <div>
-              <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Offer Amount</label>
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Investment Amount</label>
               <input 
                 type="number" 
                 value={offerData.offerAmount}
                 onChange={(e) => setOfferData({...offerData, offerAmount: e.target.value})}
-                placeholder="250000"
+                placeholder="500000"
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
               />
             </div>
@@ -240,6 +243,9 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
                 <option value="GBP">GBP (£)</option>
               </select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-2">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Equity Percentage (%)</label>
               <input 
@@ -250,9 +256,6 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Investment Type (Instrument)</label>
               <select 
@@ -265,6 +268,9 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
                 <option value="Equity">Equity (Priced Round)</option>
               </select>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-2">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Valuation Cap (₹)</label>
               <input 
@@ -275,9 +281,6 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Discount (%)</label>
               <input 
@@ -287,6 +290,9 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]"
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-2">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Offer Expiry Date</label>
               <input 
@@ -325,7 +331,8 @@ const SendInvestmentOfferModal: React.FC<SendInvestmentOfferModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

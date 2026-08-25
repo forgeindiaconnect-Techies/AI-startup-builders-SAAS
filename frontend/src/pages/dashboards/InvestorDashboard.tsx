@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Briefcase, TrendingUp, Search, X, ArrowLeft, Mail, Calendar, LogIn, ShieldCheck, Bookmark, Heart, Rocket, Target, Cpu, Send, ArrowRight, ExternalLink, Sparkles } from 'lucide-react';
@@ -415,7 +416,7 @@ const InvestorDashboard: React.FC = () => {
       </div>
 
       {/* Startup Details Modal Overlay */}
-      {selectedStartup && (
+      {selectedStartup && createPortal(
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl relative my-8 animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <button 
@@ -450,7 +451,8 @@ const InvestorDashboard: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Send Investment Offer Modal */}
