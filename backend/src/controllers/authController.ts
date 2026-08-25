@@ -764,12 +764,21 @@ export const updateMe = async (req: AuthRequest, res: Response) => {
       } catch {}
     }
 
-    const { fullName, mobile, location, expertise, experienceYears, linkedin, bio } = req.body;
+    const { fullName, email, mobile, location, expertise, experienceYears, linkedin, bio } = req.body;
 
     if (user && typeof user.save === 'function') {
       if (typeof fullName === 'string' && fullName.trim().length >= 2) user.fullName = fullName.trim();
       if (typeof mobile === 'string') user.mobile = mobile.trim();
       if (typeof location === 'string') user.location = location.trim();
+
+      if (typeof email === 'string' && email.trim().toLowerCase() !== user.email) {
+        const emailTrim = email.trim().toLowerCase();
+        const existingUser = await User.findOne({ email: emailTrim });
+        if (existingUser) {
+          return res.status(400).json({ success: false, error: 'Email is already in use by another account.' });
+        }
+        user.email = emailTrim;
+      }
 
       if (user.role === 'mentor') {
         if (typeof expertise === 'string') user.expertise = expertise;
@@ -780,11 +789,15 @@ export const updateMe = async (req: AuthRequest, res: Response) => {
 
       try {
         await user.save();
-      } catch {}
+      } catch (err: any) {
+        console.error('Failed to save updated user details:', err);
+        return res.status(400).json({ success: false, error: err.message || 'Failed to save updated profile details.' });
+      }
     }
 
     return res.json({ success: true, message: 'Profile updated successfully.' });
-  } catch (error) {
-    return res.json({ success: true, message: 'Profile updated successfully.' });
+  } catch (error: any) {
+    console.error('Error updating profile in updateMe:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Server error updating profile details.' });
   }
 };

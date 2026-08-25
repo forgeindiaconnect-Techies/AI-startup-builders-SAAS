@@ -169,6 +169,7 @@ const MentorProfile: React.FC = () => {
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({
             fullName: form.name,
+            email: form.email,
             mobile: form.phone,
             location: form.location,
             expertise: form.expertise,
