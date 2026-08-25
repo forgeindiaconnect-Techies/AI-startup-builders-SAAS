@@ -452,13 +452,6 @@ const AdminInviteLinks: React.FC = () => {
                           {effectiveStatus === 'active' && (
                             <>
                               <button
-                                onClick={() => copyToClipboard(inv.inviteUrl, inv.id)}
-                                className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
-                                title="Copy Link"
-                              >
-                                <Copy size={14} />
-                              </button>
-                              <button
                                 onClick={() => handleResend(inv.inviteToken)}
                                 className="p-1.5 rounded-lg hover:bg-purple-50 text-purple-600 transition-colors"
                                 title="Resend"
