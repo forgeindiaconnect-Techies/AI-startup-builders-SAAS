@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, X, GraduationCap, Calendar, ExternalLink, Mail, Phone, MapPin, Globe, MessageSquare, Star, ChevronDown, ChevronUp, CheckCircle, Pencil, Save, Loader2 } from 'lucide-react';
 import { getStartups } from '../../../utils/localStorageHelper';
 import { API_URL } from '../../../config/api';
@@ -499,12 +500,13 @@ const AdminMentorApproval: React.FC = () => {
       ))}
     </div>
 
-    {editingMentor && (
+    {editingMentor && typeof document !== 'undefined' && createPortal(
       <EditMentorModal
         mentor={editingMentor}
         onClose={() => setEditingMentor(null)}
         onSaved={() => loadApplicants()}
-      />
+      />,
+      document.body
     )}
   </div>
   );
