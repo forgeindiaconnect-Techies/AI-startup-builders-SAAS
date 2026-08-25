@@ -164,6 +164,7 @@ const AdminUsers: React.FC = () => {
   const { user: currentUser, getAllUsers, deleteUser, approveUser, rejectUser, updateUserStatus, updateUserApproval, refreshUsers, getTokenRole } = useAuth();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'active' | 'inactive'>('All');
   const [usersList, setUsersList] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
@@ -418,6 +419,9 @@ const AdminUsers: React.FC = () => {
 
   const filtered = usersList.filter(u =>
     (roleFilter === 'All' || (u.role || '').toLowerCase() === roleFilter.toLowerCase()) &&
+    (statusFilter === 'All' || 
+     (statusFilter === 'active' && (u.status || 'active') === 'active') || 
+     (statusFilter === 'inactive' && (u.status || 'active') !== 'active')) &&
     ((u.name || '').toLowerCase().includes(search.toLowerCase()) ||
      (u.email || '').toLowerCase().includes(search.toLowerCase()) ||
      (u.fullName || '').toLowerCase().includes(search.toLowerCase()))
@@ -783,9 +787,36 @@ const AdminUsers: React.FC = () => {
             <Download size={15} className="mr-2 text-gray-600" /> Export CSV
           </button>
           <div className="flex items-center gap-2 text-sm font-bold">
-            <span className="px-3 py-1.5 bg-purple-100 text-[#5B21B6] rounded-lg">{usersList.length} Total</span>
-            <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg">{usersList.filter(u => u.status === 'active').length} Active</span>
-            <span className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg">{usersList.filter(u => u.status === 'inactive').length} Inactive</span>
+            <button
+              onClick={() => setStatusFilter('All')}
+              className={`px-3 py-1.5 rounded-xl transition-all duration-200 ${
+                statusFilter === 'All'
+                  ? 'bg-[#5B21B6] text-white shadow-sm'
+                  : 'bg-purple-100 text-[#5B21B6] hover:bg-purple-200/60'
+              }`}
+            >
+              {usersList.length} Total
+            </button>
+            <button
+              onClick={() => setStatusFilter('active')}
+              className={`px-3 py-1.5 rounded-xl transition-all duration-200 ${
+                statusFilter === 'active'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200/60'
+              }`}
+            >
+              {usersList.filter(u => (u.status || 'active') === 'active').length} Active
+            </button>
+            <button
+              onClick={() => setStatusFilter('inactive')}
+              className={`px-3 py-1.5 rounded-xl transition-all duration-200 ${
+                statusFilter === 'inactive'
+                  ? 'bg-gray-700 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200/60'
+              }`}
+            >
+              {usersList.filter(u => (u.status || 'active') !== 'active').length} Inactive
+            </button>
           </div>
         </div>
       </div>
