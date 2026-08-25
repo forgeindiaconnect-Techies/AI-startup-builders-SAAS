@@ -1,7 +1,9 @@
 import React from 'react';
 import { Check, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const AICapabilities: React.FC = () => {
+  const navigate = useNavigate();
   const capabilities = [
     "Comprehensive Business Summary",
     "Detailed Market Research",
@@ -66,7 +68,10 @@ const AICapabilities: React.FC = () => {
               ))}
             </div>
             
-            <button className="px-8 py-4 bg-[#FBBF24] hover:bg-[#FDE68A] text-[#111827] rounded-xl font-bold text-lg transition-colors shadow-lg">
+            <button 
+              onClick={() => navigate('/dashboard/founder/ai-builder')}
+              className="px-8 py-4 bg-[#FBBF24] hover:bg-[#FDE68A] text-[#111827] rounded-xl font-bold text-lg transition-colors shadow-lg"
+            >
               Try the AI Generator
             </button>
           </div>
