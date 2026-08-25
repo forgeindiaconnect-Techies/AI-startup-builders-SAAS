@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, Filter, ShieldCheck, Building2, Briefcase, MapPin,
@@ -486,7 +487,7 @@ const FounderInvestorMarketplace: React.FC = () => {
       )}
 
       {/* ─── INVESTOR PROFILE MODAL ─── */}
-      {viewingInvestor && (
+      {viewingInvestor && createPortal(
         <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button
@@ -615,11 +616,12 @@ const FounderInvestorMarketplace: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─── SEND CONNECTION REQUEST MODAL ─── */}
-      {requestInvestor && (
+      {requestInvestor && createPortal(
         <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[92vh] overflow-y-auto font-sans my-auto">
             <button
@@ -779,11 +781,12 @@ const FounderInvestorMarketplace: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ─── SUCCESS POPUP CONFIRMATION MODAL ─── */}
-      {confirmSuccessModal && (
+      {confirmSuccessModal && createPortal(
         <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-sans">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-center">
             <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-sm">
@@ -818,7 +821,8 @@ const FounderInvestorMarketplace: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

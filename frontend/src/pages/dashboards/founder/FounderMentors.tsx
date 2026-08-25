@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import QRCode from 'qrcode';
 import {
   GraduationCap, Search, Star, MapPin, Briefcase, Clock, IndianRupee, ExternalLink,
@@ -117,12 +118,13 @@ const Toast: React.FC<{ toast: { type: 'success' | 'error'; message: string } | 
   );
 };
 
-const Modal: React.FC<{ onClose: () => void; children: React.ReactNode; maxWidth?: string }> = ({ onClose: _onClose, children, maxWidth = 'max-w-2xl' }) => (
+const Modal: React.FC<{ onClose: () => void; children: React.ReactNode; maxWidth?: string }> = ({ onClose: _onClose, children, maxWidth = 'max-w-2xl' }) => createPortal(
   <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
     <div className={`bg-white rounded-2xl w-full ${maxWidth} overflow-hidden shadow-2xl my-8`}>
       {children}
     </div>
-  </div>
+  </div>,
+  document.body
 );
 
 const Spinner: React.FC = () => (
