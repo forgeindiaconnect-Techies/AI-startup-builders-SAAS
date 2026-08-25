@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Save, CheckCircle2, Clock, ShieldAlert, Lock, Globe, Briefcase, MapPin, Star, Loader2 } from 'lucide-react';
+import { Camera, Save, CheckCircle2, Clock, ShieldAlert, Lock, Globe, Briefcase, MapPin, Star, Loader2, Pencil } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { API_URL } from '../../../config/api';
 import { saveUserProfileOverride } from '../../../utils/localStorageHelper';
@@ -108,6 +108,7 @@ const MentorProfile: React.FC = () => {
   const { user, getToken, checkAuth } = useAuth();
   const [form, setForm] = useState<MentorProfileData>(defaultMentorProfile);
   const [saving, setSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -147,6 +148,35 @@ const MentorProfile: React.FC = () => {
 
   const update = (key: keyof MentorProfileData, val: any) => {
     setForm(prev => ({ ...prev, [key]: val }));
+  };
+
+  const handleCancel = () => {
+    const myId = user?.id || '';
+    const fromUser: Partial<MentorProfileData> = {
+      id: myId,
+      name: user?.fullName || '',
+      email: user?.email || '',
+      phone: user?.mobile || '',
+      location: user?.location || '',
+      expertise: user?.expertise || '',
+      experienceYears: formatExperience(user?.experienceYears),
+      linkedin: user?.linkedin || '',
+      bio: user?.bio || '',
+      category: mapCategory(user?.expertise),
+    };
+
+    try {
+      const stored = localStorage.getItem('ai_startup_builder_mentor_profiles');
+      let profiles: MentorProfileData[] = [];
+      if (stored) {
+        profiles = JSON.parse(stored);
+      }
+      const found = profiles.find(p => p.id === myId || (p.name && p.name === user?.fullName));
+      setForm({ ...defaultMentorProfile, ...(found || {}), ...fromUser });
+    } catch {
+      setForm({ ...defaultMentorProfile, ...fromUser });
+    }
+    setIsEditing(false);
   };
 
   const handleSave = async () => {
@@ -221,7 +251,8 @@ const MentorProfile: React.FC = () => {
       window.dispatchEvent(new Event('user_profile_updated'));
       window.dispatchEvent(new Event('mentor_profile_updated'));
       setSaving(false);
-      window.alert("✅ Profile settings saved successfully! Your profile details are now visible to the Admin Dashboard.");
+      setIsEditing(false);
+      window.alert("✅ Profile settings saved successfully! Your profile details are now updated.");
     } catch {
       setSaving(false);
       window.alert("Error saving profile settings.");
@@ -285,13 +316,15 @@ const MentorProfile: React.FC = () => {
               accept="image/*"
               onChange={handlePhotoUpload}
             />
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-0 right-0 w-9 h-9 bg-[#5B21B6] text-white rounded-full flex items-center justify-center shadow-md hover:bg-[#7C3AED] transition-colors"
-              title="Change profile photo"
-            >
-              <Camera size={16} />
-            </button>
+            {isEditing && (
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-0 right-0 w-9 h-9 bg-[#5B21B6] text-white rounded-full flex items-center justify-center shadow-md hover:bg-[#7C3AED] transition-colors"
+                title="Change profile photo"
+              >
+                <Camera size={16} />
+              </button>
+            )}
           </div>
 
           <h3 className="font-bold text-gray-900 text-lg mt-1">{form.name}</h3>
@@ -328,11 +361,21 @@ const MentorProfile: React.FC = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Card 1: Public Mentorship Profile */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 space-y-6">
-            <div>
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 pb-3 border-b border-gray-100">
-                <Briefcase size={18} className="text-[#5B21B6]" /> Public Mentor Profile
-              </h2>
-              <p className="text-xs text-gray-500 mt-1">This information is publicly visible to founders exploring the mentor network.</p>
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                  <Briefcase size={18} className="text-[#5B21B6]" /> Public Mentor Profile
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">This information is publicly visible to founders exploring the mentor network.</p>
+              </div>
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-lg border border-gray-200 text-sm transition-colors shadow-sm"
+                >
+                  <Pencil size={14} className="mr-2" /> Edit Profile
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -341,8 +384,11 @@ const MentorProfile: React.FC = () => {
                 <input 
                   type="text" 
                   value={form.name} 
+                  disabled={!isEditing}
                   onChange={e => update('name', e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]" 
+                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] ${
+                    isEditing ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'
+                  }`} 
                 />
               </div>
 
@@ -350,8 +396,11 @@ const MentorProfile: React.FC = () => {
                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Mentor Category</label>
                 <select 
                   value={form.category} 
+                  disabled={!isEditing}
                   onChange={e => update('category', e.target.value as any)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] bg-white font-medium"
+                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] font-medium ${
+                    isEditing ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'
+                  }`}
                 >
                   {categories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
@@ -364,9 +413,12 @@ const MentorProfile: React.FC = () => {
                 <input 
                   type="text" 
                   value={form.experienceYears} 
+                  disabled={!isEditing}
                   placeholder="e.g. 12+ Years"
                   onChange={e => update('experienceYears', e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]" 
+                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] ${
+                    isEditing ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'
+                  }`} 
                 />
               </div>
 
@@ -374,8 +426,11 @@ const MentorProfile: React.FC = () => {
                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Availability Status</label>
                 <select 
                   value={form.availability} 
+                  disabled={!isEditing}
                   onChange={e => update('availability', e.target.value as any)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] bg-white font-medium"
+                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] font-medium ${
+                    isEditing ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'
+                  }`}
                 >
                   {availabilityOptions.map(opt => (
                     <option key={opt} value={opt}>{opt}</option>
@@ -388,9 +443,12 @@ const MentorProfile: React.FC = () => {
                 <input 
                   type="text" 
                   value={form.languages} 
+                  disabled={!isEditing}
                   placeholder="e.g. English, Spanish"
                   onChange={e => update('languages', e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]" 
+                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] ${
+                    isEditing ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'
+                  }`} 
                 />
               </div>
 
@@ -399,9 +457,12 @@ const MentorProfile: React.FC = () => {
                 <input 
                   type="text" 
                   value={form.location} 
+                  disabled={!isEditing}
                   placeholder="e.g. New York, NY"
                   onChange={e => update('location', e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]" 
+                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] ${
+                    isEditing ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'
+                  }`} 
                 />
               </div>
 
@@ -410,9 +471,12 @@ const MentorProfile: React.FC = () => {
                 <input 
                   type="text" 
                   value={form.expertise} 
+                  disabled={!isEditing}
                   placeholder="e.g. SaaS, Go-to-Market, Fundraising, Product Strategy"
                   onChange={e => update('expertise', e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]" 
+                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] ${
+                    isEditing ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'
+                  }`} 
                 />
               </div>
 
@@ -423,9 +487,12 @@ const MentorProfile: React.FC = () => {
                   <input 
                     type="text" 
                     value={form.linkedin} 
+                    disabled={!isEditing}
                     placeholder="e.g. linkedin.com/in/alexrivera"
                     onChange={e => update('linkedin', e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]" 
+                    className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] ${
+                      isEditing ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'
+                    }`} 
                   />
                 </div>
               </div>
@@ -434,10 +501,13 @@ const MentorProfile: React.FC = () => {
                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">Bio & Investment Thesis</label>
                 <textarea 
                   value={form.bio} 
+                  disabled={!isEditing}
                   onChange={e => update('bio', e.target.value)} 
                   rows={3}
                   placeholder="Share your background, key achievements, and the types of founders you love helping..."
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] resize-none leading-relaxed" 
+                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] resize-none leading-relaxed ${
+                    isEditing ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'
+                  }`} 
                 />
               </div>
             </div>
@@ -473,8 +543,11 @@ const MentorProfile: React.FC = () => {
                 <input 
                   type="email" 
                   value={form.email} 
+                  disabled={!isEditing}
                   onChange={e => update('email', e.target.value)}
-                  className="w-full px-4 py-2.5 border border-purple-200/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] bg-white font-medium" 
+                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] font-medium ${
+                    isEditing ? 'border-purple-200/80 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'
+                  }`} 
                 />
               </div>
 
@@ -486,23 +559,34 @@ const MentorProfile: React.FC = () => {
                 <input 
                   type="tel" 
                   value={form.phone} 
+                  disabled={!isEditing}
                   onChange={e => update('phone', e.target.value)}
-                  className="w-full px-4 py-2.5 border border-purple-200/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] bg-white font-medium" 
+                  className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] font-medium ${
+                    isEditing ? 'border-purple-200/80 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'
+                  }`} 
                 />
               </div>
             </div>
           </div>
 
           {/* Save Changes Button inside bottom/last */}
-          <div className="flex justify-end pt-2">
-            <button 
-              onClick={handleSave}
-              disabled={saving}
-              className="flex items-center justify-center px-8 py-3.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm transition-all transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {saving ? <Loader2 size={18} className="mr-2 animate-spin" /> : <Save size={18} className="mr-2" />} {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
+          {isEditing && (
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={handleCancel}
+                className="flex items-center justify-center px-8 py-3.5 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-xl border border-gray-200 text-sm transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center justify-center px-8 py-3.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow-lg hover:shadow-xl text-sm transition-all transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {saving ? <Loader2 size={18} className="mr-2 animate-spin" /> : <Save size={18} className="mr-2" />} {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
