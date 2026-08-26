@@ -1,4 +1,4 @@
-
+import mongoose from 'mongoose';
 import { Request, Response } from 'express';
 import crypto from 'crypto';
 import { InvestorInvite } from '../models/InvestorInvite.js';
@@ -282,6 +282,17 @@ export const deleteInvite = async (req: Request, res: Response) => {
 export const listInvites = async (_req: Request, res: Response) => {
   try {
     const now = new Date();
+
+    // Graceful fallback if MongoDB is not connected
+    if (mongoose.connection.readyState !== 1) {
+      console.warn('⚠️ Database disconnected. Returning empty list so client falls back to localStorage.');
+      return res.json({
+        success: true,
+        invites: [],
+        dbConnected: false
+      });
+    }
+
     const mentorInvites = await MentorInvite.find().sort({ createdAt: -1 });
 
     for (const inv of mentorInvites) {

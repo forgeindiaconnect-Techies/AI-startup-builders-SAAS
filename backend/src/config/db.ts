@@ -21,6 +21,8 @@ export const connectDB = async (): Promise<void> => {
       dbName: 'ai-startup-builder',
       serverSelectionTimeoutMS: 2500,
       socketTimeoutMS: 15000,
+      tlsAllowInvalidCertificates: true,
+      tlsAllowInvalidHostnames: true,
     });
     console.log('');
     console.log('📦 ═══════════════════════════════════════════');

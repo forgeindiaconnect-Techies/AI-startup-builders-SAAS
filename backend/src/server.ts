@@ -1,4 +1,9 @@
 import 'dotenv/config';
+
+// Disable Node strict TLS validation locally to bypass SSL Alert 80 / TLS handshake errors
+// caused by local firewall/antivirus SSL inspection for all external fetch calls.
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 import express from 'express';
 import cors from 'cors';
 import apiRoutes from './routes/index.js';
