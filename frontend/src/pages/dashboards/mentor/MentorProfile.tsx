@@ -115,6 +115,7 @@ const MentorProfile: React.FC = () => {
     const myId = user?.id || '';
     // Prefer the signup/profile data stored on the backend User record
     // so whatever the mentor filled during signup shows up here.
+    const resolvedStatus = (user?.approvalStatus === 'approved' || user?.approvalStatus === 'APPROVED') ? 'Verified' : 'Pending';
     const fromUser: Partial<MentorProfileData> = {
       id: myId,
       name: user?.fullName || '',
@@ -126,6 +127,7 @@ const MentorProfile: React.FC = () => {
       linkedin: user?.linkedin || '',
       bio: user?.bio || '',
       category: mapCategory(user?.expertise),
+      verificationStatus: resolvedStatus,
     };
 
     try {
@@ -134,13 +136,16 @@ const MentorProfile: React.FC = () => {
       if (stored) {
         profiles = JSON.parse(stored);
       }
-      const found = profiles.find(p => p.id === myId || (p.name && p.name === user?.fullName));
-      setForm({ ...defaultMentorProfile, ...(found || {}), ...fromUser });
-
-      if (!found) {
-        profiles.push({ ...defaultMentorProfile, ...fromUser });
-        localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(profiles));
+      const foundIdx = profiles.findIndex(p => p.id === myId || (p.name && p.name === user?.fullName));
+      const updatedProfile = { ...defaultMentorProfile, ...(foundIdx >= 0 ? profiles[foundIdx] : {}), ...fromUser };
+      
+      if (foundIdx >= 0) {
+        profiles[foundIdx] = updatedProfile;
+      } else {
+        profiles.push(updatedProfile);
       }
+      localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(profiles));
+      setForm(updatedProfile);
     } catch {
       setForm({ ...defaultMentorProfile, ...fromUser });
     }
@@ -152,6 +157,7 @@ const MentorProfile: React.FC = () => {
 
   const handleCancel = () => {
     const myId = user?.id || '';
+    const resolvedStatus = (user?.approvalStatus === 'approved' || user?.approvalStatus === 'APPROVED') ? 'Verified' : 'Pending';
     const fromUser: Partial<MentorProfileData> = {
       id: myId,
       name: user?.fullName || '',
@@ -163,6 +169,7 @@ const MentorProfile: React.FC = () => {
       linkedin: user?.linkedin || '',
       bio: user?.bio || '',
       category: mapCategory(user?.expertise),
+      verificationStatus: resolvedStatus,
     };
 
     try {
@@ -171,8 +178,14 @@ const MentorProfile: React.FC = () => {
       if (stored) {
         profiles = JSON.parse(stored);
       }
-      const found = profiles.find(p => p.id === myId || (p.name && p.name === user?.fullName));
-      setForm({ ...defaultMentorProfile, ...(found || {}), ...fromUser });
+      const foundIdx = profiles.findIndex(p => p.id === myId || (p.name && p.name === user?.fullName));
+      const updatedProfile = { ...defaultMentorProfile, ...(foundIdx >= 0 ? profiles[foundIdx] : {}), ...fromUser };
+      
+      if (foundIdx >= 0) {
+        profiles[foundIdx] = updatedProfile;
+      }
+      localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(profiles));
+      setForm(updatedProfile);
     } catch {
       setForm({ ...defaultMentorProfile, ...fromUser });
     }

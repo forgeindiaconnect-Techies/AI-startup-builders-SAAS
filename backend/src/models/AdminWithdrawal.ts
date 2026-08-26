@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IAdminWithdrawal extends Document {
   amount: number;
   withdrawalMethod: 'bank_transfer' | 'upi' | 'other';
+  payoutSource?: 'all' | 'mentor' | 'investor';
   upiId?: string;
   accountHolderName?: string;
   bankName?: string;
@@ -29,6 +30,11 @@ const AdminWithdrawalSchema: Schema = new Schema(
       type: String,
       enum: ['bank_transfer', 'upi', 'other'],
       required: true,
+    },
+    payoutSource: {
+      type: String,
+      enum: ['all', 'mentor', 'investor'],
+      default: 'all',
     },
     upiId: { type: String, default: '' },
     accountHolderName: { type: String, default: '' },

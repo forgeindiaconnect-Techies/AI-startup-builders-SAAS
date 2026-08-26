@@ -450,21 +450,7 @@ const FounderNotifications: React.FC = () => {
                     <div className="bg-white p-3.5 rounded-xl border border-purple-100 text-xs text-gray-800 leading-relaxed font-medium mb-3">
                       {n.desc}
                     </div>
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      {n.actionUrl ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedNotif(null);
-                            navigate(n.actionUrl || '/');
-                          }}
-                          className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
-                        >
-                          <ExternalLink size={13} /> Go to Page
-                        </button>
-                      ) : (
-                        <span />
-                      )}
+                    <div className="flex flex-wrap items-center justify-end gap-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -570,20 +556,8 @@ const FounderNotifications: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row gap-3 justify-between items-center">
-              {selectedNotif.actionUrl && (
-                <button
-                  onClick={() => {
-                    setSelectedNotif(null);
-                    navigate(selectedNotif.actionUrl || '/');
-                  }}
-                  className="w-full sm:w-auto px-4 py-2 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold text-xs rounded-xl transition-colors shadow-sm cursor-pointer"
-                >
-                  <ExternalLink size={13} className="inline mr-1.5 -mt-0.5" />
-                  Go to Page
-                </button>
-              )}
-              <div className={`flex ${selectedNotif.actionUrl ? '' : 'w-full'} flex-col sm:flex-row gap-3 items-center sm:justify-end`}>
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row gap-3 justify-end items-center">
+              <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-3 items-center sm:justify-end">
                 <button
                   onClick={() => {
                     const newRead = !selectedNotif.read;

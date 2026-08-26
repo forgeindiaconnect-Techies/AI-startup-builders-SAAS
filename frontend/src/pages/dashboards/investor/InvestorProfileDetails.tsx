@@ -43,12 +43,21 @@ const InvestorProfileDetails: React.FC = () => {
         profiles = JSON.parse(stored);
       }
       const myId = user?.id || '';
-      const found = profiles.find(p => p.id === myId || p.id === user?.id || p.investorName === user?.fullName);
-      if (found) {
-        setProfile(found);
+      const resolvedStatus = (user?.approvalStatus === 'approved' || user?.approvalStatus === 'APPROVED')
+        ? 'Verified'
+        : (user?.approvalStatus === 'rejected' || user?.approvalStatus === 'REJECTED')
+          ? 'Rejected'
+          : 'pending';
+
+      const foundIdx = profiles.findIndex(p => p.id === myId || p.id === user?.id || p.investorName === user?.fullName);
+      if (foundIdx >= 0) {
+        const updated = { ...profiles[foundIdx], verificationStatus: resolvedStatus, id: myId };
+        profiles[foundIdx] = updated;
+        localStorage.setItem('ai_startup_builder_investor_profiles', JSON.stringify(profiles));
+        setProfile(updated);
       } else {
         // Initialize if not found
-        const initial = { ...defaultProfile, id: myId };
+        const initial = { ...defaultProfile, id: myId, verificationStatus: resolvedStatus };
         if (user?.fullName) initial.investorName = user.fullName;
         if (user?.email) initial.email = user.email;
         profiles.push(initial);

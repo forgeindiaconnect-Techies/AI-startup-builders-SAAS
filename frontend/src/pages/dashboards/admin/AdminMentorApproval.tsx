@@ -462,14 +462,6 @@ const AdminMentorApproval: React.FC = () => {
                 <span className={`px-4 py-2 rounded-xl text-sm font-bold ${
                   a.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'
                 }`}>{a.status}</span>
-                {a.source === 'db' && (
-                  <button
-                    onClick={() => setEditingMentor(a)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-purple-50 text-gray-600 hover:text-[#5B21B6] border border-gray-200 hover:border-purple-200 font-bold rounded-xl text-xs transition-colors"
-                  >
-                    <Pencil size={12} /> Edit Settings
-                  </button>
-                )}
               </div>
             ) : (
               <div className="flex items-center gap-3 lg:flex-col lg:items-stretch">
@@ -485,14 +477,6 @@ const AdminMentorApproval: React.FC = () => {
                 >
                   <Check size={15} /> Approve
                 </button>
-                {a.source === 'db' && (
-                  <button
-                    onClick={() => setEditingMentor(a)}
-                    className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-50 hover:bg-purple-50 text-gray-600 hover:text-[#5B21B6] border border-gray-200 hover:border-purple-200 font-bold rounded-xl text-sm transition-colors"
-                  >
-                    <Pencil size={14} /> Edit
-                  </button>
-                )}
               </div>
             )}
           </div>

@@ -104,12 +104,29 @@ export const getPlatformRevenueDashboard = async (req: AuthRequest, res: Respons
     const withdrawals = await AdminWithdrawal.find({}).sort({ createdAt: -1 }).populate('processedBy', 'fullName email');
     let totalAmountWithdrawn = 0;
     let pendingPlatformWithdrawals = 0;
+    
+    let totalMentorWithdrawn = 0;
+    let pendingMentorWithdrawals = 0;
+    
+    let totalInvestorWithdrawn = 0;
+    let pendingInvestorWithdrawals = 0;
 
     withdrawals.forEach(w => {
+      const source = w.payoutSource || 'all';
       if (w.status === 'paid') {
         totalAmountWithdrawn += w.amount || 0;
+        if (source === 'mentor') {
+          totalMentorWithdrawn += w.amount || 0;
+        } else if (source === 'investor') {
+          totalInvestorWithdrawn += w.amount || 0;
+        }
       } else if (w.status === 'pending' || w.status === 'processing') {
         pendingPlatformWithdrawals += w.amount || 0;
+        if (source === 'mentor') {
+          pendingMentorWithdrawals += w.amount || 0;
+        } else if (source === 'investor') {
+          pendingInvestorWithdrawals += w.amount || 0;
+        }
       }
     });
 
@@ -117,6 +134,9 @@ export const getPlatformRevenueDashboard = async (req: AuthRequest, res: Respons
     const totalPlatformRevenue = totalMentorCommission + totalInvestorCommission;
     const availablePlatformBalance = Math.max(0, totalPlatformRevenue - totalAmountWithdrawn);
     const currentAvailableWithdrawalBalance = Math.max(0, availablePlatformBalance - pendingPlatformWithdrawals);
+
+    const availableMentorBalance = Math.max(0, totalMentorCommission - totalMentorWithdrawn - pendingMentorWithdrawals);
+    const availableInvestorBalance = Math.max(0, totalInvestorCommission - totalInvestorWithdrawn - pendingInvestorWithdrawals);
 
     return res.json({
       success: true,
@@ -132,6 +152,8 @@ export const getPlatformRevenueDashboard = async (req: AuthRequest, res: Respons
         pendingPlatformWithdrawals,
         totalAmountWithdrawn,
         currentAvailableWithdrawalBalance,
+        availableMentorBalance,
+        availableInvestorBalance,
         mentorTransactions,
         investorTransactions,
         withdrawals,
@@ -146,7 +168,7 @@ export const getPlatformRevenueDashboard = async (req: AuthRequest, res: Respons
 // 4. POST /api/admin/platform-withdraw
 export const requestAdminWithdrawal = async (req: AuthRequest, res: Response) => {
   try {
-    const { amount, withdrawalMethod, upiId, accountHolderName, bankName, accountNumber, ifscCode, otherDetails } = req.body;
+    const { amount, withdrawalMethod, payoutSource, upiId, accountHolderName, bankName, accountNumber, ifscCode, otherDetails } = req.body;
 
     const withdrawAmount = Number(amount);
     if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
@@ -155,6 +177,11 @@ export const requestAdminWithdrawal = async (req: AuthRequest, res: Response) =>
 
     if (!['bank_transfer', 'upi', 'other'].includes(withdrawalMethod)) {
       return res.status(400).json({ success: false, message: 'Invalid withdrawal method.' });
+    }
+
+    const source = payoutSource || 'all';
+    if (!['all', 'mentor', 'investor'].includes(source)) {
+      return res.status(400).json({ success: false, message: 'Invalid payout source.' });
     }
 
     if (withdrawalMethod === 'upi' && (!upiId || !upiId.trim())) {
@@ -180,10 +207,23 @@ export const requestAdminWithdrawal = async (req: AuthRequest, res: Response) =>
 
     // 3. Total Admin Withdrawn
     const adminWithdrawals = await AdminWithdrawal.find({ status: { $in: ['pending', 'processing', 'paid'] } });
-    const existingWithdrawnOrPending = adminWithdrawals.reduce((sum, w) => sum + w.amount, 0);
 
-    const totalRevenue = totalMentorCommission + totalInvestorCommission;
-    const availableToWithdraw = Math.max(0, totalRevenue - existingWithdrawnOrPending);
+    let availableToWithdraw = 0;
+    if (source === 'mentor') {
+      const existingMentorWithdrawn = adminWithdrawals
+        .filter(w => w.payoutSource === 'mentor')
+        .reduce((sum, w) => sum + w.amount, 0);
+      availableToWithdraw = Math.max(0, totalMentorCommission - existingMentorWithdrawn);
+    } else if (source === 'investor') {
+      const existingInvestorWithdrawn = adminWithdrawals
+        .filter(w => w.payoutSource === 'investor')
+        .reduce((sum, w) => sum + w.amount, 0);
+      availableToWithdraw = Math.max(0, totalInvestorCommission - existingInvestorWithdrawn);
+    } else {
+      const existingWithdrawnOrPending = adminWithdrawals.reduce((sum, w) => sum + w.amount, 0);
+      const totalRevenue = totalMentorCommission + totalInvestorCommission;
+      availableToWithdraw = Math.max(0, totalRevenue - existingWithdrawnOrPending);
+    }
 
     if (withdrawAmount > availableToWithdraw) {
       return res.status(400).json({
@@ -195,13 +235,17 @@ export const requestAdminWithdrawal = async (req: AuthRequest, res: Response) =>
     const withdrawal = await AdminWithdrawal.create({
       amount: withdrawAmount,
       withdrawalMethod,
+      payoutSource: source,
       upiId: withdrawalMethod === 'upi' ? upiId.trim() : '',
       accountHolderName: withdrawalMethod === 'bank_transfer' ? accountHolderName.trim() : '',
       bankName: withdrawalMethod === 'bank_transfer' ? (bankName || '').trim() : '',
       accountNumber: withdrawalMethod === 'bank_transfer' ? accountNumber.trim() : '',
       ifscCode: withdrawalMethod === 'bank_transfer' ? ifscCode.trim() : '',
       otherDetails: withdrawalMethod === 'other' ? (otherDetails || '').trim() : '',
-      status: 'pending',
+      status: 'paid',
+      transactionReference: 'AUTO-' + Math.random().toString(36).substring(2, 11).toUpperCase(),
+      processedBy: req.user?.id as any,
+      processedAt: new Date(),
     });
 
     return res.status(201).json({ success: true, message: 'Withdrawal request submitted successfully', data: withdrawal });

@@ -4,10 +4,19 @@ import { Rocket, Mail, Lock, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, E
 import { useAuth } from '../../context/AuthContext';
 
 const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isAdminLogin = location.pathname === '/admin-login';
+
+  // Redirect to dashboard if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      const targetRole = user.role || 'founder';
+      const effectiveRole = (targetRole === 'user' || !targetRole) ? 'founder' : targetRole;
+      navigate(`/dashboard/${effectiveRole}`, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const [email, setEmail] = useState(isAdminLogin ? 'selva@gmail.com' : '');
   const [password, setPassword] = useState(isAdminLogin ? 'Selva@143' : '');
@@ -73,15 +82,23 @@ const Login: React.FC = () => {
           setSuccess('Welcome back! Redirecting...');
         }
         
+        const from = location.state?.from?.pathname || '';
+        const targetUrl = from && from.startsWith('/dashboard') ? from : null;
+        
         setTimeout(() => {
-          if (targetRole === 'admin') navigate('/dashboard/admin');
-          else if (targetRole === 'mentor') navigate('/dashboard/mentor');
-          else if (targetRole === 'investor') navigate('/dashboard/investor');
-          else {
+          if (targetUrl) {
+            navigate(targetUrl + (location.state?.from?.search || ''), { replace: true });
+          } else if (targetRole === 'admin') {
+            navigate('/dashboard/admin', { replace: true });
+          } else if (targetRole === 'mentor') {
+            navigate('/dashboard/mentor', { replace: true });
+          } else if (targetRole === 'investor') {
+            navigate('/dashboard/investor', { replace: true });
+          } else {
             if (isTrialExpired) {
-              navigate('/dashboard/founder/billing');
+              navigate('/dashboard/founder/billing', { replace: true });
             } else {
-              navigate('/dashboard/founder');
+              navigate('/dashboard/founder', { replace: true });
             }
           }
         }, 1500);

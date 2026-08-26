@@ -17,7 +17,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
 
   if (!isAuthenticated || !user) {
     // Not logged in, redirect to login page
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   const effectiveRole = ((user.role as string) === 'user' || !user.role) ? 'founder' : user.role;

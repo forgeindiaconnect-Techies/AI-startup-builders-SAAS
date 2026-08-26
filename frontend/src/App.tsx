@@ -112,6 +112,8 @@ import InvestorProfileKYC      from './pages/dashboards/investor/InvestorProfile
 // ── Admin Combined Pages ────────────────────────────────────────────
 import AdminSubPayments        from './pages/dashboards/admin/AdminSubPayments';
 import AdminPlatformSettings   from './pages/dashboards/admin/AdminPlatformSettings';
+import AdminPlatformRevenue    from './pages/dashboards/admin/AdminPlatformRevenue';
+
 
 
 function App() {
@@ -210,6 +212,7 @@ function App() {
                     <Route path="help"              element={<SharedHelp />} />
                     <Route path="mentor-earnings"    element={<AdminMentorEarnings />} />
                     <Route path="investor-funding"   element={<AdminInvestorFunding />} />
+                    <Route path="revenue"            element={<AdminPlatformRevenue />} />
                   </Route>
 
                   {/* ───────────── MENTOR ───────────── */}
