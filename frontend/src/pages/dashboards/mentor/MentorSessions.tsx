@@ -115,9 +115,9 @@ const ScheduleModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl my-8">
-        <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl my-auto flex flex-col max-h-[90vh] overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 flex-shrink-0">
           <div>
             <h2 className="font-bold text-gray-900">Schedule Session</h2>
             <p className="text-xs text-gray-500 mt-0.5">Set the date and time slot for {founderNameOf(booking)} · {startupNameOf(booking)}</p>
@@ -125,9 +125,9 @@ const ScheduleModal: React.FC<{
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1"><X size={20} /></button>
         </div>
 
-        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 text-sm">
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1.5">Requested Topic</p>
+        <div className="p-6 space-y-4 overflow-y-auto flex-1">
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-3.5 text-sm">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Requested Topic</p>
             <p className="font-bold text-gray-900">{booking.topic}</p>
           </div>
 
@@ -141,7 +141,7 @@ const ScheduleModal: React.FC<{
             <>
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wider">Select Day / Date</label>
-                <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
+                <div className="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-2.5">
                   {availability.map((a) => {
                     const allBooked = (a.slots || []).every((s: string) => (bookedSlots[a.date] || []).includes(s));
                     const busy = allBooked;
@@ -221,7 +221,7 @@ const ScheduleModal: React.FC<{
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
+        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3 flex-shrink-0">
           <button onClick={onClose} className="px-5 py-2.5 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors text-sm">Cancel</button>
           <button
             onClick={handleSubmit}
