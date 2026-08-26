@@ -560,7 +560,8 @@ const MentorProfile: React.FC = () => {
                   type="tel" 
                   value={form.phone} 
                   disabled={!isEditing}
-                  onChange={e => update('phone', e.target.value)}
+                  maxLength={10}
+                  onChange={e => update('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
                   className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] font-medium ${
                     isEditing ? 'border-purple-200/80 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'
                   }`} 

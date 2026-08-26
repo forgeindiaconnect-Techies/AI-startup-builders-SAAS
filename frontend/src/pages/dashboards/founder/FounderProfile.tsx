@@ -186,8 +186,20 @@ const FounderProfile: React.FC = () => {
               ].map(f => (
                 <div key={f.key}>
                   <label className="block text-sm font-bold text-gray-700 mb-1.5">{f.label}</label>
-                  <input type={f.type} value={form[f.key as keyof typeof form]} onChange={e => update(f.key, e.target.value)} disabled={!isEditing}
-                    className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] ${isEditing ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'}`} />
+                  <input
+                    type={f.type}
+                    value={form[f.key as keyof typeof form]}
+                    onChange={e => {
+                      let val = e.target.value;
+                      if (f.key === 'phone') {
+                        val = val.replace(/\D/g, '').slice(0, 10);
+                      }
+                      update(f.key, val);
+                    }}
+                    maxLength={f.key === 'phone' ? 10 : undefined}
+                    disabled={!isEditing}
+                    className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] ${isEditing ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 text-gray-500'}`}
+                  />
                 </div>
               ))}
             </div>
