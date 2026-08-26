@@ -30,6 +30,12 @@ const toInviteJson = (inv: IMentorInvite) => ({
 
 export const createMentorInvite = async (req: Request, res: Response) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database connection is offline. Unable to complete operation.'
+      });
+    }
     const { mentorName, mentorEmail, expertise, message, inviteLink, expiryDate } = req.body;
 
     if (!mentorName || !mentorEmail) {
@@ -93,6 +99,12 @@ export const createMentorInvite = async (req: Request, res: Response) => {
 
 export const getInviteByToken = async (req: Request, res: Response) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database connection is offline. Unable to retrieve invite.'
+      });
+    }
     const { token } = req.params;
     const mentorInv = await MentorInvite.findOne({ inviteToken: token });
 
@@ -170,6 +182,12 @@ export const getInviteByToken = async (req: Request, res: Response) => {
 
 export const resendInvite = async (req: Request, res: Response) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database connection is offline. Unable to query invites for resending.'
+      });
+    }
     const { token } = req.params;
     const invite = await MentorInvite.findOne({ inviteToken: token });
 
@@ -218,6 +236,12 @@ export const resendInvite = async (req: Request, res: Response) => {
 
 export const markInviteUsed = async (req: Request, res: Response) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database connection is offline. Unable to mark invite as used.'
+      });
+    }
     const { token } = req.params;
     const invite = await MentorInvite.findOne({ inviteToken: token });
 
@@ -238,6 +262,12 @@ export const markInviteUsed = async (req: Request, res: Response) => {
 
 export const updateInvite = async (req: Request, res: Response) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database connection is offline. Unable to update invite.'
+      });
+    }
     const { token } = req.params;
     const { mentorName, mentorEmail, expertise, message, expiryDate, status } = req.body;
 
@@ -267,6 +297,12 @@ export const updateInvite = async (req: Request, res: Response) => {
 
 export const deleteInvite = async (req: Request, res: Response) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database connection is offline. Unable to delete invite.'
+      });
+    }
     const { token } = req.params;
     let invite = await MentorInvite.findOneAndDelete({ inviteToken: token });
     if (!invite) {
@@ -339,6 +375,12 @@ export const listInvites = async (_req: Request, res: Response) => {
 
 export const createInvestorInvite = async (req: Request, res: Response) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database connection is offline. Unable to create investor invitation.'
+      });
+    }
     const {
       fullName, email, phone, companyName, designation,
       investorType, linkedinUrl, website, location,

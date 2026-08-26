@@ -82,10 +82,10 @@ app.use((err: any, req: express.Request, res: express.Response, _next: express.N
 // Start server
 const startServer = async () => {
   try {
-    app.listen(PORT, '0.0.0.0', () => {
-      // Connect to DB in the background
-      connectDB();
+    // Await database connection attempt so Mongoose is ready (or fails and logs) before starting Express
+    await connectDB();
 
+    app.listen(PORT, '0.0.0.0', () => {
       console.log('');
       console.log('🚀 ═══════════════════════════════════════════');
       console.log('   AI Startup Builder API Server');
