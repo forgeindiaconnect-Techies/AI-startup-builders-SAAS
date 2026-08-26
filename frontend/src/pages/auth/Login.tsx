@@ -12,7 +12,7 @@ const Login: React.FC = () => {
   // Redirect to dashboard if already authenticated
   React.useEffect(() => {
     if (isAuthenticated && user) {
-      const targetRole = user.role || 'founder';
+      const targetRole = (user.role as string) || 'founder';
       const effectiveRole = (targetRole === 'user' || !targetRole) ? 'founder' : targetRole;
       navigate(`/dashboard/${effectiveRole}`, { replace: true });
     }

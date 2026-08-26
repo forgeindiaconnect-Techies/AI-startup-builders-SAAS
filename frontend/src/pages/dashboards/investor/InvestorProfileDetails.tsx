@@ -43,11 +43,11 @@ const InvestorProfileDetails: React.FC = () => {
         profiles = JSON.parse(stored);
       }
       const myId = user?.id || '';
-      const resolvedStatus = (user?.approvalStatus === 'approved' || user?.approvalStatus === 'APPROVED')
+      const resolvedStatus = ((user?.approvalStatus === 'approved' || user?.approvalStatus === 'APPROVED')
         ? 'Verified'
         : (user?.approvalStatus === 'rejected' || user?.approvalStatus === 'REJECTED')
           ? 'Rejected'
-          : 'pending';
+          : 'pending') as 'pending' | 'Verified' | 'Rejected';
 
       const foundIdx = profiles.findIndex(p => p.id === myId || p.id === user?.id || p.investorName === user?.fullName);
       if (foundIdx >= 0) {
