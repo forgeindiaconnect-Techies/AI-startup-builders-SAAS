@@ -1407,8 +1407,25 @@ const FounderMentors: React.FC = () => {
             <div>
               {refreshingTab ? (
                 <Spinner />
+              ) : completedBookings.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
+                  <CheckCircle2 size={40} className="mx-auto text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-medium">No completed sessions yet.</p>
+                  <p className="text-sm text-gray-400 mt-1">Completed sessions and mentor feedback will appear here.</p>
+                </div>
               ) : (
-                <FounderMentorReviews defaultTab="session_reviews" filterMode="pending" hideTabs={true} />
+                <div className="space-y-4">
+                  {completedBookings.map((b) => (
+                    <BookingRow
+                      key={b._id}
+                      booking={b}
+                      onCancel={handleCancelBooking}
+                      onReschedule={(book) => setRescheduleBookingData(book)}
+                      onAccept={handleAcceptBooking}
+                      accepting={acceptingId === b._id}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -1419,7 +1436,7 @@ const FounderMentors: React.FC = () => {
               {refreshingTab ? (
                 <Spinner />
               ) : (
-                <FounderMentorReviews defaultTab="session_reviews" filterMode="rated" hideTabs={true} />
+                <FounderMentorReviews defaultTab="session_reviews" filterMode="all" hideTabs={true} />
               )}
             </div>
           )}
