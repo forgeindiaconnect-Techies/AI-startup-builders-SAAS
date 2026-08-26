@@ -16,6 +16,7 @@ import analyticsRoutes from './analyticsRoutes.js';
 import dataroomRoutes from './dataroomRoutes.js';
 import investorMessageRoutes from './investorMessageRoutes.js';
 import investorMeetingRoutes from './investorMeetingRoutes.js';
+import adminRoutes from './adminRoutes.js';
 
 const router = Router();
 
@@ -34,6 +35,7 @@ router.use('/originality', originalityRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/dataroom', dataroomRoutes);
 router.use('/investor-meetings', investorMeetingRoutes);
+router.use('/admin', adminRoutes);
 router.use('/', investorMessageRoutes);
 
 // Health check endpoint

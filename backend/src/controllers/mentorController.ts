@@ -8,6 +8,7 @@ import MentorFeedback from '../models/MentorFeedback.js';
 import MentorReview from '../models/MentorReview.js';
 import MentorTransaction from '../models/MentorTransaction.js';
 import MentorWithdrawal from '../models/MentorWithdrawal.js';
+import CommissionSettings from '../models/CommissionSettings.js';
 import Startup from '../models/Startup.js';
 import NotificationModel from '../models/Notification.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
@@ -786,8 +787,9 @@ export const acceptSession = async (req: AuthRequest, res: Response) => {
         const existing = await MentorTransaction.findOne({ bookingId: booking._id });
         if (!existing) {
           const mentorProfile = await MentorProfile.findOne({ mentorId: booking.mentorId });
-          const sharePercent = mentorProfile?.mentorSharePercentage ?? 80;
-          const commissionPercent = mentorProfile?.platformCommissionPercentage ?? 20;
+          const systemSettings = await CommissionSettings.findOne();
+          const commissionPercent = systemSettings ? systemSettings.mentorCommission : (mentorProfile?.platformCommissionPercentage ?? 20);
+          const sharePercent = systemSettings ? (100 - systemSettings.mentorCommission) : (mentorProfile?.mentorSharePercentage ?? 80);
           const mentorEarnings = Math.round((booking.sessionFee * sharePercent) / 100 * 100) / 100;
           const platformCommission = Math.round((booking.sessionFee * commissionPercent) / 100 * 100) / 100;
 
@@ -868,8 +870,9 @@ export const completeSession = async (req: AuthRequest, res: Response) => {
       const existing = await MentorTransaction.findOne({ bookingId: booking._id });
       if (!existing && booking.sessionFee >= 0) {
         const mentorProfile = await MentorProfile.findOne({ mentorId: booking.mentorId });
-        const sharePercent = mentorProfile?.mentorSharePercentage ?? 80;
-        const commissionPercent = mentorProfile?.platformCommissionPercentage ?? 20;
+        const systemSettings = await CommissionSettings.findOne();
+        const commissionPercent = systemSettings ? systemSettings.mentorCommission : (mentorProfile?.platformCommissionPercentage ?? 20);
+        const sharePercent = systemSettings ? (100 - systemSettings.mentorCommission) : (mentorProfile?.mentorSharePercentage ?? 80);
         const fee = booking.sessionFee || 0;
         const mentorEarnings = Math.round((fee * sharePercent) / 100 * 100) / 100;
         const platformCommission = Math.round((fee * commissionPercent) / 100 * 100) / 100;

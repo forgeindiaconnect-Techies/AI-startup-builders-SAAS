@@ -7,7 +7,7 @@ import {
   File, Lightbulb, CalendarClock, Handshake, ClipboardList,
   Briefcase, Building2, UserCog, Inbox, CreditCard,
   BarChart2, Settings, CheckSquare, ShieldCheck,
-  IndianRupee, Film, Link2, Bell, GraduationCap, Star, FolderLock, ScrollText, FileText,
+  IndianRupee, Film, Link2, Bell, GraduationCap, Star, FolderLock, ScrollText, FileText, Coins,
 } from 'lucide-react';
 import NotificationDropdown from '../components/shared/NotificationDropdown';
 import PlanGate from '../components/shared/PlanGate';
@@ -67,6 +67,7 @@ import AdminPlatformSettings from '../pages/dashboards/admin/AdminPlatformSettin
 import AdminMentorEarnings from '../pages/dashboards/admin/AdminMentorEarnings';
 import AdminInvestorFunding from '../pages/dashboards/admin/AdminInvestorFunding';
 import AdminProfile from '../pages/dashboards/admin/AdminProfile';
+import AdminPlatformRevenue from '../pages/dashboards/admin/AdminPlatformRevenue';
 
 const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
   founder: {
@@ -146,6 +147,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/admin/inbox': SharedInbox,
     '/dashboard/admin/mentor-earnings': AdminMentorEarnings,
     '/dashboard/admin/investor-funding': AdminInvestorFunding,
+    '/dashboard/admin/revenue': AdminPlatformRevenue,
     '/dashboard/admin/profile': AdminProfile,
   },
 };
@@ -215,7 +217,8 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Doc Verification',        icon: File,            path: '/dashboard/admin/document-verification' },
         { name: 'Subscriptions & Payments',icon: CreditCard,      path: '/dashboard/admin/sub-payments' },
         { name: 'Mentor Earnings',         icon: IndianRupee,     path: '/dashboard/admin/mentor-earnings' },
-        { name: 'Investor Funding',         icon: Wallet,          path: '/dashboard/admin/investor-funding' },
+        { name: 'Investor Funding',        icon: Wallet,          path: '/dashboard/admin/investor-funding' },
+        { name: 'Platform Revenue',        icon: Coins,           path: '/dashboard/admin/revenue' },
         { name: 'Notifications',           icon: Bell,            path: '/dashboard/admin/notifications' },
         { name: 'Profile',                 icon: UserCog,         path: '/dashboard/admin/profile' },
       ],

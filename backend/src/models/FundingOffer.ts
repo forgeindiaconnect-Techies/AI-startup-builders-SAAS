@@ -87,6 +87,7 @@ export interface IFundingOffer extends Document {
   commissionStatus?: 'Pending' | 'Fixed' | 'Sent to Admin' | 'Collected';
   commissionNotes?: string;
   commissionUpdatedAt?: string;
+  commissionPayer?: 'investor' | 'founder';
   agreementAcknowledged?: boolean;
   agreementId?: string;
   agreementVersion?: string;
@@ -160,6 +161,7 @@ const FundingOfferSchema: Schema = new Schema(
     commissionStatus: { type: String, default: 'Pending' },
     commissionNotes: { type: String, default: '' },
     commissionUpdatedAt: { type: String, default: '' },
+    commissionPayer: { type: String, enum: ['investor', 'founder'], default: 'investor' },
     agreementAcknowledged: { type: Boolean, default: false },
     agreementId: { type: String, default: '' },
     agreementVersion: { type: String, default: 'v1.0' },

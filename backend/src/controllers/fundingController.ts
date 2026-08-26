@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import FundingOffer from '../models/FundingOffer.js';
 import InvestorConnectionRequest from '../models/InvestorConnectionRequest.js';
+import CommissionSettings from '../models/CommissionSettings.js';
 
 // GET /api/funding - get all offers
 export const getAllOffers = async (req: Request, res: Response) => {
@@ -66,12 +67,31 @@ export const updateOffer = async (req: Request, res: Response) => {
     let offer = null;
     if (mongoose.connection.readyState === 1) {
       try {
+        const existingOffer = await FundingOffer.findById(id);
+        if (existingOffer) {
+          const isCompleting = updates.status && ['funded', 'completed'].includes(updates.status) && !['funded', 'completed'].includes(existingOffer.status);
+          if (isCompleting) {
+            const settings = await CommissionSettings.findOne();
+            const rate = settings ? settings.investorCommission : 2;
+            const payer = settings ? settings.investorCommissionPayer : 'investor';
+            const amount = (existingOffer.offerAmount * rate) / 100;
+
+            updates.commissionRate = rate;
+            updates.commissionAmount = amount;
+            updates.commissionStatus = 'Collected';
+            updates.commissionPayer = payer;
+            updates.commissionUpdatedAt = new Date().toISOString();
+          }
+        }
+
         offer = await FundingOffer.findByIdAndUpdate(
           id,
           { ...updates, updatedAt: new Date() },
           { new: true }
         );
-      } catch {}
+      } catch (err) {
+        console.error('Error updating offer:', err);
+      }
     }
 
     return res.json({ success: true, data: offer || { id, ...updates } });
