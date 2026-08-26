@@ -46,7 +46,9 @@ const MentorRatings: React.FC = () => {
         startup: r.startupName || 'Startup',
         score: Number(r.rating) || 5,
         review: r.reviewText || 'Great mentoring session!',
-        date: r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'
+        date: r.createdAt
+          ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : (r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent')
       }));
 
       // Read from localStorage key ai_startup_builder_user_mentor_reviews
@@ -60,7 +62,9 @@ const MentorRatings: React.FC = () => {
             startup: r.startupName || 'Startup',
             score: Number(r.rating) || 5,
             review: r.reviewText || 'Great mentoring session!',
-            date: r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'
+            date: r.createdAt
+              ? new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+              : (r.date ? new Date(r.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent')
           }));
         }
       } catch (e) {}
