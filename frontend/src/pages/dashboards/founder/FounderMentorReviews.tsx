@@ -10,14 +10,28 @@ const RATING_COLORS: Record<string, string> = {
   Bad: 'bg-red-100 text-red-700 border border-red-200',
 };
 
-const FounderMentorReviews: React.FC = () => {
+interface FounderMentorReviewsProps {
+  defaultTab?: 'session_reviews' | 'output_reviews';
+  hideTabs?: boolean;
+  filterMode?: 'all' | 'pending' | 'rated';
+}
+
+const FounderMentorReviews: React.FC<FounderMentorReviewsProps> = ({
+  defaultTab = 'session_reviews',
+  hideTabs = false,
+  filterMode = 'all',
+}) => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'session_reviews' | 'output_reviews'>('session_reviews');
+  const [activeTab, setActiveTab] = useState<'session_reviews' | 'output_reviews'>(defaultTab);
   const [startups, setStartups] = useState<any[]>([]);
   const [completedBookings, setCompletedBookings] = useState<any[]>([]);
   const [userReviews, setUserReviews] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
 
   // Review Form state per booking
   const [selectedStars, setSelectedStars] = useState<Record<string, number>>({});
@@ -254,6 +268,16 @@ const FounderMentorReviews: React.FC = () => {
     } catch { return iso; }
   };
 
+  const visibleCompletedBookings = React.useMemo(() => {
+    return completedBookings.filter((booking) => {
+      const bId = booking._id || booking.id;
+      const hasReview = !!userReviews[bId];
+      if (filterMode === 'pending') return !hasReview;
+      if (filterMode === 'rated') return hasReview;
+      return true;
+    });
+  }, [completedBookings, userReviews, filterMode]);
+
   if (loading) {
     return (
       <div className="animate-fade-in-up flex items-center justify-center h-64">
@@ -264,48 +288,60 @@ const FounderMentorReviews: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Mentor Reviews & Feedback</h1>
-        <p className="text-gray-500 mt-1">Rate completed mentoring sessions and review feedback from your mentors.</p>
-      </div>
+      {!hideTabs && (
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Mentor Reviews & Feedback</h1>
+          <p className="text-gray-500 mt-1">Rate completed mentoring sessions and review feedback from your mentors.</p>
+        </div>
+      )}
 
       {/* Tabs Switcher */}
-      <div className="flex gap-2 border-b border-gray-200 mb-8">
-        <button
-          onClick={() => setActiveTab('session_reviews')}
-          className={`pb-3 px-4 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${
-            activeTab === 'session_reviews'
-              ? 'border-[#5B21B6] text-[#5B21B6]'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <Star size={16} /> Rate Completed Sessions ({completedBookings.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('output_reviews')}
-          className={`pb-3 px-4 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${
-            activeTab === 'output_reviews'
-              ? 'border-[#5B21B6] text-[#5B21B6]'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <MessageSquare size={16} /> Startup Output Reviews ({startups.length})
-        </button>
-      </div>
+      {!hideTabs && (
+        <div className="flex gap-2 border-b border-gray-200 mb-8">
+          <button
+            onClick={() => setActiveTab('session_reviews')}
+            className={`pb-3 px-4 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${
+              activeTab === 'session_reviews'
+                ? 'border-[#5B21B6] text-[#5B21B6]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Star size={16} /> Rate Completed Sessions ({completedBookings.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('output_reviews')}
+            className={`pb-3 px-4 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${
+              activeTab === 'output_reviews'
+                ? 'border-[#5B21B6] text-[#5B21B6]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <MessageSquare size={16} /> Startup Output Reviews ({startups.length})
+          </button>
+        </div>
+      )}
 
       {/* TAB 1: Rate & Review Completed Sessions */}
       {activeTab === 'session_reviews' && (
         <div className="space-y-6">
-          {completedBookings.length === 0 ? (
+          {visibleCompletedBookings.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
               <Award size={40} className="mx-auto text-gray-300 mb-3" />
-              <h3 className="text-lg font-bold text-gray-900 mb-1">No Completed Sessions Yet</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">
+                {filterMode === 'pending'
+                  ? 'No Pending Sessions to Rate'
+                  : filterMode === 'rated'
+                    ? 'No Rated Sessions Yet'
+                    : 'No Completed Sessions Yet'}
+              </h3>
               <p className="text-gray-500 text-sm max-w-sm mx-auto">
-                Once a mentor completes a 1:1 session with you, you can rate the session and write your review here.
+                {filterMode === 'pending'
+                  ? 'You have rated all completed sessions!'
+                  : 'Once a mentor completes a 1:1 session with you, you can rate the session and write your review here.'}
               </p>
             </div>
           ) : (
-            completedBookings.map((booking) => {
+            visibleCompletedBookings.map((booking) => {
               const bId = booking._id || booking.id;
               const mentorName = typeof booking.mentorId === 'object' ? booking.mentorId?.fullName : (booking.mentorName || 'Mentor');
               const startupName = typeof booking.startupId === 'object' ? booking.startupId?.startupName : (booking.startupName || 'Startup');

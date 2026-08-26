@@ -58,7 +58,7 @@ const STATUS_STYLES: Record<string, { label: string; className: string }> = {
 };
 
 // ─── Types ────────────────────────────────────────────────────────
-type TabId = 'mentors' | 'bookings' | 'completed' | 'reviews';
+type TabId = 'mentors' | 'bookings' | 'output_reviews' | 'completed' | 'rated';
 type BookingStep = 'startup' | 'topic' | 'confirm' | 'success';
 
 // ─── Helpers ──────────────────────────────────────────────────────
@@ -1208,8 +1208,9 @@ const FounderMentors: React.FC = () => {
   const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
     { id: 'mentors', label: 'Available Mentors', icon: GraduationCap },
     { id: 'bookings', label: 'My Bookings', icon: Calendar },
+    { id: 'output_reviews', label: 'Startup Output Reviews', icon: MessageSquare },
     { id: 'completed', label: 'Completed Sessions', icon: CheckCircle2 },
-    { id: 'reviews', label: 'Mentor Reviews & Ratings', icon: Star },
+    { id: 'rated', label: 'Rated Completed Sessions', icon: Star },
   ];
 
   return (
@@ -1390,38 +1391,36 @@ const FounderMentors: React.FC = () => {
             </div>
           )}
 
+          {/* ── Startup Output Reviews ── */}
+          {tab === 'output_reviews' && (
+            <div>
+              {refreshingTab ? (
+                <Spinner />
+              ) : (
+                <FounderMentorReviews defaultTab="output_reviews" hideTabs={true} />
+              )}
+            </div>
+          )}
+
           {/* ── Completed Sessions ── */}
           {tab === 'completed' && (
             <div>
               {refreshingTab ? (
                 <Spinner />
-              ) : completedBookings.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
-                  <CheckCircle2 size={40} className="mx-auto text-gray-300 mb-3" />
-                  <p className="text-gray-500 font-medium">No completed sessions yet.</p>
-                  <p className="text-sm text-gray-400 mt-1">Completed sessions and mentor feedback will appear here.</p>
-                </div>
               ) : (
-                <div className="space-y-4">
-                  {completedBookings.map((b) => (
-                    <BookingRow
-                      key={b._id}
-                      booking={b}
-                      onCancel={handleCancelBooking}
-                      onReschedule={(book) => setRescheduleBookingData(book)}
-                      onAccept={handleAcceptBooking}
-                      accepting={acceptingId === b._id}
-                    />
-                  ))}
-                </div>
+                <FounderMentorReviews defaultTab="session_reviews" filterMode="pending" hideTabs={true} />
               )}
             </div>
           )}
 
-          {/* ── Mentor Reviews & Ratings ── */}
-          {tab === 'reviews' && (
+          {/* ── Rated Completed Sessions ── */}
+          {tab === 'rated' && (
             <div>
-              <FounderMentorReviews />
+              {refreshingTab ? (
+                <Spinner />
+              ) : (
+                <FounderMentorReviews defaultTab="session_reviews" filterMode="rated" hideTabs={true} />
+              )}
             </div>
           )}
         </>
