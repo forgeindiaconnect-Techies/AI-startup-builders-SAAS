@@ -189,10 +189,27 @@ export const resendInvite = async (req: Request, res: Response) => {
       });
     }
     const { token } = req.params;
-    const invite = await MentorInvite.findOne({ inviteToken: token });
+    let invite = await MentorInvite.findOne({ inviteToken: token });
 
     if (!invite) {
-      return res.status(404).json({ success: false, error: 'not_found' });
+      // Re-create the invite in the database on the fly if full details are provided in body
+      // (resolving the issue where invite was created in localStorage while the DB was offline)
+      const { mentorName, mentorEmail, message, expertise, expiryDate } = req.body;
+      if (mentorName && mentorEmail) {
+        invite = await MentorInvite.create({
+          mentorName,
+          mentorEmail,
+          expertise: expertise || '',
+          inviteToken: token,
+          inviteUrl: `/signup?role=mentor&inviteToken=${token}`,
+          message: message || '',
+          expiresAt: expiryDate ? new Date(expiryDate) : new Date(Date.now() + DEFAULT_EXPIRY_MS),
+          emailedAt: new Date(),
+          status: 'active'
+        });
+      } else {
+        return res.status(404).json({ success: false, error: 'not_found' });
+      }
     }
     if (invite.status === 'disabled') {
       return res.status(400).json({ success: false, error: 'disabled' });

@@ -390,7 +390,14 @@ const AdminInviteLinks: React.FC = () => {
       const res = await fetch(`${API_URL}/invites/${token}/resend`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inviteLink: fullUrl }),
+        body: JSON.stringify({
+          inviteLink: fullUrl,
+          mentorName: inv.mentorName,
+          mentorEmail: inv.mentorEmail,
+          message: inv.message || '',
+          expertise: inv.expertise || '',
+          expiryDate: inv.expiryDate
+        }),
       });
       const json = await res.json();
       if (json.success) {
