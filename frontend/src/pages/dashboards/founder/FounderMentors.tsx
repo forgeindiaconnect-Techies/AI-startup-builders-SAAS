@@ -40,6 +40,7 @@ const BOOKING_TOPICS = [
   'Plagiarism Check',
   'Fundraising Strategy',
   'Product Roadmap',
+  'Product Development',
   'Pricing Strategy',
   'Growth & Marketing',
   'Sales Strategy',

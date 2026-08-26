@@ -46,6 +46,7 @@ export const SESSION_TOPICS = [
   'Business Model Review',
   'Go-to-Market Strategy',
   'Product Roadmap',
+  'Product Development',
   'Pricing Strategy',
   'Pitch Deck Review',
   'Growth & Marketing',
