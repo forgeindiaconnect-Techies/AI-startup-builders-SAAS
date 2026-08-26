@@ -11,10 +11,94 @@ import {
   type MentorInvite,
 } from '../../../utils/inviteLinks';
 
+// Programmatically synthesized audio feedback using the Web Audio API
+const playNotificationSound = (type: 'success' | 'error') => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContext) return;
+    const ctx = new AudioContext();
+    
+    if (type === 'success') {
+      // Elegant mail sent "whoosh + chime" sound
+      // Whoosh sound: white noise with bandpass filter sliding up
+      const bufferSize = ctx.sampleRate * 0.3; // 0.3 seconds
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.Q.setValueAtTime(3.0, ctx.currentTime);
+      filter.frequency.setValueAtTime(400, ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(1600, ctx.currentTime + 0.25);
+      
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.08, ctx.currentTime);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+      
+      noise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noise.start();
+      
+      // Chime sound: Sine wave C5 -> G5 -> C6
+      setTimeout(() => {
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+        osc1.frequency.setValueAtTime(783.99, ctx.currentTime + 0.08); // G5
+        osc1.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.16); // C6
+        
+        gain1.gain.setValueAtTime(0.05, ctx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start();
+        osc1.stop(ctx.currentTime + 0.4);
+      }, 100);
+    } else {
+      // Error sound: low buzzer double click
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180, ctx.currentTime);
+      osc.frequency.setValueAtTime(120, ctx.currentTime + 0.08);
+      
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.25);
+    }
+  } catch (e) {
+    console.warn('Audio playback failed:', e);
+  }
+};
+
+interface MailNotification {
+  show: boolean;
+  toEmail: string;
+  toName: string;
+  subject: string;
+  bodySnippet: string;
+  status: 'sending' | 'success' | 'error';
+  errorDetails?: string;
+}
+
 const AdminInviteLinks: React.FC = () => {
   const [invites, setInvites] = useState<MentorInvite[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [mailNotification, setMailNotification] = useState<MailNotification | null>(null);
   const [filter, setFilter] = useState<'all' | 'active' | 'used' | 'expired' | 'disabled'>('all');
 
   // Create form state
@@ -113,6 +197,15 @@ const AdminInviteLinks: React.FC = () => {
     if (Object.keys(errs).length > 0) return;
 
     setSending(true);
+    setMailNotification({
+      show: true,
+      toEmail: form.mentorEmail.trim(),
+      toName: form.mentorName.trim(),
+      subject: "You're Invited to Join Our Mentor Network - AI Startup Builder",
+      bodySnippet: form.message.trim() || "You have been invited to join AI Startup Builder as a Mentor. Help founders validate ideas, avoid mistakes, and grow their startups with your expertise.",
+      status: 'sending'
+    });
+
     try {
       const res = await fetch(`${API_URL}/invites/mentor`, {
         method: 'POST',
@@ -144,10 +237,23 @@ const AdminInviteLinks: React.FC = () => {
         setGeneratedLink(invite);
         setEmailSentStatus(json.emailSent !== false);
         loadInvites();
+        
         if (json.emailSent === false) {
-          showToast(`Invite created, but the email could not be sent to ${serverInvite.mentorEmail}. Use Resend to try again.`, 'error');
+          setMailNotification(prev => prev ? {
+            ...prev,
+            status: 'error',
+            errorDetails: 'Brevo/SMTP delivery failed. Check SMTP configuration.'
+          } : null);
+          playNotificationSound('error');
         } else {
-          showToast(`Invite created & email sent to ${serverInvite.mentorEmail}!`, 'success');
+          setMailNotification(prev => prev ? {
+            ...prev,
+            status: 'success'
+          } : null);
+          playNotificationSound('success');
+          setTimeout(() => {
+            setMailNotification(prev => prev && prev.status === 'success' ? null : prev);
+          }, 6000);
         }
         return;
       }
@@ -164,7 +270,12 @@ const AdminInviteLinks: React.FC = () => {
       });
       setGeneratedLink(invite);
       loadInvites();
-      showToast('Invite created, but the email could not be sent (server offline). Copy the link manually.', 'error');
+      setMailNotification(prev => prev ? {
+        ...prev,
+        status: 'error',
+        errorDetails: err.message || 'Server offline. Invitation generated locally but email could not be sent.'
+      } : null);
+      playNotificationSound('error');
     } finally {
       setSending(false);
     }
@@ -267,6 +378,14 @@ const AdminInviteLinks: React.FC = () => {
     const inv = getInviteByToken(token);
     if (!inv) return;
     const fullUrl = `${window.location.origin}${inv.inviteUrl}`;
+    setMailNotification({
+      show: true,
+      toEmail: inv.mentorEmail,
+      toName: inv.mentorName,
+      subject: "You're Invited to Join Our Mentor Network - AI Startup Builder",
+      bodySnippet: inv.message || "You have been invited to join AI Startup Builder as a Mentor. Help founders validate ideas, avoid mistakes, and grow their startups with your expertise.",
+      status: 'sending'
+    });
     try {
       const res = await fetch(`${API_URL}/invites/${token}/resend`, {
         method: 'POST',
@@ -277,15 +396,37 @@ const AdminInviteLinks: React.FC = () => {
       if (json.success) {
         loadInvites();
         if (json.emailSent === false) {
-          showToast(`Email could not be sent to ${inv.mentorEmail}. Check the SMTP settings.`, 'error');
+          setMailNotification(prev => prev ? {
+            ...prev,
+            status: 'error',
+            errorDetails: 'Brevo/SMTP delivery failed. Check SMTP configuration.'
+          } : null);
+          playNotificationSound('error');
         } else {
-          showToast(`Invite email resent to ${inv.mentorEmail}!`, 'success');
+          setMailNotification(prev => prev ? {
+            ...prev,
+            status: 'success'
+          } : null);
+          playNotificationSound('success');
+          setTimeout(() => {
+            setMailNotification(prev => prev && prev.status === 'success' ? null : prev);
+          }, 6000);
         }
       } else {
-        showToast(json.error || 'Failed to resend email', 'error');
+        setMailNotification(prev => prev ? {
+          ...prev,
+          status: 'error',
+          errorDetails: json.error || 'Failed to resend email'
+        } : null);
+        playNotificationSound('error');
       }
-    } catch {
-      showToast('Email could not be sent (server offline)', 'error');
+    } catch (err: any) {
+      setMailNotification(prev => prev ? {
+        ...prev,
+        status: 'error',
+        errorDetails: err.message || 'Server offline. Could not resend email.'
+      } : null);
+      playNotificationSound('error');
     }
   };
 
@@ -308,6 +449,106 @@ const AdminInviteLinks: React.FC = () => {
         <div className={`fixed top-6 right-6 z-[200] px-5 py-3 rounded-xl shadow-xl font-semibold text-sm flex items-center gap-2 animate-in slide-in-from-top-2 ${toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
           {toast.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
           {toast.msg}
+        </div>
+      )}
+
+      {mailNotification && (
+        <div className="fixed bottom-6 right-6 z-[250] w-96 bg-white border border-gray-100 shadow-2xl rounded-2xl overflow-hidden animate-in slide-in-from-right-5 duration-300">
+          {/* Top Header */}
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <div className="p-1 bg-[#6C4CF1]/10 rounded-lg text-[#6C4CF1]">
+                <Mail size={14} />
+              </div>
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                AI Mailer Service
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                mailNotification.status === 'sending' ? 'bg-purple-50 text-purple-600 border border-purple-100 animate-pulse' :
+                mailNotification.status === 'success' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                'bg-red-50 text-red-600 border border-red-100'
+              }`}>
+                {mailNotification.status === 'sending' ? 'Sending' :
+                 mailNotification.status === 'success' ? 'Brevo SMTP (250 OK)' :
+                 'Failed'}
+              </span>
+              <button
+                onClick={() => setMailNotification(null)}
+                className="p-1 hover:bg-gray-200/50 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          </div>
+
+          {/* Email Content Details */}
+          <div className="p-4 space-y-3">
+            <div className="text-xs space-y-1">
+              <div className="flex items-baseline">
+                <span className="font-bold text-gray-400 w-12 shrink-0">From:</span>
+                <span className="text-gray-600 font-medium truncate">AI Startup Builder &lt;admin@aistartupbuilder.com&gt;</span>
+              </div>
+              <div className="flex items-baseline">
+                <span className="font-bold text-gray-400 w-12 shrink-0">To:</span>
+                <span className="text-gray-800 font-bold truncate">
+                  {mailNotification.toName} &lt;{mailNotification.toEmail}&gt;
+                </span>
+              </div>
+              <div className="flex items-baseline">
+                <span className="font-bold text-gray-400 w-12 shrink-0">Subject:</span>
+                <span className="text-gray-950 font-extrabold truncate">{mailNotification.subject}</span>
+              </div>
+            </div>
+
+            {/* Body Snippet */}
+            <div className="bg-slate-50 border-l-2 border-purple-500/70 p-3 rounded-lg text-[11px] text-gray-600 leading-relaxed font-medium">
+              <p className="line-clamp-3">{mailNotification.bodySnippet}</p>
+            </div>
+
+            {/* Status Footer / Progress Bar */}
+            <div className="pt-1.5 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <div className="flex items-center gap-1.5">
+                  {mailNotification.status === 'sending' && (
+                    <>
+                      <RefreshCw size={12} className="animate-spin text-purple-600" />
+                      <span className="text-purple-600 font-bold">Transmitting packets...</span>
+                    </>
+                  )}
+                  {mailNotification.status === 'success' && (
+                    <>
+                      <CheckCircle2 size={12} className="text-emerald-500" />
+                      <span className="text-emerald-600 font-bold">Message delivered!</span>
+                    </>
+                  )}
+                  {mailNotification.status === 'error' && (
+                    <>
+                      <AlertCircle size={12} className="text-red-500" />
+                      <span className="text-red-600 font-bold">Delivery failed</span>
+                    </>
+                  )}
+                </div>
+                <span className="text-gray-400 text-[10px]">Just now</span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full bg-gray-100 h-1 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full transition-all duration-500 ${
+                  mailNotification.status === 'sending' ? 'bg-purple-500 w-2/3 animate-[pulse_1s_infinite]' :
+                  mailNotification.status === 'success' ? 'bg-emerald-500 w-full' :
+                  'bg-red-500 w-full'
+                }`}></div>
+              </div>
+
+              {mailNotification.status === 'error' && mailNotification.errorDetails && (
+                <p className="text-[10px] text-red-500 bg-red-50 p-2 rounded-lg border border-red-100 font-semibold leading-normal">
+                  Error: {mailNotification.errorDetails}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
