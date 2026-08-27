@@ -346,7 +346,7 @@ export const sanitizeStartupId = (raw: string | null | undefined): string | null
 
 export const getStartups = async () => {
   try {
-    const res = await fetch(`${API_URL}/startups`);
+    const res = await fetch(`${API_URL}/startups`, { headers: authHeaders() });
     const data = await res.json();
     if (data.success) {
       return (Array.isArray(data.data) ? data.data : []).map(normalizeStartup);
@@ -365,7 +365,7 @@ export const saveStartups = async (startups: any[]) => {
 export const getStartupById = async (startupId: string) => {
   if (!sanitizeStartupId(startupId)) return null;
   try {
-    const res = await fetch(`${API_URL}/startups/${startupId}`);
+    const res = await fetch(`${API_URL}/startups/${startupId}`, { headers: authHeaders() });
     const data = await res.json();
     if (data.success) return normalizeStartup(data.data);
   } catch (e) {
@@ -396,7 +396,7 @@ export const updateStartup = async (startupId: string, updatedData: any) => {
   try {
     const res = await fetch(`${API_URL}/startups/${startupId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify(updatedData)
     });
     const data = await res.json();

@@ -3,6 +3,8 @@ import { GoogleGenAI } from '@google/genai';
 import { v2 as cloudinary } from 'cloudinary';
 import Startup from '../models/Startup.js';
 import mongoose from 'mongoose';
+import { AuthRequest } from '../middleware/authMiddleware.js';
+import MentorBooking from '../models/MentorBooking.js';
 
 
 let aiClient: GoogleGenAI | null = null;
@@ -499,12 +501,22 @@ export const getStartup = async (req: Request, res: Response) => {
   }
 };
 
-export const getAllStartups = async (req: Request, res: Response) => {
+export const getAllStartups = async (req: AuthRequest, res: Response) => {
   try {
     const filter: any = {};
-    if (req.query.founderId) {
+    const userId = req.user?.id;
+    const role = req.user?.role?.toLowerCase();
+
+    if (role === 'founder') {
+      filter.founderId = userId;
+    } else if (role === 'mentor') {
+      const bookings = await MentorBooking.find({ mentorId: userId, status: { $ne: 'cancelled' } });
+      const startupIds = bookings.map(b => b.startupId);
+      filter._id = { $in: startupIds };
+    } else if (req.query.founderId) {
       filter.founderId = req.query.founderId;
     }
+
     if (req.query.investorVisible === 'true' || req.query.public === 'true') {
       filter.investorVisible = true;
     }

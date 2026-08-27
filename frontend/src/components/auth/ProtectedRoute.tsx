@@ -29,7 +29,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
 
   // Founder role check - allow access to founder dashboard pages
 
-  if (effectiveRole === 'investor' || effectiveRole === 'mentor') {
+  if (effectiveRole === 'investor' || effectiveRole === 'mentor' || effectiveRole === 'founder') {
     const isApproved = user.approvalStatus === 'approved' || user.approvalStatus === 'APPROVED';
     if (!isApproved) {
       return <Navigate to={`/pending-approval?role=${effectiveRole}`} replace />;

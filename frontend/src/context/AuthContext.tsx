@@ -167,6 +167,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const handleStatusChangeNotifications = (newStatus: string, role: string) => {
+    const roleLabel = role === 'founder' ? 'Founder' : role === 'mentor' ? 'Mentor' : role === 'investor' ? 'Investor' : 'User';
+    
+    if (newStatus === 'approved') {
+      window.alert(`🎉 Congratulations! Your ${roleLabel} account has been approved by the admin.`);
+      window.location.href = `/dashboard/${role}`;
+    } else if (newStatus === 'pending') {
+      window.alert(`⏳ Alert: Your ${roleLabel} account approval is now pending admin review.`);
+      window.location.href = `/pending-approval?role=${role}`;
+    } else if (newStatus === 'rejected') {
+      window.alert(`❌ Notice: Your ${roleLabel} account request has been rejected by the admin.`);
+      removeToken();
+      setUser(null);
+      setSubscription(null);
+      usersFetchBlockedRef.current = false;
+      window.location.href = '/login';
+    }
+  };
+
   const checkAuth = async (): Promise<{ subscriptionStatus?: string; role?: string } | null> => {
     const token = getToken();
     if (!token) {
@@ -196,6 +215,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (!effectiveApproval) {
           effectiveApproval = (data.user.role === 'investor' || data.user.role === 'mentor') ? 'pending' : 'approved';
+        }
+
+        // Check for approval status change
+        if (user) {
+          const oldStatus = (user.approvalStatus || '').toLowerCase();
+          const newStatus = (effectiveApproval || '').toLowerCase();
+          if (oldStatus && newStatus && oldStatus !== newStatus) {
+            handleStatusChangeNotifications(newStatus, data.user.role);
+          }
         }
 
         setUser({
@@ -273,6 +301,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) return;
+
+    const interval = setInterval(() => {
+      if (localStorage.getItem(TOKEN_KEY)) {
+        checkAuth().catch(() => {});
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [user?.id]);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; role?: string; subscriptionStatus?: string }> => {
     try {

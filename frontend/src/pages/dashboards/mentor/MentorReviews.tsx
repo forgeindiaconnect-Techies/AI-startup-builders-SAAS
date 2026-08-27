@@ -71,30 +71,11 @@ const MentorReviews: React.FC = () => {
       }
     });
 
-    allStartups.forEach((s: any) => {
-      const sid = String(s.startupId || s._id || s.id);
-      const fid = String(s.userId || s.founderId || s.founderName || 'founder_renu');
-      const fName = s.founderName || s.founderFullName || s.founder || 'Renu';
-      if (!map.has(fid)) {
-        const userRec = allUsers.find((u: any) => u.id === fid || u._id === fid || u.fullName === fName);
-        map.set(fid, {
-          id: fid,
-          fullName: userRec?.fullName || fName,
-          email: userRec?.email || s.founderEmail || 'renu@example.com',
-          startupsById: new Map(),
-        });
-      }
-      const entry = map.get(fid);
-      if (!entry.startupsById.has(sid)) {
-        entry.startupsById.set(sid, s);
-      }
-    });
-
     return Array.from(map.values()).map((entry) => ({
       ...entry,
       startups: Array.from(entry.startupsById.values()),
     }));
-  }, [bookings, allStartups, allUsers]);
+  }, [bookings, allUsers]);
 
   useEffect(() => {
     if (!initialFounderId && !initialStartupId && !initialStartupName) return;

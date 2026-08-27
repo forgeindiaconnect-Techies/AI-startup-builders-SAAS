@@ -1278,8 +1278,8 @@ const FounderMentors: React.FC = () => {
 
   const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
     { id: 'mentors', label: 'Available Mentors', icon: GraduationCap },
-    { id: 'bookings', label: 'My Bookings', icon: Calendar },
     { id: 'output_reviews', label: 'Startup Output Reviews', icon: MessageSquare },
+    { id: 'bookings', label: 'My Bookings', icon: Calendar },
     { id: 'completed', label: 'Completed Sessions', icon: CheckCircle2 },
     { id: 'rated', label: 'Rated Completed Sessions', icon: Star },
   ];

@@ -52,6 +52,7 @@ const Login: React.FC = () => {
 
     if (!email.trim() || !password.trim()) {
       setError('Please enter both email and password.');
+      window.alert('⚠️ Please enter both email and password.');
       return;
     }
 
@@ -103,12 +104,16 @@ const Login: React.FC = () => {
           }
         }, 1500);
       } else {
+        const errorMsg = result.error || 'Invalid email or password';
         if (result.error === 'Account request rejected') {
           showToast('Your account has been rejected by the admin.', 'error');
+          window.alert('❌ Login Failed: Your account request has been rejected by the admin.');
         } else if (result.error === 'Account pending admin approval') {
           showToast('Your account is pending admin approval.', 'warning');
+          window.alert('⏳ Login Failed: Your account is pending admin approval.');
         } else {
-          setError(result.error || 'Login failed. Please try again.');
+          setError(errorMsg);
+          window.alert(`❌ Invalid Credentials: ${errorMsg}`);
         }
       }
     } catch {

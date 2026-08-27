@@ -1,12 +1,20 @@
-import React from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Clock, ShieldCheck, Mail, ArrowRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const PendingApproval: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { logout } = useAuth();
+
   const role = searchParams.get('role');
   const isMentor = role === 'mentor';
+
+  const handleGoToLogin = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -70,11 +78,12 @@ const PendingApproval: React.FC = () => {
             </div>
 
             <div className="pt-2 space-y-3">
-              <Link to="/login"
+              <button
+                onClick={handleGoToLogin}
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold text-white bg-[#5B21B6] hover:bg-[#7C3AED] transition-colors shadow-sm"
               >
                 Go to Login <ArrowRight size={16} />
-              </Link>
+              </button>
               <button onClick={() => navigate('/')}
                 className="w-full py-3 px-4 rounded-xl text-sm font-bold text-[#6B7280] hover:text-[#1F2937] hover:bg-gray-100 transition-colors"
               >

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { FileText, IndianRupee, Star, CheckCircle, Mail, Calendar, LogIn, ShieldCheck } from 'lucide-react';
+import { FileText, IndianRupee, Star, CheckCircle, Mail, Calendar, LogIn, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { getStartups } from '../../utils/localStorageHelper';
 import { getMentorBookings } from '../../utils/mentorApi';
 
@@ -10,6 +10,7 @@ const MentorDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState('Newest');
   const [startups, setStartups] = React.useState<any[]>([]);
+  const [showList, setShowList] = useState(false);
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return '—';
@@ -31,20 +32,13 @@ const MentorDashboard: React.FC = () => {
         const sp = b.startupId;
         if (sp) startupIds.add((sp._id || sp).toString());
       });
-      let visible = allStartups
-        .filter((s: any) => startupIds.size > 0 ? startupIds.has(String(s.startupId || s._id)) : true)
+      const visible = allStartups
+        .filter((s: any) => startupIds.has(String(s.startupId || s._id)))
         .map((s: any) => {
           const founderId = typeof s.founderId === 'string' ? s.founderId : s.founderId?._id?.toString();
           const fName = founderNames.get(founderId || '') || s.founderName || s.founderFullName || s.founder || 'Renu';
           return { ...s, founderName: fName };
         });
-
-      if (visible.length === 0 && allStartups.length > 0) {
-        visible = allStartups.map((s: any) => ({
-          ...s,
-          founderName: s.founderName || s.founderFullName || s.founder || 'Renu'
-        }));
-      }
 
       visible.sort((a: any, b: any) => new Date(b.createdAt || Date.now()).getTime() - new Date(a.createdAt || Date.now()).getTime());
       setStartups(visible);
@@ -126,52 +120,74 @@ const MentorDashboard: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <h2 className="text-lg font-bold text-gray-900">Startups to Review</h2>
+          <button
+            onClick={() => setShowList(prev => !prev)}
+            className="px-4 py-2 text-xs font-bold text-[#5B21B6] bg-purple-50 hover:bg-purple-100 rounded-xl transition-all flex items-center gap-1.5 border border-purple-200 shadow-sm"
+          >
+            {showList ? (
+              <>
+                <EyeOff size={14} /> Hide Startups
+              </>
+            ) : (
+              <>
+                <Eye size={14} /> Show Startups
+              </>
+            )}
+          </button>
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Startup Name</th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Founder</th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Industry</th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">AI Score</th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Created Date</th>
-                <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {startups.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-gray-500">
-                    No startups to review yet. Founders who book you as their mentor will appear here.
-                  </td>
+        {showList && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Startup Name</th>
+                  <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Founder</th>
+                  <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Industry</th>
+                  <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">AI Score</th>
+                  <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Created Date</th>
+                  <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
                 </tr>
-              ) : (
-                startups.map((startup, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                    <td className="p-4">
-                      <div className="font-bold text-gray-900">{startup.startupName}</div>
-                    </td>
-                    <td className="p-4 text-sm text-gray-700">{startup.founderName}</td>
-                    <td className="p-4 text-sm text-gray-700">{startup.aiGenerated?.ideaAnalysis?.businessModel || 'Tech'}</td>
-                    <td className="p-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${startup.status === 'generated' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                        {startup.status === 'generated' ? (startup.aiGenerated?.aiReport?.investmentReadinessScore || '85') + '/100' : 'Draft'}
-                      </span>
-                    </td>
-                    <td className="p-4 text-sm text-gray-500">{new Date(startup.createdAt).toLocaleDateString()}</td>
-                    <td className="p-4">
-                      <button onClick={() => navigate(`/dashboard/mentor/reviews?startupId=${startup.startupId || startup._id}`)} className="text-sm font-medium text-[#5B21B6] hover:text-[#7C3AED]">Start Review</button>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {startups.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-gray-500">
+                      No startups to review yet. Founders who book you as their mentor will appear here.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  startups.map((startup, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                      <td className="p-4">
+                        <div className="font-bold text-gray-900">{startup.startupName}</div>
+                      </td>
+                      <td className="p-4 text-sm text-gray-700">{startup.founderName}</td>
+                      <td className="p-4 text-sm text-gray-700">{startup.aiGenerated?.ideaAnalysis?.businessModel || 'Tech'}</td>
+                      <td className="p-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${startup.status === 'generated' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                          {startup.status === 'generated' ? (startup.aiGenerated?.aiReport?.investmentReadinessScore || '85') + '/100' : 'Draft'}
+                        </span>
+                      </td>
+                      <td className="p-4 text-sm text-gray-500">{new Date(startup.createdAt).toLocaleDateString()}</td>
+                      <td className="p-4">
+                        <button onClick={() => navigate(`/dashboard/mentor/reviews?startupId=${startup.startupId || startup._id}`)} className="text-sm font-medium text-[#5B21B6] hover:text-[#7C3AED]">Start Review</button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {!showList && (
+          <div className="p-8 text-center text-sm text-gray-500">
+            <p className="font-semibold text-gray-700 mb-1">Startup details are hidden.</p>
+            <p className="text-xs text-gray-400 mb-3">Click <strong>Show Startups</strong> above to view startups available for review.</p>
+          </div>
+        )}
       </div>
     </div>
   );
