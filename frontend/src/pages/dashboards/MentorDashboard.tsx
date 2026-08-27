@@ -154,7 +154,6 @@ const MentorDashboard: React.FC = () => {
                   <tr key={idx} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
                       <div className="font-bold text-gray-900">{startup.startupName}</div>
-                      <div className="text-xs text-gray-500 line-clamp-1">{startup.startupIdea}</div>
                     </td>
                     <td className="p-4 text-sm text-gray-700">{startup.founderName}</td>
                     <td className="p-4 text-sm text-gray-700">{startup.aiGenerated?.ideaAnalysis?.businessModel || 'Tech'}</td>
