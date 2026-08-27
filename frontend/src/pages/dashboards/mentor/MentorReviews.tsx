@@ -327,7 +327,7 @@ const MentorReviews: React.FC = () => {
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-500 mb-4">{startup.startupIdea}</p>
+
             </div>
 
             <div className="w-full md:w-auto flex flex-col gap-2 shrink-0 md:pl-4">
