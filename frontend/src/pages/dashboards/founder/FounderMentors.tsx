@@ -48,6 +48,31 @@ const BOOKING_TOPICS = [
   'Team Building',
 ];
 
+const TOPIC_CATEGORY_MAP: Record<string, string[]> = {
+  'AI Idea Generator': ['Technology', 'Business Strategy'],
+  'Idea Validation': ['Business Strategy'],
+  'Competitor Analysis': ['Business Strategy', 'Marketing'],
+  'MVP Planner': ['Product Development', 'Technology'],
+  'Financial Plan': ['Finance'],
+  'Go-To-Market Strategy': ['Marketing', 'Business Strategy'],
+  'Logo & Branding': ['Marketing'],
+  'Business Plan': ['Business Strategy'],
+  'Pitch Deck': ['Fundraising'],
+  'Market Research': ['Marketing'],
+  'Legal & Documents': ['Legal'],
+  'AI Reports': ['Technology'],
+  'AI Chat': ['Technology'],
+  'Plagiarism Check': ['Technology', 'Legal'],
+  'Fundraising Strategy': ['Fundraising'],
+  'Product Roadmap': ['Product Development'],
+  'Product Development': ['Product Development'],
+  'Pricing Strategy': ['Finance', 'Sales', 'Business Strategy'],
+  'Growth & Marketing': ['Marketing'],
+  'Sales Strategy': ['Sales'],
+  'Operations & Scaling': ['Operations'],
+  'Team Building': ['Operations', 'Business Strategy'],
+};
+
 const STATUS_STYLES: Record<string, { label: string; className: string }> = {
   pending: { label: 'Pending', className: 'bg-amber-50 text-amber-700 border-amber-200' },
   confirmed: { label: 'Scheduled', className: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -394,6 +419,15 @@ const BookingModal: React.FC<{
 
   const [selectedStartup, setSelectedStartup] = useState<any>(null);
   const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const filteredTopics = useMemo(() => {
+    if (selectedCategory === 'All') return BOOKING_TOPICS;
+    return BOOKING_TOPICS.filter((t) => {
+      const cats = TOPIC_CATEGORY_MAP[t] || [];
+      return cats.includes(selectedCategory);
+    });
+  }, [selectedCategory]);
 
   const stepIndex: Record<BookingStep, number> = { startup: 0, topic: 1, confirm: 2, success: 3 };
   const steps = ['Startup', 'Topic', 'Confirm'];
@@ -501,18 +535,55 @@ const BookingModal: React.FC<{
           <div>
             <h3 className="text-base font-bold text-gray-900 mb-1">Select Mentoring Topic</h3>
             <p className="text-xs text-gray-500 mb-4">Choose what you would like to focus on during this session.</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              {BOOKING_TOPICS.map((t) => (
+            
+            {/* Category Filter Horizontal Tabs */}
+            <div 
+              className="flex gap-2 overflow-x-auto pb-3.5 mb-4 shrink-0"
+              style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+            >
+              <button
+                onClick={() => setSelectedCategory('All')}
+                className={`px-4 py-2 rounded-full text-xs font-bold border transition-colors shrink-0 cursor-pointer ${
+                  selectedCategory === 'All'
+                    ? 'bg-[#5B21B6] text-white border-transparent'
+                    : 'bg-white border-gray-200 text-gray-600 hover:border-purple-200'
+                }`}
+              >
+                All
+              </button>
+              {MENTOR_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-4 py-2 rounded-full text-xs font-bold border transition-colors shrink-0 cursor-pointer ${
+                    selectedCategory === cat
+                      ? 'bg-[#5B21B6] text-white border-transparent'
+                      : 'bg-white border-gray-200 text-gray-600 hover:border-purple-200'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Grid of Topics */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-72 overflow-y-auto pr-1">
+              {filteredTopics.map((t) => (
                 <button
                   key={t}
                   onClick={() => setSelectedTopic(t)}
-                  className={`p-3 rounded-xl border text-sm font-semibold transition-all ${
+                  className={`p-3 rounded-xl border text-sm font-semibold transition-all cursor-pointer ${
                     selectedTopic === t ? 'border-[#5B21B6] bg-purple-50 text-[#5B21B6]' : 'border-gray-200 text-gray-700 hover:border-purple-200'
                   }`}
                 >
                   {t}
                 </button>
               ))}
+              {filteredTopics.length === 0 && (
+                <div className="col-span-full py-8 text-center text-sm text-gray-400">
+                  No topics in this category.
+                </div>
+              )}
             </div>
           </div>
         )}
