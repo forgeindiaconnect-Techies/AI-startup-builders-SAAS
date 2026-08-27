@@ -3,7 +3,7 @@ import { Search, MoreVertical, Building2, X, ArrowLeft, FileText, Eye, Trash2, I
 import SharedStartupDetailsTabs from '../../../components/shared/SharedStartupDetailsTabs';
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer } from '../../../context/FundingContext';
-import { getDocuments, getStartups } from '../../../utils/localStorageHelper';
+import { getDocuments, getStartups, updateStartup } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
 import jsPDF from 'jspdf';
 import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx';
@@ -17,9 +17,75 @@ const AdminStartups: React.FC = () => {
   const [selectedStartup, setSelectedStartup] = React.useState<any>(null);
   const [viewMode, setViewMode] = useState<'details' | 'documents' | 'funding'>('details');
   const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [statusDropdownOpen, setStatusDropdownOpen] = useState<string | null>(null);
 
   const { getStartupOffers, markAsFunded, updateOfferAdminNote, verifyOffer } = useFunding();
   const { getAllUsers } = useAuth();
+
+  const getStatusDetails = (status: string) => {
+    const s = (status || '').toLowerCase();
+    switch (s) {
+      case 'active':
+      case 'generated':
+      case 'approved':
+        return {
+          text: 'Active',
+          bgClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100',
+        };
+      case 'inactive':
+        return {
+          text: 'Inactive',
+          bgClass: 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100',
+        };
+      case 'rejected':
+      case 'failed':
+        return {
+          text: 'Rejected',
+          bgClass: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100',
+        };
+      case 'pending':
+      case 'pending_analysis':
+      case 'generating':
+      default:
+        return {
+          text: 'Pending',
+          bgClass: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100',
+        };
+    }
+  };
+
+  const handleStatusChange = async (startupId: string, newStatus: string) => {
+    try {
+      await updateStartup(startupId, { status: newStatus });
+    } catch (err) {
+      console.error("Failed to update status on backend:", err);
+    }
+
+    setStartups(prev => prev.map(s => 
+      (s.startupId === startupId || s.id === startupId) ? { ...s, status: newStatus } : s
+    ));
+
+    try {
+      const localKey = `startup_${startupId}`;
+      const stored = localStorage.getItem(localKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        parsed.status = newStatus;
+        localStorage.setItem(localKey, JSON.stringify(parsed));
+      }
+      const storedRaw = localStorage.getItem(startupId);
+      if (storedRaw) {
+        const parsed = JSON.parse(storedRaw);
+        parsed.status = newStatus;
+        localStorage.setItem(startupId, JSON.stringify(parsed));
+      }
+    } catch (e) {
+      console.error("Failed to update localStorage status:", e);
+    }
+
+    setStatusDropdownOpen(null);
+  };
+
   const startupOffers = selectedStartup ? getStartupOffers(selectedStartup.startupId, selectedStartup.startupName) : [];
 
   const allUsers = getAllUsers();
@@ -850,10 +916,65 @@ const AdminStartups: React.FC = () => {
                   <td className="px-6 py-4 text-xs font-semibold text-gray-600 max-w-[220px] truncate">
                     {s.industry || s.category || s.aiGenerated?.ideaAnalysis?.businessModel || 'Brick-and-Mortar Retail & Local Delivery'}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${s.status === 'generated' || s.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-                      {s.status === 'generated' || s.status === 'Approved' ? 'Active' : 'Pending'}
-                    </span>
+                  <td className="px-6 py-4 relative">
+                    {(() => {
+                      const { text, bgClass } = getStatusDetails(s.status);
+                      const startupId = s.startupId || s.id;
+                      return (
+                        <div className="inline-block text-left">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setStatusDropdownOpen(statusDropdownOpen === startupId ? null : startupId);
+                            }}
+                            className={`px-2.5 py-1 rounded-full text-xs font-bold border transition-colors cursor-pointer flex items-center gap-1.5 ${bgClass}`}
+                          >
+                            <span>{text}</span>
+                            <svg className="w-3 h-3 opacity-60 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                          
+                          {statusDropdownOpen === startupId && (
+                            <>
+                              <div 
+                                className="fixed inset-0 z-[90]" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setStatusDropdownOpen(null);
+                                }}
+                              />
+                              <div className="absolute left-0 mt-1.5 w-32 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-[100] animate-fade-in-up text-left flex flex-col">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleStatusChange(startupId, 'active'); }}
+                                  className="w-full text-left px-4 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                >
+                                  Active
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleStatusChange(startupId, 'inactive'); }}
+                                  className="w-full text-left px-4 py-2 text-xs font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+                                >
+                                  Inactive
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleStatusChange(startupId, 'pending'); }}
+                                  className="w-full text-left px-4 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 transition-colors"
+                                >
+                                  Pending
+                                </button>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleStatusChange(startupId, 'rejected'); }}
+                                  className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors"
+                                >
+                                  Rejected
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="px-6 py-4 text-xs font-medium text-gray-500">
                     {s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent'}

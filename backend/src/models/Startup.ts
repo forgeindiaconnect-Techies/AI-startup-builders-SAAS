@@ -4,7 +4,7 @@ export interface IStartup extends Document {
   founderId?: mongoose.Types.ObjectId;
   startupName: string;
   startupIdea: string;
-  status: 'pending_analysis' | 'generating' | 'generated' | 'failed';
+  status: 'pending_analysis' | 'generating' | 'generated' | 'failed' | 'active' | 'inactive' | 'pending' | 'rejected' | 'Active' | 'Inactive' | 'Pending' | 'Rejected';
   aiGenerated: {
     ideaAnalysis?: any;
     businessPlan?: any;
@@ -43,7 +43,11 @@ const StartupSchema: Schema = new Schema(
     },
     status: {
       type: String,
-      enum: ["pending_analysis", "generating", "generated", "failed"],
+      enum: [
+        "pending_analysis", "generating", "generated", "failed",
+        "active", "inactive", "pending", "rejected",
+        "Active", "Inactive", "Pending", "Rejected"
+      ],
       default: "pending_analysis"
     },
     aiGenerated: {
