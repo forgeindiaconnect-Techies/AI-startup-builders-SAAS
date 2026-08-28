@@ -5,7 +5,7 @@ import {
   Bell, CheckCheck, Star, Rocket, Info, X, Calendar, ShieldCheck,
   Tag, ChevronRight, ChevronDown, CheckCircle2, User, Megaphone, IndianRupee, MessageSquare, ExternalLink
 } from 'lucide-react';
-import { getNotifications } from '../../../utils/localStorageHelper';
+import { getNotifications, markNotificationRead } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
 
 type Notif = {
@@ -451,6 +451,17 @@ const FounderNotifications: React.FC = () => {
                       {n.desc}
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-2">
+                      {n.actionUrl && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(n.actionUrl);
+                          }}
+                          className="px-4 py-1.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+                        >
+                          Go to Page <ExternalLink size={13} />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -555,12 +566,28 @@ const FounderNotifications: React.FC = () => {
               </div>
             </div>
 
-            {/* Modal Footer */}
             <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row gap-3 justify-end items-center">
               <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-3 items-center sm:justify-end">
+                {selectedNotif.actionUrl && (
+                  <button
+                    onClick={() => {
+                      const url = selectedNotif.actionUrl;
+                      setSelectedNotif(null);
+                      navigate(url);
+                    }}
+                    className="w-full sm:w-auto px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-1.5 justify-center cursor-pointer"
+                  >
+                    Go to Page <ExternalLink size={14} />
+                  </button>
+                )}
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const newRead = !selectedNotif.read;
+                    if (!selectedNotif.read) {
+                      try {
+                        await markNotificationRead(String(selectedNotif.id));
+                      } catch (e) {}
+                    }
                     markOne(selectedNotif.id);
                     setSelectedNotif({ ...selectedNotif, read: newRead });
                   }}

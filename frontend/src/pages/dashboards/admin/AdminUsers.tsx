@@ -764,6 +764,17 @@ const AdminUsers: React.FC = () => {
     );
   };
 
+  const getColSpan = () => {
+    let base = 6;
+    if (!['admin', 'mentor', 'investor'].includes(roleFilter)) {
+      base += 2;
+    }
+    if (roleFilter !== 'admin') {
+      base += 2;
+    }
+    return base;
+  };
+
   return (
     <div className="animate-fade-in-up pb-10">
       {/* Toast */}
@@ -847,8 +858,8 @@ const AdminUsers: React.FC = () => {
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Login Count</th>
                 {!['admin', 'mentor', 'investor'].includes(roleFilter) && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Trial Expiry</th>}
                 {!['admin', 'mentor', 'investor'].includes(roleFilter) && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Subscription Expiry</th>}
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Approval</th>
+                {roleFilter !== 'admin' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>}
+                {roleFilter !== 'admin' && <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Approval</th>}
                 <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
@@ -894,12 +905,16 @@ const AdminUsers: React.FC = () => {
                       ) : <span className="text-gray-400 italic">—</span>}
                     </td>
                   )}
-                  <td className="px-6 py-4">
-                    {renderStatusDropdown(u)}
-                  </td>
-                  <td className="px-6 py-4">
-                    {renderApprovalDropdown(u)}
-                  </td>
+                  {roleFilter !== 'admin' && (
+                    <td className="px-6 py-4">
+                      {(u.role || '').toLowerCase() === 'admin' ? <span className="text-gray-400 italic">—</span> : renderStatusDropdown(u)}
+                    </td>
+                  )}
+                  {roleFilter !== 'admin' && (
+                    <td className="px-6 py-4">
+                      {(u.role || '').toLowerCase() === 'admin' ? <span className="text-gray-400 italic">—</span> : renderApprovalDropdown(u)}
+                    </td>
+                  )}
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <button
@@ -933,7 +948,7 @@ const AdminUsers: React.FC = () => {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-6 py-8 text-center text-sm text-gray-500">
+                  <td colSpan={getColSpan()} className="px-6 py-8 text-center text-sm text-gray-500">
                     No users found.
                   </td>
                 </tr>

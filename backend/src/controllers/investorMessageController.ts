@@ -17,6 +17,7 @@ export const getInvestorMessages = async (req: Request, res: Response) => {
 export const createInvestorMessage = async (req: Request, res: Response) => {
   try {
     const {
+      id,
       reqId,
       senderEmail,
       senderName,
@@ -37,6 +38,7 @@ export const createInvestorMessage = async (req: Request, res: Response) => {
     }
 
     const newMessage = await InvestorMessage.create({
+      id: id || `msg_${Date.now()}`,
       reqId: reqId || '',
       senderEmail,
       senderName: senderName || 'User',

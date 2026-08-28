@@ -334,28 +334,37 @@ const INITIAL_TRANSACTIONS: FundingTransaction[] = [
 
 // ─── Helpers ───
 
+let lastRequestsFetchTime = 0;
+
 export const getInvestmentRequests = (): InvestmentRequest[] => {
-  try {
-    fetch(`${API_URL}/funding/connection-requests`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-          const currentStored = localStorage.getItem(STORAGE_KEYS.REQUESTS);
-          const currentParsed = currentStored ? JSON.parse(currentStored) : [];
-          // Merge API data with current local items avoiding duplicates
-          const apiMap = new Map<string, any>();
-          data.data.forEach((item: any) => apiMap.set(item.id || item._id, item));
-          currentParsed.forEach((item: any) => {
-            if (item.id && !apiMap.has(item.id)) apiMap.set(item.id, item);
-          });
-          const merged = Array.from(apiMap.values());
-          localStorage.setItem(STORAGE_KEYS.REQUESTS, JSON.stringify(merged));
-          localStorage.setItem('ai_startup_builder_investment_requests', JSON.stringify(merged));
-          window.dispatchEvent(new Event('investment_requests_updated'));
-        }
-      })
-      .catch(() => {});
-  } catch (e) {}
+  const now = Date.now();
+  if (now - lastRequestsFetchTime > 5000) {
+    lastRequestsFetchTime = now;
+    try {
+      fetch(`${API_URL}/funding/connection-requests`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+            const currentStored = localStorage.getItem(STORAGE_KEYS.REQUESTS);
+            const currentParsed = currentStored ? JSON.parse(currentStored) : [];
+            // Merge API data with current local items avoiding duplicates
+            const apiMap = new Map<string, any>();
+            data.data.forEach((item: any) => apiMap.set(item.id || item._id, item));
+            currentParsed.forEach((item: any) => {
+              if (item.id && !apiMap.has(item.id)) apiMap.set(item.id, item);
+            });
+            const merged = Array.from(apiMap.values());
+            const mergedStr = JSON.stringify(merged);
+            if (mergedStr !== currentStored) {
+              localStorage.setItem(STORAGE_KEYS.REQUESTS, mergedStr);
+              localStorage.setItem('ai_startup_builder_investment_requests', mergedStr);
+              window.dispatchEvent(new Event('investment_requests_updated'));
+            }
+          }
+        })
+        .catch(() => {});
+    } catch (e) {}
+  }
 
   try {
     const stored = localStorage.getItem(STORAGE_KEYS.REQUESTS) || localStorage.getItem('ai_startup_builder_investment_requests');
@@ -629,24 +638,40 @@ export const syncInvestorMessagesWithBackend = async (): Promise<void> => {
 
       json.data.forEach((remote: any) => {
         const rId = String(remote._id || remote.id || '');
-        if (rId && !localIds.has(rId)) {
-          merged.push({
-            id: rId,
-            reqId: remote.reqId,
-            senderEmail: remote.senderEmail,
-            senderName: remote.senderName,
-            senderRole: remote.senderRole,
-            receiverEmail: remote.receiverEmail,
-            receiverName: remote.receiverName,
-            startupName: remote.startupName,
-            text: remote.text,
-            attachmentUrl: remote.attachmentUrl,
-            attachmentName: remote.attachmentName,
-            createdAt: remote.createdAt,
-            isRead: remote.isRead ?? false,
-          });
-          hasNew = true;
+        if (!rId) return;
+
+        // Check if we already have this message by ID
+        if (localIds.has(rId) || (remote.id && localIds.has(remote.id))) {
+          return;
         }
+
+        // Fallback: Check if there is a local message that matches text, sender, and close timestamp
+        const isDuplicate = localMsgs.some((local: any) => {
+          const sameSender = local.senderEmail === remote.senderEmail;
+          const sameText = local.text === remote.text;
+          const timeDiff = Math.abs(new Date(local.createdAt).getTime() - new Date(remote.createdAt).getTime());
+          const sameTime = timeDiff < 15000; // within 15 seconds
+          return sameSender && sameText && sameTime;
+        });
+
+        if (isDuplicate) return;
+
+        merged.push({
+          id: rId,
+          reqId: remote.reqId,
+          senderEmail: remote.senderEmail,
+          senderName: remote.senderName,
+          senderRole: remote.senderRole,
+          receiverEmail: remote.receiverEmail,
+          receiverName: remote.receiverName,
+          startupName: remote.startupName,
+          text: remote.text,
+          attachmentUrl: remote.attachmentUrl,
+          attachmentName: remote.attachmentName,
+          createdAt: remote.createdAt,
+          isRead: remote.isRead ?? false,
+        });
+        hasNew = true;
       });
 
       if (hasNew) {

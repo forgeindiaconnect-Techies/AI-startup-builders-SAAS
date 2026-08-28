@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Info, Star, Rocket, MessageSquare } from 'lucide-react';
-import { getNotifications } from '../../utils/localStorageHelper';
+import { getNotifications, markNotificationRead } from '../../utils/localStorageHelper';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
@@ -37,6 +37,7 @@ const NotificationDropdown: React.FC = () => {
           desc: n.message || n.desc || n.message,
           time: n.time || (n.createdAt ? new Date(n.createdAt).toLocaleString() : 'Just now'),
           read: n.isRead !== undefined ? n.isRead : !n.unread,
+          actionUrl: n.actionUrl,
           ...getTypeStyles(n.type)
         }));
       setNotifications(stored);
@@ -95,9 +96,17 @@ const NotificationDropdown: React.FC = () => {
                   <div 
                     key={notif.id} 
                     className={`p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${notif.read ? 'opacity-70' : ''}`}
-                    onClick={() => {
+                    onClick={async () => {
                       setIsOpen(false);
-                      navigate(`/dashboard/${user?.role || 'admin'}/notifications`, { state: { selectedNotifId: notif.id } });
+                      try {
+                        await markNotificationRead(String(notif.id));
+                      } catch (e) {}
+
+                      if (notif.actionUrl) {
+                        navigate(notif.actionUrl);
+                      } else {
+                        navigate(`/dashboard/${user?.role || 'admin'}/notifications`, { state: { selectedNotifId: notif.id } });
+                      }
                     }}
                   >
                     <div className="flex gap-3">
