@@ -282,7 +282,6 @@ const AdminInviteLinks: React.FC = () => {
   };
 
   const handleDelete = async (token: string) => {
-    if (!window.confirm('Are you sure you want to delete this invite? This cannot be undone.')) return;
     try {
       const res = await fetch(`${API_URL}/invites/${token}`, { method: 'DELETE' });
       const json = await res.json();

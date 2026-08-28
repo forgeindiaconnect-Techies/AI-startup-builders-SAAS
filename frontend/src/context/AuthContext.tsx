@@ -46,6 +46,7 @@ interface AuthContextType {
   resetUserPassword: (userId: string) => void;
   refreshUsers: () => void;
   updateUserSubscription: (userId: string, data: { plan?: string; status?: string; paymentStatus?: string }) => Promise<void>;
+  getDeletedUsers: () => Promise<any[]>;
 }
 
 const TOKEN_KEY = 'ai_startup_builder_jwt';
@@ -76,12 +77,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const fetchAllUsers = async () => {
+  const fetchAllUsers = async (force = false) => {
     const token = getToken();
     if (!token) return;
     const currentRole = (user?.role || getTokenRole() || '').toLowerCase();
     if (currentRole !== 'admin') return;
-    if (usersFetchBlockedRef.current) return;
+    if (!force && usersFetchBlockedRef.current) return;
 
     usersFetchBlockedRef.current = true;
     try {
@@ -421,7 +422,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ userId, action: 'approve' })
           });
-          fetchAllUsers();
+          await fetchAllUsers(true);
         } catch {}
       },
       rejectUser: async (userId: string) => {
@@ -433,7 +434,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ userId, action: 'reject' })
           });
-          fetchAllUsers();
+          await fetchAllUsers(true);
         } catch {}
       },
       updateUserApproval: async (userId: string, approvalStatus: string) => {
@@ -445,11 +446,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ userId, action: 'updateApproval', approvalStatus })
           });
-          fetchAllUsers();
+          await fetchAllUsers(true);
         } catch {}
       },
       getLoginLogs: () => [],
       getAllUsers: () => allUsers,
+      getDeletedUsers: async () => {
+        const token = getToken();
+        if (!token) return [];
+        try {
+          const res = await fetch(`${API_URL}/auth/admin/deleted-users`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await res.json();
+          return data.success ? data.deleted : [];
+        } catch {
+          return [];
+        }
+      },
       updateUserStatus: async (userId: string, status: string) => {
         const token = getToken();
         if (!token || (user?.role || '').toLowerCase() !== 'admin') return;
@@ -459,7 +473,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ userId, action: 'updateStatus', status })
           });
-          fetchAllUsers();
+          await fetchAllUsers(true);
         } catch {}
       },
       deleteUser: async (userId: string) => {
@@ -471,11 +485,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ userId, action: 'delete' })
           });
-          fetchAllUsers();
+          await fetchAllUsers(true);
         } catch {}
       },
       resetUserPassword: (_userId: string) => {},
-      refreshUsers: () => { fetchAllUsers(); },
+      refreshUsers: () => { fetchAllUsers(true); },
       updateUserSubscription: async (userId: string, data: { plan?: string; status?: string; paymentStatus?: string }) => {
         const token = getToken();
         if (!token || (user?.role || '').toLowerCase() !== 'admin') return;
@@ -485,7 +499,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ userId, ...data })
           });
-          fetchAllUsers();
+          await fetchAllUsers(true);
         } catch {}
       }
     }}>

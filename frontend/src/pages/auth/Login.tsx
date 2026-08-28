@@ -18,8 +18,8 @@ const Login: React.FC = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
-  const [email, setEmail] = useState(isAdminLogin ? 'selva@gmail.com' : '');
-  const [password, setPassword] = useState(isAdminLogin ? 'Selva@143' : '');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
   const [error, setError] = useState('');
@@ -111,6 +111,12 @@ const Login: React.FC = () => {
         } else if (result.error === 'Account pending admin approval') {
           showToast('Your account is pending admin approval.', 'warning');
           window.alert('⏳ Login Failed: Your account is pending admin approval.');
+        } else if (result.error === 'Account suspended') {
+          showToast('Your account has been suspended by the admin.', 'error');
+          window.alert('❌ Login Failed: Your account has been suspended by the admin.');
+        } else if (result.error === 'Account is inactive') {
+          showToast('Your account is inactive. Please contact administrator.', 'error');
+          window.alert('❌ Login Failed: Your account is inactive.');
         } else {
           setError(errorMsg);
           window.alert(`❌ Invalid Credentials: ${errorMsg}`);

@@ -20,6 +20,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  if (user.status === 'suspended' || user.status === 'inactive') {
+    // Account suspended or inactive, redirect to login
+    return <Navigate to="/login" replace />;
+  }
+
   const effectiveRole = ((user.role as string) === 'user' || !user.role) ? 'founder' : user.role;
 
   if (allowedRoles && !allowedRoles.includes(effectiveRole as UserRole)) {

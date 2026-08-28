@@ -651,24 +651,19 @@ const AdminInvestorApproval: React.FC = () => {
     if (selectedApp?.id === app.id) setSelectedApp({ ...app, status: 'SUSPENDED' });
   };
 
-  // ── Delete Invitation Lead ──────────────────────────────────────────────────
   const handleDeleteLead = async (lead: InvestorInviteLead) => {
-    if (!window.confirm(`Are you sure you want to delete invitation for ${lead.fullName} (${lead.email})?`)) return;
-
     deleteInvestorLead(lead.id);
+    setInvitedLeads(getInvestorLeads());
 
     try {
       await fetch(`${API_URL}/invites/${lead.invitationToken}`, {
         method: 'DELETE',
       });
     } catch {}
-
-    setInvitedLeads(getInvestorLeads());
   };
 
   // ── Delete Investor Application ─────────────────────────────────────────────
   const handleDeleteApp = async (app: InvestorApplication) => {
-    if (!window.confirm(`Are you sure you want to delete investor application for ${app.fullName} (${app.email})?`)) return;
 
     const updated = applications.filter(a => a.id !== app.id && a.email?.toLowerCase() !== app.email?.toLowerCase());
     handleSaveApplications(updated);

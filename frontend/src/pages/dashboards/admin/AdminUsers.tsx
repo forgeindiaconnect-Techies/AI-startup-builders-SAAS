@@ -195,6 +195,46 @@ const AdminUsers: React.FC = () => {
 
   const lockUntilRef = React.useRef<number>(0);
 
+  const viewDocument = (base64Data: string, docName: string) => {
+    if (!base64Data) {
+      showToast('No document content available.', 'error');
+      return;
+    }
+    
+    if (!base64Data.startsWith('data:')) {
+      window.open(base64Data, '_blank');
+      return;
+    }
+
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.title = docName;
+      newWindow.document.body.style.margin = '0';
+      newWindow.document.body.style.backgroundColor = '#0F1117';
+      
+      const isPdf = base64Data.includes('application/pdf');
+      if (isPdf) {
+        newWindow.document.body.innerHTML = `
+          <iframe src="${base64Data}" width="100%" height="100%" style="border:none; height:100vh; width:100vw;"></iframe>
+        `;
+      } else {
+        newWindow.document.body.innerHTML = `
+          <div style="display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; box-sizing:border-box;">
+            <img src="${base64Data}" style="max-width:100%; max-height:90vh; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5); object-fit:contain;" />
+          </div>
+        `;
+      }
+    } else {
+      const link = document.createElement('a');
+      link.href = base64Data;
+      link.download = docName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('Popup blocker active. Document downloaded instead.', 'success');
+    }
+  };
+
   const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
@@ -427,22 +467,22 @@ const AdminUsers: React.FC = () => {
      (u.fullName || '').toLowerCase().includes(search.toLowerCase()))
   );
 
-  const handleDeleteUser = (id: string, name: string, email?: string) => {
-    if (window.confirm(`Are you sure you want to permanently delete ${name}?`)) {
-      deleteUser(id);
-      deleteInvestorLead(id);
-      const storedApps = JSON.parse(localStorage.getItem('ai_startup_builder_investor_apps') || '[]');
-      const cleanEmail = (email || '').trim().toLowerCase();
-      const updatedApps = storedApps.filter((a: any) => {
-        const appEmail = (a.email || '').trim().toLowerCase();
-        return a.id !== id && (!cleanEmail || appEmail !== cleanEmail);
-      });
-      localStorage.setItem('ai_startup_builder_investor_apps', JSON.stringify(updatedApps));
+  const handleDeleteUser = async (id: string, name: string, email?: string) => {
+    setUsersList(prev => prev.filter(u => u.id !== id && (!email || u.email?.toLowerCase() !== email.toLowerCase())));
 
-      if (selectedUser?.id === id) setSelectedUser(null);
-      loadUsers(true);
-      showToast(`User "${name}" deleted successfully.`);
-    }
+    await deleteUser(id);
+    deleteInvestorLead(id);
+    const storedApps = JSON.parse(localStorage.getItem('ai_startup_builder_investor_apps') || '[]');
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const updatedApps = storedApps.filter((a: any) => {
+      const appEmail = (a.email || '').trim().toLowerCase();
+      return a.id !== id && (!cleanEmail || appEmail !== cleanEmail);
+    });
+    localStorage.setItem('ai_startup_builder_investor_apps', JSON.stringify(updatedApps));
+
+    if (selectedUser?.id === id) setSelectedUser(null);
+    loadUsers(true);
+    showToast(`User "${name}" deleted successfully.`);
   };
 
   const handleStatusChange = (userId: string, userName: string, newStatus: string) => {
@@ -961,7 +1001,7 @@ const AdminUsers: React.FC = () => {
       {/* View Details Modal */}
       {selectedUser && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 pb-6 px-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-lg flex flex-col my-auto">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-lg flex flex-col my-auto max-h-[85vh] overflow-hidden">
             {/* Header */}
             <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
@@ -1003,6 +1043,10 @@ const AdminUsers: React.FC = () => {
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Login Count</span>
                     <span className="font-bold text-gray-900 text-base">{selectedUser.loginCount || 0}</span>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Email Address</span>
+                    <span className="font-bold text-gray-900 truncate block">{selectedUser.email || '—'}</span>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile Number</span>
@@ -1100,18 +1144,24 @@ const AdminUsers: React.FC = () => {
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Aadhaar Number</span>
                         <span className="font-bold text-gray-900">{selectedUser.aadharNumber || 'XXXX-XXXX-8921'}</span>
                         {selectedUser.aadharDocUrl && (
-                          <a href={selectedUser.aadharDocUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-[#5B21B6] hover:underline mt-1.5">
+                          <button
+                            onClick={() => viewDocument(selectedUser.aadharDocUrl, `${selectedUser.name || selectedUser.fullName || 'Mentor'}_Aadhaar_Document`)}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#5B21B6] hover:underline mt-1.5 bg-transparent border-none p-0 cursor-pointer text-left"
+                          >
                             <ExternalLink size={12} /> View Aadhaar Document
-                          </a>
+                          </button>
                         )}
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">PAN Number</span>
                         <span className="font-bold text-gray-900">{selectedUser.panNumber || 'ABCDE1234F'}</span>
                         {selectedUser.panDocUrl && (
-                          <a href={selectedUser.panDocUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-[#5B21B6] hover:underline mt-1.5">
+                          <button
+                            onClick={() => viewDocument(selectedUser.panDocUrl, `${selectedUser.name || selectedUser.fullName || 'Mentor'}_PAN_Document`)}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#5B21B6] hover:underline mt-1.5 bg-transparent border-none p-0 cursor-pointer text-left"
+                          >
                             <ExternalLink size={12} /> View PAN Document
-                          </a>
+                          </button>
                         )}
                       </div>
                       {selectedUser.otherDocType && (
@@ -1119,9 +1169,12 @@ const AdminUsers: React.FC = () => {
                           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Additional Verification Document ({selectedUser.otherDocType})</span>
                           <span className="font-bold text-gray-900">{selectedUser.otherDocNumber || 'VERIFIED-DOC-09'}</span>
                           {selectedUser.otherDocUrl && (
-                            <a href={selectedUser.otherDocUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-[#5B21B6] hover:underline mt-1.5">
+                            <button
+                              onClick={() => viewDocument(selectedUser.otherDocUrl, `${selectedUser.name || selectedUser.fullName || 'Mentor'}_Additional_Document`)}
+                              className="inline-flex items-center gap-1 text-xs font-bold text-[#5B21B6] hover:underline mt-1.5 bg-transparent border-none p-0 cursor-pointer text-left"
+                            >
                               <ExternalLink size={12} /> View Additional Document
-                            </a>
+                            </button>
                           )}
                         </div>
                       )}
@@ -1131,62 +1184,7 @@ const AdminUsers: React.FC = () => {
                 </>
               )}
 
-              {(selectedUser.role === 'founder' || (!selectedUser.role || selectedUser.role.toLowerCase() === 'user')) && (
-                <>
-                  <div>
-                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                      <span className="w-1 h-4 rounded-full bg-yellow-500"></span> Founder Signup & Startup Details
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Startup / Business Name</span>
-                        <span className="font-bold text-gray-900">{selectedUser.startupName || 'AI Startup Builder Platform'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Industry / Domain Focus</span>
-                        <span className="font-bold text-gray-900">{selectedUser.industry || 'Artificial Intelligence & SaaS'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Startup Development Stage</span>
-                        <span className="font-bold text-gray-900">{selectedUser.startupStage || 'Seed Stage'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Designation / Role</span>
-                        <span className="font-bold text-gray-900">{selectedUser.currentRole || 'Founder & CEO'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Business Model</span>
-                        <span className="font-bold text-[#5B21B6]">{selectedUser.businessModel || 'B2B SaaS / Subscription'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile Contact</span>
-                        <span className="font-bold text-gray-900">{selectedUser.mobile || selectedUser.phone || '+91 98765 43210'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
-                        <span className="font-bold text-gray-900">{selectedUser.location || selectedUser.preferredLocation || 'Bengaluru, India'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">LinkedIn Profile</span>
-                        {(selectedUser.linkedin || selectedUser.linkedinUrl) ? (
-                          <a href={selectedUser.linkedin || selectedUser.linkedinUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
-                            {selectedUser.linkedin || selectedUser.linkedinUrl}
-                          </a>
-                        ) : (
-                          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
-                            https://linkedin.com/in/founder-profile
-                          </a>
-                        )}
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Elevator Pitch & Startup Summary</span>
-                        <p className="text-sm text-gray-800">{selectedUser.bio || selectedUser.startupIdea || selectedUser.problemStatement || 'Building an AI-native SaaS platform empowering early-stage founders to generate ideas, validate business models, and secure angel funding.'}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="my-4 border-t border-gray-100" />
-                </>
-              )}
+
 
               {((selectedUser.role || '').toLowerCase().includes('investor') || !!selectedUser.investorType || !!selectedUser.isInvitedLead) && (
                 <>
@@ -1485,7 +1483,7 @@ const AdminUsers: React.FC = () => {
       {/* Edit Mentor Profile Modal */}
       {editingMentor && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 pb-6 px-4 bg-gray-900/60 backdrop-blur-sm animate-fade-in overflow-y-auto">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-2xl flex flex-col my-auto">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-2xl w-full max-w-2xl flex flex-col my-auto max-h-[85vh] overflow-hidden">
             {/* Header */}
             <div className="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">

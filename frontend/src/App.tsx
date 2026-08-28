@@ -97,6 +97,7 @@ import AdminInvestorFunding    from './pages/dashboards/admin/AdminInvestorFundi
 import SharedNotifications from './pages/dashboards/founder/FounderNotifications';
 import SharedHelp          from './pages/dashboards/founder/FounderHelp';
 import AdminProfile        from './pages/dashboards/admin/AdminProfile';
+import AdminDeletedUsers   from './pages/dashboards/admin/AdminDeletedUsers';
 // ── Founder Combined Pages ──────────────────────────────────────────
 import FounderAIBuilder        from './pages/dashboards/founder/FounderAIBuilder';
 import FounderProfileBilling   from './pages/dashboards/founder/FounderProfileBilling';
@@ -213,6 +214,7 @@ function App() {
                     <Route path="mentor-earnings"    element={<AdminMentorEarnings />} />
                     <Route path="investor-funding"   element={<AdminInvestorFunding />} />
                     <Route path="revenue"            element={<AdminPlatformRevenue />} />
+                    <Route path="deleted-users"      element={<AdminDeletedUsers />} />
                   </Route>
 
                   {/* ───────────── MENTOR ───────────── */}

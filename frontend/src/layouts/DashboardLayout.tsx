@@ -7,7 +7,7 @@ import {
   File, Lightbulb, CalendarClock, Handshake, ClipboardList,
   Briefcase, Building2, UserCog, Inbox, CreditCard,
   BarChart2, Settings, CheckSquare, ShieldCheck,
-  IndianRupee, Film, Link2, Bell, GraduationCap, Star, FolderLock, ScrollText, FileText, Coins,
+  IndianRupee, Film, Link2, Bell, GraduationCap, Star, FolderLock, ScrollText, FileText, Coins, Trash2,
 } from 'lucide-react';
 import NotificationDropdown from '../components/shared/NotificationDropdown';
 import PlanGate from '../components/shared/PlanGate';
@@ -68,6 +68,7 @@ import AdminMentorEarnings from '../pages/dashboards/admin/AdminMentorEarnings';
 import AdminInvestorFunding from '../pages/dashboards/admin/AdminInvestorFunding';
 import AdminProfile from '../pages/dashboards/admin/AdminProfile';
 import AdminPlatformRevenue from '../pages/dashboards/admin/AdminPlatformRevenue';
+import AdminDeletedUsers from '../pages/dashboards/admin/AdminDeletedUsers';
 
 const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
   founder: {
@@ -149,6 +150,7 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
     '/dashboard/admin/investor-funding': AdminInvestorFunding,
     '/dashboard/admin/revenue': AdminPlatformRevenue,
     '/dashboard/admin/profile': AdminProfile,
+    '/dashboard/admin/deleted-users': AdminDeletedUsers,
   },
 };
 
@@ -220,6 +222,7 @@ const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
         { name: 'Mentor Earnings',         icon: IndianRupee,     path: '/dashboard/admin/mentor-earnings' },
         { name: 'Investor Funding',        icon: Wallet,          path: '/dashboard/admin/investor-funding' },
         { name: 'Platform Revenue',        icon: Coins,           path: '/dashboard/admin/revenue' },
+        { name: 'Deleted Details',         icon: Trash2,          path: '/dashboard/admin/deleted-users' },
         { name: 'Notifications',           icon: Bell,            path: '/dashboard/admin/notifications' },
         { name: 'Profile',                 icon: UserCog,         path: '/dashboard/admin/profile' },
       ],

@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import { User } from '../models/User.js';
 import { OTP } from '../models/OTP.js';
 import { Subscription } from '../models/Subscription.js';
+import { DeletedUser } from '../models/DeletedUser.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 import { sendOTPEmail, sendPasswordResetEmail } from '../utils/emailService.js';
 
@@ -26,11 +27,10 @@ export const sendOTP = async (req: Request, res: Response) => {
     const { email } = req.body;
     if (!email) return res.status(200).json({ success: false, error: 'Email is required' });
 
-    // For demo/testing flexibility, we allow re-registering and updating existing users
     try {
       const existingUser = await User.findOne({ email: email.toLowerCase() });
       if (existingUser && existingUser.isVerified) {
-        console.log(`ℹ️ User ${email} already exists and is verified. Allowing OTP generation for re-registration test.`);
+        return res.status(200).json({ success: false, error: 'already this mail id is exist' });
       }
     } catch (dbErr) {
       console.warn('⚠️ User lookup DB check failed:', (dbErr as Error).message);
@@ -139,10 +139,10 @@ export const verifyOTPAndCreateUser = async (req: Request, res: Response) => {
 
     const roleFields: Record<string, any> = {};
     if (role === 'founder') {
-      Object.assign(roleFields, { mobile, currentRole, startupName, startupStage, industry, agreedToTerms });
+      Object.assign(roleFields, { mobile, location, currentRole, startupName, startupStage, industry, agreedToTerms });
     } else if (role === 'mentor') {
       Object.assign(roleFields, {
-        mobile, expertise, experienceYears, linkedin, bio,
+        mobile, location, expertise, experienceYears, linkedin, bio,
         aadharNumber, aadharDocUrl, panNumber, panDocUrl, otherDocType, otherDocNumber, otherDocUrl
       });
     } else if (role === 'investor') {
@@ -305,50 +305,7 @@ export const loginUser = async (req: Request, res: Response) => {
       }
     }
 
-    // Auto-create or sync Investor / Mentor / Founder account if logging in
-    const isKnownInvestorEmail = cleanEmail.includes('investor') || 
-                                 cleanEmail === 'forgeindiaconnectfic@gmail.com' || 
-                                 cleanEmail === 'renugopal24022000@gmail.com' ||
-                                 cleanEmail.endsWith('@nexuscap.com') ||
-                                 cleanEmail.endsWith('@nambiarfamily.in') ||
-                                 cleanEmail.endsWith('@mehtaholdings.com') ||
-                                 cleanEmail.endsWith('@taniavc.com') ||
-                                 cleanEmail.endsWith('@deshmukhnetwork.in') ||
-                                 cleanEmail.endsWith('@singhaniavc.com') ||
-                                 cleanEmail.endsWith('@angelnetwork.in') ||
-                                 (req.body && req.body.role === 'investor');
 
-    const isKnownMentorEmail = cleanEmail.includes('mentor') || 
-                               cleanEmail === 'sleepercell0006@gmail.com';
-
-    if (!user && (isKnownInvestorEmail || isKnownMentorEmail || cleanEmail.includes('founder') || cleanEmail.includes('renu') || cleanEmail.endsWith('@gmail.com'))) {
-      const detectedRole = isKnownInvestorEmail ? 'investor' : (isKnownMentorEmail ? 'mentor' : 'founder');
-      try {
-        const salt = await bcrypt.genSalt(10);
-        const passwordHash = await bcrypt.hash(password, salt);
-        user = await User.create({
-          fullName: cleanEmail.split('@')[0].toUpperCase(),
-          email: cleanEmail,
-          passwordHash,
-          role: detectedRole,
-          isVerified: true,
-          approvalStatus: 'approved',
-          status: 'active'
-        });
-      } catch {
-        const validId = new mongoose.Types.ObjectId().toString();
-        user = {
-          _id: validId,
-          fullName: cleanEmail.split('@')[0].toUpperCase(),
-          email: cleanEmail,
-          role: detectedRole,
-          isVerified: true,
-          approvalStatus: 'approved',
-          status: 'active',
-          toObject: function() { return { ...this }; }
-        };
-      }
-    }
 
     if (!user) {
       return res.status(200).json({ success: false, error: 'Invalid email or password' });
@@ -356,6 +313,10 @@ export const loginUser = async (req: Request, res: Response) => {
 
     if (user.status === 'suspended') {
       return res.status(200).json({ success: false, error: 'Account suspended' });
+    }
+
+    if (user.status === 'inactive') {
+      return res.status(200).json({ success: false, error: 'Account is inactive' });
     }
 
     // ✅ Check password FIRST — before revealing any account status
@@ -601,6 +562,19 @@ export const updateUserApproval = async (req: AuthRequest, res: Response) => {
     } else if (action === 'updateStatus') {
       user.status = status || 'active';
     } else if (action === 'delete') {
+      try {
+        await DeletedUser.create({
+          originalId: user._id.toString(),
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          mobile: user.mobile,
+          location: user.location,
+          signupDate: user.createdAt
+        });
+      } catch (delErr) {
+        console.warn('⚠️ Saving to DeletedUser failed:', (delErr as Error).message);
+      }
       await User.findByIdAndDelete(userId);
       await Subscription.deleteMany({ userId });
       return res.json({ success: true, message: 'User deleted' });
@@ -688,6 +662,15 @@ export const getMe = async (req: AuthRequest, res: Response) => {
       try {
         user = await User.findById(userId).select('-passwordHash');
       } catch (dbErr) {}
+    }
+
+    if (user) {
+      if (user.status === 'suspended') {
+        return res.status(200).json({ success: false, error: 'Account suspended' });
+      }
+      if (user.status === 'inactive') {
+        return res.status(200).json({ success: false, error: 'Account is inactive' });
+      }
     }
 
     if (!user) {
@@ -804,5 +787,16 @@ export const updateMe = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     console.error('Error updating profile in updateMe:', error);
     return res.status(500).json({ success: false, error: error.message || 'Server error updating profile details.' });
+  }
+};
+
+// Admin: Get all deleted users
+export const getDeletedUsersAdmin = async (req: AuthRequest, res: Response) => {
+  try {
+    const deleted = await DeletedUser.find({}).sort({ deletedAt: -1 });
+    return res.json({ success: true, deleted });
+  } catch (error) {
+    console.error('Error in getDeletedUsersAdmin:', error);
+    return res.status(500).json({ success: false, error: 'Server error' });
   }
 };

@@ -876,8 +876,7 @@ const Signup: React.FC = () => {
       return [
         { num: 1, label: 'Choose Role' },
         { num: 2, label: 'Account Details' },
-        { num: 3, label: 'Startup Details' },
-        { num: 4, label: 'Verify Email' },
+        { num: 3, label: 'Verify Email' },
       ];
     }
     if (selectedRole === 'investor') {
@@ -901,8 +900,7 @@ const Signup: React.FC = () => {
     }
     if (selectedRole === 'founder') {
       if (step === 'basic') return 1;
-      if (step === 'founder_details') return 2;
-      if (step === 'otp') return 3;
+      if (step === 'otp') return 2;
     }
     if (selectedRole === 'investor') {
       if (step === 'basic') return 1;
@@ -1104,14 +1102,27 @@ const Signup: React.FC = () => {
                       setApiError('');
                       if (validateBasic()) {
                         setErrors({});
-                        if (selectedRole === 'founder') setStep('founder_details');
-                        else if (selectedRole === 'investor') setStep('investor_details');
-                        else setStep('professional');
+                        if (selectedRole === 'founder') {
+                          handleSendEmailOtp();
+                        } else if (selectedRole === 'investor') {
+                          setStep('investor_details');
+                        } else {
+                          setStep('professional');
+                        }
                       }
                     }}
-                    className="w-full h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] transition-all flex items-center justify-center gap-2 mt-2"
+                    disabled={selectedRole === 'founder' && isSubmitting}
+                    className="w-full h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] disabled:opacity-70 transition-all flex items-center justify-center gap-2 mt-2"
                   >
-                    Next <ArrowRight size={16} />
+                    {selectedRole === 'founder' ? (
+                      isSubmitting ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending OTP...</>
+                      ) : (
+                        <>Send Verification OTP <ArrowRight size={16} /></>
+                      )
+                    ) : (
+                      <>Next <ArrowRight size={16} /></>
+                    )}
                   </button>
 
                   <p className="text-center text-sm text-gray-500 font-medium">
@@ -1124,103 +1135,7 @@ const Signup: React.FC = () => {
               </div>
             )}
 
-            {/* ── STEP 2: FOUNDER DETAILS (Final Section for Founder) ── */}
-            {step === 'founder_details' && (
-              <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-                <button
-                  onClick={() => { setErrors({}); setStep('basic'); }}
-                  className="mb-4 inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors text-sm"
-                >
-                  <ArrowLeft size={14} /> Back
-                </button>
-                <SectionHeading
-                  title="Startup Details"
-                  subtitle="Tell us about your startup or idea so we can personalize your AI tools."
-                />
 
-                {apiError && (
-                  <div className="mb-5 p-3.5 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm flex items-start gap-2.5">
-                    <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                    <span className="font-medium">{apiError}</span>
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <Field
-                    label="Startup / Project Name"
-                    icon={<Rocket size={16} />}
-                    placeholder="e.g. Acme AI"
-                    value={form.startupName}
-                    onChange={v => update('startupName', v)}
-                    hint="Optional — you can change or create this later in dashboard"
-                  />
-
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-1.5">Startup Stage</label>
-                      <div className="relative">
-                        <Layers size={16} className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <select
-                          value={form.startupStage}
-                          onChange={e => update('startupStage', e.target.value)}
-                          className="block w-full pl-9 px-4 py-3 border-2 border-gray-100 rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium appearance-none"
-                        >
-                          <option value="">Select stage</option>
-                          {STAGE_OPTIONS.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-900 mb-1.5">Industry / Category</label>
-                      <div className="relative">
-                        <Tag size={16} className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <select
-                          value={form.industry}
-                          onChange={e => update('industry', e.target.value)}
-                          className="block w-full pl-9 px-4 py-3 border-2 border-gray-100 rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium appearance-none"
-                        >
-                          <option value="">Select industry</option>
-                          {INDUSTRY_OPTIONS.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* NOTE: Here on the LAST section before OTP for Founder, button is "Send Verification OTP ->" */}
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      onClick={() => { setErrors({}); setStep('basic'); }}
-                      className="px-6 h-12 text-sm font-bold rounded-xl border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-all"
-                    >
-                      Back
-                    </button>
-                    <button
-                      onClick={handleSendEmailOtp}
-                      disabled={isSubmitting}
-                      className="flex-1 h-12 text-sm font-bold rounded-xl shadow-md bg-gradient-to-r from-[#6C4CF1] to-[#5B21B6] text-white hover:from-[#5B21B6] hover:to-[#4C1D95] disabled:opacity-70 transition-all flex items-center justify-center gap-2"
-                    >
-                      {isSubmitting ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending OTP...</>
-                      ) : (
-                        <>Send Verification OTP <ArrowRight size={16} /></>
-                      )}
-                    </button>
-                  </div>
-
-                  <p className="text-center text-sm text-gray-500 font-medium">
-                    Already have an account?{' '}
-                    <Link to="/login" className="font-bold text-[#6C4CF1] hover:text-[#5B21B6] transition-colors">
-                      Sign in
-                    </Link>
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* ── STEP 2: INVESTOR DETAILS (Final Section for Investor) ── */}
             {step === 'investor_details' && (
@@ -1583,7 +1498,7 @@ const Signup: React.FC = () => {
                     setErrors({});
                     setOtp(['', '', '', '', '', '']);
                     if (selectedRole === 'mentor') setStep('proof');
-                    else if (selectedRole === 'founder') setStep('founder_details');
+                    else if (selectedRole === 'founder') setStep('basic');
                     else setStep('investor_details');
                   }}
                   className="self-start mb-4 inline-flex items-center gap-1.5 text-gray-400 hover:text-gray-600 transition-colors text-sm"

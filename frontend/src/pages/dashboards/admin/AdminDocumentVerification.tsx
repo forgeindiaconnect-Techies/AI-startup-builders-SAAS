@@ -171,6 +171,34 @@ const AdminDocumentVerification: React.FC = () => {
     if (!doc) return;
 
     if (doc.fileUrl) {
+      if (doc.fileUrl.startsWith('data:')) {
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.title = doc.documentLabel || doc.fileName || 'Proof Document';
+          newWindow.document.body.style.margin = '0';
+          newWindow.document.body.style.backgroundColor = '#0F1117';
+          const isPdf = doc.fileUrl.includes('application/pdf');
+          if (isPdf) {
+            newWindow.document.body.innerHTML = `
+              <iframe src="${doc.fileUrl}" width="100%" height="100%" style="border:none; height:100vh; width:100vw;"></iframe>
+            `;
+          } else {
+            newWindow.document.body.innerHTML = `
+              <div style="display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; box-sizing:border-box;">
+                <img src="${doc.fileUrl}" style="max-width:100%; max-height:90vh; border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.5); object-fit:contain;" />
+              </div>
+            `;
+          }
+        } else {
+          const link = document.createElement('a');
+          link.href = doc.fileUrl;
+          link.download = doc.fileName || 'document';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        return;
+      }
       window.open(doc.fileUrl, '_blank');
       return;
     }
