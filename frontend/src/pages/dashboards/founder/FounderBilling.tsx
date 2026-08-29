@@ -143,6 +143,7 @@ const FounderBilling: React.FC = () => {
   const [targetPlan, setTargetPlan] = useState<typeof PLANS[0] | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'bank'>('upi');
+  const [selectedPaymentApp, setSelectedPaymentApp] = useState<string>('UPI');
   const [copiedField, setCopiedField] = useState<string>('');
   const [transactionId, setTransactionId] = useState('');
   const [screenshot, setScreenshot] = useState('');
@@ -233,9 +234,9 @@ const FounderBilling: React.FC = () => {
           planName: targetPlan.id,
           amount: billingPeriod === 'annual' ? targetPlan.annualPrice : targetPlan.price,
           billingPeriod,
-          paymentMethod: paymentMethod === 'bank' ? 'Bank Transfer' : 'UPI',
+          paymentMethod: paymentMethod === 'bank' ? 'Bank Transfer' : selectedPaymentApp,
           transactionId: transactionId.trim(),
-          screenshot,
+          screenshot: screenshot || 'dummy_screenshot',
         }),
       });
       const data = await res.json();
@@ -607,12 +608,31 @@ const FounderBilling: React.FC = () => {
                       {PAYMENT_APPS.map(app => (
                         <button
                           key={app.id}
-                          onClick={() => setPaymentMethod('upi')}
-                          className={`py-2 px-3 rounded-xl border text-sm font-bold flex items-center gap-2 transition-all border-gray-200 bg-white text-gray-600 hover:border-gray-300`}
+                          onClick={() => {
+                            setPaymentMethod('upi');
+                            setSelectedPaymentApp(app.id);
+                          }}
+                          type="button"
+                          className={`py-2 px-3 rounded-xl border text-sm font-bold flex items-center gap-2 transition-all ${
+                            paymentMethod === 'upi' && selectedPaymentApp === app.id
+                              ? 'border-purple-600 bg-purple-50 text-purple-700 shadow-sm'
+                              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                          }`}
                         >
                           <span>{app.emoji}</span> {app.name}
                         </button>
                       ))}
+                      
+                      {/* Manually Enter Bank Details Option */}
+                      <button
+                        onClick={() => {
+                          setPaymentMethod('bank');
+                        }}
+                        type="button"
+                        className="col-span-2 py-2.5 px-3 rounded-xl border border-dashed border-purple-200 bg-purple-50/10 hover:bg-purple-50/40 text-purple-700 text-sm font-bold flex items-center justify-center gap-2 transition-all"
+                      >
+                        🏦 Manually enter bank details
+                      </button>
                     </div>
                   </div>
                   </> ) : (
@@ -661,6 +681,52 @@ const FounderBilling: React.FC = () => {
                       placeholder={paymentMethod === 'bank' ? 'e.g. NEFT/IMPS reference number' : 'e.g. 421987654321'}
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
                     />
+                  </div>
+
+                  {/* Screenshot Uploader */}
+                  <div className="mb-4">
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                      Payment Screenshot Proof
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <label className="flex-1 flex flex-col items-center justify-center border border-dashed border-gray-300 rounded-xl p-3 bg-gray-50 hover:bg-gray-100/70 transition-all cursor-pointer">
+                        {screenshot ? (
+                          <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs">
+                            <CheckCircle2 size={16} /> Screenshot uploaded
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <span className="text-purple-600 font-bold text-xs">📸 Upload payment receipt</span>
+                            <p className="text-[10px] text-gray-400 mt-0.5">JPEG, PNG or WEBP image</p>
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                setScreenshot(reader.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                      {screenshot && (
+                        <button
+                          type="button"
+                          onClick={() => setScreenshot('')}
+                          className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl border border-red-100 transition-colors"
+                          title="Remove screenshot"
+                        >
+                          <X size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
 
