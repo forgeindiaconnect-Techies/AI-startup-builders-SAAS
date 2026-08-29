@@ -1,4 +1,12 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
+
+export interface ICommissionSettings extends Document {
+  mentorCommission: number;
+  investorCommission: number;
+  investorCommissionPayer: 'investor' | 'founder';
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
 const CommissionSettingsSchema = new Schema({
   mentorCommission: { type: Number, required: true, default: 20 },
@@ -11,4 +19,4 @@ const CommissionSettingsSchema = new Schema({
   },
 }, { timestamps: true });
 
-export default mongoose.model('CommissionSettings', CommissionSettingsSchema);
+export default mongoose.model<ICommissionSettings>('CommissionSettings', CommissionSettingsSchema);

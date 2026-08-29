@@ -1,4 +1,23 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
+
+export interface IAdminWithdrawal extends Document {
+  amount: number;
+  withdrawalMethod: 'bank_transfer' | 'upi' | 'other';
+  payoutSource: 'all' | 'mentor' | 'investor';
+  upiId?: string;
+  accountHolderName?: string;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  otherDetails?: string;
+  status: 'pending' | 'processing' | 'paid' | 'failed';
+  transactionReference?: string;
+  adminNotes?: string;
+  processedBy?: mongoose.Types.ObjectId;
+  processedAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
 const AdminWithdrawalSchema = new Schema({
   amount: { type: Number, required: true, min: 1 },
@@ -30,4 +49,4 @@ const AdminWithdrawalSchema = new Schema({
   processedAt: { type: Date },
 }, { timestamps: true });
 
-export default mongoose.model('AdminWithdrawal', AdminWithdrawalSchema);
+export default mongoose.model<IAdminWithdrawal>('AdminWithdrawal', AdminWithdrawalSchema);

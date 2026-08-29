@@ -1162,7 +1162,7 @@ export const getMentorEarnings = async (req: AuthRequest, res: Response) => {
 
     transactions.forEach((tx) => {
       totalEarnings += tx.mentorEarnings;
-      if (new Date(tx.createdAt) >= startOfMonth) {
+      if (new Date(tx.createdAt as any) >= startOfMonth) {
         thisMonthEarnings += tx.mentorEarnings;
       }
       // Check if session is completed

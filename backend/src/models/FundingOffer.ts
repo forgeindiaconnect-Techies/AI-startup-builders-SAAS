@@ -1,4 +1,67 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
+
+export interface IFundingOffer extends Document {
+  startupId: string;
+  startupName: string;
+  founderId: string;
+  founderName: string;
+  investorId: string;
+  investorName: string;
+  investorCompany: string;
+  investorEmail?: string;
+  investorAddress?: string;
+  offerAmount: number;
+  currency: string;
+  equityPercentage: number;
+  valuationCap?: number;
+  instrument?: string;
+  discount?: number;
+  expiresInDays?: number;
+  investorMessage?: string;
+  founderResponse?: string;
+  counterOffer?: {
+    amount?: number | null;
+    equityPercentage?: number | null;
+    message?: string;
+  };
+  adminNote?: string;
+  status: string;
+  agreementStatus?: string;
+  dueDiligenceStatus?: string;
+  paymentStatus?: string;
+  paymentMethod?: string;
+  paymentReference?: string;
+  paymentProof?: string;
+  paymentDate?: string;
+  verificationStatus?: string;
+  stage?: string;
+  commitmentId?: string;
+  transactionId?: string;
+  fundingRound?: string;
+  expectedInvestmentDate?: string;
+  commitmentNotes?: string;
+  commissionRate?: number;
+  commissionAmount?: number;
+  commissionStatus?: string;
+  commissionNotes?: string;
+  commissionUpdatedAt?: string;
+  commissionPayer?: 'investor' | 'founder';
+  agreementAcknowledged?: boolean;
+  agreementId?: string;
+  agreementVersion?: string;
+  investorSignedAt?: string;
+  investorSignatureName?: string;
+  investorSignatureFontIndex?: number;
+  founderSignedAt?: string;
+  founderSignatureName?: string;
+  founderSignatureFontIndex?: number;
+  agreementDetails?: any;
+  agreementVersions?: any[];
+  agreementAuditTrail?: any[];
+  history?: any[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
 const FundingOfferSchema = new Schema({
   startupId: { type: String, required: true },
@@ -117,4 +180,4 @@ const FundingOfferSchema = new Schema({
   ],
 }, { timestamps: true });
 
-export default mongoose.model('FundingOffer', FundingOfferSchema);
+export default mongoose.model<IFundingOffer>('FundingOffer', FundingOfferSchema);

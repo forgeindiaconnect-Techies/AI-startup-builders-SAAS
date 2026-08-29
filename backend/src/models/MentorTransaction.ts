@@ -1,4 +1,25 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
+
+export interface IMentorTransaction extends Document {
+  bookingId: mongoose.Types.ObjectId;
+  mentorId: mongoose.Types.ObjectId;
+  founderId: mongoose.Types.ObjectId;
+  startupId?: mongoose.Types.ObjectId;
+  sessionFee: number;
+  mentorSharePercentage: number;
+  platformCommissionPercentage: number;
+  mentorEarnings: number;
+  platformCommission: number;
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  payoutStatus: 'pending' | 'processing' | 'paid' | 'failed';
+  mentorName?: string;
+  founderName?: string;
+  startupName?: string;
+  topic?: string;
+  sessionDate?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
 const MentorTransactionSchema = new Schema({
   bookingId: {
@@ -35,4 +56,4 @@ const MentorTransactionSchema = new Schema({
   sessionDate: { type: String, default: '' },
 }, { timestamps: true });
 
-export default mongoose.model('MentorTransaction', MentorTransactionSchema);
+export default mongoose.model<IMentorTransaction>('MentorTransaction', MentorTransactionSchema);

@@ -82,7 +82,7 @@ export const getAdminAnalyticsData = async (req: AuthRequest, res: Response) => 
     });
 
     mentorTransactions.forEach((tx) => {
-      const d = new Date(tx.createdAt);
+      const d = new Date(tx.createdAt as any);
       if (d.getFullYear() === currentYear) {
         monthlyTotals[d.getMonth()] += tx.sessionFee || 0;
       }
