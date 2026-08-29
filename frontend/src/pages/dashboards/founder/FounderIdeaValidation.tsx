@@ -117,21 +117,9 @@ const FounderIdeaValidation: React.FC<Props> = ({ startupData, setStartupData })
             </button>
           )}
 
-          <button
-            onClick={handleRegenerate}
-            disabled={isGenerating}
-            className="flex items-center gap-2 px-4 py-2 border border-purple-200 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] rounded-xl text-sm font-bold transition-all disabled:opacity-50"
-          >
-            <RefreshCw size={16} className={isGenerating ? 'animate-spin' : ''} />
-            {isGenerating ? 'Analyzing...' : 'Regenerate AI'}
-          </button>
 
-          <button
-            onClick={handleExportPDF}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-sm font-bold shadow-sm transition-all"
-          >
-            <Download size={16} /> Export Report
-          </button>
+
+
         </div>
       </div>
 

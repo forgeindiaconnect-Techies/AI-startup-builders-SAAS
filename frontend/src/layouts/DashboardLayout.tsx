@@ -158,6 +158,20 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
 type NavItem = { name: string; icon: React.ElementType; path: string; plans?: string[] };
 type SidebarSection = { items: NavItem[] };
 
+// ─── Trial-expiry helper ────────────────────────────────────────
+const checkTrialExpired = (userRole: string, userObj: any): boolean => {
+  if (userRole !== 'founder') return false;
+  const hasActivePaidSub = (
+    userObj?.subscriptionStatus === 'active' &&
+    userObj?.plan &&
+    userObj?.plan !== 'free_trial' &&
+    userObj?.plan !== 'none'
+  );
+  if (hasActivePaidSub) return false;
+  if (!userObj?.trialEndDate) return false;
+  return new Date(userObj.trialEndDate) < new Date();
+};
+
 // ─── Simplified Sidebar Config ──────────────────────────────────
 const SIDEBAR_CONFIG: Record<string, SidebarSection[]> = {
   founder: [
@@ -240,7 +254,8 @@ const SidebarInner: React.FC<{
   userRole: string;
   userPlan: string;
   activePath: string;
-}> = ({ isCollapsed, onLinkClick, onNavigate, onLogout, userName, userRole, userPlan, activePath }) => {
+  trialExpired: boolean;
+}> = ({ isCollapsed, onLinkClick, onNavigate, onLogout, userName, userRole, userPlan, activePath, trialExpired }) => {
   const sections = SIDEBAR_CONFIG[userRole] ?? [];
   const navigate = useNavigate();
 
@@ -288,7 +303,11 @@ const SidebarInner: React.FC<{
         {sections.map((section, si) => (
           <div key={si} className="space-y-0.5">
             {section.items
-              .filter((item) => !item.plans || item.plans.includes(userPlan))
+              .filter((item) => {
+                // When trial expired, only show the Subscription item
+                if (trialExpired) return item.name === 'Subscription';
+                return !item.plans || item.plans.includes(userPlan);
+              })
               .map((item) => {
                 const isItemActive = (itemPath: string, currentActive: string) => {
                   if (itemPath === `/dashboard/${userRole}`) return currentActive === itemPath;
@@ -367,6 +386,7 @@ const DashboardLayout: React.FC = () => {
 
   const rawRole = (user?.role ?? '').toLowerCase();
   const role = (rawRole === 'user' || !rawRole) ? 'founder' : rawRole;
+  const trialExpired = checkTrialExpired(role, user);
 
   // Preserve the founder subscription gate that ProtectedRoute applies on route change
   const resolveAllowed = (path: string): string => {
@@ -402,6 +422,7 @@ const DashboardLayout: React.FC = () => {
     userRole: role,
     userPlan: user?.plan ?? 'none',
     activePath,
+    trialExpired,
   };
 
   const ActivePage = (PAGE_REGISTRY[role] ?? {})[activePath] as React.ElementType | undefined;

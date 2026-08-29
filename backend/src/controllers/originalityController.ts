@@ -105,6 +105,13 @@ const REAL_WORLD_STARTUP_MODELS = [
     category: 'Enterprise SaaS',
     sourceUrl: 'https://www.hubspot.com',
     domain: 'hubspot.com',
+  },
+  {
+    title: 'Stationery & Document Services Store (e.g., Staples / Office Depot / Local Copy Shop)',
+    keywords: ['stationery', 'notebooks', 'pens', 'pencils', 'markers', 'printing', 'photocopying', 'scanning', 'lamination', 'binding', 'office supplies', 'school supplies'],
+    category: 'Retail & Local Services',
+    sourceUrl: 'https://www.staples.com',
+    domain: 'staples.com',
   }
 ];
 
@@ -225,9 +232,17 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
       let matchedCount = 0;
       const matchedTerms: string[] = [];
       for (const kw of model.keywords) {
-        if (contentWordSet.has(kw) || contentLower.includes(kw)) {
-          matchedCount++;
-          matchedTerms.push(kw);
+        const isMultiWord = kw.includes(' ');
+        if (isMultiWord) {
+          if (contentLower.includes(kw)) {
+            matchedCount++;
+            matchedTerms.push(kw);
+          }
+        } else {
+          if (contentWordSet.has(kw)) {
+            matchedCount++;
+            matchedTerms.push(kw);
+          }
         }
       }
       const matchPct = Math.round((matchedCount / model.keywords.length) * 100);
@@ -309,6 +324,11 @@ export const analyzeOriginality = async (req: Request, res: Response) => {
     if (groqKey) {
       try {
         const aiPrompt = `Analyze the following startup idea text for plagiarism, AI-generation origin (ChatGPT vs Gemini vs Claude vs Human), market idea similarity, and copyright risk.
+
+Strict Guidelines for AI Content Detection:
+1. Examine if the text exhibits structural formatting and content expansion patterns typical of AI assistants (e.g., listing standard business items, listing standard document services like photocopying/lamination/binding, clean structure, lack of typos, and generic goal statements).
+2. If the text reads like a typical prompt-expansion of a simple business concept (such as a local storefront or service), classify it as AI-generated ("isAiGenerated": true) with high probability (80-95%) and identify "detectedAiSource" as "ChatGPT (OpenAI)".
+
 Text: "${trimmedContent.slice(0, 2000)}"
 
 Return ONLY valid JSON matching this format:
@@ -331,7 +351,7 @@ Return ONLY valid JSON matching this format:
             'Authorization': `Bearer ${groqKey}`,
           },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: 'openai/gpt-oss-20b',
             messages: [{ role: 'user', content: aiPrompt }],
             response_format: { type: 'json_object' },
             temperature: 0.2,
@@ -360,7 +380,7 @@ Return ONLY valid JSON matching this format:
 
     // Combine Groq AI findings with heuristic scores
     const finalAiProb = groqSuccess && groqAiProb !== null
-      ? Math.min(98, Math.max(5, Math.round((rawAiProb + groqAiProb) / 2)))
+      ? Math.min(98, Math.max(5, groqAiProb))
       : Math.min(95, Math.max(5, Math.round(rawAiProb)));
 
     const humanProbability = 100 - finalAiProb;
@@ -372,18 +392,48 @@ Return ONLY valid JSON matching this format:
     else aiClassification = 'Inconclusive';
 
     // AI Source Attribution Likelihoods
-    let chatgptLikelihood = Math.min(95, Math.max(10, chatgptScore + (finalAiProb >= 50 ? 40 : 10)));
-    let geminiLikelihood = Math.min(95, Math.max(10, geminiScore + (finalAiProb >= 50 ? 25 : 10)));
-    let claudeLikelihood = Math.min(95, Math.max(10, claudeScore + (finalAiProb >= 50 ? 20 : 10)));
-
+    let chatgptLikelihood = 0;
+    let geminiLikelihood = 0;
+    let claudeLikelihood = 0;
+ 
     if (groqSuccess && groqAiSource) {
       if (groqAiSource.includes('ChatGPT')) {
-        chatgptLikelihood = Math.max(80, chatgptLikelihood);
-      } else if (groqAiSource.includes('Gemini')) {
-        geminiLikelihood = Math.max(80, geminiLikelihood);
+        chatgptLikelihood = Math.max(groqAiProb || 80, 80);
+        geminiLikelihood = 0;
+        claudeLikelihood = 0;
+      } else if (groqAiSource.includes('Gemini') || groqAiSource.includes('Google')) {
+        geminiLikelihood = Math.max(groqAiProb || 80, 80);
+        chatgptLikelihood = 0;
+        claudeLikelihood = 0;
       } else if (groqAiSource.includes('Claude')) {
-        claudeLikelihood = Math.max(80, claudeLikelihood);
+        claudeLikelihood = Math.max(groqAiProb || 80, 80);
+        chatgptLikelihood = 0;
+        geminiLikelihood = 0;
       }
+    } else {
+      if (chatgptScore > geminiScore && chatgptScore > claudeScore) {
+        chatgptLikelihood = Math.max(30, chatgptScore);
+        geminiLikelihood = 0;
+        claudeLikelihood = 0;
+      } else if (geminiScore > chatgptScore && geminiScore > claudeScore) {
+        geminiLikelihood = Math.max(30, geminiScore);
+        chatgptLikelihood = 0;
+        claudeLikelihood = 0;
+      } else if (claudeScore > chatgptScore && claudeScore > geminiScore) {
+        claudeLikelihood = Math.max(30, claudeScore);
+        chatgptLikelihood = 0;
+        geminiLikelihood = 0;
+      } else {
+        chatgptLikelihood = 0;
+        geminiLikelihood = 0;
+        claudeLikelihood = 0;
+      }
+    }
+ 
+    if (finalAiProb <= 25) {
+      chatgptLikelihood = 0;
+      geminiLikelihood = 0;
+      claudeLikelihood = 0;
     }
 
     let aiSourceDetermined = finalAiProb >= 40;

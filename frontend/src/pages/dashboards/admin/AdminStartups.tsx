@@ -880,7 +880,6 @@ const AdminStartups: React.FC = () => {
             <tr className="bg-gray-50 border-b border-gray-100">
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Startup</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Founder</th>
-              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Industry</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Joined</th>
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
@@ -889,7 +888,7 @@ const AdminStartups: React.FC = () => {
           <tbody className="divide-y divide-gray-100">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-10 text-center text-gray-400 text-sm">No startups match your search.</td>
+                <td colSpan={5} className="px-6 py-10 text-center text-gray-400 text-sm">No startups match your search.</td>
               </tr>
             ) : (
               filtered.map(s => (
@@ -910,9 +909,6 @@ const AdminStartups: React.FC = () => {
                       </div>
                       <span className="font-semibold text-gray-800 text-xs">{founderLabel(s)}</span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 text-xs font-semibold text-gray-600 max-w-[220px] truncate">
-                    {s.industry || s.category || s.aiGenerated?.ideaAnalysis?.businessModel || 'Brick-and-Mortar Retail & Local Delivery'}
                   </td>
                   <td className="px-6 py-4 relative">
                     {(() => {

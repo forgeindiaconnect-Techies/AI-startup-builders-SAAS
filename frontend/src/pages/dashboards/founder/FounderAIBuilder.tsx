@@ -15,7 +15,26 @@ import FounderReports from './FounderReports';
 import FounderAIChat from './FounderAIChat';
 import FounderLegalDocs from './FounderLegalDocs';
 import PlanGate, { usePlanAccess } from '../../../components/shared/PlanGate';
-import { getStartups, getStartupById, updateStartup, generateStartupFromBackend, generateRoadmapAndTasks, addNotification, saveDocument, getDocuments, deleteDocument, detectStartupCategory, generateCategoryDocuments, sanitizeStartupId } from '../../../utils/localStorageHelper';
+import { 
+  getStartups, 
+  getStartupById, 
+  updateStartup, 
+  generateStartupFromBackend, 
+  generateRoadmapAndTasks, 
+  addNotification, 
+  saveDocument, 
+  getDocuments, 
+  deleteDocument, 
+  detectStartupCategory, 
+  generateCategoryDocuments, 
+  sanitizeStartupId,
+  getIdeaValidationData,
+  getCompetitorAnalysisData,
+  getMVPPlanData,
+  getFinancialPlanData,
+  getGTMStrategyData
+} from '../../../utils/localStorageHelper';
+import jsPDF from 'jspdf';
 
 const tabs = [
   { id: 'idea',                label: 'AI Idea Generator',    icon: Lightbulb,     component: FounderIdeaGenerator },
@@ -176,6 +195,261 @@ const FounderAIBuilder: React.FC = () => {
     }, 1500);
   };
 
+  const handleDownloadTotalPlan = () => {
+    if (!startupData) return;
+    const doc = new jsPDF();
+    
+    // Page 1: Title & Cover
+    doc.setFontSize(26);
+    doc.setTextColor(91, 33, 182); // Premium Purple
+    doc.text(startupData.startupName || 'AI Startup Plan', 14, 40);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(100, 100, 100);
+    doc.text("Total AI Startup Plan & Projections", 14, 52);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 62);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(80, 80, 80);
+    const splitIdea = doc.splitTextToSize(startupData.startupIdea || '', 180);
+    doc.text("Original Concept Description:", 14, 80);
+    doc.text(splitIdea, 14, 88);
+
+    const hasGenerated = startupData.status === 'generated' || !!startupData.aiGenerated?.ideaAnalysis;
+    if (!hasGenerated) {
+      doc.setFontSize(12);
+      doc.setTextColor(180, 100, 50);
+      doc.text("Note: This plan is currently a Draft.", 14, 150);
+      doc.text("AI analysis and financial projections have not been generated yet.", 14, 158);
+      doc.save(`${startupData.startupName || 'Startup'}_Draft_Plan.pdf`);
+      return;
+    }
+    
+    // Retrieve modules data
+    const analysis = startupData.aiGenerated?.ideaAnalysis || {};
+    const valData = getIdeaValidationData(startupData);
+    const compData = getCompetitorAnalysisData(startupData);
+    const mvpData = getMVPPlanData(startupData);
+    const finData = getFinancialPlanData(startupData);
+    const gtmData = getGTMStrategyData(startupData);
+    const branding = startupData.aiGenerated?.branding || {};
+    const bpData = startupData.aiGenerated?.businessPlan || {};
+    const pitchDeck = startupData.aiGenerated?.pitchDeck || [];
+    const mrData = startupData.aiGenerated?.marketResearch || {};
+    const reportData = startupData.aiGenerated?.aiReport || {};
+
+    doc.addPage();
+    let y = 20;
+    const checkPageOverflow = (neededHeight: number) => {
+      if (y + neededHeight > 275) {
+        doc.addPage();
+        y = 20;
+      }
+    };
+
+    const drawHeader = (title: string) => {
+      checkPageOverflow(30);
+      y += 5;
+      doc.setFontSize(14);
+      doc.setTextColor(91, 33, 182);
+      doc.text(title, 14, y);
+      y += 6;
+      doc.setDrawColor(220, 220, 220);
+      doc.line(14, y, 196, y);
+      y += 8;
+    };
+
+    const drawSection = (title: string, content: any) => {
+      if (!content || (Array.isArray(content) && content.length === 0)) return;
+      
+      checkPageOverflow(15);
+      doc.setFontSize(10);
+      doc.setTextColor(91, 33, 182);
+      doc.text(title, 14, y);
+      y += 5;
+      
+      doc.setFontSize(9);
+      doc.setTextColor(70, 70, 70);
+      
+      if (Array.isArray(content)) {
+        content.forEach(item => {
+          if (typeof item === 'string') {
+            const splitItem = doc.splitTextToSize(`• ${item}`, 180);
+            checkPageOverflow(splitItem.length * 4.5);
+            doc.text(splitItem, 14, y);
+            y += (splitItem.length * 4.5);
+          } else if (typeof item === 'object' && item !== null) {
+            const details = Object.entries(item)
+              .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${Array.isArray(v) ? v.join(', ') : v}`)
+              .join(' | ');
+            const splitDetails = doc.splitTextToSize(`• ${details}`, 180);
+            checkPageOverflow(splitDetails.length * 4.5);
+            doc.text(splitDetails, 14, y);
+            y += (splitDetails.length * 4.5);
+          }
+        });
+      } else if (typeof content === 'object' && content !== null) {
+        const details = Object.entries(content)
+          .map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+          .join(' | ');
+        const splitDetails = doc.splitTextToSize(details, 180);
+        checkPageOverflow(splitDetails.length * 4.5);
+        doc.text(splitDetails, 14, y);
+        y += (splitDetails.length * 4.5) + 2;
+      } else {
+        const splitText = doc.splitTextToSize(String(content), 180);
+        checkPageOverflow(splitText.length * 4.5);
+        doc.text(splitText, 14, y);
+        y += (splitText.length * 4.5) + 2;
+      }
+      y += 3;
+    };
+
+    // 1. AI Idea Analysis
+    drawHeader("1. AI Idea Analysis");
+    drawSection("Refined Startup Concept", analysis.refinedStartupIdea || analysis.refinedIdea);
+    drawSection("Problem Statement", analysis.problemStatement);
+    drawSection("Proposed Solution", analysis.solution);
+    drawSection("Target Customers", analysis.targetCustomers);
+    drawSection("Unique Value Proposition", analysis.uniqueValueProposition);
+    drawSection("Business Model", analysis.businessModel);
+    drawSection("Revenue Model", analysis.revenueModel);
+    drawSection("Core Features", analysis.coreFeatures);
+    drawSection("Market Opportunity", analysis.marketOpportunity);
+    drawSection("Next Execution Steps", analysis.nextSteps);
+
+    // 2. Idea Validation
+    drawHeader("2. Idea Validation");
+    drawSection("Validation Score", valData.validationScore ? `${valData.validationScore}%` : 'N/A');
+    drawSection("Market Assessment Indicators", {
+      problemStrength: valData.problemStrength,
+      marketNeed: valData.marketNeed,
+      customerDemand: valData.customerDemand,
+      solutionFeasibility: valData.solutionFeasibility,
+      businessPotential: valData.businessPotential
+    });
+    drawSection("Validation Summary", valData.validationSummary);
+    drawSection("Key Strengths", valData.strengths);
+    drawSection("Areas of Focus / Weaknesses", valData.weaknesses);
+    drawSection("Recommended Improvements", valData.recommendedImprovements);
+
+    // 3. Competitor Analysis
+    drawHeader("3. Competitor Analysis");
+    drawSection("Our USP", compData.uniqueSellingProposition);
+    drawSection("Direct Competitors", compData.directCompetitors);
+    drawSection("Indirect Competitors", compData.indirectCompetitors);
+    drawSection("Competitor Matrix Features", compData.comparisonMatrix);
+    drawSection("Market Gaps Identified", compData.marketGaps);
+    drawSection("Differentiation Opportunities", compData.differentiationOpportunities);
+
+    // 4. MVP Planner
+    drawHeader("4. MVP Planner");
+    drawSection("MVP Concept Definition", mvpData.mvpConcept);
+    drawSection("Core Features (Must-Haves)", mvpData.coreFeatures || mvpData.mustHaveFeatures);
+    drawSection("Nice-to-Have Features (Future Phases)", mvpData.niceToHaveFeatures);
+    drawSection("Target User Roles", mvpData.userRoles);
+    drawSection("Required Tech Stack Setup", mvpData.requiredTechStack);
+    drawSection("Development Phases", mvpData.developmentPhases);
+    drawSection("Milestones & Timelines", mvpData.mvpRoadmap);
+
+    // 5. Financial Plan & Projections
+    drawHeader("5. Financial Plan & Projections");
+    drawSection("Initial Setup Cost (CapEx)", finData.initialStartupCost);
+    drawSection("Breakdown: Dev / Marketing / Operations", {
+      development: finData.developmentCost,
+      marketing: finData.marketingCost,
+      operations: finData.operationalExpenses
+    });
+    drawSection("Monthly Running Expenses (OpEx)", finData.monthlyExpenses);
+    drawSection("Suggested Product/Service Pricing", finData.suggestedPricing);
+    drawSection("Revenue Model Details", finData.revenueModel);
+    drawSection("Customer Acquisition Cost (CAC) Assumptions", finData.customerAcquisitionAssumptions);
+    drawSection("Estimated Break-even Period", finData.breakEvenEstimate);
+    drawSection("Year 1 Projection", finData.year1Projection);
+    drawSection("Year 3 Projection", finData.year3Projection);
+    drawSection("Year 5 Projection", finData.year5Projection);
+
+    // 6. Go-To-Market (GTM) Strategy
+    drawHeader("6. Go-To-Market (GTM) Strategy");
+    drawSection("Target Audience & ICP", {
+      audience: gtmData.targetAudience,
+      idealCustomerProfile: gtmData.idealCustomerProfile
+    });
+    drawSection("Value Proposition & Positioning", {
+      positioning: gtmData.positioningStrategy,
+      valueProp: gtmData.valueProposition
+    });
+    drawSection("Marketing Channels", gtmData.marketingChannels);
+    drawSection("Customer Acquisition Strategy Details", gtmData.customerAcquisitionStrategy);
+    drawSection("Acquiring First 100 Customers", gtmData.first100CustomersStrategy);
+    drawSection("Launch Steps", gtmData.launchStrategy);
+    drawSection("30-Day Action Plan", gtmData.thirtyDayLaunchPlan);
+    drawSection("90-Day Milestones Roadmap", gtmData.ninetyDayRoadmap);
+
+    // 7. Logo & Branding Suggestions
+    drawHeader("7. Logo & Branding Suggestions");
+    drawSection("Suggested Brand Names", branding.brandNameSuggestions);
+    drawSection("Suggested Taglines", branding.taglineSuggestions);
+    drawSection("Logo Design Concept & Prompt", {
+      concept: branding.logoConceptIdeas,
+      prompt: branding.logoPrompt,
+      style: branding.logoStyle
+    });
+    drawSection("Brand Color Palette Suggestions", branding.brandColorPalette);
+    drawSection("Font Styles", branding.fontStyleSuggestions);
+    drawSection("Website Hero Message", branding.websiteHero);
+
+    // 8. Full Business Plan Document
+    drawHeader("8. Full Business Plan Document");
+    drawSection("Executive Summary", bpData.executiveSummary);
+    drawSection("Problem & Solution Details", bpData.problemAndSolution);
+    drawSection("Product/Service Details", bpData.productDetails);
+    drawSection("Operations & Staff Requirements", {
+      teamRequirements: bpData.teamRequirement,
+      operationalPlan: bpData.operationsPlan
+    });
+    drawSection("Funding Ask & Capital Allocation", bpData.fundingAsk);
+
+    // 9. Pitch Deck Slide Outlines
+    drawHeader("9. Pitch Deck Slide Outlines");
+    drawSection("Slide Structure & Contents", pitchDeck.map((s: any) => `Slide ${s.slide}: ${s.title} - ${s.content}`));
+
+    // 10. Market Research Metrics
+    drawHeader("10. Market Research Metrics");
+    drawSection("Estimated Addressable Market (TAM/SAM/SOM)", {
+      tam: mrData.tam,
+      sam: mrData.sam,
+      som: mrData.som
+    });
+    drawSection("Target Market Segments", mrData.customerSegments);
+    drawSection("Industry Competition Summary", mrData.competitorAnalysis);
+    drawSection("Market Opportunities Identified", mrData.opportunities);
+    drawSection("Potential Industry Risks", mrData.risks);
+    drawSection("Suggested Locations", mrData.locationSuggestions);
+
+    // 11. AI Reports & Readiness Checks
+    drawHeader("11. AI Reports & Readiness Checks");
+    drawSection("Investment Readiness Score", reportData.investmentReadinessScore ? `${reportData.investmentReadinessScore}/100` : 'N/A');
+    drawSection("Scalability Potential Rating", reportData.scalabilityScore ? `${reportData.scalabilityScore}/100` : 'N/A');
+    drawSection("Key Strengths Checklist", reportData.keyStrengths);
+    drawSection("Operational Risk Factors", reportData.riskFactors);
+    drawSection("Funding Readiness Evaluation", reportData.fundingReadiness);
+    drawSection("Improvement Guidelines", reportData.improvementSuggestions);
+    drawSection("Mentor Review Summary", reportData.mentorReviewSummary);
+
+    doc.save(`${startupData.startupName || 'Startup'}_Total_AI_Plan.pdf`);
+    addNotification({
+      id: `notification_${Date.now()}`,
+      userId: startupData.founderId || "founder_demo_user",
+      title: "Documents exported successfully.",
+      message: "Total AI Startup Plan has been downloaded as PDF.",
+      type: "document_export",
+      isRead: false,
+      actionUrl: `/dashboard/founder/documents`,
+      createdAt: new Date().toISOString()
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-fade-in-up">
@@ -278,14 +552,23 @@ const FounderAIBuilder: React.FC = () => {
         
         <div className="flex flex-wrap items-center gap-3">
           {startupData && startupData.status !== 'generated' && (
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className="px-5 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl text-sm transition-all shadow flex items-center gap-2 disabled:opacity-50"
-            >
-              {generating ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
-              {generating ? 'Analyzing & Generating...' : 'Generate with AI'}
-            </button>
+            <>
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="px-5 py-2.5 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl text-sm transition-all shadow flex items-center gap-2 disabled:opacity-50"
+              >
+                {generating ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
+                {generating ? 'Analyzing & Generating...' : 'Generate with AI'}
+              </button>
+              
+              <button 
+                onClick={handleDownloadTotalPlan}
+                className="flex items-center px-4 py-2.5 border border-purple-200 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] font-bold rounded-xl shadow-sm text-sm transition-colors"
+              >
+                <Download size={16} className="mr-2" /> Download Plan
+              </button>
+            </>
           )}
 
           {startupData && startupData.status === 'generated' && (
@@ -301,47 +584,12 @@ const FounderAIBuilder: React.FC = () => {
                 Save to My Startups
               </button>
 
-              <div className="relative">
-                <button 
-                  onClick={() => setShowExportMenu(!showExportMenu)}
-                  disabled={exporting}
-                  className="flex items-center px-4 py-2 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow text-sm transition-colors disabled:opacity-50"
-                >
-                  {exporting ? <RefreshCw size={16} className="animate-spin mr-2" /> : <Download size={16} className="mr-2" />}
-                  {exporting ? 'Exporting...' : 'Export'}
-                  <ChevronDown size={16} className="ml-2" />
-                </button>
-                
-                {showExportMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-fade-in-up">
-                    <button 
-                      onClick={() => handleExport('PDF')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center text-sm font-bold text-gray-700"
-                    >
-                      <FileText size={16} className="mr-3 text-red-500" /> Export PDF
-                    </button>
-                    <button 
-                      onClick={() => handleExport('WORD')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center text-sm font-bold text-gray-700"
-                    >
-                      <FileIcon size={16} className="mr-3 text-blue-500" /> Export Word
-                    </button>
-                    <button 
-                      onClick={() => handleExport('PPT')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center text-sm font-bold text-gray-700"
-                    >
-                      <BarChart3 size={16} className="mr-3 text-orange-500" /> Export Pitch Deck
-                    </button>
-                    <div className="border-t border-gray-100 my-1"></div>
-                    <button 
-                      onClick={() => handleExport('ZIP')}
-                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center text-sm font-bold text-gray-700"
-                    >
-                      <Download size={16} className="mr-3 text-purple-500" /> Download All as ZIP
-                    </button>
-                  </div>
-                )}
-              </div>
+              <button 
+                onClick={handleDownloadTotalPlan}
+                className="flex items-center px-4 py-2 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl shadow text-sm transition-colors"
+              >
+                <Download size={16} className="mr-2" /> Download Plan
+              </button>
             </>
           )}
         </div>
@@ -372,6 +620,28 @@ const FounderAIBuilder: React.FC = () => {
 
       {startupData && (() => {
         const Comp = ActiveComponent as any;
+        const hasGenerated = startupData.status === 'generated' || !!startupData.aiGenerated?.ideaAnalysis;
+
+        if (!hasGenerated && active !== 'idea') {
+          return (
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-12 text-center max-w-2xl mx-auto my-8 animate-fade-in-up">
+              <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <Sparkles size={28} className="text-[#5B21B6] animate-pulse" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">AI Plan Not Generated Yet</h3>
+              <p className="text-gray-500 mb-8 leading-relaxed">
+                Before accessing the <strong>{activeTab.label}</strong>, please complete and generate your startup plan first using the AI Idea Generator.
+              </p>
+              <button 
+                onClick={() => setActive('idea')}
+                className="px-6 py-3 bg-[#5B21B6] hover:bg-[#7C3AED] text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-purple-500/20 active:scale-95 inline-flex items-center gap-2"
+              >
+                Go to AI Idea Generator <Play size={14} fill="currentColor" />
+              </button>
+            </div>
+          );
+        }
+
         return activeTab.plans ? (
           <PlanGate requiredPlans={activeTab.plans}>
             <Comp startupData={startupData} setStartupData={setStartupData} onBackToBuilder={() => setActive('idea')} />

@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import QRCode from 'qrcode';
 import {
   Check, Zap, Crown, X, ArrowRight,
-  Copy, CheckCircle2, UploadCloud, Loader2, Clock, AlertTriangle, Shield
+  Copy, CheckCircle2, Loader2, Clock, AlertTriangle, Shield
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { API_URL } from '../../../config/api';
@@ -142,7 +142,8 @@ const FounderBilling: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [targetPlan, setTargetPlan] = useState<typeof PLANS[0] | null>(null);
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
-  const [paymentApp, setPaymentApp] = useState('UPI');
+  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'bank'>('upi');
+  const [copiedField, setCopiedField] = useState<string>('');
   const [transactionId, setTransactionId] = useState('');
   const [screenshot, setScreenshot] = useState('');
   const [copied, setCopied] = useState(false);
@@ -200,27 +201,21 @@ const FounderBilling: React.FC = () => {
     return () => { active = false; };
   }, [isModalOpen, targetPlan, billingPeriod]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setScreenshot(reader.result as string);
-    reader.readAsDataURL(file);
-  };
-
   const handleCopyUPI = () => {
     navigator.clipboard.writeText('aistartupbuilder@okaxis');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCopyField = (value: string, key: string) => {
+    navigator.clipboard.writeText(value);
+    setCopiedField(key);
+    setTimeout(() => setCopiedField(''), 2000);
+  };
+
   const handleSubmitPayment = async () => {
     if (!transactionId.trim()) {
       setSubmitError('Please enter your Transaction ID / UTR Number.');
-      return;
-    }
-    if (!screenshot) {
-      setSubmitError('Please upload a payment screenshot.');
       return;
     }
     if (!targetPlan || !user) return;
@@ -238,7 +233,7 @@ const FounderBilling: React.FC = () => {
           planName: targetPlan.id,
           amount: billingPeriod === 'annual' ? targetPlan.annualPrice : targetPlan.price,
           billingPeriod,
-          paymentMethod: paymentApp,
+          paymentMethod: paymentMethod === 'bank' ? 'Bank Transfer' : paymentApp,
           transactionId: transactionId.trim(),
           screenshot,
         }),
@@ -270,19 +265,17 @@ const FounderBilling: React.FC = () => {
         <p className="text-[#6B7280] mt-1">Manage your plan, upgrade, and payment history.</p>
       </div>
 
-      {/* Expired Banner */}
-      {(expiredBanner || currentStatus === 'expired') && currentStatus !== 'pending_verification' && (
-        <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-2xl">
-          <AlertTriangle size={20} className="shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold">Your free trial has expired.</p>
-            <p className="text-sm mt-0.5">Please choose a plan below to continue using all AI features. You will regain full access after your payment is approved by admin.</p>
+      {/* Expired Banner — shows whenever trial date is past or status says expired */}
+      {(expiredBanner || currentStatus === 'expired' || (user?.trialEndDate && new Date(user.trialEndDate) < new Date() && !['pro', 'premium_startup_builder'].includes(currentPlanName))) && currentStatus !== 'pending_verification' && (
+        <div className="mb-6 flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-2xl animate-fade-in-up">
+          <AlertTriangle size={22} className="shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-bold text-base">🔒 Your free trial has expired.</p>
+            <p className="text-sm mt-1">To restore full access to AI features, please choose a subscription plan below and complete payment. Your access will be re-activated once the admin verifies your payment.</p>
           </div>
-          <button onClick={() => setExpiredBanner(false)} className="ml-auto text-red-400 hover:text-red-600">
-            <X size={18} />
-          </button>
         </div>
       )}
+
 
       {/* Payment Pending Verification Banner */}
       {currentStatus === 'pending_verification' && (
@@ -532,6 +525,32 @@ const FounderBilling: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Payment Method Tab Switcher */}
+                  <div className="flex gap-2 mb-5 p-1 bg-gray-100 rounded-xl">
+                    <button
+                      onClick={() => setPaymentMethod('upi')}
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                        paymentMethod === 'upi'
+                          ? 'bg-white text-purple-700 shadow-sm border border-purple-100'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      📱 UPI / QR Pay
+                    </button>
+                    <button
+                      onClick={() => setPaymentMethod('bank')}
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                        paymentMethod === 'bank'
+                          ? 'bg-white text-purple-700 shadow-sm border border-purple-100'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      🏦 Bank Transfer
+                    </button>
+                  </div>
+
+                  {paymentMethod === 'upi' ? (
+                  <>
                   {/* UPI Details */}
                   <div className="text-center mb-5">
                     <p className="text-sm font-bold text-[#1F2937] mb-1">Scan & Pay via UPI</p>
@@ -588,54 +607,63 @@ const FounderBilling: React.FC = () => {
                       {PAYMENT_APPS.map(app => (
                         <button
                           key={app.id}
-                          onClick={() => setPaymentApp(app.id)}
-                          className={`py-2 px-3 rounded-xl border text-sm font-bold flex items-center gap-2 transition-all ${
-                            paymentApp === app.id
-                              ? 'border-purple-500 bg-purple-50 text-purple-700'
-                              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                          }`}
+                          onClick={() => setPaymentMethod('upi')}
+                          className={`py-2 px-3 rounded-xl border text-sm font-bold flex items-center gap-2 transition-all border-gray-200 bg-white text-gray-600 hover:border-gray-300`}
                         >
                           <span>{app.emoji}</span> {app.name}
                         </button>
                       ))}
                     </div>
                   </div>
+                  </> ) : (
+                  <>
+                  {/* Bank Transfer Details */}
+                  <div className="mb-5">
+                    <p className="text-sm font-bold text-[#1F2937] mb-3 text-center">Transfer to our Bank Account</p>
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-4 space-y-3">
+                      {[
+                        { label: 'Account Name',    value: 'AI Startup Builders Pvt Ltd',  key: 'name' },
+                        { label: 'Account Number',  value: '9876543210123456',              key: 'acct' },
+                        { label: 'IFSC Code',       value: 'AXIS0001234',                   key: 'ifsc' },
+                        { label: 'Bank Name',       value: 'Axis Bank',                     key: 'bank' },
+                        { label: 'Branch',          value: 'Chennai Main Branch',           key: 'branch' },
+                        { label: 'Account Type',    value: 'Current Account',              key: 'type' },
+                      ].map(({ label, value, key }) => (
+                        <div key={key} className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold text-blue-500 uppercase tracking-wider">{label}</p>
+                            <p className="text-sm font-bold text-gray-800 truncate">{value}</p>
+                          </div>
+                          <button
+                            onClick={() => handleCopyField(value, key)}
+                            className="flex-shrink-0 p-1.5 bg-white hover:bg-blue-100 border border-blue-100 rounded-lg transition-colors text-blue-500"
+                            title={`Copy ${label}`}
+                          >
+                            {copiedField === key ? <CheckCircle2 size={13} className="text-emerald-500" /> : <Copy size={13} />}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2.5 text-center">⚠️ Please use your registered email as payment reference/narration</p>
+                  </div>
+                  </> )}
 
-                  {/* Transaction ID */}
+                  {/* Transaction / Reference ID */}
                   <div className="mb-4">
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                      Transaction ID / UTR Number <span className="text-red-500">*</span>
+                      {paymentMethod === 'bank' ? 'Bank Reference / UTR Number' : 'Transaction ID / UTR Number'}
+                      <span className="text-red-500"> *</span>
                     </label>
                     <input
                       type="text"
                       value={transactionId}
                       onChange={e => setTransactionId(e.target.value)}
-                      placeholder="e.g. 421987654321"
+                      placeholder={paymentMethod === 'bank' ? 'e.g. NEFT/IMPS reference number' : 'e.g. 421987654321'}
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
                     />
                   </div>
 
-                  {/* Screenshot Upload */}
-                  <div className="mb-5">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                      Payment Screenshot <span className="text-red-500">*</span>
-                    </label>
-                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
-                      <div className="flex flex-col items-center justify-center py-4">
-                        {screenshot ? (
-                          <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
-                            <CheckCircle2 size={20} /> Screenshot Attached
-                          </div>
-                        ) : (
-                          <>
-                            <UploadCloud className="w-6 h-6 mb-1 text-gray-400" />
-                            <p className="text-xs text-gray-500 font-medium">Click to upload payment screenshot</p>
-                          </>
-                        )}
-                      </div>
-                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                    </label>
-                  </div>
+
 
                   {submitError && (
                     <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600 font-medium flex items-center gap-2">

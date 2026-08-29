@@ -281,10 +281,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return null;
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      removeToken();
-      setUser(null);
-      setSubscription(null);
+      console.error('Auth check failed (network/server offline):', error);
+      // Keep token and user state active on temporary network hiccups
       return null;
     } finally {
       setIsLoading(false);

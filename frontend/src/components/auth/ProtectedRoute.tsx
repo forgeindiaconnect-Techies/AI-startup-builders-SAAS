@@ -3,6 +3,20 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import type { UserRole } from '../../context/AuthContext';
 
+// Returns true if founder's trial has expired AND they have no active paid subscription
+const isTrialExpired = (user: any): boolean => {
+  if (!user || (user.role !== 'founder' && user.role !== 'user')) return false;
+  const hasActivePaidSub = (
+    user.subscriptionStatus === 'active' &&
+    user.plan &&
+    user.plan !== 'free_trial' &&
+    user.plan !== 'none'
+  );
+  if (hasActivePaidSub) return false;
+  if (!user.trialEndDate) return false;
+  return new Date(user.trialEndDate) < new Date();
+};
+
 interface ProtectedRouteProps {
   allowedRoles?: UserRole[];
 }
@@ -38,6 +52,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     const isApproved = user.approvalStatus === 'approved' || user.approvalStatus === 'APPROVED';
     if (!isApproved) {
       return <Navigate to={`/pending-approval?role=${effectiveRole}`} replace />;
+    }
+  }
+
+  // ── Trial expiry gate for founders ──────────────────────────────
+  if (effectiveRole === 'founder') {
+    const expired = isTrialExpired(user);
+    const isBillingPath = location.pathname === '/dashboard/founder/billing' ||
+                          location.pathname.startsWith('/dashboard/founder/billing');
+    if (expired && !isBillingPath) {
+      return <Navigate to="/dashboard/founder/billing" replace />;
     }
   }
 

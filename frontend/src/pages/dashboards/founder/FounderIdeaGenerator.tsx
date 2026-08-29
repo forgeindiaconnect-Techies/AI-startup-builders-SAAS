@@ -49,7 +49,8 @@ const FounderIdeaGenerator: React.FC<Props> = ({ startupData = {}, setStartupDat
     }
   };
 
-  if (startupData) {
+  const hasGenerated = startupData?.status === 'generated' || !!startupData?.aiGenerated?.ideaAnalysis;
+  if (hasGenerated) {
     const ai = startupData.aiGenerated?.ideaAnalysis || {};
     return (
       <div className="animate-fade-in-up space-y-8">
