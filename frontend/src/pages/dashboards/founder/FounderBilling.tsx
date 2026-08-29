@@ -148,7 +148,6 @@ const FounderBilling: React.FC = () => {
   const [senderAccountName, setSenderAccountName] = useState('');
   const [copiedField, setCopiedField] = useState<string>('');
   const [transactionId, setTransactionId] = useState('');
-  const [screenshot, setScreenshot] = useState('');
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -186,7 +185,6 @@ const FounderBilling: React.FC = () => {
     if (plan.disabled || currentPlanName === plan.id) return;
     setTargetPlan(plan);
     setTransactionId('');
-    setScreenshot('');
     setSenderBankName('');
     setSenderAccountName('');
     setSubmitSuccess(false);
@@ -219,8 +217,13 @@ const FounderBilling: React.FC = () => {
   };
 
   const handleSubmitPayment = async () => {
-    if (!transactionId.trim()) {
+    const utr = transactionId.trim();
+    if (!utr) {
       setSubmitError('Please enter your Transaction ID / UTR Number.');
+      return;
+    }
+    if (utr.length < 8 || utr.length > 22) {
+      setSubmitError('Please enter a valid Transaction ID / UTR Number (must be between 8 and 22 alphanumeric characters).');
       return;
     }
     if (paymentMethod === 'bank') {
@@ -248,7 +251,7 @@ const FounderBilling: React.FC = () => {
           transactionId: paymentMethod === 'bank' 
             ? `UTR: ${transactionId.trim()} | Bank: ${senderBankName.trim()} | Holder: ${senderAccountName.trim()}`
             : transactionId.trim(),
-          screenshot: screenshot || 'dummy_screenshot',
+          screenshot: 'no_screenshot',
         }),
       });
       const data = await res.json();
@@ -717,56 +720,10 @@ const FounderBilling: React.FC = () => {
                     <input
                       type="text"
                       value={transactionId}
-                      onChange={e => setTransactionId(e.target.value)}
+                      onChange={e => setTransactionId(e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 22))}
                       placeholder={paymentMethod === 'bank' ? 'e.g. NEFT/IMPS reference number' : 'e.g. 421987654321'}
                       className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
                     />
-                  </div>
-
-                  {/* Screenshot Uploader */}
-                  <div className="mb-4">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                      Payment Screenshot Proof
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <label className="flex-1 flex flex-col items-center justify-center border border-dashed border-gray-300 rounded-xl p-3 bg-gray-50 hover:bg-gray-100/70 transition-all cursor-pointer">
-                        {screenshot ? (
-                          <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs">
-                            <CheckCircle2 size={16} /> Screenshot uploaded
-                          </div>
-                        ) : (
-                          <div className="text-center">
-                            <span className="text-purple-600 font-bold text-xs">📸 Upload payment receipt</span>
-                            <p className="text-[10px] text-gray-400 mt-0.5">JPEG, PNG or WEBP image</p>
-                          </div>
-                        )}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => {
-                                setScreenshot(reader.result as string);
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                          className="hidden"
-                        />
-                      </label>
-                      {screenshot && (
-                        <button
-                          type="button"
-                          onClick={() => setScreenshot('')}
-                          className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl border border-red-100 transition-colors"
-                          title="Remove screenshot"
-                        >
-                          <X size={16} />
-                        </button>
-                      )}
-                    </div>
                   </div>
 
 

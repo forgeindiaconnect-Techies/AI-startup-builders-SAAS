@@ -27,12 +27,23 @@ const STATUS_CONFIG: Record<string, { cls: string; icon: React.ElementType; labe
   rejected: { cls: 'bg-red-50 text-red-700 border-red-200', icon: XCircle, label: 'Rejected' },
 };
 
+const parseTransactionDetails = (txId: string) => {
+  if (txId && txId.startsWith('UTR: ')) {
+    const parts = txId.split(' | ');
+    const utrPart = parts.find(p => p.startsWith('UTR: '))?.replace('UTR: ', '') || '';
+    const bankPart = parts.find(p => p.startsWith('Bank: '))?.replace('Bank: ', '') || '';
+    const holderPart = parts.find(p => p.startsWith('Holder: '))?.replace('Holder: ', '') || '';
+    return { utr: utrPart, bank: bankPart, holder: holderPart, isParsed: true };
+  }
+  return { utr: txId || '', bank: '', holder: '', isParsed: false };
+};
+
 const AdminPayments: React.FC = () => {
   const { getToken } = useAuth();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pending' | 'all'>('pending');
-  const [screenshotModal, setScreenshotModal] = useState<string | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
@@ -174,14 +185,12 @@ const AdminPayments: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                      {payment.screenshot && (
-                        <button
-                          onClick={() => setScreenshotModal(payment.screenshot)}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors"
-                        >
-                          <ImageIcon size={14} /> View Screenshot
-                        </button>
-                      )}
+                      <button
+                        onClick={() => setSelectedPayment(payment)}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors"
+                      >
+                        <ImageIcon size={14} /> View Details / Receipt
+                      </button>
 
                       {payment.status === 'pending_verification' && (
                         <>
@@ -212,14 +221,123 @@ const AdminPayments: React.FC = () => {
         )}
       </div>
 
-      {/* Screenshot Modal */}
-      {screenshotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/80 backdrop-blur-sm" onClick={() => setScreenshotModal(null)}>
-          <div className="relative max-w-lg w-full" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setScreenshotModal(null)} className="absolute -top-3 -right-3 w-8 h-8 bg-white text-gray-700 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 z-10">
-              ✕
-            </button>
-            <img src={screenshotModal} alt="Payment Screenshot" className="w-full rounded-2xl shadow-2xl border-4 border-white" />
+      {/* Details / Receipt Modal */}
+      {selectedPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setSelectedPayment(null)}>
+          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-[#1F2937] text-base">Payment Receipt Details</h3>
+              <button onClick={() => setSelectedPayment(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-200 transition-colors">
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4">
+              <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 flex justify-between items-center">
+                <div>
+                  <p className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mb-0.5">Plan Name</p>
+                  <p className="text-sm font-extrabold text-[#1F2937]">{PLAN_LABELS[selectedPayment.planName] || selectedPayment.planName}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-black text-purple-700">₹{selectedPayment.amount.toLocaleString('en-IN')}</p>
+                  <p className="text-[10px] text-purple-500 font-semibold">Payment Recorded</p>
+                </div>
+              </div>
+
+              {/* Grid Info */}
+              <div className="space-y-3 bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Founder Name</span>
+                    <p className="text-xs font-bold text-gray-800">{selectedPayment.founderName}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Payment Method</span>
+                    <p className="text-xs font-bold text-gray-800">{selectedPayment.paymentMethod}</p>
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email Address</span>
+                  <p className="text-xs font-bold text-gray-800 font-mono">{selectedPayment.userId?.email || 'N/A'}</p>
+                </div>
+                {selectedPayment.userId?.mobile && (
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Mobile Number</span>
+                    <p className="text-xs font-bold text-gray-800 font-mono">{selectedPayment.userId.mobile}</p>
+                  </div>
+                )}
+
+                {(() => {
+                  const details = parseTransactionDetails(selectedPayment.transactionId);
+                  if (details.isParsed) {
+                    return (
+                      <>
+                        <div className="pt-2 border-t border-gray-100">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Transaction ID / UTR</span>
+                          <p className="text-xs font-mono font-bold text-purple-600 select-all">{details.utr}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                          <div>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sender Bank Name</span>
+                            <p className="text-xs font-bold text-gray-700">{details.bank}</p>
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Account Holder Name</span>
+                            <p className="text-xs font-bold text-gray-700">{details.holder}</p>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  }
+                  return (
+                    <div className="pt-2 border-t border-gray-100">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Transaction ID / UTR</span>
+                      <p className="text-xs font-mono font-bold text-purple-600 select-all">{selectedPayment.transactionId}</p>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Screenshot Image (if any) */}
+              {selectedPayment.screenshot && selectedPayment.screenshot !== 'no_screenshot' ? (
+                <div>
+                  <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Screenshot Receipt Proof</span>
+                  <div className="border border-gray-200 rounded-2xl overflow-hidden max-h-48 flex items-center justify-center bg-gray-100">
+                    <img src={selectedPayment.screenshot} alt="Payment Screenshot" className="object-contain w-full h-full" />
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-3 bg-gray-50 border border-gray-200 border-dashed rounded-2xl text-[11px] text-gray-400 font-semibold">
+                  ℹ️ No screenshot proof uploaded (Manual entry)
+                </div>
+              )}
+            </div>
+
+            {/* Footer Actions */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3">
+              <button
+                onClick={() => setSelectedPayment(null)}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-xs hover:bg-gray-100 transition-colors"
+              >
+                Close
+              </button>
+              {selectedPayment.status === 'pending_verification' && (
+                <>
+                  <button
+                    onClick={() => {
+                      handleAction(selectedPayment._id, 'approve');
+                      setSelectedPayment(null);
+                    }}
+                    disabled={actionLoading === selectedPayment._id}
+                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm disabled:opacity-70"
+                  >
+                    Approve
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
