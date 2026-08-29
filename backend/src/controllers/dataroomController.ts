@@ -252,7 +252,7 @@ export const updateDocument = async (req: Request, res: Response) => {
 
     if (replaceFileUrl) {
       // Archive current version to previousVersions
-      if (!targetDoc.previousVersions) targetDoc.previousVersions = [];
+      if (!targetDoc.previousVersions) targetDoc.previousVersions = [] as any;
       targetDoc.previousVersions.push({
         version: targetDoc.version,
         fileUrl: targetDoc.fileUrl,

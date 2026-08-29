@@ -116,7 +116,7 @@ export const getAdminAnalyticsData = async (req: AuthRequest, res: Response) => 
       .limit(10);
 
     const topStartups = realStartups.map((s, idx) => {
-      const ai = s.aiGenerated || {};
+      const ai = (s.aiGenerated || {}) as any;
       const report = ai.aiReport || {};
       const validation = ai.ideaValidation || {};
       const financial = ai.financialPlan || {};

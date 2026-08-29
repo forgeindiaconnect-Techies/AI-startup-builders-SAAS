@@ -494,7 +494,10 @@ export const getMentorAvailability = async (req: AuthRequest, res: Response) => 
     });
     const bookedMap: Record<string, string[]> = {};
     booked.forEach((b) => {
-      (bookedMap[b.date] = bookedMap[b.date] || []).push(b.time);
+      const dateKey = b.date || '';
+      if (dateKey) {
+        (bookedMap[dateKey] = bookedMap[dateKey] || []).push(b.time || '');
+      }
     });
 
     res.json({ success: true, data: { availability, booked: bookedMap } });

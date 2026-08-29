@@ -790,7 +790,7 @@ export const generateLogo = async (req: Request, res: Response) => {
               prompt: fullPrompt,
               createdAt: new Date().toISOString(),
             },
-          };
+          } as any;
           await startup.save();
           console.log(`✅ Logo persisted to startup record ${startupId}`);
         }
