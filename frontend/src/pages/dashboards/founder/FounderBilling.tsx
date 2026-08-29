@@ -144,6 +144,8 @@ const FounderBilling: React.FC = () => {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly');
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'bank'>('upi');
   const [selectedPaymentApp, setSelectedPaymentApp] = useState<string>('UPI');
+  const [senderBankName, setSenderBankName] = useState('');
+  const [senderAccountName, setSenderAccountName] = useState('');
   const [copiedField, setCopiedField] = useState<string>('');
   const [transactionId, setTransactionId] = useState('');
   const [screenshot, setScreenshot] = useState('');
@@ -185,6 +187,8 @@ const FounderBilling: React.FC = () => {
     setTargetPlan(plan);
     setTransactionId('');
     setScreenshot('');
+    setSenderBankName('');
+    setSenderAccountName('');
     setSubmitSuccess(false);
     setSubmitError('');
     setIsModalOpen(true);
@@ -219,6 +223,12 @@ const FounderBilling: React.FC = () => {
       setSubmitError('Please enter your Transaction ID / UTR Number.');
       return;
     }
+    if (paymentMethod === 'bank') {
+      if (!senderBankName.trim() || !senderAccountName.trim()) {
+        setSubmitError('Please enter your Bank Name and Account Holder Name.');
+        return;
+      }
+    }
     if (!targetPlan || !user) return;
 
     setIsSubmitting(true);
@@ -235,7 +245,9 @@ const FounderBilling: React.FC = () => {
           amount: billingPeriod === 'annual' ? targetPlan.annualPrice : targetPlan.price,
           billingPeriod,
           paymentMethod: paymentMethod === 'bank' ? 'Bank Transfer' : selectedPaymentApp,
-          transactionId: transactionId.trim(),
+          transactionId: paymentMethod === 'bank' 
+            ? `UTR: ${transactionId.trim()} | Bank: ${senderBankName.trim()} | Holder: ${senderAccountName.trim()}`
+            : transactionId.trim(),
           screenshot: screenshot || 'dummy_screenshot',
         }),
       });
@@ -665,6 +677,34 @@ const FounderBilling: React.FC = () => {
                       ))}
                     </div>
                     <p className="text-xs text-gray-400 mt-2.5 text-center">⚠️ Please use your registered email as payment reference/narration</p>
+                    
+                    {/* Sender Bank details inputs */}
+                    <div className="space-y-3 mt-4 pt-4 border-t border-gray-100">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Your Bank Details (For verification)</p>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Your Bank Name <span className="text-red-500">*</span></label>
+                          <input
+                            type="text"
+                            value={senderBankName}
+                            onChange={(e) => setSenderBankName(e.target.value)}
+                            placeholder="e.g. HDFC Bank"
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Account Holder Name <span className="text-red-500">*</span></label>
+                          <input
+                            type="text"
+                            value={senderAccountName}
+                            onChange={(e) => setSenderAccountName(e.target.value)}
+                            placeholder="e.g. Renu"
+                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   </> )}
 
