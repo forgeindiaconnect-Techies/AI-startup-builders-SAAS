@@ -233,7 +233,7 @@ const FounderBilling: React.FC = () => {
           planName: targetPlan.id,
           amount: billingPeriod === 'annual' ? targetPlan.annualPrice : targetPlan.price,
           billingPeriod,
-          paymentMethod: paymentMethod === 'bank' ? 'Bank Transfer' : paymentApp,
+          paymentMethod: paymentMethod === 'bank' ? 'Bank Transfer' : 'UPI',
           transactionId: transactionId.trim(),
           screenshot,
         }),
