@@ -712,11 +712,6 @@ const AdminInvestorApproval: React.FC = () => {
   const filteredApps = applications.filter(a => {
     const matchesSearch = (a.fullName + a.email + (a.companyName || '') + (a.investorType || '')).toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
-    if (activeTab === 'all') return true;
-    if (activeTab === 'pending') return a.status === 'PENDING_VERIFICATION';
-    if (activeTab === 'approved') return a.status === 'APPROVED';
-    if (activeTab === 'rejected') return a.status === 'REJECTED';
-    if (activeTab === 'suspended') return a.status === 'SUSPENDED';
     return true;
   });
 
