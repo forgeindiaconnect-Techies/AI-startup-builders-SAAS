@@ -411,7 +411,24 @@ export const updateMentorProfileAdmin = async (req: AuthRequest, res: Response) 
     if (typeof experienceYears !== 'undefined') user.experienceYears = String(experienceYears);
     if (status && ['active', 'inactive', 'suspended'].includes(status)) user.status = status;
     if (approvalStatus && ['pending', 'approved', 'rejected'].includes(approvalStatus)) user.approvalStatus = approvalStatus;
-    await user.save();
+    try {
+      await user.save();
+    } catch (saveErr: any) {
+      console.warn("===> Backend: user.save() in updateMentorProfileAdmin failed. Retrying with direct updateOne... Error:", saveErr.message);
+      await User.updateOne(
+        { _id: user._id },
+        { 
+          fullName: user.fullName,
+          expertise: user.expertise,
+          bio: user.bio,
+          linkedin: user.linkedin,
+          location: user.location,
+          experienceYears: user.experienceYears,
+          status: user.status,
+          approvalStatus: user.approvalStatus
+        }
+      );
+    }
 
     // Upsert MentorProfile (drives the founder-facing dashboard + booking fee)
     let profile = await MentorProfile.findOne({ mentorId: id });

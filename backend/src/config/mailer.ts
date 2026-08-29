@@ -1,13 +1,20 @@
 import dotenv from "dotenv";
+import nodemailer from "nodemailer";
 
 dotenv.config();
+
+const SMTP_USER = process.env.SMTP_USER || process.env.MAIL_USER;
+const SMTP_PASS = process.env.SMTP_PASS || process.env.MAIL_PASS;
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
 const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || "renugopal603@gmail.com";
 const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || "AI-startup";
 
-if (!BREVO_API_KEY) {
-    console.warn("⚠️ WARNING: BREVO_API_KEY is missing in environment variables. Email sending will fail.");
+if (!SMTP_USER || !SMTP_PASS) {
+    console.log("ℹ️ Info: SMTP credentials not configured. Will use Brevo as primary sender.");
+    if (!BREVO_API_KEY) {
+        console.warn("⚠️ WARNING: Neither SMTP credentials nor BREVO_API_KEY are configured in environment variables. Email sending will log to console only.");
+    }
 }
 
 export const sendEmail = async ({
@@ -19,12 +26,40 @@ export const sendEmail = async ({
     subject: string;
     html: string;
 }) => {
+    // 1. Try Nodemailer SMTP if credentials are provided in .env
+    if (SMTP_USER && SMTP_PASS) {
+        try {
+            console.log(`✉️ Attempting to send email via SMTP (${SMTP_USER}) to ${to}...`);
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: SMTP_USER,
+                    pass: SMTP_PASS
+                }
+            });
+            const info = await transporter.sendMail({
+                from: `"AI Startup Builder" <${SMTP_USER}>`,
+                to,
+                subject,
+                html
+            });
+            console.log(`✉️ Email sent via SMTP to ${to} successfully: ${info.messageId}`);
+            return info;
+        } catch (smtpError: any) {
+            console.error(`❌ SMTP sending failed to ${to}, falling back to Brevo:`, smtpError.message);
+        }
+    }
+
+    // 2. Fallback to Brevo API
     if (!BREVO_API_KEY) {
-        console.warn(`[BREVO API KEY MISSING] Would have sent to ${to}: ${subject}`);
+        console.warn(`\n⚠️ [EMAIL SERVICE] No sending provider configured. Would have sent email to: ${to}`);
+        console.warn(`📧 Subject: ${subject}`);
+        console.warn(`📝 Content Snippet: ${html.substring(0, 100)}...\n`);
         return null;
     }
 
     try {
+        console.log(`✉️ Attempting to send email via Brevo to ${to}...`);
         const response = await fetch("https://api.brevo.com/v3/smtp/email", {
             method: "POST",
             headers: {
@@ -53,10 +88,10 @@ export const sendEmail = async ({
         }
 
         const data = await response.json();
-        console.log(`✉️ Email sent via Brevo to ${to}: ${data.messageId || 'Success'}`);
+        console.log(`✉️ Email sent via Brevo to ${to} successfully: ${data.messageId || 'Success'}`);
         return data;
-    } catch (error) {
-        console.error(`❌ Failed to send email to ${to} via Brevo:`, error);
+    } catch (error: any) {
+        console.error(`❌ Failed to send email to ${to} via Brevo:`, error.message);
         throw error;
     }
 };

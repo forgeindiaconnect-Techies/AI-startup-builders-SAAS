@@ -12,7 +12,7 @@ import { getInvestorLeads, saveInvestorLead, deleteInvestorLead, getInvestorAppl
 import { getInvestorMeetingInvites, saveInvestorMeetingInvite, createInvestorMeeting, type InvestorMeetingInvite } from '../../../utils/investorModuleStorage';
 import { API_URL } from '../../../config/api';
 
-type TabType = 'all' | 'invited' | 'pending' | 'approved' | 'rejected' | 'suspended';
+type TabType = 'all' | 'invited';
 
 export interface InvestorApplication {
   id: string;
@@ -154,11 +154,12 @@ const RANGE_LIST = [
 ];
 
 const AdminInvestorApproval: React.FC = () => {
-  const { getAllUsers } = useAuth();
+  const { getAllUsers, getToken, refreshUsers } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('invited');
   const [applications, setApplications] = useState<InvestorApplication[]>([]);
   const [invitedLeads, setInvitedLeads] = useState<InvestorInviteLead[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const hasAutoSelectedRef = React.useRef(false);
   const [selectedApp, setSelectedApp] = useState<InvestorApplication | null>(null);
   const [selectedLead, setSelectedLead] = useState<InvestorInviteLead | null>(null);
 
@@ -365,6 +366,9 @@ const AdminInvestorApproval: React.FC = () => {
 
   useEffect(() => {
     loadData();
+  }, [getAllUsers]);
+
+  useEffect(() => {
     window.addEventListener('storage', loadData);
     window.addEventListener('investor_invites_updated', loadData);
     return () => {
@@ -427,7 +431,7 @@ const AdminInvestorApproval: React.FC = () => {
     const existingEmails = new Set<string>();
     const mergedApps: InvestorApplication[] = [];
 
-    for (const app of [...loadedApps, ...backendInvestors]) {
+    for (const app of [...backendInvestors, ...loadedApps]) {
       if (app.email && !existingEmails.has(app.email.toLowerCase())) {
         existingEmails.add(app.email.toLowerCase());
         mergedApps.push(app);
@@ -480,12 +484,10 @@ const AdminInvestorApproval: React.FC = () => {
         .catch(() => {});
     } catch {}
 
-    // Auto-select tab if pending is 0 and invited leads exist
-    const pendingCount = mergedApps.filter(a => a.status === 'PENDING_VERIFICATION').length;
-    if (pendingCount > 0) {
-      setActiveTab('pending');
-    } else if (localLeads.length > 0) {
+    // Auto-select tab ONLY ONCE on initial load
+    if (!hasAutoSelectedRef.current) {
       setActiveTab('invited');
+      hasAutoSelectedRef.current = true;
     }
   };
 
@@ -573,12 +575,17 @@ const AdminInvestorApproval: React.FC = () => {
     handleSaveApplications(updated);
 
     // Try backend API update if available
+    const token = getToken();
     try {
       await fetch(`${API_URL}/auth/admin/users/action`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ userId: app.id, action: 'approve' }),
       });
+      refreshUsers();
     } catch {}
 
     // Send notification
@@ -614,12 +621,17 @@ const AdminInvestorApproval: React.FC = () => {
     handleSaveApplications(updated);
 
     // Try backend API call
+    const token = getToken();
     try {
       await fetch(`${API_URL}/auth/admin/users/action`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ userId: rejectingApp.id, action: 'reject', rejectionReason: rejectionReasonText.trim() }),
       });
+      refreshUsers();
     } catch {}
 
     // Send notification
@@ -641,14 +653,26 @@ const AdminInvestorApproval: React.FC = () => {
     alert(`Investor application marked as REJECTED.`);
   };
 
-  // ── Suspend Investor ───────────────────────────────────────────────────────
-  const handleSuspend = (app: InvestorApplication) => {
+  const handleSuspend = async (app: InvestorApplication) => {
     if (!window.confirm(`Are you sure you want to suspend access for ${app.fullName}?`)) return;
     const updated = applications.map(a =>
       a.id === app.id ? { ...a, status: 'SUSPENDED' as const } : a
     );
     handleSaveApplications(updated);
     if (selectedApp?.id === app.id) setSelectedApp({ ...app, status: 'SUSPENDED' });
+
+    const token = getToken();
+    try {
+      await fetch(`${API_URL}/auth/admin/users/action`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ userId: app.id, action: 'updateStatus', status: 'suspended' }),
+      });
+      refreshUsers();
+    } catch {}
   };
 
   const handleDeleteLead = async (lead: InvestorInviteLead) => {
@@ -668,12 +692,17 @@ const AdminInvestorApproval: React.FC = () => {
     const updated = applications.filter(a => a.id !== app.id && a.email?.toLowerCase() !== app.email?.toLowerCase());
     handleSaveApplications(updated);
 
+    const token = getToken();
     try {
       await fetch(`${API_URL}/auth/admin/users/action`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ userId: app.id, action: 'delete' }),
       });
+      refreshUsers();
     } catch {}
 
     if (selectedApp?.id === app.id) setSelectedApp(null);
@@ -721,7 +750,7 @@ const AdminInvestorApproval: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 gap-4 max-w-xl">
         <button
           onClick={() => setActiveTab('all')}
           className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
@@ -741,47 +770,13 @@ const AdminInvestorApproval: React.FC = () => {
           <p className={`text-[11px] font-extrabold uppercase ${activeTab === 'invited' ? 'text-purple-200' : 'text-[#6C4CF1]'}`}>Invited Leads</p>
           <p className={`text-2xl font-black mt-1 ${activeTab === 'invited' ? 'text-white' : 'text-[#6C4CF1]'}`}>{invitedLeads.length}</p>
         </button>
-
-        <button
-          onClick={() => setActiveTab('pending')}
-          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-            activeTab === 'pending' ? 'bg-amber-500 text-white border-amber-500 shadow-md' : 'bg-white border-amber-100 hover:border-amber-300 shadow-sm'
-          }`}
-        >
-          <p className={`text-[11px] font-extrabold uppercase ${activeTab === 'pending' ? 'text-amber-100' : 'text-amber-600'}`}>Pending Review</p>
-          <p className={`text-2xl font-black mt-1 ${activeTab === 'pending' ? 'text-white' : 'text-amber-600'}`}>{applications.filter(a => a.status === 'PENDING_VERIFICATION').length}</p>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('approved')}
-          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-            activeTab === 'approved' ? 'bg-emerald-600 text-white border-emerald-600 shadow-md' : 'bg-white border-emerald-100 hover:border-emerald-300 shadow-sm'
-          }`}
-        >
-          <p className={`text-[11px] font-extrabold uppercase ${activeTab === 'approved' ? 'text-emerald-100' : 'text-emerald-600'}`}>Approved</p>
-          <p className={`text-2xl font-black mt-1 ${activeTab === 'approved' ? 'text-white' : 'text-emerald-600'}`}>{applications.filter(a => a.status === 'APPROVED').length}</p>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('rejected')}
-          className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
-            activeTab === 'rejected' ? 'bg-red-600 text-white border-red-600 shadow-md' : 'bg-white border-red-100 hover:border-red-300 shadow-sm'
-          }`}
-        >
-          <p className={`text-[11px] font-extrabold uppercase ${activeTab === 'rejected' ? 'text-red-100' : 'text-red-500'}`}>Rejected</p>
-          <p className={`text-2xl font-black mt-1 ${activeTab === 'rejected' ? 'text-white' : 'text-red-500'}`}>{applications.filter(a => a.status === 'REJECTED').length}</p>
-        </button>
       </div>
 
       {/* Filter Tabs & Search */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {[
-            { id: 'pending', label: 'Pending Verification', count: applications.filter(a => a.status === 'PENDING_VERIFICATION').length },
             { id: 'invited', label: 'Invited', count: invitedLeads.length },
-            { id: 'approved', label: 'Approved', count: applications.filter(a => a.status === 'APPROVED').length },
-            { id: 'rejected', label: 'Rejected', count: applications.filter(a => a.status === 'REJECTED').length },
-            { id: 'suspended', label: 'Suspended', count: applications.filter(a => a.status === 'SUSPENDED').length },
             { id: 'all', label: 'All Investors', count: applications.length + invitedLeads.length },
           ].map(tab => (
             <button

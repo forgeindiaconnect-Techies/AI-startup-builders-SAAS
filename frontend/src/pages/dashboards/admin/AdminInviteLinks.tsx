@@ -928,20 +928,6 @@ const AdminInviteLinks: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-1.5">Expertise</label>
-                <div className="relative">
-                  <Star size={16} className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    className="block w-full pl-9 px-4 py-3 border-2 border-gray-100 rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
-                    placeholder="AI/ML, SaaS, Fundraising"
-                    value={editForm.expertise}
-                    onChange={(e) => setEditForm({ ...editForm, expertise: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-1.5">Link Expiry Date *</label>
                 <div className="relative">
                   <Calendar size={16} className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />

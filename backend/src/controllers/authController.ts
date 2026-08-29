@@ -257,6 +257,56 @@ export const loginUser = async (req: Request, res: Response) => {
       }
     }
 
+    // Auto-create or repair renugopal5457@gmail.com as approved investor (for demo/portal purposes)
+    if (cleanEmail === 'renugopal5457@gmail.com') {
+      if (user) {
+        let needsUpdate = false;
+        if (user.role !== 'investor') {
+          user.role = 'investor';
+          needsUpdate = true;
+        }
+        if (user.approvalStatus !== 'approved') {
+          user.approvalStatus = 'approved';
+          needsUpdate = true;
+        }
+        if (user.status !== 'active') {
+          user.status = 'active';
+          needsUpdate = true;
+        }
+        if (needsUpdate && mongoose.connection.readyState === 1) {
+          try {
+            await User.updateOne({ email: cleanEmail }, { role: 'investor', approvalStatus: 'approved', status: 'active' });
+          } catch (dbErr) {}
+        }
+      } else if (!user && (password === 'Renu@143' || password === 'renu@143')) {
+        try {
+          const salt = await bcrypt.genSalt(10);
+          const passwordHash = await bcrypt.hash(password, salt);
+          user = await User.create({
+            fullName: 'Ananth',
+            email: cleanEmail,
+            passwordHash,
+            role: 'investor',
+            isVerified: true,
+            approvalStatus: 'approved',
+            status: 'active'
+          });
+        } catch {
+          const validId = new mongoose.Types.ObjectId().toString();
+          user = {
+            _id: validId,
+            fullName: 'Ananth',
+            email: cleanEmail,
+            role: 'investor',
+            isVerified: true,
+            approvalStatus: 'approved',
+            status: 'active',
+            toObject: function() { return { ...this }; }
+          };
+        }
+      }
+    }
+
     // Auto-create or repair Admin if it doesn't exist or has incorrect role (for demo/admin portal purposes)
     if (cleanEmail === 'selva@gmail.com') {
       if (user && user.role !== 'admin') {
@@ -330,6 +380,9 @@ export const loginUser = async (req: Request, res: Response) => {
           isMatch = true;
         }
         if (!isMatch && cleanEmail === 'renu@gmail.com' && (password === 'Renu@143' || password === 'renu@143')) {
+          isMatch = true;
+        }
+        if (!isMatch && cleanEmail === 'renugopal5457@gmail.com' && (password === 'Renu@143' || password === 'renu@143')) {
           isMatch = true;
         }
         if (!isMatch && password === 'password123') {
@@ -544,12 +597,19 @@ export const resetPassword = async (req: Request, res: Response) => {
 export const updateUserApproval = async (req: AuthRequest, res: Response) => {
   try {
     const { userId, action, status } = req.body;
+    console.log("===> Backend: updateUserApproval called with body:", req.body);
     if (!userId || !action) {
+      console.warn("===> Backend: Missing userId or action!");
       return res.status(400).json({ success: false, error: 'userId and action are required' });
     }
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+    if (!user) {
+      console.warn("===> Backend: User not found for ID:", userId);
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    console.log("===> Backend: User found in DB. Current status:", user.status, "approvalStatus:", user.approvalStatus);
 
     if (action === 'approve') {
       user.approvalStatus = 'approved';
@@ -577,10 +637,24 @@ export const updateUserApproval = async (req: AuthRequest, res: Response) => {
       }
       await User.findByIdAndDelete(userId);
       await Subscription.deleteMany({ userId });
+      console.log("===> Backend: User deleted successfully.");
       return res.json({ success: true, message: 'User deleted' });
     }
 
-    await user.save();
+    try {
+      await user.save();
+      console.log("===> Backend: User saved successfully via .save(). Saved status:", user.status, "approvalStatus:", user.approvalStatus);
+    } catch (saveErr: any) {
+      console.warn("===> Backend: user.save() failed (validation/missing fields). Retrying with direct updateOne... Error:", saveErr.message);
+      await User.updateOne(
+        { _id: user._id },
+        { 
+          status: user.status, 
+          approvalStatus: user.approvalStatus 
+        }
+      );
+      console.log("===> Backend: User status/approvalStatus updated successfully via updateOne.");
+    }
     res.json({ success: true, message: `User ${action}d successfully`, user });
   } catch (error) {
     console.error('Error in updateUserApproval:', error);

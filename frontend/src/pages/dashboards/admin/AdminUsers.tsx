@@ -132,6 +132,8 @@ const getCombinedProfileOverride = (emailKey: string, uId?: string) => {
       if (found.experienceYears) combined.experienceYears = found.experienceYears;
       if (found.linkedin) combined.linkedin = found.linkedin;
       if (found.bio) combined.bio = found.bio;
+      if (typeof found.sessionFee !== 'undefined') combined.sessionFee = found.sessionFee;
+      if (typeof found.sessionDuration !== 'undefined') combined.sessionDuration = found.sessionDuration;
     }
   } catch {}
 
@@ -305,8 +307,8 @@ const AdminUsers: React.FC = () => {
         name: profileOverride.fullName || profileOverride.name || u.name || u.fullName,
         fullName: profileOverride.fullName || profileOverride.name || u.fullName || u.name,
         email: profileOverride.email || u.email,
-        status: userOverride.status || profileOverride.status || initialStatus,
-        approvalStatus: userOverride.approvalStatus || profileOverride.approvalStatus || initialApproval,
+        status: initialStatus,
+        approvalStatus: initialApproval,
         mobile: profileOverride.mobile || profileOverride.phone || u.mobile || u.phone || appData.mobile || leadData.phone || '',
         phone: profileOverride.phone || profileOverride.mobile || u.phone || u.mobile || appData.mobile || leadData.phone || '',
         location: profileOverride.location || u.location || appData.location || leadData.location || '',
@@ -327,6 +329,8 @@ const AdminUsers: React.FC = () => {
         portfolioCompanies: u.portfolioCompanies || appData.portfolioCompanies || '',
         notableInvestments: u.notableInvestments || appData.notableInvestments || '',
         areasOfExpertise: profileOverride.expertise || u.areasOfExpertise || appData.areasOfExpertise || '',
+        sessionFee: profileOverride.sessionFee ?? u.sessionFee,
+        sessionDuration: profileOverride.sessionDuration ?? u.sessionDuration,
         kycDocUrl: u.kycDocUrl || appData.kycDocUrl || '',
         kycDocName: u.kycDocName || appData.kycDocName || '',
         panTaxDocUrl: u.panTaxDocUrl || appData.panTaxDocUrl || '',
@@ -344,7 +348,7 @@ const AdminUsers: React.FC = () => {
 
     // 2. Merge local investor applications not in fetched users
     const localInvestors = storedApps
-      .filter((app: any) => app.email && !processedEmails.has(app.email.toLowerCase()))
+      .filter((app: any) => app.email && !processedEmails.has(app.email.trim().toLowerCase()))
       .map((app: any) => {
         const emailKey = app.email.trim().toLowerCase();
         processedEmails.add(emailKey);
@@ -400,7 +404,7 @@ const AdminUsers: React.FC = () => {
 
     // 3. Merge invited investor leads not in fetched or localInvestors
     const localInvited = storedLeads
-      .filter((lead: any) => lead.email && !processedEmails.has(lead.email.toLowerCase()))
+      .filter((lead: any) => lead.email && !processedEmails.has(lead.email.trim().toLowerCase()))
       .map((lead: any) => {
         const emailKey = lead.email.trim().toLowerCase();
         processedEmails.add(emailKey);
@@ -440,9 +444,10 @@ const AdminUsers: React.FC = () => {
     setUsersList([...enrichedFetched, ...localInvestors, ...localInvited]);
   };
 
+  // Setup listeners and polling on mount
   useEffect(() => {
     loadUsers(true);
-    const handleStorageChange = () => loadUsers(true);
+    const handleStorageChange = () => loadUsers(false);
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('user_profile_updated', handleStorageChange);
     window.addEventListener('investor_invites_updated', handleStorageChange);
@@ -456,6 +461,11 @@ const AdminUsers: React.FC = () => {
       window.removeEventListener('investor_invites_updated', handleStorageChange);
     };
   }, []);
+
+  // React to changes in context users list
+  useEffect(() => {
+    loadUsers(true);
+  }, [getAllUsers()]);
 
   const filtered = usersList.filter(u =>
     (roleFilter === 'All' || (u.role || '').toLowerCase() === roleFilter.toLowerCase()) &&
@@ -503,10 +513,6 @@ const AdminUsers: React.FC = () => {
       setSelectedUser({ ...selectedUser, status: newStatus });
     }
 
-    if (uEmail) {
-      saveUserOverride(uEmail, { status: newStatus });
-    }
-
     updateUserStatus(userId, newStatus);
     showToast(`${userName}'s status updated to "${newStatus}".`);
   };
@@ -527,10 +533,6 @@ const AdminUsers: React.FC = () => {
 
     if (selectedUser && (selectedUser.id === userId || (uEmail && selectedUser.email?.toLowerCase() === uEmail.toLowerCase()))) {
       setSelectedUser({ ...selectedUser, approvalStatus: newApproval });
-    }
-
-    if (uEmail) {
-      saveUserOverride(uEmail, { approvalStatus: newApproval });
     }
 
     if (uEmail) {
@@ -580,6 +582,21 @@ const AdminUsers: React.FC = () => {
     } else {
       if (updateUserApproval) updateUserApproval(userId, newApproval);
       showToast(`${userName}'s approval status updated to "${newApproval}".`);
+    }
+  };
+
+  const handleViewUser = async (u: any) => {
+    setSelectedUser(u);
+    if (u.role === 'mentor') {
+      try {
+        const full = await getMentorProfile(u.id);
+        if (full) {
+          setSelectedUser(prev => prev && prev.id === u.id ? { ...prev, ...full } : prev);
+          setUsersList(prev => prev.map(item => item.id === u.id ? { ...item, ...full } : item));
+        }
+      } catch (err) {
+        console.error("Failed to load mentor details for view:", err);
+      }
     }
   };
 
@@ -710,6 +727,8 @@ const AdminUsers: React.FC = () => {
         linkedin: mentorForm.linkedin.trim(),
         bio: mentorForm.bio.trim(),
         location: mentorForm.location.trim(),
+        sessionFee: Number(mentorForm.sessionFee) || 0,
+        sessionDuration: Number(mentorForm.sessionDuration) || 45,
       } : u));
       refreshUsers();
       setEditingMentor(null);
@@ -958,7 +977,7 @@ const AdminUsers: React.FC = () => {
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
                       <button
-                        onClick={() => setSelectedUser(u)}
+                        onClick={() => handleViewUser(u)}
                         className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-xs transition-colors inline-flex items-center gap-1"
                         title="View Details"
                       >
@@ -1048,14 +1067,18 @@ const AdminUsers: React.FC = () => {
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Email Address</span>
                     <span className="font-bold text-gray-900 truncate block">{selectedUser.email || '—'}</span>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile Number</span>
-                    <span className="font-bold text-gray-900">{selectedUser.mobile || selectedUser.phone || '—'}</span>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
-                    <span className="font-bold text-gray-900">{selectedUser.location || selectedUser.preferredLocation || '—'}</span>
-                  </div>
+                  {(selectedUser.mobile || selectedUser.phone) && (
+                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile Number</span>
+                      <span className="font-bold text-gray-900">{selectedUser.mobile || selectedUser.phone}</span>
+                    </div>
+                  )}
+                  {(selectedUser.location || selectedUser.preferredLocation) && (
+                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                      <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
+                      <span className="font-bold text-gray-900">{selectedUser.location || selectedUser.preferredLocation}</span>
+                    </div>
+                  )}
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Signup Date</span>
                     <span className="font-bold text-gray-900">{formatDate(selectedUser.signupDate)}</span>
@@ -1091,7 +1114,13 @@ const AdminUsers: React.FC = () => {
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Session Fee & Duration</span>
-                        <span className="font-bold text-[#5B21B6]">₹{selectedUser.sessionFee || '2,500'} / session ({selectedUser.sessionDuration || '45'} mins)</span>
+                        <span className="font-bold text-[#5B21B6]">
+                          {selectedUser.sessionFee && selectedUser.sessionDuration ? (
+                            `₹${Number(selectedUser.sessionFee).toLocaleString('en-IN')} / session (${selectedUser.sessionDuration} mins)`
+                          ) : (
+                            ''
+                          )}
+                        </span>
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Platform Split Share</span>
@@ -1105,7 +1134,7 @@ const AdminUsers: React.FC = () => {
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
                         <span className="font-bold text-gray-900">{selectedUser.location || 'Bengaluru, India'}</span>
                       </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
                         <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">LinkedIn Profile</span>
                         {(selectedUser.linkedin || selectedUser.linkedinUrl) ? (
                           <a href={selectedUser.linkedin || selectedUser.linkedinUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
@@ -1115,16 +1144,6 @@ const AdminUsers: React.FC = () => {
                           <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
                             https://linkedin.com/in/mentor-profile
                           </a>
-                        )}
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Website / Portfolio</span>
-                        {selectedUser.website ? (
-                          <a href={selectedUser.website} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
-                            {selectedUser.website}
-                          </a>
-                        ) : (
-                          <span className="font-bold text-gray-900">https://mentor-advisory.io</span>
                         )}
                       </div>
                       <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
@@ -1192,104 +1211,134 @@ const AdminUsers: React.FC = () => {
                     <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                       <span className="w-1 h-4 rounded-full bg-emerald-500"></span> Investor Signup & Investment Profile Details
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Company / Fund Name</span>
-                        <span className="font-bold text-gray-900">{selectedUser.companyName || 'Syndicate Capital Partners'}</span>
+                    {!selectedUser.companyName && !selectedUser.investorType && !selectedUser.designation && !selectedUser.experienceYears && !(selectedUser.mobile || selectedUser.phone) && !(selectedUser.location || selectedUser.preferredLocation) && !(selectedUser.linkedin || selectedUser.linkedinUrl) && !selectedUser.website && !(selectedUser.investmentRange || selectedUser.minInvestment) && !selectedUser.preferredLocation && !selectedUser.preferredIndustry && !(Array.isArray(selectedUser.preferredIndustries) && selectedUser.preferredIndustries.length > 0) && !selectedUser.investmentStage && !(Array.isArray(selectedUser.investmentStages) && selectedUser.investmentStages.length > 0) && !selectedUser.investmentFocus && !selectedUser.previousExperience && !selectedUser.startupsInvestedCount && !selectedUser.portfolioCompanies && !selectedUser.notableInvestments && !selectedUser.areasOfExpertise && !selectedUser.bio ? (
+                      <div className="p-6 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-center text-gray-500 text-xs">
+                        This investor has not completed their investment profile details yet.
                       </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investor Category / Type</span>
-                        <span className="font-bold text-gray-900">{selectedUser.investorType || 'Angel Investor'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Designation / Title</span>
-                        <span className="font-bold text-gray-900">{selectedUser.designation || 'Managing Director'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Experience</span>
-                        <span className="font-bold text-gray-900">{selectedUser.experienceYears ? `${selectedUser.experienceYears} Years` : '8+ Years'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile Contact</span>
-                        <span className="font-bold text-gray-900">{selectedUser.mobile || selectedUser.phone || '+91 98765 43210'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
-                        <span className="font-bold text-gray-900">{selectedUser.location || selectedUser.preferredLocation || 'Bengaluru, India'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">LinkedIn Profile</span>
-                        {(selectedUser.linkedin || selectedUser.linkedinUrl) ? (
-                          <a href={selectedUser.linkedin || selectedUser.linkedinUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
-                            {selectedUser.linkedin || selectedUser.linkedinUrl}
-                          </a>
-                        ) : (
-                          <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
-                            https://linkedin.com/in/investor-profile
-                          </a>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {selectedUser.companyName && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Company / Fund Name</span>
+                            <span className="font-bold text-gray-900">{selectedUser.companyName}</span>
+                          </div>
+                        )}
+                        {selectedUser.investorType && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investor Category / Type</span>
+                            <span className="font-bold text-gray-900">{selectedUser.investorType}</span>
+                          </div>
+                        )}
+                        {selectedUser.designation && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Designation / Title</span>
+                            <span className="font-bold text-gray-900">{selectedUser.designation}</span>
+                          </div>
+                        )}
+                        {selectedUser.experienceYears && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Experience</span>
+                            <span className="font-bold text-gray-900">{selectedUser.experienceYears} Years</span>
+                          </div>
+                        )}
+                        {(selectedUser.mobile || selectedUser.phone) && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Mobile Contact</span>
+                            <span className="font-bold text-gray-900">{selectedUser.mobile || selectedUser.phone}</span>
+                          </div>
+                        )}
+                        {(selectedUser.location || selectedUser.preferredLocation) && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Location</span>
+                            <span className="font-bold text-gray-900">{selectedUser.location || selectedUser.preferredLocation}</span>
+                          </div>
+                        )}
+                        {(selectedUser.linkedin || selectedUser.linkedinUrl) && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">LinkedIn Profile</span>
+                            <a href={selectedUser.linkedin || selectedUser.linkedinUrl} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
+                              {selectedUser.linkedin || selectedUser.linkedinUrl}
+                            </a>
+                          </div>
+                        )}
+                        {selectedUser.website && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Website / Fund Link</span>
+                            <a href={selectedUser.website} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
+                              {selectedUser.website}
+                            </a>
+                          </div>
+                        )}
+                        {(selectedUser.investmentRange || selectedUser.minInvestment) && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Ticket Range</span>
+                            <span className="font-bold text-[#5B21B6]">
+                              {selectedUser.investmentRange || (selectedUser.minInvestment ? `₹${selectedUser.minInvestment} - ₹${selectedUser.maxInvestment}` : '')}
+                            </span>
+                          </div>
+                        )}
+                        {selectedUser.preferredLocation && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Geography</span>
+                            <span className="font-bold text-gray-900">{selectedUser.preferredLocation}</span>
+                          </div>
+                        )}
+                        {((Array.isArray(selectedUser.preferredIndustries) && selectedUser.preferredIndustries.length > 0) || selectedUser.preferredIndustry) && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Target Industries</span>
+                            <span className="font-bold text-gray-900">
+                              {Array.isArray(selectedUser.preferredIndustries) && selectedUser.preferredIndustries.length > 0
+                                ? selectedUser.preferredIndustries.join(', ')
+                                : selectedUser.preferredIndustry}
+                            </span>
+                          </div>
+                        )}
+                        {((Array.isArray(selectedUser.investmentStages) && selectedUser.investmentStages.length > 0) || selectedUser.investmentStage) && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Target Investment Stages</span>
+                            <span className="font-bold text-gray-900">
+                              {Array.isArray(selectedUser.investmentStages) && selectedUser.investmentStages.length > 0
+                                ? selectedUser.investmentStages.join(', ')
+                                : selectedUser.investmentStage}
+                            </span>
+                          </div>
+                        )}
+                        {selectedUser.investmentFocus && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Focus & Thesis</span>
+                            <p className="text-xs text-gray-800">{selectedUser.investmentFocus}</p>
+                          </div>
+                        )}
+                        {selectedUser.previousExperience && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Previous Investment Experience</span>
+                            <p className="text-xs text-gray-800">{selectedUser.previousExperience}</p>
+                          </div>
+                        )}
+                        {(selectedUser.startupsInvestedCount || selectedUser.portfolioCompanies || selectedUser.notableInvestments) && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2 space-y-2">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Portfolio & Track Record Highlights</span>
+                            {selectedUser.startupsInvestedCount && <div><span className="text-gray-400 text-xs">Startups Invested:</span> <strong className="text-xs text-gray-900">{selectedUser.startupsInvestedCount}</strong></div>}
+                            {selectedUser.portfolioCompanies && <div><span className="text-gray-400 text-xs">Portfolio Companies:</span> <strong className="text-xs text-gray-900">{selectedUser.portfolioCompanies}</strong></div>}
+                            {selectedUser.notableInvestments && <div><span className="text-gray-400 text-xs">Notable Investments:</span> <strong className="text-xs text-gray-900">{selectedUser.notableInvestments}</strong></div>}
+                          </div>
+                        )}
+                        {((Array.isArray(selectedUser.areasOfExpertise) && selectedUser.areasOfExpertise.length > 0) || selectedUser.areasOfExpertise) && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Areas of Domain Expertise</span>
+                            <span className="font-bold text-gray-900">
+                              {Array.isArray(selectedUser.areasOfExpertise) ? selectedUser.areasOfExpertise.join(', ') : selectedUser.areasOfExpertise}
+                            </span>
+                          </div>
+                        )}
+                        {selectedUser.bio && (
+                          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
+                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investor Bio / Summary</span>
+                            <p className="text-xs text-gray-700 italic">{selectedUser.bio}</p>
+                          </div>
                         )}
                       </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Website / Fund Link</span>
-                        {selectedUser.website ? (
-                          <a href={selectedUser.website} target="_blank" rel="noopener noreferrer" className="font-bold text-[#5B21B6] hover:underline truncate block">
-                            {selectedUser.website}
-                          </a>
-                        ) : (
-                          <span className="font-bold text-gray-900">https://investor-syndicate.io</span>
-                        )}
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Ticket Range</span>
-                        <span className="font-bold text-[#5B21B6]">
-                          {selectedUser.investmentRange || (selectedUser.minInvestment ? `₹${selectedUser.minInvestment} - ₹${selectedUser.maxInvestment}` : '₹25 Lakhs – ₹1 Crore')}
-                        </span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Geography</span>
-                        <span className="font-bold text-gray-900">{selectedUser.preferredLocation || 'India & Global'}</span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Preferred Target Industries</span>
-                        <span className="font-bold text-gray-900">
-                          {Array.isArray(selectedUser.preferredIndustries) && selectedUser.preferredIndustries.length > 0
-                            ? selectedUser.preferredIndustries.join(', ')
-                            : (selectedUser.preferredIndustry || 'Artificial Intelligence, B2B SaaS, FinTech, DeepTech')}
-                        </span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Target Investment Stages</span>
-                        <span className="font-bold text-gray-900">
-                          {Array.isArray(selectedUser.investmentStages) && selectedUser.investmentStages.length > 0
-                            ? selectedUser.investmentStages.join(', ')
-                            : 'Seed, Series A'}
-                        </span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investment Focus & Thesis</span>
-                        <p className="text-xs text-gray-800">{selectedUser.investmentFocus || 'Focusing on high-growth AI-native software products and scalable SaaS business models with strong founder-market fit.'}</p>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Previous Investment Experience</span>
-                        <p className="text-xs text-gray-800">{selectedUser.previousExperience || 'Lead angel investor in 12+ early-stage technology startups with 3 successful follow-on rounds.'}</p>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2 space-y-2">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Portfolio & Track Record Highlights</span>
-                        <div><span className="text-gray-400 text-xs">Startups Invested:</span> <strong className="text-xs text-gray-900">{selectedUser.startupsInvestedCount || '14 Startups'}</strong></div>
-                        <div><span className="text-gray-400 text-xs">Portfolio Companies:</span> <strong className="text-xs text-gray-900">{selectedUser.portfolioCompanies || 'CloudScale AI, PayFlow, DataPulse'}</strong></div>
-                        <div><span className="text-gray-400 text-xs">Notable Investments:</span> <strong className="text-xs text-gray-900">{selectedUser.notableInvestments || 'Early Seed Lead in CloudScale AI'}</strong></div>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Areas of Domain Expertise</span>
-                        <span className="font-bold text-gray-900">
-                          {Array.isArray(selectedUser.areasOfExpertise) ? selectedUser.areasOfExpertise.join(', ') : (selectedUser.areasOfExpertise || 'Fundraising Advisory, Term Sheet Negotiation, Board Governance')}
-                        </span>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 sm:col-span-2">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1.5">Investor Bio / Summary</span>
-                        <p className="text-xs text-gray-700 italic">{selectedUser.bio || 'Active angel investor supporting ambitious technology founders with capital, strategic mentorship, and network access.'}</p>
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Invitation Details if Invited Lead */}

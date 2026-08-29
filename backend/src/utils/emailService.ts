@@ -1,23 +1,12 @@
 import dotenv from 'dotenv';
+import { sendEmail } from '../config/mailer.js';
 
 dotenv.config();
 
-const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
-const BREVO_SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || "renugopal603@gmail.com";
-const BREVO_SENDER_NAME = process.env.BREVO_SENDER_NAME || "AI-startup";
-
-export const sendOTPEmail = async (to: string, otpCode: string) => {
-  // If API key is not configured, fallback to console log
-  if (!BREVO_API_KEY) {
-    console.warn('\n⚠️ BREVO_API_KEY not configured in .env');
-    console.warn(`📧 WOULD HAVE SENT EMAIL TO: ${to}`);
-    console.warn(`🔑 OTP CODE: ${otpCode}\n`);
-    return true; // Pretend it succeeded for development
-  }
-
+export const sendOTPEmail = async (to: string, otpCode: string): Promise<boolean> => {
   const subject = 'Your Verification Code - AI Startup Builder';
   const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px; background: #ffffff;">
       <h2 style="color: #6C4CF1; text-align: center;">AI Startup Builder</h2>
       <p style="font-size: 16px; color: #333;">Hello,</p>
       <p style="font-size: 16px; color: #333;">Please use the verification code below to complete your registration. This code is valid for 1 minute.</p>
@@ -33,52 +22,19 @@ export const sendOTPEmail = async (to: string, otpCode: string) => {
   `;
 
   try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "accept": "application/json",
-        "api-key": BREVO_API_KEY,
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        sender: {
-          name: BREVO_SENDER_NAME,
-          email: BREVO_SENDER_EMAIL
-        },
-        to: [{ email: to }],
-        subject: subject,
-        htmlContent: htmlContent
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Brevo API Error: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log(`✉️ OTP Email sent via Brevo to ${to}: ${data.messageId || 'Success'}`);
-    return true;
+    const res = await sendEmail({ to, subject, html: htmlContent });
+    return res !== null;
   } catch (error) {
-    // Do NOT throw — log the error and fall back to console so registration still works
-    console.error(`❌ Failed to send email to ${to}:`, error);
+    console.error(`❌ Failed to send OTP email to ${to}:`, error);
     console.warn(`🔑 FALLBACK OTP for ${to}: ${otpCode}`);
-    return false; // Caller can decide, but registration won't crash
+    return false;
   }
 };
 
-export const sendPasswordResetEmail = async (to: string, otpCode: string) => {
-  // If API key is not configured, fallback to console log
-  if (!BREVO_API_KEY) {
-    console.warn('\n⚠️ BREVO_API_KEY not configured in .env');
-    console.warn(`📧 WOULD HAVE SENT PASSWORD RESET EMAIL TO: ${to}`);
-    console.warn(`🔑 RESET OTP CODE: ${otpCode}\n`);
-    return true; // Pretend it succeeded for development
-  }
-
+export const sendPasswordResetEmail = async (to: string, otpCode: string): Promise<boolean> => {
   const subject = 'Reset Your Password - AI Startup Builder';
   const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaec; border-radius: 10px; background: #ffffff;">
       <h2 style="color: #6C4CF1; text-align: center;">AI Startup Builder</h2>
       <p style="font-size: 16px; color: #333;">Hello,</p>
       <p style="font-size: 16px; color: #333;">Please use the verification code below to reset your password. This code is valid for 10 minutes.</p>
@@ -94,36 +50,12 @@ export const sendPasswordResetEmail = async (to: string, otpCode: string) => {
   `;
 
   try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "accept": "application/json",
-        "api-key": BREVO_API_KEY,
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        sender: {
-          name: BREVO_SENDER_NAME,
-          email: BREVO_SENDER_EMAIL
-        },
-        to: [{ email: to }],
-        subject: subject,
-        htmlContent: htmlContent
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Brevo API Error: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log(`✉️ Password reset email sent via Brevo to ${to}: ${data.messageId || 'Success'}`);
-    return true;
+    const res = await sendEmail({ to, subject, html: htmlContent });
+    return res !== null;
   } catch (error) {
     console.error(`❌ Failed to send password reset email to ${to}:`, error);
     console.warn(`🔑 FALLBACK RESET OTP for ${to}: ${otpCode}`);
-    return false; // Caller can decide, but reset won't crash
+    return false;
   }
 };
 
@@ -132,14 +64,7 @@ export const sendInvestorInviteEmail = async (
   fullName: string,
   inviteUrl: string,
   adminNotes?: string
-) => {
-  if (!BREVO_API_KEY) {
-    console.warn('\n⚠️ BREVO_API_KEY not configured in .env');
-    console.warn(`📧 WOULD HAVE SENT INVESTOR INVITE EMAIL TO: ${to}`);
-    console.warn(`🔗 INVITE URL: ${inviteUrl}\n`);
-    return true;
-  }
-
+): Promise<boolean> => {
   const subject = "You're Invited to Join Our Investor Network - AI Startup Builder";
   const htmlContent = `
     <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; border: 1px solid #E5E7EB; border-radius: 16px; background-color: #ffffff;">
@@ -191,32 +116,8 @@ export const sendInvestorInviteEmail = async (
   `;
 
   try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "accept": "application/json",
-        "api-key": BREVO_API_KEY,
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        sender: {
-          name: BREVO_SENDER_NAME,
-          email: BREVO_SENDER_EMAIL
-        },
-        to: [{ email: to, name: fullName }],
-        subject: subject,
-        htmlContent: htmlContent
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Brevo API Error: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log(`✉️ Investor Invite Email sent via Brevo to ${to}: ${data.messageId || 'Success'}`);
-    return true;
+    const res = await sendEmail({ to, subject, html: htmlContent });
+    return res !== null;
   } catch (error) {
     console.error(`❌ Failed to send investor invite email to ${to}:`, error);
     return false;
@@ -237,13 +138,7 @@ export const sendMeetingInviteEmail = async ({
   meetingTime: string;
   videoUrl: string;
   passcode: string;
-}) => {
-  if (!BREVO_API_KEY) {
-    console.warn('\n⚠️ BREVO_API_KEY not configured in .env');
-    console.warn(`📧 WOULD HAVE SENT MEETING INVITE EMAIL TO: ${to}`);
-    return true;
-  }
-
+}): Promise<boolean> => {
   const subject = "Investor Accreditation & Meeting Invitation - AI Startup Builder";
   const htmlContent = `
     <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; border: 1px solid #E5E7EB; border-radius: 16px; background-color: #ffffff;">
@@ -306,32 +201,8 @@ export const sendMeetingInviteEmail = async ({
   `;
 
   try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "accept": "application/json",
-        "api-key": BREVO_API_KEY,
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        sender: {
-          name: BREVO_SENDER_NAME,
-          email: BREVO_SENDER_EMAIL
-        },
-        to: [{ email: to, name: fullName }],
-        subject: subject,
-        htmlContent: htmlContent
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Brevo API Error: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    console.log(`✉️ Meeting Invite Email sent via Brevo to ${to}: ${data.messageId || 'Success'}`);
-    return true;
+    const res = await sendEmail({ to, subject, html: htmlContent });
+    return res !== null;
   } catch (error) {
     console.error(`❌ Failed to send meeting invite email to ${to}:`, error);
     return false;
@@ -345,15 +216,8 @@ export const sendMentorInviteEmail = async (options: {
   message?: string;
   expertise?: string;
   expiresAt?: Date;
-}) => {
+}): Promise<boolean> => {
   const { mentorName, mentorEmail, inviteLink, message } = options;
-  if (!BREVO_API_KEY) {
-    console.warn('\n⚠️ BREVO_API_KEY not configured in .env');
-    console.warn(`📧 WOULD HAVE SENT MENTOR INVITE EMAIL TO: ${mentorEmail}`);
-    console.warn(`🔗 INVITE URL: ${inviteLink}\n`);
-    return true;
-  }
-
   const subject = "You're Invited to Join Our Mentor Network - AI Startup Builder";
   const htmlContent = `
     <div style="font-family: Arial, Helvetica, sans-serif; max-width: 600px; margin: 0 auto; padding: 32px 24px; border: 1px solid #E5E7EB; border-radius: 16px; background-color: #ffffff;">
@@ -365,25 +229,10 @@ export const sendMentorInviteEmail = async (options: {
   `;
 
   try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        "accept": "application/json",
-        "api-key": BREVO_API_KEY,
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        sender: { name: BREVO_SENDER_NAME, email: BREVO_SENDER_EMAIL },
-        to: [{ email: mentorEmail, name: mentorName }],
-        subject,
-        htmlContent
-      })
-    });
-    return response.ok;
+    const res = await sendEmail({ to: mentorEmail, subject, html: htmlContent });
+    return res !== null;
   } catch (error) {
     console.error('Failed to send mentor invite email:', error);
     return false;
   }
 };
-
-
