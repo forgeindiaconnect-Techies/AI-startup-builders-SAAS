@@ -245,7 +245,7 @@ export const updateDocument = async (req: Request, res: Response) => {
     const room = await DataRoom.findOne({ startupId });
     if (!room) return res.status(404).json({ success: false, message: 'Data room not found' });
 
-    const docIndex = room.documents.findIndex((d) => d._id?.toString() === docId || (d as any).id === docId);
+    const docIndex = room.documents.findIndex((d: any) => d._id?.toString() === docId || (d as any).id === docId);
     if (docIndex === -1) return res.status(404).json({ success: false, message: 'Document not found' });
 
     const targetDoc = room.documents[docIndex];
@@ -313,7 +313,7 @@ export const manageInvestorAccess = async (req: Request, res: Response) => {
     const room = await DataRoom.findOne({ startupId });
     if (!room) return res.status(404).json({ success: false, message: 'Data room not found' });
 
-    let accessObj = room.investorAccess.find((a) => a.investorId === String(investorId));
+    let accessObj = room.investorAccess.find((a: any) => a.investorId === String(investorId));
 
     if (action === 'grant') {
       if (!accessObj) {
@@ -397,7 +397,7 @@ export const addQuestionOrAnswer = async (req: Request, res: Response) => {
       });
     } else if (questionId && answer) {
       // Founder response to question
-      const targetQ = room.questions.find((q) => q._id?.toString() === questionId || (q as any).id === questionId);
+      const targetQ = room.questions.find((q: any) => q._id?.toString() === questionId || (q as any).id === questionId);
       if (targetQ) {
         targetQ.answer = answer;
         targetQ.answeredAt = new Date();
