@@ -1,9 +1,4 @@
-import 'dotenv/config';
 
-import express from 'express';
-import cors from 'cors';
-import apiRoutes from './routes/index.js';
-import { connectDB } from './config/db.js';
 
 // Catch all background uncaught errors so Node process on Render never crashes with Bad Gateway 502
 process.on('unhandledRejection', (reason, promise) => {
@@ -14,7 +9,7 @@ process.on('uncaughtException', (err) => {
 });
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '5000', 10);
+const PORT = parseInt(process.env.PORT || 'yu898', 10);
 
 // Global permissive CORS handler for seamless origin access (Vercel, localhost, custom domains)
 app.use((req, res, next) => {
@@ -86,9 +81,7 @@ const startServer = async () => {
       console.log('🚀 ═══════════════════════════════════════════');
       console.log('   AI Startup Builder API Server');
       console.log('═══════════════════════════════════════════════');
-      console.log(`   🌐 Server:  http://localhost:${PORT}`);
-      console.log(`   📡 API:     http://localhost:${PORT}/api`);
-      console.log(`   💚 Health:  http://localhost:${PORT}/api/health`);
+     
       console.log('═══════════════════════════════════════════════');
       console.log('');
     });
