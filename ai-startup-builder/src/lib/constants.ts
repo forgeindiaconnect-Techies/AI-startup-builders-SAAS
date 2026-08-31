@@ -84,61 +84,9 @@ export const FOUNDER_PLANS: PlanDetails[] = [
   },
 ];
 
-export const MENTOR_PLANS: PlanDetails[] = [
-  {
-    id: "monthly",
-    name: "Monthly Plan",
-    price: 29,
-    period: "month",
-    highlighted: true,
-    features: [
-      { text: "Founder request management", included: true },
-      { text: "Unlimited chat", included: true },
-      { text: "Notifications", included: true },
-      { text: "Session management", included: true },
-      { text: "Earnings management", included: true },
-      { text: "Profile management", included: true },
-      { text: "AI-powered insights", included: false },
-      { text: "Featured mentor badge", included: false },
-    ],
-  },
-  {
-    id: "yearly",
-    name: "Yearly Plan",
-    price: 249,
-    period: "year",
-    badge: "Save 29%",
-    features: [
-      { text: "Founder request management", included: true },
-      { text: "Unlimited chat", included: true },
-      { text: "Notifications", included: true },
-      { text: "Session management", included: true },
-      { text: "Earnings management", included: true },
-      { text: "Profile management", included: true },
-      { text: "AI-powered insights", included: false },
-      { text: "Featured mentor badge", included: true },
-    ],
-  },
-];
 
-export const INVESTOR_PLANS: PlanDetails[] = [
-  {
-    id: "monthly",
-    name: "Monthly Plan",
-    price: 39,
-    period: "month",
-    highlighted: true,
-    features: [
-      { text: "Startup discovery feed", included: true },
-      { text: "Founder connections", included: true },
-      { text: "Investment tracking", included: true },
-      { text: "Portfolio management", included: true },
-      { text: "Notifications", included: true },
-      { text: "Deal flow analytics", included: true },
-      { text: "Priority deal access", included: false },
-      { text: "Custom reports", included: false },
-    ],
-  },
+  
+
   {
     id: "yearly",
     name: "Yearly Plan",
