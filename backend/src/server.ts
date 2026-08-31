@@ -81,9 +81,7 @@ const startServer = async () => {
       console.log('🚀 ═══════════════════════════════════════════');
       console.log('   AI Startup Builder API Server');
       console.log('═══════════════════════════════════════════════');
-      console.log(`   🌐 Server:  http://localhost:${PORT}`);
-      console.log(`   📡 API:     http://localhost:${PORT}/api`);
-      console.log(`   💚 Health:  http://localhost:${PORT}/api/health`);
+     
       console.log('═══════════════════════════════════════════════');
       console.log('');
     });
