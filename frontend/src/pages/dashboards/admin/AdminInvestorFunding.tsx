@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Wallet, ShieldCheck, CheckCircle2, AlertCircle, Search, 
   X, Mail, Building, MapPin, Calendar, FileText, Landmark,
@@ -26,10 +26,23 @@ const AdminInvestorFunding: React.FC = () => {
   const adminName = user?.fullName || 'Admin';
 
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'All' | 'completed' | 'rejected'>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'approved' | 'pending' | 'completed' | 'rejected'>('All');
   
   // Selected transaction for details modal
   const [selectedTx, setSelectedTx] = useState<FundingOffer | null>(null);
+
+  // Inline status dropdown
+  const [openStatusDropdown, setOpenStatusDropdown] = useState<string | null>(null);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node)) {
+        setOpenStatusDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
   
   // Commission Modal State
   const [commissionModalTx, setCommissionModalTx] = useState<FundingOffer | null>(null);
@@ -59,10 +72,70 @@ const AdminInvestorFunding: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  // Quick inline status change from the dropdown badge
+  const handleQuickStatusChange = async (offer: FundingOffer, newAgreementStatus: string) => {
+    setOpenStatusDropdown(null);
+    const offerId = offer._id || offer.id;
+    const statusMap: Record<string, string> = {
+      'Approved — Sent to Founder & Investor': 'accepted',
+      'Pending Admin Approval': 'offer_received',
+      'Rejected': 'rejected',
+    };
+    const newStatus = statusMap[newAgreementStatus] || offer.status;
+    const auditEntry = {
+      action: newAgreementStatus,
+      performedBy: adminName,
+      role: 'Admin',
+      notes: `Admin changed agreement status to "${newAgreementStatus}".`,
+      timestamp: new Date().toISOString(),
+    };
+    const updates: any = {
+      agreementStatus: newAgreementStatus,
+      status: newStatus,
+      adminNote: `Status changed to ${newAgreementStatus} by Admin.`,
+      agreementAuditTrail: [...(offer.agreementAuditTrail || []), auditEntry],
+      history: [...(offer.history || []), {
+        action: newAgreementStatus.toLowerCase().replace(/ /g, '_'),
+        performedBy: adminName,
+        role: 'Admin',
+        message: `Admin updated agreement status to "${newAgreementStatus}".`,
+        createdAt: new Date().toISOString(),
+      }],
+      updatedAt: new Date().toISOString(),
+    };
+    await updateFundingOffer(offerId, updates);
+    // Notify founder
+    if (offer.founderId) {
+      await addNotification({
+        userId: offer.founderId,
+        title: `Agreement ${newAgreementStatus}`,
+        message: `Admin updated your investment agreement for "${offer.startupName}" to: ${newAgreementStatus}.`,
+        type: 'funding',
+        actionUrl: '/dashboard/founder/investor-agreement',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    // Notify investor
+    if (offer.investorId) {
+      await addNotification({
+        userId: offer.investorId,
+        title: `Agreement ${newAgreementStatus}`,
+        message: `Admin updated the agreement status for "${offer.startupName}" to: ${newAgreementStatus}.`,
+        type: 'funding',
+        actionUrl: '/dashboard/investor/agreement',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    showToast(`Status updated to "${newAgreementStatus}" ✓`);
+    await refreshOffers();
+  };
+
   // Filter offers
   const filteredOffers = useMemo(() => {
     return offers.filter(o => {
-      const matchesSearch = 
+      const matchesSearch =
         o.startupName.toLowerCase().includes(search.toLowerCase()) ||
         o.founderName.toLowerCase().includes(search.toLowerCase()) ||
         o.investorName.toLowerCase().includes(search.toLowerCase()) ||
@@ -72,8 +145,14 @@ const AdminInvestorFunding: React.FC = () => {
       let matchesTab = false;
       if (statusFilter === 'All') {
         matchesTab = true;
+      } else if (statusFilter === 'approved') {
+        // Deals where agreement has been approved by admin
+        matchesTab = (o.agreementStatus || '').toLowerCase().includes('approved');
+      } else if (statusFilter === 'pending') {
+        // Deals waiting for admin approval
+        matchesTab = o.agreementStatus === 'Pending Admin Approval' ||
+          (!o.agreementStatus && !['completed', 'funded', 'rejected', 'failed'].includes(o.status));
       } else if (statusFilter === 'completed') {
-        // Show all completed deals + offers with details completed / submitted / accepted
         matchesTab = ['completed', 'funded', 'payment_submitted', 'under_verification', 'accepted'].includes(o.status) || !!o.paymentStatus || !!o.paymentMethod;
       } else if (statusFilter === 'rejected') {
         matchesTab = o.status === 'rejected' || o.status === 'failed';
@@ -517,15 +596,23 @@ const AdminInvestorFunding: React.FC = () => {
 
         <div className="flex gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
           {[
-            { id: 'All', label: 'All Transactions' },
+            { id: 'All',       label: 'All Transactions' },
+            { id: 'pending',   label: 'Pending' },
+            { id: 'approved',  label: 'Approved' },
             { id: 'completed', label: 'Completed' },
-            { id: 'rejected', label: 'Rejected' },
+            { id: 'rejected',  label: 'Rejected' },
           ].map(t => (
             <button
               key={t.id}
               onClick={() => setStatusFilter(t.id as any)}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                statusFilter === t.id ? 'bg-[#5B21B6] text-white shadow-md' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                statusFilter === t.id
+                  ? t.id === 'pending'   ? 'bg-amber-500 text-white shadow-md'
+                  : t.id === 'approved'  ? 'bg-blue-600 text-white shadow-md'
+                  : t.id === 'completed' ? 'bg-emerald-600 text-white shadow-md'
+                  : t.id === 'rejected'  ? 'bg-red-600 text-white shadow-md'
+                  : 'bg-[#5B21B6] text-white shadow-md'
+                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
               }`}
             >
               {t.label}
@@ -597,17 +684,67 @@ const AdminInvestorFunding: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* Status */}
+                      {/* Status — clickable dropdown */}
                       <td className="px-5 py-4 whitespace-nowrap">
-                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${
-                          o.status === 'completed' || o.status === 'funded'
+                        {(() => {
+                          const offerId = o._id || o.id || '';
+                          const agStatus = o.agreementStatus;
+                          const isApproved = agStatus && agStatus.toLowerCase().includes('approved');
+                          const isPending  = agStatus === 'Pending Admin Approval';
+                          const isSigned   = agStatus === 'Fully Signed';
+                          const isDone     = o.status === 'completed' || o.status === 'funded';
+                          const isRejected = o.status === 'rejected' || o.status === 'failed' || agStatus === 'Rejected';
+                          const label = agStatus || (isDone ? 'Completed' : isRejected ? 'Rejected' : 'Pending Verification');
+                          const cls = isDone || isSigned
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : o.status === 'rejected'
+                            : isRejected
                             ? 'bg-red-50 text-red-700 border-red-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
-                        }`}>
-                          {o.status === 'completed' || o.status === 'funded' ? 'Completed' : o.status === 'rejected' ? 'Rejected' : 'Pending Verification'}
-                        </span>
+                            : isApproved
+                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                            : isPending
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-gray-50 text-gray-600 border-gray-200';
+                          return (
+                            <div className="relative inline-block" ref={openStatusDropdown === offerId ? statusDropdownRef : undefined}>
+                              <button
+                                onClick={() => setOpenStatusDropdown(openStatusDropdown === offerId ? null : offerId)}
+                                className={`text-[11px] font-bold px-2.5 py-1 rounded-full border cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 ${cls}`}
+                                title="Click to change status"
+                              >
+                                {label}
+                                <svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd"/></svg>
+                              </button>
+                              {openStatusDropdown === offerId && (
+                                <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden min-w-[180px]">
+                                  <p className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider px-3 pt-2 pb-1">Change Status</p>
+                                  {[
+                                    { label: 'Approved — Sent to Founder & Investor', color: 'text-blue-700 hover:bg-blue-50', dot: 'bg-blue-500' },
+                                    { label: 'Pending Admin Approval',                 color: 'text-amber-700 hover:bg-amber-50', dot: 'bg-amber-500' },
+                                    { label: 'Rejected',                               color: 'text-red-700 hover:bg-red-50', dot: 'bg-red-500' },
+                                  ].map(opt => (
+                                    <button
+                                      key={opt.label}
+                                      onClick={() => handleQuickStatusChange(o, opt.label)}
+                                      className={`w-full text-left px-3 py-2 text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 ${opt.color} ${
+                                        label === opt.label ? 'opacity-40 cursor-default pointer-events-none' : ''
+                                      }`}
+                                    >
+                                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${opt.dot}`} />
+                                      {opt.label}
+                                    </button>
+                                  ))}
+                                  <div className="border-t border-gray-100 mx-2 my-1" />
+                                  <button
+                                    onClick={() => setOpenStatusDropdown(null)}
+                                    className="w-full text-left px-3 py-2 text-xs font-bold text-gray-500 hover:bg-gray-50 cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       {/* Date */}
@@ -645,39 +782,178 @@ const AdminInvestorFunding: React.FC = () => {
 
       {/* DEAL DETAILS & AUDIT MODAL */}
       {selectedTx && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh] text-xs">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[92vh] text-xs my-4">
             <div className="bg-gradient-to-r from-[#5B21B6] via-[#6C4CF1] to-[#7C3AED] px-6 py-4 flex items-center justify-between text-white flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
                   <ShieldCheck size={20} className="text-purple-200" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base tracking-tight">{selectedTx.startupName} Investment Deal</h3>
-                  <p className="text-xs text-purple-200 font-mono">Ref ID: {getTxId(selectedTx)}</p>
+                  <h3 className="font-extrabold text-base tracking-tight">{selectedTx.startupName} — Investment Deal</h3>
+                  <p className="text-xs text-purple-200 font-mono">{selectedTx.agreementId || getTxId(selectedTx)} &bull; {selectedTx.agreementVersion || 'v1.0'}</p>
                 </div>
               </div>
               <button
-                onClick={() => setSelectedTx(null)}
+                onClick={() => { setSelectedTx(null); setShowActionBox(null); setAdminNoteInput(''); }}
                 className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-purple-100 hover:text-white transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-5 flex-1 text-xs">
-              <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100 flex justify-between items-center">
-                <div>
-                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700">Investment Commitment</p>
-                  <p className="text-xl font-black text-gray-900 mt-0.5">₹{selectedTx.offerAmount.toLocaleString('en-IN')}</p>
+            {/* Status bar */}
+            <div className={`px-6 py-2 flex items-center gap-2 text-xs font-bold border-b flex-shrink-0 ${
+              selectedTx.agreementStatus === 'Pending Admin Approval'
+                ? 'bg-amber-50 text-amber-800 border-amber-200'
+                : (selectedTx.agreementStatus || '').includes('Approved')
+                ? 'bg-blue-50 text-blue-800 border-blue-200'
+                : selectedTx.agreementStatus === 'Fully Signed'
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                : 'bg-gray-50 text-gray-700 border-gray-200'
+            }`}>
+              <span className="uppercase tracking-wider">Agreement Status:</span>
+              <span>{selectedTx.agreementStatus || selectedTx.status || 'Pending Verification'}</span>
+              <span className="ml-auto">{selectedTx.fundingLockStatus === 'locked' ? '🔒 Funding Locked' : '🔓 Funding Enabled'}</span>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-5 flex-1">
+
+              {/* Metrics */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { label: 'Investment', value: `₹${(selectedTx.offerAmount || 0).toLocaleString('en-IN')}`, color: 'text-[#5B21B6]' },
+                  { label: 'Equity', value: `${selectedTx.equityPercentage || 0}%`, color: 'text-indigo-700' },
+                  { label: 'Instrument', value: selectedTx.instrument || (selectedTx.agreementDetails as any)?.fundingType || 'SAFE', color: 'text-gray-900' },
+                  { label: 'Commission', value: `₹${(selectedTx.commissionAmount ?? Math.round((selectedTx.offerAmount || 0) * ((selectedTx.commissionRate ?? 2) / 100))).toLocaleString('en-IN')}`, color: 'text-emerald-700' },
+                ].map(m => (
+                  <div key={m.label} className="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                    <p className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider">{m.label}</p>
+                    <p className={`text-base font-black mt-0.5 ${m.color}`}>{m.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Parties */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="bg-purple-50/60 border border-purple-100 rounded-2xl p-4">
+                  <p className="text-[10px] font-extrabold uppercase text-purple-600 tracking-wider mb-2">Startup</p>
+                  <p className="font-black text-gray-900">{selectedTx.startupName}</p>
+                  <p className="text-gray-500 mt-0.5">Founder: {selectedTx.founderName}</p>
+                  {selectedTx.founderEmail && <p className="text-gray-400 mt-0.5">{selectedTx.founderEmail}</p>}
+                  {selectedTx.businessCategory && <p className="text-purple-700 font-bold mt-1 text-[10px] uppercase">{selectedTx.businessCategory}</p>}
                 </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700">Platform Commission ({selectedTx.commissionRate ?? 2}%)</p>
-                  <p className="text-lg font-black text-emerald-700 mt-0.5">
-                    ₹{(selectedTx.commissionAmount ?? Math.round(selectedTx.offerAmount * ((selectedTx.commissionRate ?? 2) / 100))).toLocaleString('en-IN')}
-                  </p>
+                <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-4">
+                  <p className="text-[10px] font-extrabold uppercase text-indigo-600 tracking-wider mb-2">Investor</p>
+                  <p className="font-black text-gray-900">{selectedTx.investorName}</p>
+                  <p className="text-gray-500 mt-0.5">{selectedTx.investorCompany || 'Individual Investor'}</p>
+                  {selectedTx.investorEmail && <p className="text-gray-400 mt-0.5">{selectedTx.investorEmail}</p>}
+                </div>
+                <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                  <p className="text-[10px] font-extrabold uppercase text-gray-500 tracking-wider mb-2">Agreement Info</p>
+                  <div className="space-y-1">
+                    {([
+                      ['Agreement ID', selectedTx.agreementId],
+                      ['Version', selectedTx.agreementVersion || 'v1.0'],
+                      ['Type', selectedTx.agreementType],
+                      ['Method', selectedTx.creationMethod],
+                      ['Category', selectedTx.businessCategory],
+                      ['Date', selectedTx.createdAt ? new Date(selectedTx.createdAt).toLocaleDateString('en-IN') : null],
+                    ] as [string, string | null | undefined][]).filter(([, v]) => v).map(([label, val]) => (
+                      <div key={label} className="flex justify-between">
+                        <span className="text-gray-500">{label}</span>
+                        <span className="font-bold text-gray-900 capitalize">{val}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
+
+              {/* Terms */}
+              {((selectedTx.agreementDetails as any)?.agreementContent || (selectedTx.agreementDetails as any)?.investmentTerms || selectedTx.investorMessage) && (
+                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+                  <p className="text-[10px] font-extrabold uppercase text-gray-500 tracking-wider mb-2">Agreement Terms / Content</p>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-xs">
+                    {(selectedTx.agreementDetails as any)?.agreementContent || (selectedTx.agreementDetails as any)?.investmentTerms || selectedTx.investorMessage}
+                  </p>
+                </div>
+              )}
+
+              {/* Signatures */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className={`rounded-2xl p-3 border ${selectedTx.investorSignedAt ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-200'}`}>
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Investor Signature</p>
+                  {selectedTx.investorSignedAt
+                    ? <><p className="font-bold text-emerald-700 mt-0.5">Signed — {selectedTx.investorSignatureName}</p><p className="text-gray-400">{new Date(selectedTx.investorSignedAt).toLocaleDateString('en-IN')}</p></>
+                    : <p className="font-bold text-amber-600 mt-0.5">Pending</p>}
+                </div>
+                <div className={`rounded-2xl p-3 border ${selectedTx.founderSignedAt ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-gray-200'}`}>
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-500">Founder Signature</p>
+                  {selectedTx.founderSignedAt
+                    ? <><p className="font-bold text-emerald-700 mt-0.5">Signed — {selectedTx.founderSignatureName}</p><p className="text-gray-400">{new Date(selectedTx.founderSignedAt).toLocaleDateString('en-IN')}</p></>
+                    : <p className="font-bold text-amber-600 mt-0.5">Pending</p>}
+                </div>
+              </div>
+
+              {/* Audit Trail */}
+              {selectedTx.agreementAuditTrail && selectedTx.agreementAuditTrail.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase text-gray-500 tracking-wider mb-2">Audit Trail</p>
+                  <div className="space-y-2">
+                    {selectedTx.agreementAuditTrail.map((entry: any, idx: number) => (
+                      <div key={idx} className="flex gap-3 bg-gray-50 border border-gray-100 rounded-xl p-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="flex justify-between">
+                            <span className="font-bold text-gray-900">{entry.action}</span>
+                            <span className="text-gray-400">{entry.timestamp ? new Date(entry.timestamp).toLocaleDateString('en-IN') : ''}</span>
+                          </div>
+                          <p className="text-gray-500 mt-0.5">{entry.performedBy} ({entry.role})</p>
+                          {entry.notes && <p className="text-gray-400 mt-0.5">{entry.notes}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Admin Actions */}
+              {selectedTx.agreementStatus === 'Pending Admin Approval' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                  <p className="text-[10px] font-extrabold uppercase text-amber-700 tracking-wider mb-3">Admin Actions</p>
+                  {!showActionBox ? (
+                    <div className="flex gap-2 flex-wrap">
+                      <button onClick={() => setShowActionBox('approve')} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs cursor-pointer inline-flex items-center gap-1.5">
+                        <CheckCircle2 size={13} /> Approve &amp; Send to Founder
+                      </button>
+                      <button onClick={() => setShowActionBox('reject')} className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs cursor-pointer inline-flex items-center gap-1.5">
+                        <Ban size={13} /> Reject
+                      </button>
+                      <button onClick={() => setShowActionBox('clarify')} className="px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs cursor-pointer inline-flex items-center gap-1.5">
+                        <HelpCircle size={13} /> Request Clarification
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="font-bold text-gray-700">
+                        {showActionBox === 'approve' ? 'Approve & Send to Founder' : showActionBox === 'reject' ? 'Reject Agreement' : 'Request Clarification'}
+                      </p>
+                      <textarea value={adminNoteInput} onChange={e => setAdminNoteInput(e.target.value)}
+                        placeholder="Add admin note (optional)..." rows={3}
+                        className="w-full border border-gray-200 rounded-xl p-3 text-xs resize-none focus:outline-none focus:border-purple-400" />
+                      <div className="flex gap-2">
+                        <button onClick={() => handleAction(showActionBox as any)} disabled={actionLoading}
+                          className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold rounded-xl text-xs cursor-pointer disabled:opacity-50">
+                          {actionLoading ? 'Processing...' : 'Confirm'}
+                        </button>
+                        <button onClick={() => setShowActionBox(null)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs cursor-pointer">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-between items-center flex-shrink-0">
@@ -688,7 +964,7 @@ const AdminInvestorFunding: React.FC = () => {
                 <Coins size={14} /> Fix Commission &amp; Payment Options
               </button>
               <button
-                onClick={() => setSelectedTx(null)}
+                onClick={() => { setSelectedTx(null); setShowActionBox(null); setAdminNoteInput(''); }}
                 className="px-4 py-2 border border-gray-200 text-gray-700 hover:bg-gray-100 font-bold rounded-xl text-xs cursor-pointer"
               >
                 Close

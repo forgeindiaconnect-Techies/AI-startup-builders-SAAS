@@ -366,7 +366,8 @@ const AdminInvestorApproval: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [getAllUsers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     window.addEventListener('storage', loadData);
@@ -494,7 +495,6 @@ const AdminInvestorApproval: React.FC = () => {
   const handleSaveApplications = (newApps: InvestorApplication[]) => {
     setApplications(newApps);
     localStorage.setItem('ai_startup_builder_investor_apps', JSON.stringify(newApps));
-    window.dispatchEvent(new Event('storage'));
   };
 
   // ── Send Investor Invitation (Admin) ───────────────────────────────────────

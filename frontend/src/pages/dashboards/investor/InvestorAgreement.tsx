@@ -317,7 +317,7 @@ const AgreementTrackingModal: React.FC<{
             <Download size={14} /> Download Agreement Text
           </button>
           <div className="flex gap-3">
-            {offer.agreementStatus === 'Approved — Sent to Founder' && !offer.investorSignedAt && onSignAgreement && (
+            {(offer.agreementStatus || '').includes('Approved') && !offer.investorSignedAt && onSignAgreement && (
               <button
                 onClick={() => onSignAgreement(offer)}
                 className="px-5 py-2.5 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center gap-2 transition"
@@ -342,7 +342,7 @@ const AgreementTrackingModal: React.FC<{
 // ─── MAIN INVESTOR AGREEMENT PAGE ──────────────────────────────────────────────
 const InvestorAgreement: React.FC = () => {
   const { user } = useAuth();
-  const { offers, loading, refreshOffers, updateOfferDetails } = useFunding();
+  const { offers, loading, refreshOffers, updateOfferDetails, sendOffer } = useFunding();
 
   // Mode Selection State ('selection' | 'manual' | 'template')
   const [creationMode, setCreationMode] = useState<'selection' | 'manual' | 'template'>('selection');
@@ -571,7 +571,8 @@ const InvestorAgreement: React.FC = () => {
       alert('Investment Amount must be greater than 0.');
       return;
     }
-    setShowSendConfirmation(true);
+    // Submit immediately without a confirmation dialog
+    handleConfirmAndSend();
   };
 
   // Action: Confirm & Send Agreement to Admin for Approval (Status -> Pending Admin Approval)
@@ -637,7 +638,9 @@ const InvestorAgreement: React.FC = () => {
 
       const founderIdToUse = realFounder ? (realFounder.id || realFounder._id) : `founder_${Date.now()}`;
 
-      const offerPayload: any = {
+      // ── Use sendOffer() so the agreement is created as a proper funding record
+      // that appears immediately on: Investor agreement page, Founder agreement page, Admin investor-funding page.
+      await sendOffer({
         startupId: selectedStartupId || `st_${Date.now()}`,
         startupName,
         founderId: founderIdToUse,
@@ -655,7 +658,6 @@ const InvestorAgreement: React.FC = () => {
         discount,
         expiresInDays: 30,
         investorMessage: `Submitted Investment Agreement (${generatedAgreementId}) under category ${businessCategory} for Admin Approval.`,
-        status: 'accepted',
         agreementId: generatedAgreementId,
         agreementVersion: agreementVer,
         agreementStatus: 'Pending Admin Approval',
@@ -664,7 +666,7 @@ const InvestorAgreement: React.FC = () => {
         agreementType,
         templateId: selectedTemplateId,
         templateVersion: agreementVer,
-        fundingLockStatus: 'locked', // LOCKED UNTIL BOTH PARTIES SIGN AFTER APPROVAL
+        fundingLockStatus: 'locked',
         agreementDetails: detailsObj,
         agreementVersions: [],
         agreementAuditTrail: [
@@ -676,17 +678,26 @@ const InvestorAgreement: React.FC = () => {
             timestamp: new Date().toISOString()
           }
         ]
-      };
+      } as any);
 
-      await updateOfferDetails(generatedAgreementId, offerPayload);
-
-      // STEP 12 & Requirement 17: Agreement Submitted Notification
+      // Notify admin
       await addNotification({
         userId: 'admin',
-        title: 'Agreement Submitted',
-        message: `Investor submitted an investment agreement for approval. (Ref: ${generatedAgreementId}, Startup: ${startupName})`,
+        title: 'New Investment Agreement',
+        message: `Investor ${user?.fullName || investorName} submitted agreement ${generatedAgreementId} for startup "${startupName}" — Pending Admin Approval.`,
         type: 'funding',
         actionUrl: '/dashboard/admin/investor-funding',
+        isRead: false,
+        createdAt: new Date().toISOString()
+      });
+
+      // Notify founder
+      await addNotification({
+        userId: founderIdToUse,
+        title: 'Investment Agreement Received',
+        message: `Investor ${user?.fullName || investorName} submitted an investment agreement for your startup "${startupName}". Ref: ${generatedAgreementId}.`,
+        type: 'funding',
+        actionUrl: '/dashboard/founder/investor-agreement',
         isRead: false,
         createdAt: new Date().toISOString()
       });
@@ -705,7 +716,7 @@ const InvestorAgreement: React.FC = () => {
   const handleExecuteInvestorSignature = async () => {
     if (!showSignOverlay) return;
     const offer = showSignOverlay;
-    const offerId = offer.id || offer._id || offer.agreementId || '';
+    const offerId = offer._id || offer.id || '';
     setActionLoading(true);
     try {
       const isFullySigned = !!offer.founderSignedAt;
@@ -1176,9 +1187,15 @@ const InvestorAgreement: React.FC = () => {
 
               <button
                 onClick={handleGenerateAgreement}
-                className="px-6 py-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center gap-2 transition"
+                disabled={actionLoading}
+                className="px-6 py-3 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Send size={14} /> Generate & Submit for Approval
+                {actionLoading ? (
+                  <svg className="animate-spin" width={14} height={14} viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                ) : (
+                  <Send size={14} />
+                )}
+                {actionLoading ? 'Submitting…' : 'Generate & Submit for Approval'}
               </button>
             </div>
           </div>
@@ -1583,9 +1600,15 @@ const InvestorAgreement: React.FC = () => {
                 </button>
                 <button
                   onClick={handleGenerateAgreement}
-                  className="ml-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center gap-2 transition"
+                  disabled={actionLoading}
+                  className="ml-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-md flex items-center gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  <Sparkles size={14} /> Generate Agreement
+                  {actionLoading ? (
+                    <svg className="animate-spin" width={14} height={14} viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+                  ) : (
+                    <Sparkles size={14} />
+                  )}
+                  {actionLoading ? 'Submitting…' : 'Generate Agreement'}
                 </button>
               </div>
             </div>
@@ -1717,7 +1740,7 @@ const InvestorAgreement: React.FC = () => {
                         <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
                           isFullySigned ? 'bg-emerald-600 text-white' :
                           offer.agreementStatus === 'Pending Admin Approval' ? 'bg-amber-600 text-white' :
-                          offer.agreementStatus === 'Approved — Sent to Founder' ? 'bg-blue-600 text-white' :
+                          (offer.agreementStatus || '').includes('Approved') ? 'bg-blue-600 text-white' :
                           'bg-purple-600 text-white'
                         }`}>
                           {offer.agreementStatus || 'Pending Admin Approval'}
@@ -1759,7 +1782,7 @@ const InvestorAgreement: React.FC = () => {
                         <ScrollText size={14} /> Audit Trail & History
                       </button>
 
-                      {offer.agreementStatus === 'Approved — Sent to Founder' && !offer.investorSignedAt && (
+                      {(offer.agreementStatus || '').includes('Approved') && !offer.investorSignedAt && (
                         <button
                           onClick={() => {
                             setShowSignOverlay(offer);

@@ -442,7 +442,15 @@ const AdminUsers: React.FC = () => {
         };
       });
 
-    setUsersList([...enrichedFetched, ...localInvestors, ...localInvited]);
+    // Deduplicate by id to prevent React duplicate key warnings
+    const seenIds = new Set<string>();
+    const deduped = [...enrichedFetched, ...localInvestors, ...localInvited].filter(u => {
+      const uid = String(u.id || u._id || u.email || '');
+      if (!uid || seenIds.has(uid)) return false;
+      seenIds.add(uid);
+      return true;
+    });
+    setUsersList(deduped);
   };
 
   // Setup listeners and polling on mount
@@ -463,10 +471,7 @@ const AdminUsers: React.FC = () => {
     };
   }, []);
 
-  // React to changes in context users list
-  useEffect(() => {
-    loadUsers(true);
-  }, [getAllUsers()]);
+  // Note: loadUsers is called on mount and via event listeners; no need for a separate context effect
 
   const filtered = usersList.filter(u =>
     (roleFilter === 'All' || (u.role || '').toLowerCase() === roleFilter.toLowerCase()) &&
@@ -929,7 +934,7 @@ const AdminUsers: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {filtered.map((u: any) => (
-                <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                <tr key={u.id || u._id || u.email} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#FBBF24] flex items-center justify-center text-white text-sm font-black shadow flex-shrink-0">

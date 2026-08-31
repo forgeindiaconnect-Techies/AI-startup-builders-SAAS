@@ -798,8 +798,8 @@ const FounderInvestorAgreement: React.FC = () => {
 
   const metrics = useMemo(() => {
     const total = agreementOffers.length;
-    const awaitingInvestor = agreementOffers.filter(o => ['Sent to Founder', 'Viewed by Founder', 'Resent'].includes(o.agreementStatus || '') && !o.investorSignedAt).length;
-    const awaitingFounder = agreementOffers.filter(o => ['Sent to Founder', 'Viewed by Founder', 'Resent'].includes(o.agreementStatus || '') && !o.founderSignedAt).length;
+    const awaitingInvestor = agreementOffers.filter(o => (['Sent to Founder', 'Viewed by Founder', 'Resent'].includes(o.agreementStatus || '') || (o.agreementStatus || '').includes('Approved')) && !o.investorSignedAt).length;
+    const awaitingFounder = agreementOffers.filter(o => (['Sent to Founder', 'Viewed by Founder', 'Resent'].includes(o.agreementStatus || '') || (o.agreementStatus || '').includes('Approved')) && !o.founderSignedAt).length;
     const fullySigned = agreementOffers.filter(o => o.agreementStatus === 'Fully Signed').length;
     return { total, awaitingInvestor, awaitingFounder, fullySigned };
   }, [agreementOffers]);
@@ -1038,10 +1038,10 @@ const FounderInvestorAgreement: React.FC = () => {
         </span>
       );
     }
-    if (['Sent to Founder', 'Resent', 'Viewed by Founder'].includes(status || '')) {
+    if (['Sent to Founder', 'Resent', 'Viewed by Founder'].includes(status || '') || (status || '').includes('Approved')) {
       return (
         <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit uppercase animate-pulse">
-          <Clock size={9} /> Review & Sign
+          <Clock size={9} /> Review &amp; Sign
         </span>
       );
     }
@@ -1056,7 +1056,7 @@ const FounderInvestorAgreement: React.FC = () => {
     if (step === '1') {
       showToast('Investor must create and send the agreement terms first.');
     } else if (step === '2' || step === '3') {
-      const signDeal = agreementOffers.find(o => ['Sent to Founder', 'Resent', 'Viewed by Founder'].includes(o.agreementStatus || '') && !o.founderSignedAt);
+      const signDeal = agreementOffers.find(o => (['Sent to Founder', 'Resent', 'Viewed by Founder'].includes(o.agreementStatus || '') || (o.agreementStatus || '').includes('Approved')) && !o.founderSignedAt);
       if (signDeal) {
         handleOpenReview(signDeal);
       } else {
@@ -1218,7 +1218,7 @@ const FounderInvestorAgreement: React.FC = () => {
                             <button
                               onClick={() => handleOpenReview(o)}
                               className={`px-3 py-1.5 font-bold rounded-lg text-[10px] transition-colors flex items-center gap-1 cursor-pointer ${
-                                ['Sent to Founder', 'Resent', 'Viewed by Founder'].includes(status || '')
+                                ['Sent to Founder', 'Resent', 'Viewed by Founder'].includes(status || '') || (status || '').includes('Approved')
                                   ? 'bg-[#5B21B6] hover:bg-[#4C1D95] text-white animate-pulse'
                                   : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200'
                               }`}
