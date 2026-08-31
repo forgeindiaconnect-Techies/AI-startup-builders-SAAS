@@ -9,7 +9,7 @@ process.on('uncaughtException', (err) => {
 });
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '5000', 10);
+const PORT = parseInt(process.env.PORT || 'yu898', 10);
 
 // Global permissive CORS handler for seamless origin access (Vercel, localhost, custom domains)
 app.use((req, res, next) => {
