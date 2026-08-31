@@ -317,7 +317,7 @@ const AgreementTrackingModal: React.FC<{
             <Download size={14} /> Download Agreement Text
           </button>
           <div className="flex gap-3">
-            {(offer.agreementStatus || '').includes('Approved') && !offer.investorSignedAt && onSignAgreement && (
+            {((offer.agreementStatus || '').includes('Approved') || offer.agreementStatus === 'Founder Signed') && !offer.investorSignedAt && onSignAgreement && (
               <button
                 onClick={() => onSignAgreement(offer)}
                 className="px-5 py-2.5 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs rounded-xl shadow-md flex items-center gap-2 transition"
@@ -1782,7 +1782,7 @@ const InvestorAgreement: React.FC = () => {
                         <ScrollText size={14} /> Audit Trail & History
                       </button>
 
-                      {(offer.agreementStatus || '').includes('Approved') && !offer.investorSignedAt && (
+                      {((offer.agreementStatus || '').includes('Approved') || offer.agreementStatus === 'Founder Signed') && !offer.investorSignedAt && (
                         <button
                           onClick={() => {
                             setShowSignOverlay(offer);

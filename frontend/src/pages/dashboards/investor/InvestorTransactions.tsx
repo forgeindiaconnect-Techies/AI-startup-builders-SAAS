@@ -208,6 +208,10 @@ const InvestorTransactions: React.FC = () => {
         showToast('Please enter the transaction reference / UTR number.', 'error');
         return;
       }
+      if (upiUtr.trim().length !== 12 || !/^\d{12}$/.test(upiUtr.trim())) {
+        showToast('UPI UTR number must be exactly 12 digits.', 'error');
+        return;
+      }
       utr = upiUtr.trim();
       details = `UPI ID: ${upiVpa.trim()}`;
     } else if (paymentMethod === 'Bank Transfer' || paymentMethod === 'Manual Payment') {
@@ -217,6 +221,10 @@ const InvestorTransactions: React.FC = () => {
       }
       if (!bankUtr.trim()) {
         showToast('Please enter the transaction Reference/UTR number.', 'error');
+        return;
+      }
+      if (bankUtr.trim().length !== 12 || !/^\d{12}$/.test(bankUtr.trim())) {
+        showToast('Transaction Reference/UTR number must be exactly 12 digits.', 'error');
         return;
       }
       utr = bankUtr.trim();
@@ -253,7 +261,7 @@ const InvestorTransactions: React.FC = () => {
         paymentMethod: paymentMethod,
         paymentReference: utr,
         paymentDate: new Date().toISOString(),
-        paymentProof: proofBase64 || 'Uploaded receipt verification pending.',
+        paymentProof: 'Escrow reference submitted for verification.',
         verificationStatus: 'Under Verification',
         history: [...(paymentOffer.history || []), historyEntry]
       });
@@ -1467,7 +1475,8 @@ const InvestorTransactions: React.FC = () => {
                           type="text"
                           required
                           value={upiUtr}
-                          onChange={(e) => setUpiUtr(e.target.value)}
+                          maxLength={12}
+                          onChange={(e) => setUpiUtr(e.target.value.replace(/\D/g, ''))}
                           placeholder="Enter 12-digit UPI UTR Number"
                           className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
                         />
@@ -1518,8 +1527,9 @@ const InvestorTransactions: React.FC = () => {
                           type="text"
                           required
                           value={bankUtr}
-                          onChange={(e) => setBankUtr(e.target.value)}
-                          placeholder="IMPS / NEFT / RTGS Ref No."
+                          maxLength={12}
+                          onChange={(e) => setBankUtr(e.target.value.replace(/\D/g, ''))}
+                          placeholder="12-digit IMPS / NEFT / RTGS Ref No."
                           className="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white outline-none focus:ring-2 focus:ring-[#5B21B6]"
                         />
                       </div>
@@ -1537,41 +1547,7 @@ const InvestorTransactions: React.FC = () => {
                   </div>
                 )}
 
-                {/* File Proof Uploader (Common for both types) */}
-                <div className="space-y-1.5 pt-2 border-t border-gray-100">
-                  <label className="block font-bold text-gray-700 uppercase tracking-wider text-[10px]">Upload Transfer Receipt / Screenshot Proof *</label>
-                  <div className="border-2 border-dashed border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center bg-gray-50/50 hover:bg-gray-50 hover:border-purple-300 transition-all cursor-pointer relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      required={!proofBase64}
-                    />
-                    {proofBase64 ? (
-                      <div className="flex items-center gap-3 w-full">
-                        <img src={proofBase64} alt="Receipt Thumbnail" className="w-12 h-12 object-cover rounded-lg border shadow-xs" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-gray-900 truncate">payment_proof_receipt.jpg</p>
-                          <span className="text-[10px] text-emerald-600 font-bold">Base64 file encoded</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={(e) => { e.preventDefault(); setProofBase64(''); }}
-                          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 relative z-10"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                          <>
-                            <Upload size={24} className="text-gray-400 mb-2" />
-                            <p className="font-bold text-gray-700">Select File Proof</p>
-                            <span className="text-[10px] text-gray-400 mt-0.5">JPEG, PNG receipt file up to 2MB</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
+
 
                 {/* Card Form */}
                 {paymentMethod === 'Card' && (

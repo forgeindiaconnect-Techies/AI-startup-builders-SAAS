@@ -8,7 +8,7 @@ import {
 import { useAuth } from '../../../context/AuthContext';
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer } from '../../../context/FundingContext';
-import { getStartups } from '../../../utils/localStorageHelper';
+import { getStartups, addNotification, updateFundingOffer } from '../../../utils/localStorageHelper';
 import {
   getFundingTransactions, saveFundingTransaction
 } from '../../../utils/investorModuleStorage';
@@ -30,6 +30,15 @@ const FounderFundingTransactions: React.FC = () => {
   const [counterData, setCounterData] = useState({ amount: '', equity: '', message: '' });
   // Record Finalized Deal modal
   const [showAddModal, setShowAddModal] = useState(false);
+
+  // Withdrawal States
+  const [withdrawalOfferModal, setWithdrawalOfferModal] = useState<FundingOffer | null>(null);
+  const [withdrawalBankName, setWithdrawalBankName] = useState('');
+  const [withdrawalAccountNumber, setWithdrawalAccountNumber] = useState('');
+  const [withdrawalIfscCode, setWithdrawalIfscCode] = useState('');
+  const [withdrawalAccountHolder, setWithdrawalAccountHolder] = useState('');
+  const [withdrawalUpiId, setWithdrawalUpiId] = useState('');
+  const [withdrawalMethod, setWithdrawalMethod] = useState<'bank' | 'upi'>('bank');
 
   // "Record deal" form state
   const [selectedStartupName, setSelectedStartupName] = useState('');
@@ -69,15 +78,23 @@ const FounderFundingTransactions: React.FC = () => {
     };
   }, []);
 
-  // Get all investor commitments directed to this founder's startups
   const founderOffers = useMemo(() => {
     if (!user) return offers;
-    const userId = String(user.id || '');
-    const userEmail = (user.email || '').toLowerCase();
-    return offers.filter(o =>
-      (o.founderId && String(o.founderId) === userId) ||
-      (o.founderEmail && o.founderEmail.toLowerCase() === userEmail)
-    );
+    const id = String(user.id || '').toLowerCase();
+    const email = (user.email || '').toLowerCase();
+    const name = (user.fullName || '').toLowerCase();
+    return offers.filter(o => {
+      const fId = String(o.founderId || '').toLowerCase();
+      const fEmail = String(o.founderEmail || '').toLowerCase();
+      const fName = String(o.founderName || '').toLowerCase();
+
+      const matchesId = Boolean(id && fId && fId === id);
+      const matchesEmail = Boolean(email && fEmail && (fEmail === email || email.includes(fEmail) || fEmail.includes(email)));
+      const matchesName = Boolean(name && fName && (fName === name || name.includes(fName) || fName.includes(name)));
+      const isDispatched = Boolean(o.agreementStatus && !['Draft', 'Drafted'].includes(o.agreementStatus));
+
+      return matchesId || matchesEmail || matchesName || isDispatched;
+    });
   }, [offers, user]);
 
   // Metrics from live FundingContext offers
@@ -191,6 +208,104 @@ const FounderFundingTransactions: React.FC = () => {
     setShowAddModal(false);
     setInvestorName(''); setInvestorFirm(''); setDealNotes('');
     loadLocalData();
+  };
+
+  const handleSubmitWithdrawal = async () => {
+    if (!withdrawalOfferModal) return;
+    
+    let details: any = { method: withdrawalMethod };
+     if (withdrawalMethod === 'bank') {
+      if (!withdrawalAccountHolder.trim() || !withdrawalBankName.trim() || !withdrawalAccountNumber.trim() || !withdrawalIfscCode.trim()) {
+        showToast('Please fill all required bank fields.', 'error');
+        return;
+      }
+      if (withdrawalAccountNumber.trim().length < 9 || withdrawalAccountNumber.trim().length > 18) {
+        showToast('Account number must be between 9 and 18 digits.', 'error');
+        return;
+      }
+      if (withdrawalIfscCode.trim().length !== 11) {
+        showToast('IFSC Code must be exactly 11 characters.', 'error');
+        return;
+      }
+      const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+      if (!ifscRegex.test(withdrawalIfscCode.trim())) {
+        showToast('IFSC Code format is invalid (e.g., HDFC0000123).', 'error');
+        return;
+      }
+      details = {
+        method: 'bank',
+        accountHolder: withdrawalAccountHolder.trim(),
+        bankName: withdrawalBankName.trim(),
+        accountNumber: withdrawalAccountNumber.trim(),
+        ifscCode: withdrawalIfscCode.trim(),
+      };
+    } else {
+      if (!withdrawalUpiId.trim()) {
+        showToast('Please enter a valid UPI ID.', 'error');
+        return;
+      }
+      details = {
+        method: 'upi',
+        upiId: withdrawalUpiId.trim(),
+      };
+    }
+    
+    details.requestedAt = new Date().toISOString();
+    setActionLoading(true);
+    
+    try {
+      const offerId = withdrawalOfferModal._id || withdrawalOfferModal.id;
+      const netAmount = withdrawalOfferModal.offerAmount - (withdrawalOfferModal.commissionAmount ?? Math.round(withdrawalOfferModal.offerAmount * ((withdrawalOfferModal.commissionRate ?? 2) / 100)));
+      
+      const historyEntry = {
+        action: 'withdrawal_requested',
+        performedBy: user?.fullName || 'Founder',
+        role: 'Founder',
+        message: `Requested withdrawal of net capital ₹${netAmount.toLocaleString('en-IN')}.`,
+        createdAt: new Date().toISOString(),
+      };
+      
+      const updates = {
+        withdrawalStatus: 'Pending Admin Approval',
+        withdrawalDetails: details,
+        history: [...(withdrawalOfferModal.history || []), historyEntry],
+        updatedAt: new Date().toISOString(),
+      };
+      
+      await updateFundingOffer(offerId, updates);
+      
+      // Notify Admin
+      await addNotification({
+        userId: 'admin',
+        title: '🏦 New Withdrawal Request',
+        message: `Founder "${user?.fullName || 'Founder'}" requested withdrawal of ₹${netAmount.toLocaleString('en-IN')} for "${withdrawalOfferModal.startupName}".`,
+        type: 'funding',
+        actionUrl: '/dashboard/admin/investor-funding',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
+
+      // Notify Investor
+      if (withdrawalOfferModal.investorId) {
+        await addNotification({
+          userId: withdrawalOfferModal.investorId,
+          title: '🏦 Investment Release Requested',
+          message: `Founder "${user?.fullName || 'Founder'}" has requested release/withdrawal of net investment capital ₹${netAmount.toLocaleString('en-IN')} for "${withdrawalOfferModal.startupName}".`,
+          type: 'funding',
+          actionUrl: '/dashboard/investor/transactions',
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
+      }
+      
+      showToast('Withdrawal request submitted successfully ✓');
+      setWithdrawalOfferModal(null);
+      await refreshOffers();
+    } catch (e: any) {
+      showToast(e.message || 'Submission failed.', 'error');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   return (
@@ -472,9 +587,117 @@ const FounderFundingTransactions: React.FC = () => {
                           />
                         </div>
                       )}
-                      {o.paymentProof && !o.paymentProof.startsWith('data:image') && o.paymentProof !== 'Uploaded receipt verification pending.' && (
-                        <p className="text-[10px] text-gray-500 italic">{o.paymentProof}</p>
-                      )}
+                      {/* Withdrawal Request Section */}
+                      {(() => {
+                        const isDone = o.status === 'funded' || o.status === 'completed' || o.verificationStatus === 'Approved' || o.verificationStatus === 'Verified';
+                        if (!isDone) return null;
+
+                        if (o.withdrawalStatus === 'Pending Admin Approval') {
+                          return (
+                            <div className="mt-4 p-4 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-amber-800 font-bold uppercase text-[10px] flex items-center gap-1">
+                                  <Clock size={13} /> Withdrawal Status: Pending Admin Approval
+                                </span>
+                                <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-bold">Awaiting Admin Release</span>
+                              </div>
+                              <div className="text-[11px] text-gray-600 space-y-1 bg-white border border-amber-100 rounded-xl p-3">
+                                <p className="font-bold text-gray-700">Withdrawal Destination Details:</p>
+                                {o.withdrawalDetails?.method === 'bank' ? (
+                                  <>
+                                    <div><span className="text-gray-400">Bank Name:</span> <strong className="text-gray-800">{o.withdrawalDetails?.bankName}</strong></div>
+                                    <div><span className="text-gray-400">Account Number:</span> <strong className="text-gray-800">{o.withdrawalDetails?.accountNumber}</strong></div>
+                                    <div><span className="text-gray-400">IFSC Code:</span> <strong className="text-gray-800">{o.withdrawalDetails?.ifscCode}</strong></div>
+                                    <div><span className="text-gray-400">Account Holder:</span> <strong className="text-gray-800">{o.withdrawalDetails?.accountHolder}</strong></div>
+                                  </>
+                                ) : (
+                                  <div><span className="text-gray-400">UPI ID:</span> <strong className="text-gray-800">{o.withdrawalDetails?.upiId}</strong></div>
+                                )}
+                                <div className="text-[10px] text-gray-400 pt-1.5 border-t border-gray-100 mt-1.5">
+                                  Requested at: {fmtDate(o.withdrawalDetails?.requestedAt)}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        if (o.withdrawalStatus === 'Approved') {
+                          return (
+                            <div className="mt-4 p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-emerald-800 font-bold uppercase text-[10px] flex items-center gap-1">
+                                  <CheckCircle2 size={13} /> Withdrawal Released
+                                </span>
+                                <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold">Funds Dispatched</span>
+                              </div>
+                              <p className="text-[11px] text-emerald-700 leading-relaxed">
+                                Admin approved and released the net investment capital of <strong>₹{(o.offerAmount - (o.commissionAmount ?? Math.round(o.offerAmount * ((o.commissionRate ?? 2) / 100)))).toLocaleString('en-IN')}</strong> to your registered account.
+                              </p>
+                              {o.withdrawalAdminNote && (
+                                <div className="text-[10px] text-gray-500 italic bg-white border border-emerald-100 rounded-xl p-2.5 mt-1">
+                                  Admin Note: "{o.withdrawalAdminNote}"
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        if (o.withdrawalStatus === 'Rejected') {
+                          return (
+                            <div className="mt-4 p-4 bg-rose-50/80 border border-rose-200 rounded-2xl space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-red-800 font-bold uppercase text-[10px] flex items-center gap-1">
+                                  <AlertCircle size={13} /> Withdrawal Rejected by Admin
+                                </span>
+                                <span className="px-2.5 py-0.5 bg-red-100 text-red-800 rounded-full text-[10px] font-bold">Rejected</span>
+                              </div>
+                              {o.withdrawalAdminNote && (
+                                <p className="text-[11px] text-red-700">
+                                  Reason: <strong>"{o.withdrawalAdminNote}"</strong>
+                                </p>
+                              )}
+                              <div className="flex justify-end pt-1">
+                                <button
+                                  onClick={() => {
+                                    setWithdrawalOfferModal(o);
+                                    setWithdrawalAccountHolder(user?.fullName || '');
+                                    setWithdrawalBankName('');
+                                    setWithdrawalAccountNumber('');
+                                    setWithdrawalIfscCode('');
+                                    setWithdrawalUpiId('');
+                                  }}
+                                  className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-[10px] rounded-lg shadow-sm transition-colors cursor-pointer"
+                                >
+                                  Re-request Withdrawal
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // Default: Show withdrawal release button
+                        return (
+                          <div className="mt-4 p-4 bg-purple-50/60 border border-purple-100 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                              <p className="font-extrabold text-gray-900 text-xs">Release / Withdraw Investment Capital</p>
+                              <p className="text-[10px] text-gray-500 mt-0.5 font-semibold">Your payment is verified. You can now request release/withdrawal of funds to your bank account.</p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setWithdrawalOfferModal(o);
+                                setWithdrawalAccountHolder(user?.fullName || '');
+                                setWithdrawalBankName('');
+                                setWithdrawalAccountNumber('');
+                                setWithdrawalIfscCode('');
+                                setWithdrawalUpiId('');
+                              }}
+                              className="px-4 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-[10px] rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                            >
+                              <Wallet size={12} /> Request Withdrawal
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })}
@@ -648,6 +871,120 @@ const FounderFundingTransactions: React.FC = () => {
                   </p>
                 </div>
               )}
+
+              {/* Withdrawal Request Section inside Details Modal */}
+              {(() => {
+                const isDone = viewingOffer.status === 'funded' || viewingOffer.status === 'completed' || viewingOffer.verificationStatus === 'Approved' || viewingOffer.verificationStatus === 'Verified';
+                if (!isDone) return null;
+
+                if (viewingOffer.withdrawalStatus === 'Pending Admin Approval') {
+                  return (
+                    <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-amber-800 font-bold uppercase text-[10px] flex items-center gap-1">
+                          <Clock size={13} /> Withdrawal Status: Pending Admin Approval
+                        </span>
+                        <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-bold">Awaiting Release</span>
+                      </div>
+                      <div className="text-[11px] text-gray-600 space-y-1 bg-white border border-amber-100 rounded-xl p-3">
+                        <p className="font-bold text-gray-700">Withdrawal Destination Details:</p>
+                        {viewingOffer.withdrawalDetails?.method === 'bank' ? (
+                          <>
+                            <div><span className="text-gray-400">Bank Name:</span> <strong className="text-gray-800">{viewingOffer.withdrawalDetails?.bankName}</strong></div>
+                            <div><span className="text-gray-400">Account Number:</span> <strong className="text-gray-800">{viewingOffer.withdrawalDetails?.accountNumber}</strong></div>
+                            <div><span className="text-gray-400">IFSC Code:</span> <strong className="text-gray-800">{viewingOffer.withdrawalDetails?.ifscCode}</strong></div>
+                            <div><span className="text-gray-400">Account Holder:</span> <strong className="text-gray-800">{viewingOffer.withdrawalDetails?.accountHolder}</strong></div>
+                          </>
+                        ) : (
+                          <div><span className="text-gray-400">UPI ID:</span> <strong className="text-gray-800">{viewingOffer.withdrawalDetails?.upiId}</strong></div>
+                        )}
+                        <div className="text-[10px] text-gray-400 pt-1.5 border-t border-gray-100 mt-1.5">
+                          Requested at: {fmtDate(viewingOffer.withdrawalDetails?.requestedAt)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (viewingOffer.withdrawalStatus === 'Approved') {
+                  return (
+                    <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-emerald-800 font-bold uppercase text-[10px] flex items-center gap-1">
+                          <CheckCircle2 size={13} /> Withdrawal Released
+                        </span>
+                        <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-bold">Funds Dispatched</span>
+                      </div>
+                      <p className="text-[11px] text-emerald-700 leading-relaxed">
+                        Admin approved and released the net investment capital of <strong>₹{(viewingOffer.offerAmount - (viewingOffer.commissionAmount ?? Math.round(viewingOffer.offerAmount * ((viewingOffer.commissionRate ?? 2) / 100)))).toLocaleString('en-IN')}</strong> to your registered account.
+                      </p>
+                      {viewingOffer.withdrawalAdminNote && (
+                        <div className="text-[10px] text-gray-500 italic bg-white border border-emerald-100 rounded-xl p-2.5 mt-1">
+                          Admin Note: "{viewingOffer.withdrawalAdminNote}"
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                if (viewingOffer.withdrawalStatus === 'Rejected') {
+                  return (
+                    <div className="p-4 bg-rose-50/80 border border-rose-200 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-red-800 font-bold uppercase text-[10px] flex items-center gap-1">
+                          <AlertCircle size={13} /> Withdrawal Rejected by Admin
+                        </span>
+                        <span className="px-2.5 py-0.5 bg-red-100 text-red-800 rounded-full text-[10px] font-bold">Rejected</span>
+                      </div>
+                      {viewingOffer.withdrawalAdminNote && (
+                        <p className="text-[11px] text-red-700">
+                          Reason: <strong>"{viewingOffer.withdrawalAdminNote}"</strong>
+                        </p>
+                      )}
+                      <div className="flex justify-end pt-1">
+                        <button
+                          onClick={() => {
+                            setWithdrawalOfferModal(viewingOffer);
+                            setWithdrawalAccountHolder(user?.fullName || '');
+                            setWithdrawalBankName('');
+                            setWithdrawalAccountNumber('');
+                            setWithdrawalIfscCode('');
+                            setWithdrawalUpiId('');
+                            setViewingOffer(null);
+                          }}
+                          className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white font-extrabold text-[10px] rounded-lg shadow-sm transition-colors cursor-pointer"
+                        >
+                          Re-request Withdrawal
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Default: Show withdrawal release button
+                return (
+                  <div className="p-4 bg-purple-50/60 border border-purple-100 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <p className="font-extrabold text-gray-900 text-xs">Release / Withdraw Capital</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5 font-semibold">Your payment is verified. You can now request release/withdrawal of funds to your bank account.</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setWithdrawalOfferModal(viewingOffer);
+                        setWithdrawalAccountHolder(user?.fullName || '');
+                        setWithdrawalBankName('');
+                        setWithdrawalAccountNumber('');
+                        setWithdrawalIfscCode('');
+                        setWithdrawalUpiId('');
+                        setViewingOffer(null);
+                      }}
+                      className="px-4 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-[10px] rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1 shrink-0"
+                    >
+                      <Wallet size={12} /> Request Withdrawal
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
             {/* Actions */}
             {viewingOffer.status === 'offer_received' ? (
@@ -835,6 +1172,143 @@ const FounderFundingTransactions: React.FC = () => {
                 <button type="submit" className="px-6 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold text-xs rounded-xl shadow-md">Save Record</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── REQUEST WITHDRAWAL MODAL ─── */}
+      {withdrawalOfferModal && (
+        <div className="fixed inset-0 z-[160] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-left font-sans text-xs">
+            <button
+              onClick={() => setWithdrawalOfferModal(null)}
+              className="absolute top-5 right-5 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-2xl shadow-md">
+                <Wallet size={22} />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-gray-900">Request Withdrawal</h3>
+                <p className="text-xs text-gray-500">Submit destination details to release net capital of ₹{(withdrawalOfferModal.offerAmount - (withdrawalOfferModal.commissionAmount ?? Math.round(withdrawalOfferModal.offerAmount * ((withdrawalOfferModal.commissionRate ?? 2) / 100)))).toLocaleString('en-IN')}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Method Selector */}
+              <div>
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Withdrawal Method</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setWithdrawalMethod('bank')}
+                    className={`py-2 px-3 rounded-xl border font-bold text-xs cursor-pointer transition-all ${
+                      withdrawalMethod === 'bank'
+                        ? 'border-purple-600 bg-purple-50 text-purple-700'
+                        : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    Bank Transfer
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWithdrawalMethod('upi')}
+                    className={`py-2 px-3 rounded-xl border font-bold text-xs cursor-pointer transition-all ${
+                      withdrawalMethod === 'upi'
+                        ? 'border-purple-600 bg-purple-50 text-purple-700'
+                        : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    UPI ID
+                  </button>
+                </div>
+              </div>
+
+              {withdrawalMethod === 'bank' ? (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Account Holder Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={withdrawalAccountHolder}
+                      onChange={e => setWithdrawalAccountHolder(e.target.value)}
+                      placeholder="Enter account holder name"
+                      className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Bank Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={withdrawalBankName}
+                      onChange={e => setWithdrawalBankName(e.target.value)}
+                      placeholder="e.g. HDFC Bank, ICICI Bank"
+                      className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Account Number *</label>
+                      <input
+                        type="text"
+                        required
+                        value={withdrawalAccountNumber}
+                        maxLength={18}
+                        onChange={e => setWithdrawalAccountNumber(e.target.value.replace(/\D/g, ''))}
+                        placeholder="Enter account number"
+                        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">IFSC Code *</label>
+                      <input
+                        type="text"
+                        required
+                        value={withdrawalIfscCode}
+                        maxLength={11}
+                        onChange={e => setWithdrawalIfscCode(e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase())}
+                        placeholder="e.g. HDFC0000123"
+                        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">UPI ID *</label>
+                  <input
+                    type="text"
+                    required
+                    value={withdrawalUpiId}
+                    onChange={e => setWithdrawalUpiId(e.target.value)}
+                    placeholder="e.g. founder@okaxis"
+                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-600 focus:bg-white"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setWithdrawalOfferModal(null)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitWithdrawal}
+                disabled={actionLoading}
+                className="px-5 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold rounded-xl shadow-md cursor-pointer transition-all"
+              >
+                {actionLoading ? 'Submitting...' : 'Submit Request'}
+              </button>
+            </div>
           </div>
         </div>
       )}

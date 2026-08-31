@@ -27,6 +27,7 @@ const AdminInvestorFunding: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'approved' | 'pending' | 'completed' | 'rejected'>('All');
+  const [viewSection, setViewSection] = useState<'deals' | 'payments' | 'commissions'>('deals');
   
   // Selected transaction for details modal
   const [selectedTx, setSelectedTx] = useState<FundingOffer | null>(null);
@@ -38,6 +39,19 @@ const AdminInvestorFunding: React.FC = () => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node)) {
         setOpenStatusDropdown(null);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  // Inline verification dropdown
+  const [openVerificationDropdown, setOpenVerificationDropdown] = useState<string | null>(null);
+  const verificationDropdownRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (verificationDropdownRef.current && !verificationDropdownRef.current.contains(e.target as Node)) {
+        setOpenVerificationDropdown(null);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
@@ -132,6 +146,84 @@ const AdminInvestorFunding: React.FC = () => {
     await refreshOffers();
   };
 
+  // Quick inline verification status change from the dropdown badge
+  const handleQuickVerificationChange = async (offer: FundingOffer, newVerificationStatus: string) => {
+    setOpenVerificationDropdown(null);
+    const offerId = offer._id || offer.id;
+    
+    // Map verification status to deal status and payment status
+    let newStatus = offer.status;
+    let newPaymentStatus = offer.paymentStatus || 'Pending';
+    
+    if (newVerificationStatus === 'Approved') {
+      newStatus = 'completed';
+      newPaymentStatus = 'Completed';
+    } else if (newVerificationStatus === 'Rejected') {
+      newStatus = 'rejected';
+      newPaymentStatus = 'Pending';
+    } else if (newVerificationStatus === 'Under Verification') {
+      newStatus = 'under_verification';
+      newPaymentStatus = 'Submitted';
+    } else if (newVerificationStatus === 'Pending') {
+      newStatus = 'accepted';
+      newPaymentStatus = 'Pending';
+    }
+
+    const auditEntry = {
+      action: `Verification Update: ${newVerificationStatus}`,
+      performedBy: adminName,
+      role: 'Admin',
+      notes: `Admin changed verification status to "${newVerificationStatus}".`,
+      timestamp: new Date().toISOString(),
+    };
+
+    const updates: any = {
+      verificationStatus: newVerificationStatus,
+      status: newStatus,
+      paymentStatus: newPaymentStatus,
+      adminNote: `Verification status changed to ${newVerificationStatus} by Admin.`,
+      agreementAuditTrail: [...(offer.agreementAuditTrail || []), auditEntry],
+      history: [...(offer.history || []), {
+        action: `verification_${newVerificationStatus.toLowerCase().replace(/ /g, '_')}`,
+        performedBy: adminName,
+        role: 'Admin',
+        message: `Admin updated verification status to "${newVerificationStatus}".`,
+        createdAt: new Date().toISOString(),
+      }],
+      updatedAt: new Date().toISOString(),
+    };
+
+    await updateFundingOffer(offerId, updates);
+
+    // Notify founder
+    if (offer.founderId) {
+      await addNotification({
+        userId: offer.founderId,
+        title: `Payment Verification: ${newVerificationStatus}`,
+        message: `Admin updated the payment verification status for "${offer.startupName}" to: ${newVerificationStatus}.`,
+        type: 'funding',
+        actionUrl: '/dashboard/founder/funding-transactions',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    // Notify investor
+    if (offer.investorId) {
+      await addNotification({
+        userId: offer.investorId,
+        title: `Payment Verification: ${newVerificationStatus}`,
+        message: `Admin updated your payment verification status for "${offer.startupName}" to: ${newVerificationStatus}.`,
+        type: 'funding',
+        actionUrl: '/dashboard/investor/transactions',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    showToast(`Verification status updated to "${newVerificationStatus}" ✓`);
+    await refreshOffers();
+  };
+
   // Filter offers
   const filteredOffers = useMemo(() => {
     return offers.filter(o => {
@@ -161,6 +253,35 @@ const AdminInvestorFunding: React.FC = () => {
       return matchesSearch && matchesTab;
     });
   }, [offers, search, statusFilter]);
+
+  // Filter payment history offers
+  const paymentHistoryOffers = useMemo(() => {
+    return offers.filter(o => {
+      const matchesSearch =
+        o.startupName.toLowerCase().includes(search.toLowerCase()) ||
+        o.founderName.toLowerCase().includes(search.toLowerCase()) ||
+        o.investorName.toLowerCase().includes(search.toLowerCase()) ||
+        (o.paymentReference && o.paymentReference.toLowerCase().includes(search.toLowerCase())) ||
+        (o.id || o._id || '').toLowerCase().includes(search.toLowerCase());
+
+      const hasPayment = o.paymentMethod || ['payment_submitted', 'under_verification', 'funded', 'completed'].includes(o.status) || o.paymentStatus;
+      return matchesSearch && hasPayment;
+    });
+  }, [offers, search]);
+
+  // Filter commission history offers
+  const commissionHistoryOffers = useMemo(() => {
+    return offers.filter(o => {
+      const matchesSearch =
+        o.startupName.toLowerCase().includes(search.toLowerCase()) ||
+        o.founderName.toLowerCase().includes(search.toLowerCase()) ||
+        o.investorName.toLowerCase().includes(search.toLowerCase()) ||
+        (o.id || o._id || '').toLowerCase().includes(search.toLowerCase());
+
+      const hasCommission = (o.commissionAmount !== undefined && o.commissionAmount !== null && o.commissionAmount > 0) || o.commissionStatus === 'Fixed';
+      return matchesSearch && hasCommission;
+    });
+  }, [offers, search]);
 
   // Summary Metrics calculations
   const summary = useMemo(() => {
@@ -516,8 +637,68 @@ const AdminInvestorFunding: React.FC = () => {
     }
   };
 
+  const handleWithdrawalAction = async (isApprove: boolean) => {
+    if (!selectedTx) return;
+    const txId = selectedTx._id || selectedTx.id;
+    const note = adminNoteInput.trim();
+    
+    if (!isApprove && !note) {
+      showToast('Please provide a reason/note for rejecting the withdrawal request.', 'error');
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const netAmount = selectedTx.offerAmount - (selectedTx.commissionAmount ?? Math.round(selectedTx.offerAmount * ((selectedTx.commissionRate ?? 2) / 100)));
+      const statusLabel = isApprove ? 'Approved' : 'Rejected';
+      
+      const historyEntry = {
+        action: `withdrawal_${statusLabel.toLowerCase()}`,
+        performedBy: adminName,
+        role: 'Admin',
+        message: `Admin ${statusLabel.toLowerCase()} withdrawal request of ₹${netAmount.toLocaleString('en-IN')}. ${note ? `Note: ${note}` : ''}`,
+        createdAt: new Date().toISOString(),
+      };
+      
+      const updates = {
+        withdrawalStatus: statusLabel,
+        withdrawalAdminNote: note || (isApprove ? 'Funds released successfully.' : 'Request rejected.'),
+        history: [...(selectedTx.history || []), historyEntry],
+        updatedAt: new Date().toISOString(),
+      };
+      
+      await updateFundingOffer(txId, updates);
+      
+      // Notify Founder
+      if (selectedTx.founderId) {
+        await addNotification({
+          userId: selectedTx.founderId,
+          title: isApprove ? '🏦 Withdrawal Approved' : '❌ Withdrawal Request Rejected',
+          message: isApprove 
+            ? `Your withdrawal request of ₹${netAmount.toLocaleString('en-IN')} for "${selectedTx.startupName}" has been approved. Funds released.`
+            : `Your withdrawal request of ₹${netAmount.toLocaleString('en-IN')} for "${selectedTx.startupName}" was rejected by Admin. Reason: ${note}`,
+          type: 'funding',
+          actionUrl: '/dashboard/founder/funding-transactions',
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        });
+      }
+      
+      showToast(`Withdrawal request ${statusLabel.toLowerCase()} successfully!`);
+      setSelectedTx(null);
+      setShowActionBox(null);
+      setAdminNoteInput('');
+      await refreshOffers();
+    } catch (err: any) {
+      showToast(err.message || 'Action failed', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
-    <div className="animate-fade-in-up pb-10 font-sans">
+    <>
+      <div className="animate-fade-in-up pb-10 font-sans">
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-5 right-5 z-[200] px-4 py-3 rounded-2xl shadow-xl border text-xs font-bold flex items-center gap-2 animate-in slide-in-from-top-3 ${
@@ -538,251 +719,546 @@ const AdminInvestorFunding: React.FC = () => {
             Monitor investor payment commitments, verify transfer proofs, fix platform commissions, and manage manual &amp; QR payment options.
           </p>
         </div>
-      </div>
 
-      {/* Summary Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Deals</span>
-            <div className="p-2 bg-purple-50 text-[#5B21B6] rounded-xl"><Wallet size={18} /></div>
-          </div>
-          <p className="text-2xl font-black text-gray-900">{summary.totalTransactions}</p>
-          <p className="text-xs text-gray-500 mt-0.5">₹{(summary.totalAmount / 100000).toFixed(2)} Lakhs Total</p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Completed / Verified</span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><CheckCircle2 size={18} /></div>
-          </div>
-          <p className="text-2xl font-black text-emerald-600">{summary.completedFunding}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Verified completed deals</p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Completed Ratio</span>
-            <div className="p-2 bg-purple-50 text-[#5B21B6] rounded-xl"><TrendingUp size={18} /></div>
-          </div>
-          <p className="text-2xl font-black text-[#5B21B6]">
-            {summary.totalTransactions > 0 ? Math.round((summary.completedFunding / summary.totalTransactions) * 100) : 100}%
-          </p>
-          <p className="text-xs text-gray-500 mt-0.5">Success completion rate</p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Platform Commission</span>
-            <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl"><Coins size={18} /></div>
-          </div>
-          <p className="text-2xl font-black text-emerald-700">₹{summary.totalCommission.toLocaleString('en-IN')}</p>
-          <p className="text-xs text-emerald-600 font-bold mt-0.5">Admin Platform Earnings</p>
+        {/* Section Switcher Buttons */}
+        <div className="flex gap-2 bg-gray-100 p-1 rounded-xl w-fit shrink-0">
+          <button
+            onClick={() => setViewSection('deals')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewSection === 'deals'
+                ? 'bg-white text-gray-900 shadow-xs'
+                : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            Deals Registry
+          </button>
+          <button
+            onClick={() => setViewSection('payments')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewSection === 'payments'
+                ? 'bg-white text-gray-900 shadow-xs'
+                : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            Payment History
+          </button>
+          <button
+            onClick={() => setViewSection('commissions')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              viewSection === 'commissions'
+                ? 'bg-white text-gray-900 shadow-xs'
+                : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            Commission History
+          </button>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6 flex flex-col md:flex-row gap-3 items-center justify-between">
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search startup, investor, founder, or TXN ref..."
-            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#5B21B6] focus:ring-2 focus:ring-[#5B21B6]/10"
-          />
-        </div>
+      {viewSection === 'deals' && (
+        <>
+          {/* Summary Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Deals</span>
+                <div className="p-2 bg-purple-50 text-[#5B21B6] rounded-xl"><Wallet size={18} /></div>
+              </div>
+              <p className="text-2xl font-black text-gray-900">{summary.totalTransactions}</p>
+              <p className="text-xs text-gray-500 mt-0.5">₹{(summary.totalAmount / 100000).toFixed(2)} Lakhs Total</p>
+            </div>
 
-        <div className="flex gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-          {[
-            { id: 'All',       label: 'All Transactions' },
-            { id: 'pending',   label: 'Pending' },
-            { id: 'approved',  label: 'Approved' },
-            { id: 'completed', label: 'Completed' },
-            { id: 'rejected',  label: 'Rejected' },
-          ].map(t => (
-            <button
-              key={t.id}
-              onClick={() => setStatusFilter(t.id as any)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                statusFilter === t.id
-                  ? t.id === 'pending'   ? 'bg-amber-500 text-white shadow-md'
-                  : t.id === 'approved'  ? 'bg-blue-600 text-white shadow-md'
-                  : t.id === 'completed' ? 'bg-emerald-600 text-white shadow-md'
-                  : t.id === 'rejected'  ? 'bg-red-600 text-white shadow-md'
-                  : 'bg-[#5B21B6] text-white shadow-md'
-                  : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Completed / Verified</span>
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><CheckCircle2 size={18} /></div>
+              </div>
+              <p className="text-2xl font-black text-emerald-600">{summary.completedFunding}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Verified completed deals</p>
+            </div>
 
-      {/* Funding Transactions Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                <th className="px-5 py-3.5">Startup &amp; Founder</th>
-                <th className="px-5 py-3.5">Investor &amp; Firm</th>
-                <th className="px-5 py-3.5">Investment Amount</th>
-                <th className="px-5 py-3.5">Platform Commission</th>
-                <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5">Date</th>
-                <th className="px-5 py-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 text-xs">
-              {filteredOffers.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-400 font-medium">
-                    No investor funding transactions found.
-                  </td>
-                </tr>
-              ) : (
-                filteredOffers.map((o) => {
-                  const rate = o.commissionRate ?? 2;
-                  const commAmt = o.commissionAmount ?? Math.round(o.offerAmount * (rate / 100));
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Completed Ratio</span>
+                <div className="p-2 bg-purple-50 text-[#5B21B6] rounded-xl"><TrendingUp size={18} /></div>
+              </div>
+              <p className="text-2xl font-black text-[#5B21B6]">
+                {summary.totalTransactions > 0 ? Math.round((summary.completedFunding / summary.totalTransactions) * 100) : 100}%
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">Success completion rate</p>
+            </div>
 
-                  return (
-                    <tr key={o.id || o._id} className="hover:bg-gray-50/80 transition-colors">
-                      {/* Startup & Founder */}
-                      <td className="px-5 py-4">
-                        <div>
-                          <p className="font-bold text-gray-900 text-xs">{o.startupName}</p>
-                          <p className="text-[11px] text-gray-500 mt-0.5">Founder: {o.founderName}</p>
-                        </div>
-                      </td>
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Platform Commission</span>
+                <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl"><Coins size={18} /></div>
+              </div>
+              <p className="text-2xl font-black text-emerald-700">₹{summary.totalCommission.toLocaleString('en-IN')}</p>
+              <p className="text-xs text-emerald-600 font-bold mt-0.5">Admin Platform Earnings</p>
+            </div>
+          </div>
 
-                      {/* Investor & Firm */}
-                      <td className="px-5 py-4">
-                        <div>
-                          <p className="font-bold text-gray-900 text-xs">{o.investorName}</p>
-                          <p className="text-[11px] text-gray-500 mt-0.5">{o.investorCompany || 'Individual Investor'}</p>
-                        </div>
-                      </td>
+          {/* Filter and Search Bar */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6 flex flex-col md:flex-row gap-3 items-center justify-between">
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search startup, investor, founder, or TXN ref..."
+                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#5B21B6] focus:ring-2 focus:ring-[#5B21B6]/10"
+              />
+            </div>
 
-                      {/* Investment Amount */}
-                      <td className="px-5 py-4">
-                        <div>
-                          <p className="font-black text-gray-900 text-sm">₹{o.offerAmount.toLocaleString('en-IN')}</p>
-                          <p className="text-[10px] text-purple-700 font-bold mt-0.5">{o.instrument || 'Equity'} • {o.equityPercentage}%</p>
-                        </div>
-                      </td>
+            <div className="flex gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+              {[
+                { id: 'All',       label: 'All Transactions' },
+                { id: 'pending',   label: 'Pending' },
+                { id: 'approved',  label: 'Approved' },
+                { id: 'completed', label: 'Completed' },
+                { id: 'rejected',  label: 'Rejected' },
+              ].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setStatusFilter(t.id as any)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    statusFilter === t.id
+                      ? t.id === 'pending'   ? 'bg-amber-500 text-white shadow-md'
+                      : t.id === 'approved'  ? 'bg-blue-600 text-white shadow-md'
+                      : t.id === 'completed' ? 'bg-emerald-600 text-white shadow-md'
+                      : t.id === 'rejected'  ? 'bg-red-600 text-white shadow-md'
+                      : 'bg-[#5B21B6] text-white shadow-md'
+                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-                      {/* Platform Commission */}
-                      <td className="px-5 py-4">
-                        <div>
-                          <p className="font-black text-emerald-700 text-xs">₹{commAmt.toLocaleString('en-IN')}</p>
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-50 text-[#5B21B6] border border-purple-100 inline-block mt-0.5">
-                            {rate}% Fee
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* Status — clickable dropdown */}
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        {(() => {
-                          const offerId = o._id || o.id || '';
-                          const agStatus = o.agreementStatus;
-                          const isApproved = agStatus && agStatus.toLowerCase().includes('approved');
-                          const isPending  = agStatus === 'Pending Admin Approval';
-                          const isSigned   = agStatus === 'Fully Signed';
-                          const isDone     = o.status === 'completed' || o.status === 'funded';
-                          const isRejected = o.status === 'rejected' || o.status === 'failed' || agStatus === 'Rejected';
-                          const label = agStatus || (isDone ? 'Completed' : isRejected ? 'Rejected' : 'Pending Verification');
-                          const cls = isDone || isSigned
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : isRejected
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : isApproved
-                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                            : isPending
-                            ? 'bg-amber-50 text-amber-700 border-amber-200'
-                            : 'bg-gray-50 text-gray-600 border-gray-200';
-                          return (
-                            <div className="relative inline-block" ref={openStatusDropdown === offerId ? statusDropdownRef : undefined}>
-                              <button
-                                onClick={() => setOpenStatusDropdown(openStatusDropdown === offerId ? null : offerId)}
-                                className={`text-[11px] font-bold px-2.5 py-1 rounded-full border cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 ${cls}`}
-                                title="Click to change status"
-                              >
-                                {label}
-                                <svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd"/></svg>
-                              </button>
-                              {openStatusDropdown === offerId && (
-                                <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden min-w-[180px]">
-                                  <p className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider px-3 pt-2 pb-1">Change Status</p>
-                                  {[
-                                    { label: 'Approved — Sent to Founder & Investor', color: 'text-blue-700 hover:bg-blue-50', dot: 'bg-blue-500' },
-                                    { label: 'Pending Admin Approval',                 color: 'text-amber-700 hover:bg-amber-50', dot: 'bg-amber-500' },
-                                    { label: 'Rejected',                               color: 'text-red-700 hover:bg-red-50', dot: 'bg-red-500' },
-                                  ].map(opt => (
-                                    <button
-                                      key={opt.label}
-                                      onClick={() => handleQuickStatusChange(o, opt.label)}
-                                      className={`w-full text-left px-3 py-2 text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 ${opt.color} ${
-                                        label === opt.label ? 'opacity-40 cursor-default pointer-events-none' : ''
-                                      }`}
-                                    >
-                                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${opt.dot}`} />
-                                      {opt.label}
-                                    </button>
-                                  ))}
-                                  <div className="border-t border-gray-100 mx-2 my-1" />
-                                  <button
-                                    onClick={() => setOpenStatusDropdown(null)}
-                                    className="w-full text-left px-3 py-2 text-xs font-bold text-gray-500 hover:bg-gray-50 cursor-pointer"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </td>
-
-                      {/* Date */}
-                      <td className="px-5 py-4 text-gray-500 whitespace-nowrap">
-                        {new Date(o.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-5 py-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => openCommissionModal(o)}
-                            title="Fix Platform Commission & Payment Options"
-                            className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
-                          >
-                            <Coins size={13} /> Fix Commission
-                          </button>
-                          <button
-                            onClick={() => setSelectedTx(o)}
-                            title="View Full Deal Audit & Payment Details"
-                            className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
-                          >
-                            <Eye size={13} /> View
-                          </button>
-                        </div>
+          {/* Funding Transactions Table */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-3.5">Startup &amp; Founder</th>
+                    <th className="px-5 py-3.5">Investor &amp; Firm</th>
+                    <th className="px-5 py-3.5">Investment Amount</th>
+                    <th className="px-5 py-3.5">Platform Commission</th>
+                    <th className="px-5 py-3.5">Status</th>
+                    <th className="px-5 py-3.5">Date</th>
+                    <th className="px-5 py-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {filteredOffers.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-12 text-center text-gray-400 font-medium">
+                        No investor funding transactions found.
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                  ) : (
+                    filteredOffers.map((o) => {
+                      const rate = o.commissionRate ?? 2;
+                      const commAmt = o.commissionAmount ?? Math.round(o.offerAmount * (rate / 100));
+
+                      return (
+                        <tr key={o.id || o._id} className="hover:bg-gray-50/85 transition-colors">
+                          {/* Startup & Founder */}
+                          <td className="px-5 py-4">
+                            <div>
+                              <p className="font-bold text-gray-900 text-xs">{o.startupName}</p>
+                              <p className="text-[11px] text-gray-500 mt-0.5">Founder: {o.founderName}</p>
+                            </div>
+                          </td>
+
+                          {/* Investor & Firm */}
+                          <td className="px-5 py-4">
+                            <div>
+                              <p className="font-bold text-gray-900 text-xs">{o.investorName}</p>
+                              <p className="text-[11px] text-gray-500 mt-0.5">{o.investorCompany || 'Individual Investor'}</p>
+                            </div>
+                          </td>
+
+                          {/* Investment Amount */}
+                          <td className="px-5 py-4">
+                            <div>
+                              <p className="font-black text-gray-900 text-sm">₹{o.offerAmount.toLocaleString('en-IN')}</p>
+                              <p className="text-[10px] text-purple-700 font-bold mt-0.5">{o.instrument || 'Equity'} • {o.equityPercentage}%</p>
+                            </div>
+                          </td>
+
+                          {/* Platform Commission */}
+                          <td className="px-5 py-4">
+                            <div>
+                              <p className="font-black text-emerald-700 text-xs">₹{commAmt.toLocaleString('en-IN')}</p>
+                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-50 text-[#5B21B6] border border-purple-100 inline-block mt-0.5">
+                                {rate}% Fee
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Status — clickable dropdown */}
+                          <td className="px-5 py-4 whitespace-nowrap">
+                            {(() => {
+                              const offerId = o._id || o.id || '';
+                              const agStatus = o.agreementStatus;
+                              const isApproved = agStatus && agStatus.toLowerCase().includes('approved');
+                              const isPending  = agStatus === 'Pending Admin Approval';
+                              const isSigned   = agStatus === 'Fully Signed';
+                              const isDone     = o.status === 'completed' || o.status === 'funded';
+                              const isRejected = o.status === 'rejected' || o.status === 'failed' || agStatus === 'Rejected';
+                              const label = agStatus || (isDone ? 'Completed' : isRejected ? 'Rejected' : 'Pending Verification');
+                              const cls = isDone || isSigned
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : isRejected
+                                ? 'bg-red-50 text-red-700 border-red-200'
+                                : isApproved
+                                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                : isPending
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-gray-50 text-gray-600 border-gray-200';
+                              return (
+                                <div className="relative inline-block" ref={openStatusDropdown === offerId ? statusDropdownRef : undefined}>
+                                  <button
+                                    onClick={() => setOpenStatusDropdown(openStatusDropdown === offerId ? null : offerId)}
+                                    className={`text-[11px] font-bold px-2.5 py-1 rounded-full border cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 ${cls}`}
+                                    title="Click to change status"
+                                  >
+                                    {label}
+                                    <svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd"/></svg>
+                                  </button>
+                                  {openStatusDropdown === offerId && (
+                                    <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden min-w-[180px]">
+                                      <p className="text-[10px] font-extrabold uppercase text-gray-400 tracking-wider px-3 pt-2 pb-1">Change Status</p>
+                                      {[
+                                        { label: 'Approved — Sent to Founder & Investor', color: 'text-blue-700 hover:bg-blue-50', dot: 'bg-blue-500' },
+                                        { label: 'Pending Admin Approval',                 color: 'text-amber-700 hover:bg-amber-50', dot: 'bg-amber-500' },
+                                        { label: 'Rejected',                               color: 'text-red-700 hover:bg-red-50', dot: 'bg-red-500' },
+                                      ].map(opt => (
+                                        <button
+                                          key={opt.label}
+                                          onClick={() => handleQuickStatusChange(o, opt.label)}
+                                          className={`w-full text-left px-3 py-2 text-xs font-bold transition-colors cursor-pointer flex items-center gap-2 ${opt.color} ${
+                                            label === opt.label ? 'opacity-40 cursor-default pointer-events-none' : ''
+                                          }`}
+                                        >
+                                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${opt.dot}`} />
+                                          {opt.label}
+                                        </button>
+                                      ))}
+                                      <div className="border-t border-gray-100 mx-2 my-1" />
+                                      <button
+                                        onClick={() => setOpenStatusDropdown(null)}
+                                        className="w-full text-left px-3 py-2 text-xs font-bold text-gray-500 hover:bg-gray-50 cursor-pointer"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </td>
+
+                          {/* Date */}
+                          <td className="px-5 py-4 text-gray-500 whitespace-nowrap">
+                            {new Date(o.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-5 py-4 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => openCommissionModal(o)}
+                                title="Fix Platform Commission & Payment Options"
+                                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <Coins size={13} /> Fix Commission
+                              </button>
+                              <button
+                                onClick={() => setSelectedTx(o)}
+                                title="View Full Deal Audit & Payment Details"
+                                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <Eye size={13} /> View
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {viewSection === 'payments' && (
+        <div className="space-y-6">
+          {/* Search bar */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between gap-4">
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search payment ref, startup, investor..."
+                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#5B21B6] focus:ring-2 focus:ring-[#5B21B6]/10"
+              />
+            </div>
+            <span className="px-3 py-1 bg-purple-100 text-[#5B21B6] rounded-lg text-xs font-bold font-sans">
+              {paymentHistoryOffers.length} Payments Found
+            </span>
+          </div>
+
+          {/* Payment History Table */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-3.5">Transaction ID</th>
+                    <th className="px-5 py-3.5">Startup &amp; Founder</th>
+                    <th className="px-5 py-3.5">Investor</th>
+                    <th className="px-5 py-3.5">Amount Paid</th>
+                    <th className="px-5 py-3.5">Method</th>
+                    <th className="px-5 py-3.5">UTR / Reference</th>
+                    <th className="px-5 py-3.5">Date</th>
+                    <th className="px-5 py-3.5">Verification</th>
+                    <th className="px-5 py-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {paymentHistoryOffers.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="px-6 py-12 text-center text-gray-400 font-medium">
+                        No payment records found.
+                      </td>
+                    </tr>
+                  ) : (
+                    paymentHistoryOffers.map((o) => {
+                      const isDone = o.status === 'completed' || o.status === 'funded';
+                      const label = o.verificationStatus || (isDone ? 'Verified' : 'Under Verification');
+                      const cls = isDone || o.verificationStatus === 'Verified' || o.verificationStatus === 'Approved'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : o.verificationStatus === 'Clarification Requested'
+                        ? 'bg-amber-50 text-amber-700 border-amber-200'
+                        : 'bg-blue-50 text-blue-700 border-blue-200';
+
+                      return (
+                        <tr key={o.id || o._id} className="hover:bg-gray-50/80 transition-colors">
+                          <td className="px-5 py-4 font-mono font-bold text-gray-600">
+                            {o.transactionId || `TXN-2026-${String(o.id || o._id || '0000').slice(-4).toUpperCase()}`}
+                          </td>
+                          <td className="px-5 py-4 font-bold text-gray-900">
+                            <p>{o.startupName}</p>
+                            <p className="text-[10px] text-gray-500 font-semibold mt-0.5">Founder: {o.founderName}</p>
+                          </td>
+                          <td className="px-5 py-4">
+                            <p className="font-semibold text-gray-700">{o.investorName}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">{o.investorCompany || 'Individual'}</p>
+                          </td>
+                          <td className="px-5 py-4 font-black text-gray-900 text-sm">
+                            ₹{o.offerAmount.toLocaleString('en-IN')}
+                          </td>
+                          <td className="px-5 py-4 font-bold text-gray-600">
+                            {o.paymentMethod || 'Manual Transfer'}
+                          </td>
+                          <td className="px-5 py-4 font-mono text-gray-500 font-bold">
+                            {o.paymentReference || 'N/A'}
+                          </td>
+                          <td className="px-5 py-4 text-gray-500 font-medium">
+                            {o.paymentDate ? new Date(o.paymentDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}
+                          </td>
+                          <td className="px-5 py-4 whitespace-nowrap">
+                            {(() => {
+                              const offerId = o._id || o.id || '';
+                              return (
+                                <div className="relative inline-block text-left" ref={openVerificationDropdown === offerId ? verificationDropdownRef : undefined}>
+                                  <button
+                                    onClick={() => setOpenVerificationDropdown(openVerificationDropdown === offerId ? null : offerId)}
+                                    className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 uppercase ${cls}`}
+                                    title="Click to change verification status"
+                                  >
+                                    {label}
+                                    <svg width="10" height="10" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd"/></svg>
+                                  </button>
+                                  {openVerificationDropdown === offerId && (
+                                    <div className="absolute left-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden min-w-[160px]">
+                                      <p className="text-[9px] font-extrabold uppercase text-gray-400 tracking-wider px-3 pt-2 pb-1">Verify Payment</p>
+                                      {[
+                                        { val: 'Approved',           color: 'text-emerald-700 hover:bg-emerald-50', dot: 'bg-emerald-500' },
+                                        { val: 'Pending',            color: 'text-gray-700 hover:bg-gray-50',     dot: 'bg-gray-400' },
+                                        { val: 'Under Verification', color: 'text-blue-700 hover:bg-blue-50',     dot: 'bg-blue-500' },
+                                        { val: 'Rejected',           color: 'text-red-700 hover:bg-red-50',       dot: 'bg-red-500' },
+                                      ].map(opt => (
+                                        <button
+                                          key={opt.val}
+                                          onClick={() => handleQuickVerificationChange(o, opt.val)}
+                                          className={`w-full text-left px-3 py-2 text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-2 ${opt.color} ${
+                                            label === opt.val ? 'opacity-40 cursor-default pointer-events-none' : ''
+                                          }`}
+                                        >
+                                          <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${opt.dot}`} />
+                                          {opt.val}
+                                        </button>
+                                      ))}
+                                      <div className="border-t border-gray-100 mx-2 my-1" />
+                                      <button
+                                        onClick={() => setOpenVerificationDropdown(null)}
+                                        className="w-full text-left px-3 py-2 text-[10px] font-bold text-gray-500 hover:bg-gray-50 cursor-pointer"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </td>
+                          <td className="px-5 py-4 text-right whitespace-nowrap">
+                            <button
+                              onClick={() => setSelectedTx(o)}
+                              className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                            >
+                              <Eye size={13} /> View &amp; Verify
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
+      )}
+
+      {viewSection === 'commissions' && (
+        <div className="space-y-6">
+          {/* Header Summary */}
+          <div className="bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] rounded-2xl p-5 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-extrabold text-base flex items-center gap-1.5"><Coins size={20} className="text-purple-200" /> Platform Commission History</h3>
+              <p className="text-xs text-purple-100 mt-1">Review locked and fixed platform commission structures for verified investment deals.</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/20">
+              <span className="text-[10px] text-purple-200 uppercase font-black tracking-wider block">Total Platform Earnings</span>
+              <span className="text-xl font-black mt-0.5 block">₹{summary.totalCommission.toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+
+          {/* Search bar */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between gap-4">
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search startup, investor..."
+                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#5B21B6] focus:ring-2 focus:ring-[#5B21B6]/10"
+              />
+            </div>
+            <span className="px-3 py-1 bg-purple-100 text-[#5B21B6] rounded-lg text-xs font-bold font-sans">
+              {commissionHistoryOffers.length} Records
+            </span>
+          </div>
+
+          {/* Commission History Table */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-3.5">Transaction ID</th>
+                    <th className="px-5 py-3.5">Startup &amp; Founder</th>
+                    <th className="px-5 py-3.5">Investor</th>
+                    <th className="px-5 py-3.5">Deal Amount</th>
+                    <th className="px-5 py-3.5">Commission Rate</th>
+                    <th className="px-5 py-3.5">Commission Earned</th>
+                    <th className="px-5 py-3.5">Date</th>
+                    <th className="px-5 py-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {commissionHistoryOffers.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-12 text-center text-gray-400 font-medium">
+                        No platform commission records fixed yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    commissionHistoryOffers.map((o) => {
+                      const rate = o.commissionRate ?? 2;
+                      const commAmt = o.commissionAmount ?? Math.round(o.offerAmount * (rate / 100));
+
+                      return (
+                        <tr key={o.id || o._id} className="hover:bg-gray-50/80 transition-colors">
+                          <td className="px-5 py-4 font-mono font-bold text-gray-600">
+                            {o.transactionId || `TXN-2026-${String(o.id || o._id || '0000').slice(-4).toUpperCase()}`}
+                          </td>
+                          <td className="px-5 py-4 font-bold text-gray-900">
+                            <p>{o.startupName}</p>
+                            <p className="text-[10px] text-gray-500 font-semibold mt-0.5">Founder: {o.founderName}</p>
+                          </td>
+                          <td className="px-5 py-4">
+                            <p className="font-semibold text-gray-700">{o.investorName}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">{o.investorCompany || 'Individual'}</p>
+                          </td>
+                          <td className="px-5 py-4 font-bold text-gray-900">
+                            ₹{o.offerAmount.toLocaleString('en-IN')}
+                          </td>
+                          <td className="px-5 py-4 font-bold text-indigo-700">
+                            <span className="px-2.5 py-0.5 bg-indigo-50 border border-indigo-100 rounded-full text-[10px]">
+                              {rate}%
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 font-black text-emerald-700 text-sm">
+                            ₹{commAmt.toLocaleString('en-IN')}
+                          </td>
+                          <td className="px-5 py-4 text-gray-500 font-medium">
+                            {new Date(o.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </td>
+                          <td className="px-5 py-4 text-right whitespace-nowrap">
+                            <div className="flex justify-end gap-1.5">
+                              <button
+                                onClick={() => openCommissionModal(o)}
+                                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <Coins size={13} /> Fix Commission
+                              </button>
+                              <button
+                                onClick={() => setSelectedTx(o)}
+                                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <Eye size={13} /> View
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
 
       {/* DEAL DETAILS & AUDIT MODAL */}
       {selectedTx && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[92vh] text-xs my-4">
             <div className="bg-gradient-to-r from-[#5B21B6] via-[#6C4CF1] to-[#7C3AED] px-6 py-4 flex items-center justify-between text-white flex-shrink-0">
               <div className="flex items-center gap-3">
@@ -895,6 +1371,39 @@ const AdminInvestorFunding: React.FC = () => {
                 </div>
               </div>
 
+              {/* Withdrawal Status Display */}
+              {selectedTx.withdrawalStatus && (
+                <div className={`rounded-2xl p-4 border ${
+                  selectedTx.withdrawalStatus === 'Approved'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : selectedTx.withdrawalStatus === 'Rejected'
+                    ? 'bg-rose-50 border-rose-200 text-rose-800'
+                    : 'bg-amber-50 border-amber-200 text-amber-800'
+                }`}>
+                  <p className="text-[10px] font-extrabold uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <Landmark size={12} /> Withdrawal Status: {selectedTx.withdrawalStatus}
+                  </p>
+                  <div className="bg-white/80 border border-gray-100 rounded-xl p-3 text-xs space-y-1.5 text-gray-700">
+                    <p className="font-bold text-gray-700">Withdrawal Destination Details:</p>
+                    {selectedTx.withdrawalDetails?.method === 'bank' ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <div><span className="text-gray-400 font-semibold">Bank Name:</span> <strong className="text-gray-900">{selectedTx.withdrawalDetails?.bankName}</strong></div>
+                        <div><span className="text-gray-400 font-semibold">Account Number:</span> <strong className="text-gray-900">{selectedTx.withdrawalDetails?.accountNumber}</strong></div>
+                        <div><span className="text-gray-400 font-semibold">IFSC Code:</span> <strong className="text-gray-900">{selectedTx.withdrawalDetails?.ifscCode}</strong></div>
+                        <div><span className="text-gray-400 font-semibold">Account Holder:</span> <strong className="text-gray-900">{selectedTx.withdrawalDetails?.accountHolder}</strong></div>
+                      </div>
+                    ) : (
+                      <div><span className="text-gray-400 font-semibold">UPI ID:</span> <strong className="text-gray-900">{selectedTx.withdrawalDetails?.upiId}</strong></div>
+                    )}
+                    {selectedTx.withdrawalAdminNote && (
+                      <div className="pt-2 border-t border-gray-100 mt-2 text-[10px] text-gray-500 italic">
+                        Admin Note: "{selectedTx.withdrawalAdminNote}"
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Audit Trail */}
               {selectedTx.agreementAuditTrail && selectedTx.agreementAuditTrail.length > 0 && (
                 <div>
@@ -943,6 +1452,57 @@ const AdminInvestorFunding: React.FC = () => {
                         className="w-full border border-gray-200 rounded-xl p-3 text-xs resize-none focus:outline-none focus:border-purple-400" />
                       <div className="flex gap-2">
                         <button onClick={() => handleAction(showActionBox as any)} disabled={actionLoading}
+                          className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold rounded-xl text-xs cursor-pointer disabled:opacity-50">
+                          {actionLoading ? 'Processing...' : 'Confirm'}
+                        </button>
+                        <button onClick={() => setShowActionBox(null)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs cursor-pointer">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Founder Withdrawal Request Actions */}
+              {selectedTx.withdrawalStatus === 'Pending Admin Approval' && (
+                <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 space-y-3">
+                  <p className="text-[10px] font-extrabold uppercase text-[#5B21B6] tracking-wider flex items-center gap-1">
+                    <Landmark size={12} /> Founder Withdrawal Request Actions
+                  </p>
+                  
+                  <div className="bg-white border border-purple-100 rounded-xl p-3 text-xs space-y-1.5">
+                    <p className="font-bold text-gray-700">Withdrawal Destination Details:</p>
+                    {selectedTx.withdrawalDetails?.method === 'bank' ? (
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div><span className="text-gray-400">Bank Name:</span> <strong className="text-gray-800">{selectedTx.withdrawalDetails?.bankName}</strong></div>
+                        <div><span className="text-gray-400">Account Number:</span> <strong className="text-gray-800">{selectedTx.withdrawalDetails?.accountNumber}</strong></div>
+                        <div><span className="text-gray-400">IFSC Code:</span> <strong className="text-gray-800">{selectedTx.withdrawalDetails?.ifscCode}</strong></div>
+                        <div><span className="text-gray-400">Account Holder:</span> <strong className="text-gray-800">{selectedTx.withdrawalDetails?.accountHolder}</strong></div>
+                      </div>
+                    ) : (
+                      <div className="text-[11px]"><span className="text-gray-400">UPI ID:</span> <strong className="text-gray-800">{selectedTx.withdrawalDetails?.upiId}</strong></div>
+                    )}
+                  </div>
+
+                  {!showActionBox ? (
+                    <div className="flex gap-2 flex-wrap">
+                      <button onClick={() => setShowActionBox('verify')} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs cursor-pointer inline-flex items-center gap-1.5">
+                        <CheckCircle2 size={13} /> Approve &amp; Release Funds
+                      </button>
+                      <button onClick={() => setShowActionBox('completed')} className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs cursor-pointer inline-flex items-center gap-1.5">
+                        <Ban size={13} /> Reject Request
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="font-bold text-gray-700">
+                        {showActionBox === 'verify' ? 'Confirm Release of Funds to Founder' : 'Reject Withdrawal Request'}
+                      </p>
+                      <textarea value={adminNoteInput} onChange={e => setAdminNoteInput(e.target.value)}
+                        placeholder="Add withdrawal note / transaction reference..." rows={3}
+                        className="w-full border border-gray-200 rounded-xl p-3 text-xs resize-none focus:outline-none focus:border-purple-400" />
+                      <div className="flex gap-2">
+                        <button onClick={() => handleWithdrawalAction(showActionBox === 'verify')} disabled={actionLoading}
                           className="px-4 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold rounded-xl text-xs cursor-pointer disabled:opacity-50">
                           {actionLoading ? 'Processing...' : 'Confirm'}
                         </button>
@@ -1287,7 +1847,7 @@ const AdminInvestorFunding: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
