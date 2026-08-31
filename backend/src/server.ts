@@ -1,9 +1,4 @@
-import 'dotenv/config';
 
-import express from 'express';
-import cors from 'cors';
-import apiRoutes from './routes/index.js';
-import { connectDB } from './config/db.js';
 
 // Catch all background uncaught errors so Node process on Render never crashes with Bad Gateway 502
 process.on('unhandledRejection', (reason, promise) => {
