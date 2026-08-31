@@ -152,6 +152,9 @@ export interface FundingOffer {
     message: string;
     createdAt: string;
   }>;
+  withdrawalStatus?: string;
+  withdrawalDetails?: any;
+  withdrawalAdminNote?: string;
   createdAt: string;
   updatedAt: string;
 }
