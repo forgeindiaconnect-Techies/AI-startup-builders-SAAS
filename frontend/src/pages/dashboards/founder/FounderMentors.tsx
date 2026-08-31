@@ -359,7 +359,7 @@ const MentorProfileModal: React.FC<{
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-gray-50 rounded-xl p-4 text-center">
             <Clock size={18} className="mx-auto text-[#5B21B6] mb-1.5" />
             <p className="text-sm font-bold text-gray-900">{mentor.sessionDuration} min</p>
@@ -374,11 +374,6 @@ const MentorProfileModal: React.FC<{
             <Award size={18} className="mx-auto text-[#5B21B6] mb-1.5" />
             <p className="text-sm font-bold text-gray-900">{mentor.rating}</p>
             <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Rating</p>
-          </div>
-          <div className="bg-gray-50 rounded-xl p-4 text-center">
-            <Calendar size={18} className="mx-auto text-[#5B21B6] mb-1.5" />
-            <p className="text-sm font-bold text-gray-900">{(mentor.availability || []).length}</p>
-            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Open Days</p>
           </div>
         </div>
 
@@ -940,9 +935,16 @@ const PaymentModal: React.FC<{
   };
 
   const handleConfirm = () => {
-    if (amount > 0 && !transactionId.trim()) {
-      setError('Please enter the transaction ID / UTR number from your UPI app.');
-      return;
+    if (amount > 0) {
+      const trimmed = transactionId.trim();
+      if (!trimmed) {
+        setError('Please enter the 12-digit transaction ID / UTR number from your UPI app.');
+        return;
+      }
+      if (trimmed.length !== 12 || !/^\d{12}$/.test(trimmed)) {
+        setError('UTR number must be exactly 12 digits (numbers only).');
+        return;
+      }
     }
     onConfirm({ paymentMethod: app, transactionId: transactionId.trim() });
   };
@@ -1026,7 +1028,11 @@ const PaymentModal: React.FC<{
             <input
               type="text"
               value={transactionId}
-              onChange={(e) => { setTransactionId(e.target.value); if (error) setError(''); }}
+              onChange={(e) => {
+                const cleaned = e.target.value.replace(/[^0-9]/g, '').slice(0, 12);
+                setTransactionId(cleaned);
+                if (error) setError('');
+              }}
               placeholder="e.g. 421987654321"
               className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
             />

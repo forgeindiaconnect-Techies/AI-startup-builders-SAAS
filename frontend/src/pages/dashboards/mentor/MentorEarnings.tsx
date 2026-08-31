@@ -110,6 +110,18 @@ const MentorEarnings: React.FC = () => {
         setFormError('Please complete all required bank account fields.');
         return;
       }
+      
+      const cleanAcc = accountNumber.trim();
+      if (cleanAcc.length < 9 || cleanAcc.length > 18 || !/^\d+$/.test(cleanAcc)) {
+        setFormError('Please enter a valid Account Number (9 to 18 digits only).');
+        return;
+      }
+
+      const cleanIfsc = ifscCode.trim().toUpperCase();
+      if (cleanIfsc.length !== 11 || !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(cleanIfsc)) {
+        setFormError('Please enter a valid 11-character IFSC code (e.g. HDFC0001234).');
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -457,7 +469,10 @@ const MentorEarnings: React.FC = () => {
                       <input
                         type="text"
                         value={ifscCode}
-                        onChange={(e) => setIfscCode(e.target.value.toUpperCase())}
+                        onChange={(e) => {
+                          const cleaned = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 11);
+                          setIfscCode(cleaned);
+                        }}
                         placeholder="e.g. HDFC0001234"
                         className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:border-[#5B21B6] outline-none text-xs font-mono font-bold"
                       />
@@ -468,7 +483,10 @@ const MentorEarnings: React.FC = () => {
                     <input
                       type="text"
                       value={accountNumber}
-                      onChange={(e) => setAccountNumber(e.target.value)}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/[^0-9]/g, '').slice(0, 18);
+                        setAccountNumber(cleaned);
+                      }}
                       placeholder="Enter account number"
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:border-[#5B21B6] outline-none text-xs font-mono font-bold"
                     />

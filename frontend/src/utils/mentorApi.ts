@@ -56,6 +56,7 @@ export const updateMentorProfileAdmin = async (
     approvalStatus?: string;
     availableDays?: number[];
     availableSlots?: string[];
+    rating?: number;
   }
 ): Promise<any> => {
   const res = await fetch(`${API_URL}/mentors/admin/${id}`, {

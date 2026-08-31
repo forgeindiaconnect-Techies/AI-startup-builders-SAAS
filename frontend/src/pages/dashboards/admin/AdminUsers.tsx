@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Eye, Trash2, Download, X, AlertCircle, CheckCircle, ChevronDown, ExternalLink, Pencil, Loader2, Copy } from 'lucide-react';
+import { Search, Eye, Trash2, Download, X, AlertCircle, CheckCircle, ChevronDown, ExternalLink, Pencil, Loader2, Copy, Star } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { getMentorProfile, updateMentorProfileAdmin } from '../../../utils/mentorApi';
 import { getInvestorLeads, deleteInvestorLead, getInvestorApplications } from '../../../utils/investorInvites';
@@ -193,6 +193,7 @@ const AdminUsers: React.FC = () => {
     isActive: true,
     availableDays: [1, 2, 3, 4, 5, 6],
     availableSlots: DEFAULT_AVAIL_SLOTS,
+    rating: '4.8',
   });
 
   const lockUntilRef = React.useRef<number>(0);
@@ -621,6 +622,7 @@ const AdminUsers: React.FC = () => {
       isActive: u.isActive !== false,
       availableDays: [1, 2, 3, 4, 5, 6],
       availableSlots: DEFAULT_AVAIL_SLOTS,
+      rating: String(u.rating ?? 4.8),
     });
     try {
       const full = await getMentorProfile(u.id);
@@ -651,6 +653,7 @@ const AdminUsers: React.FC = () => {
         isActive: full.isActive !== false,
         availableDays: daySet.size ? [...daySet].sort() : [1, 2, 3, 4, 5, 6],
         availableSlots: slotSet.size ? TIME_SLOTS.filter((t) => slotSet.has(t.value)).map((t) => t.value) : DEFAULT_AVAIL_SLOTS,
+        rating: String(full.rating ?? u.rating ?? 4.8),
       });
     } catch {
       // fall back to the admin list data
@@ -715,6 +718,7 @@ const AdminUsers: React.FC = () => {
         isActive: mentorForm.isActive,
         availableDays: mentorForm.availableDays,
         availableSlots: mentorForm.availableSlots,
+        rating: Number(mentorForm.rating) || 4.8,
       });
       // Reflect the changes immediately and lock background polling for 10s
       lockUntilRef.current = Date.now() + 10000;
@@ -729,6 +733,7 @@ const AdminUsers: React.FC = () => {
         location: mentorForm.location.trim(),
         sessionFee: Number(mentorForm.sessionFee) || 0,
         sessionDuration: Number(mentorForm.sessionDuration) || 45,
+        rating: Number(mentorForm.rating) || 4.8,
       } : u));
       refreshUsers();
       setEditingMentor(null);
@@ -1596,6 +1601,45 @@ const AdminUsers: React.FC = () => {
                       placeholder="e.g. Bengaluru, India"
                       className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] transition-all"
                     />
+                  </div>
+                  <div className="sm:col-span-2 bg-[#F8FAFC] border border-gray-100 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Mentor Rating (1 - 5)</label>
+                      <p className="text-xs text-gray-500">Fix the mentor's rating based on experience and credentials.</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => {
+                          const ratingVal = Number(mentorForm.rating) || 0;
+                          const active = star <= ratingVal;
+                          return (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => updateForm('rating', String(star))}
+                              className="focus:outline-none transition-transform active:scale-95 text-gray-300 hover:scale-105"
+                            >
+                              <Star
+                                size={22}
+                                className={active ? "text-[#FBBF24] fill-[#FBBF24]" : "text-gray-300"}
+                              />
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <input
+                        type="number"
+                        min={1}
+                        max={5}
+                        step={0.1}
+                        value={mentorForm.rating}
+                        onChange={(e) => {
+                          const val = Math.min(5, Math.max(1, Number(e.target.value) || 0));
+                          updateForm('rating', String(val));
+                        }}
+                        className="w-16 px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6]"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Industry</label>

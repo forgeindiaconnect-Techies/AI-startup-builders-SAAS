@@ -24,7 +24,19 @@ const Instagram = ({ size = 24 }: { size?: number }) => (
 
 const scrollToSection = (id: string) => {
   const el = document.getElementById(id);
-  if (el) el.scrollIntoView({ behavior: 'smooth' });
+  if (el) {
+    const offset = 80;
+    const bodyRect = document.body.getBoundingClientRect().top;
+    const elementRect = el.getBoundingClientRect().top;
+    const elementPosition = elementRect - bodyRect;
+    const offsetPosition = elementPosition - offset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    });
+    window.history.pushState(null, '', `#${id}`);
+  }
 };
 
 const Footer: React.FC = () => {
@@ -65,7 +77,13 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 mb-16">
 
           <div className="col-span-2 lg:col-span-2">
-            <div className="flex items-center space-x-2 mb-6 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+            <div
+              className="flex items-center space-x-2 mb-6 cursor-pointer"
+              onClick={() => {
+                navigate('/');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
               <div className="bg-[#5B21B6] text-[#FBBF24] p-1.5 rounded-md">
                 <Rocket size={20} />
               </div>

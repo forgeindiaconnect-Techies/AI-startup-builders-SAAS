@@ -52,7 +52,7 @@ const FounderMentorReviews: React.FC<FounderMentorReviewsProps> = ({
       ]);
 
       // Reviewed startups
-      const reviewed = allStartups.filter((s: any) => s.mentorReview && (s.mentorReview.feedback || s.mentorFeedback));
+      const reviewed = allStartups.filter((s: any) => s.mentorReview || s.mentorFeedback);
       setStartups(reviewed);
 
       // Completed bookings for rating
@@ -176,13 +176,21 @@ const FounderMentorReviews: React.FC<FounderMentorReviewsProps> = ({
   const getStartupMessages = (startup: any) => {
     const list = [...(startup.mentorReview?.messages || [])];
     if (list.length === 0 && (startup.mentorReview?.feedback || startup.mentorFeedback)) {
+      const sid = startup.startupId || startup._id;
+      const booking = completedBookings.find(b => {
+        const bid = typeof b.startupId === 'object' ? (b.startupId._id || b.startupId.startupId || b.startupId.id) : b.startupId;
+        return String(bid) === String(sid);
+      });
+      const mentorId = startup.mentorReview?.mentorId || booking?.mentorId?._id || booking?.mentorId?.id || booking?.mentorId || 'mentor';
+      const mentorName = startup.mentorReview?.mentorName || booking?.mentorName || booking?.mentorId?.fullName || 'Mentor';
+
       list.push({
         id: 'msg_initial',
-        senderId: startup.mentorReview?.mentorId || 'mentor',
-        senderName: startup.mentorReview?.mentorName || 'Mentor',
+        senderId: mentorId,
+        senderName: mentorName,
         senderRole: 'Mentor',
         message: startup.mentorReview?.feedback || startup.mentorFeedback,
-        createdAt: startup.mentorReview?.createdAt || startup.createdAt || new Date().toISOString()
+        createdAt: startup.mentorReview?.createdAt || startup.mentorReview?.submittedAt || startup.createdAt || new Date().toISOString()
       });
     }
     if (startup.mentorReview?.founderReply && !list.some(m => m.senderRole === 'Founder')) {
@@ -217,10 +225,18 @@ const FounderMentorReviews: React.FC<FounderMentorReviewsProps> = ({
     };
 
     const updatedMessages = [...currentMessages, newMessage];
-    const mentorId = startup.mentorReview?.mentorId;
+    
+    const booking = completedBookings.find(b => {
+      const bid = typeof b.startupId === 'object' ? (b.startupId._id || b.startupId.startupId || b.startupId.id) : b.startupId;
+      return String(bid) === String(id);
+    });
+    const mentorId = startup.mentorReview?.mentorId || booking?.mentorId?._id || booking?.mentorId?.id || booking?.mentorId || 'mentor';
+    const mentorName = startup.mentorReview?.mentorName || booking?.mentorName || booking?.mentorId?.fullName || 'Mentor';
 
     const updatedReview = {
-      ...startup.mentorReview,
+      ...(startup.mentorReview || {}),
+      mentorId,
+      mentorName,
       founderReply: startup.mentorReview?.founderReply || reply,
       founderReplyAt: startup.mentorReview?.founderReplyAt || new Date().toISOString(),
       messages: updatedMessages
@@ -235,7 +251,7 @@ const FounderMentorReviews: React.FC<FounderMentorReviewsProps> = ({
 
     addNotification({
       id: `notif_reply_${Date.now()}`,
-      userId: mentorId || 'mentor',
+      userId: mentorId,
       title: 'Founder Replied to Your Review',
       message: `${user.fullName || 'The founder'} replied on "${startup.startupName}": "${reply}"`,
       type: 'mentor_reply',
@@ -495,7 +511,7 @@ const FounderMentorReviews: React.FC<FounderMentorReviewsProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                           <h3 className="text-lg font-bold text-gray-900">{startup.startupName}</h3>
-                          {review.rating && (
+                          {review?.rating && (
                             <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${RATING_COLORS[review.rating] || 'bg-gray-100 text-gray-600'}`}>
                               {review.rating}
                             </span>
@@ -503,7 +519,7 @@ const FounderMentorReviews: React.FC<FounderMentorReviewsProps> = ({
                         </div>
                         <p className="text-sm text-gray-500">
                           Reviewed by <span className="font-semibold text-gray-700">{mentorName}</span>
-                          {review.createdAt && ` · ${formatDate(review.createdAt)}`}
+                          {(review?.createdAt || review?.submittedAt) && ` · ${formatDate(review.createdAt || review.submittedAt)}`}
                         </p>
                       </div>
                     </div>
@@ -514,13 +530,65 @@ const FounderMentorReviews: React.FC<FounderMentorReviewsProps> = ({
 
                   {isExpanded && (
                     <div className="border-t border-gray-100 px-6 pb-6 pt-5 space-y-5">
-                      <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Mentor Feedback</p>
-                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                          <p className="text-sm text-gray-700 leading-relaxed">
-                            {review.feedback || startup.mentorFeedback || 'No detailed feedback provided.'}
-                          </p>
-                        </div>
+                      {/* Detailed Feedback & Recommendations */}
+                      <div className="space-y-4">
+                        {(review?.feedback || startup.mentorFeedback) && (
+                          <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Mentor Feedback</p>
+                            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                              <p className="text-sm text-gray-700 leading-relaxed">
+                                {review?.feedback || startup.mentorFeedback}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {review?.recommendations && (
+                          <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Recommendations</p>
+                            <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
+                              <p className="text-sm text-emerald-800 leading-relaxed font-medium">
+                                {review.recommendations}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {review?.actionItems && (
+                          <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Action Items</p>
+                            <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
+                              <p className="text-sm text-blue-800 leading-relaxed font-medium">
+                                {review.actionItems}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {review?.improvementSuggestions && (
+                          <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Improvement Suggestions</p>
+                            <div className="bg-amber-50/50 border border-amber-100 rounded-xl p-4">
+                              <p className="text-sm text-amber-800 leading-relaxed font-medium">
+                                {review.improvementSuggestions}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {!(review?.feedback || startup.mentorFeedback) &&
+                         !review?.recommendations &&
+                         !review?.actionItems &&
+                         !review?.improvementSuggestions && (
+                          <div>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Mentor Feedback</p>
+                            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                              <p className="text-sm text-gray-700 leading-relaxed italic">
+                                No detailed feedback provided.
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div>

@@ -126,15 +126,20 @@ const AdminMentorEarnings: React.FC = () => {
   // Submit Mark Paid Modal
   const handleConfirmPaidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!utrReference.trim()) {
+    const cleanUtr = utrReference.trim().toUpperCase();
+    if (!cleanUtr) {
       setModalError('Transaction / UTR Reference is required.');
+      return;
+    }
+    if (cleanUtr.length < 8 || cleanUtr.length > 22) {
+      setModalError('UTR / Transaction reference must be between 8 and 22 alphanumeric characters.');
       return;
     }
     setModalSaving(true);
     setModalError('');
     try {
       await markWithdrawalPaid(selectedWithdrawalForPaid._id, {
-        transactionReference: utrReference.trim(),
+        transactionReference: cleanUtr,
         paidDate,
       });
       setSelectedWithdrawalForPaid(null);
@@ -908,7 +913,10 @@ const AdminMentorEarnings: React.FC = () => {
                   type="text"
                   required
                   value={utrReference}
-                  onChange={(e) => setUtrReference(e.target.value)}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 22);
+                    setUtrReference(cleaned);
+                  }}
                   placeholder="e.g. UTR192837465012 or BANKTXN9921"
                   className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl focus:border-[#5B21B6] focus:ring-2 focus:ring-[#5B21B6]/20 outline-none text-xs font-mono font-bold text-gray-900"
                 />

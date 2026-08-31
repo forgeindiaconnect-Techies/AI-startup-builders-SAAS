@@ -128,11 +128,11 @@ const MentorDashboard: React.FC = () => {
           >
             {showList ? (
               <>
-                <EyeOff size={14} /> Hide Startups
+                <EyeOff size={14} /> Hide Startup Ideas
               </>
             ) : (
               <>
-                <Eye size={14} /> Show Startups
+                <Eye size={14} /> Show Startup Ideas
               </>
             )}
           </button>
@@ -146,7 +146,6 @@ const MentorDashboard: React.FC = () => {
                   <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Startup Name</th>
                   <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Founder</th>
                   <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Industry</th>
-                  <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">AI Score</th>
                   <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Created Date</th>
                   <th className="p-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
                 </tr>
@@ -154,7 +153,7 @@ const MentorDashboard: React.FC = () => {
               <tbody className="divide-y divide-gray-100">
                 {startups.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-500">
+                    <td colSpan={5} className="p-8 text-center text-gray-500">
                       No startups to review yet. Founders who book you as their mentor will appear here.
                     </td>
                   </tr>
@@ -163,15 +162,15 @@ const MentorDashboard: React.FC = () => {
                     <tr key={idx} className="hover:bg-gray-50 transition-colors">
                       <td className="p-4">
                         <div className="font-bold text-gray-900">{startup.startupName}</div>
+                        {startup.startupIdea && (
+                          <div className="text-xs text-gray-500 mt-1 max-w-xs font-normal line-clamp-2" title={startup.startupIdea}>
+                            {startup.startupIdea}
+                          </div>
+                        )}
                       </td>
                       <td className="p-4 text-sm text-gray-700">{startup.founderName}</td>
                       <td className="p-4 text-sm text-gray-700">{startup.aiGenerated?.ideaAnalysis?.businessModel || 'Tech'}</td>
-                      <td className="p-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${startup.status === 'generated' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                          {startup.status === 'generated' ? (startup.aiGenerated?.aiReport?.investmentReadinessScore || '85') + '/100' : 'Draft'}
-                        </span>
-                      </td>
-                      <td className="p-4 text-sm text-gray-500">{new Date(startup.createdAt).toLocaleDateString()}</td>
+                      <td className="p-4 text-sm text-gray-700">{formatDate(startup.createdAt)}</td>
                       <td className="p-4">
                         <button onClick={() => navigate(`/dashboard/mentor/reviews?startupId=${startup.startupId || startup._id}`)} className="text-sm font-medium text-[#5B21B6] hover:text-[#7C3AED]">Start Review</button>
                       </td>
@@ -184,8 +183,8 @@ const MentorDashboard: React.FC = () => {
         )}
         {!showList && (
           <div className="p-8 text-center text-sm text-gray-500">
-            <p className="font-semibold text-gray-700 mb-1">Startup details are hidden.</p>
-            <p className="text-xs text-gray-400 mb-3">Click <strong>Show Startups</strong> above to view startups available for review.</p>
+            <p className="font-semibold text-gray-700 mb-1">Startup ideas are hidden.</p>
+            <p className="text-xs text-gray-400 mb-3">Click <strong>Show Startup Ideas</strong> above to view startups available for review.</p>
           </div>
         )}
       </div>

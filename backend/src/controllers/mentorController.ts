@@ -384,7 +384,7 @@ export const updateMentorProfileAdmin = async (req: AuthRequest, res: Response) 
       experienceYears, linkedin, photoUrl, location,
       sessionDuration, sessionFee, mentorSharePercentage, platformCommissionPercentage,
       paymentModel, isActive, status, approvalStatus,
-      availableDays, availableSlots,
+      availableDays, availableSlots, rating,
     } = req.body;
 
     // Validate commission percentages sum to 100
@@ -449,6 +449,7 @@ export const updateMentorProfileAdmin = async (req: AuthRequest, res: Response) 
     if (typeof platformCommissionPercentage === 'number') profile.platformCommissionPercentage = platformCommissionPercentage;
     if (typeof paymentModel === 'string') profile.paymentModel = paymentModel;
     if (typeof isActive === 'boolean') profile.isActive = isActive;
+    if (rating !== undefined) profile.rating = Number(rating) || 0;
 
     // Regenerate rolling availability from admin-selected days + time slots
     if (Array.isArray(availableSlots)) {

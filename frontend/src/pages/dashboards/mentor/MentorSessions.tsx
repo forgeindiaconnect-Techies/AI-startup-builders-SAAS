@@ -97,7 +97,8 @@ const ScheduleModal: React.FC<{
     return () => { active = false; };
   }, [mentorId]);
 
-  const dateSlots = availability.find((a) => a.date === selectedDate)?.slots || [];
+  const DEFAULT_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+  const dateSlots = availability.find((a) => a.date === selectedDate)?.slots || DEFAULT_SLOTS;
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -133,35 +134,54 @@ const ScheduleModal: React.FC<{
 
           {loading ? (
             <div className="flex justify-center py-10"><Loader2 size={26} className="animate-spin text-[#5B21B6]" /></div>
-          ) : availability.length === 0 ? (
-            <div className="p-6 text-center text-sm text-gray-500 border border-dashed border-gray-200 rounded-xl">
-              No availability set. Please ask the admin to configure your available days and time slots.
-            </div>
           ) : (
             <>
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-2 uppercase tracking-wider">Select Day / Date</label>
-                <div className="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-2.5">
-                  {availability.map((a) => {
-                    const allBooked = (a.slots || []).every((s: string) => (bookedSlots[a.date] || []).includes(s));
-                    const busy = allBooked;
-                    return (
-                      <button
-                        key={a.date}
-                        disabled={busy}
-                        onClick={() => { setSelectedDate(a.date); setSelectedTime(''); }}
-                        className={`p-2.5 rounded-xl border text-xs font-semibold transition-all ${
-                          selectedDate === a.date
-                            ? 'border-[#5B21B6] bg-purple-50 text-[#5B21B6]'
-                            : busy
-                              ? 'border-gray-100 text-gray-300 cursor-not-allowed bg-gray-50'
-                              : 'border-gray-200 text-gray-700 hover:border-purple-200'
-                        }`}
-                      >
-                        {formatDateDisplay(a.date)}
-                      </button>
-                    );
-                  })}
+                <div className="space-y-3">
+                  {availability.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-2.5">
+                      {availability.map((a) => {
+                        const allBooked = (a.slots || []).every((s: string) => (bookedSlots[a.date] || []).includes(s));
+                        const busy = allBooked;
+                        return (
+                          <button
+                            key={a.date}
+                            disabled={busy}
+                            onClick={() => { setSelectedDate(a.date); setSelectedTime(''); }}
+                            className={`p-2.5 rounded-xl border text-xs font-semibold transition-all ${
+                              selectedDate === a.date
+                                ? 'border-[#5B21B6] bg-purple-50 text-[#5B21B6]'
+                                : busy
+                                  ? 'border-gray-100 text-gray-300 cursor-not-allowed bg-gray-50'
+                                  : 'border-gray-200 text-gray-700 hover:border-purple-200'
+                            }`}
+                          >
+                            {formatDateDisplay(a.date)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  <div>
+                    <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Choose Custom Date</span>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Calendar size={15} className="text-gray-400" />
+                      </div>
+                      <input
+                        type="date"
+                        value={selectedDate}
+                        onChange={(e) => {
+                          setSelectedDate(e.target.value);
+                          setSelectedTime('');
+                        }}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6]/20 focus:border-[#5B21B6] bg-white transition-all text-gray-700 font-medium"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
