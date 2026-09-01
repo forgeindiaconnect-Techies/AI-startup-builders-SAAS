@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Briefcase, TrendingUp, Search, X, ArrowLeft, Mail, Calendar, LogIn, ShieldCheck, Bookmark, Heart, Rocket, Target, Cpu, Send, ArrowRight, ExternalLink, Sparkles } from 'lucide-react';
+import { Briefcase, TrendingUp, Search, X, ArrowLeft, Mail, Calendar, LogIn, ShieldCheck, Bookmark, Heart, Rocket, Target, Cpu, Send, ArrowRight, ExternalLink, Sparkles, Coins, IndianRupee } from 'lucide-react';
 import SharedStartupDetailsTabs from '../../components/shared/SharedStartupDetailsTabs';
 import SendInvestmentOfferModal from '../../components/shared/SendInvestmentOfferModal';
 import { API_URL } from '../../config/api';
@@ -275,26 +275,42 @@ const InvestorDashboard: React.FC = () => {
 
       {/* Top metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 rounded-2xl shadow-sm text-white">
-          <p className="text-sm font-medium text-gray-400 mb-1">Total Deployed Capital</p>
-          <p className="text-3xl font-bold">₹1.2M</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        {/* Total Deployed Capital */}
+        <div className="bg-gradient-to-br from-[#1E1B4B] via-[#312E81] to-[#4338CA] p-6 rounded-2xl shadow-xl shadow-indigo-950/20 border border-indigo-500/20 text-white relative overflow-hidden">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Active Investments</p>
-              <p className="text-3xl font-bold text-gray-900">4</p>
+              <p className="text-xs font-black uppercase tracking-wider text-indigo-200 mb-1">Total Deployed Capital</p>
+              <p className="text-3xl font-black text-white">₹1.2M</p>
             </div>
-            <div className="p-2 bg-blue-50 text-blue-500 rounded-lg"><Briefcase size={20}/></div>
+            <div className="p-2.5 bg-white/15 backdrop-blur-md text-white rounded-xl">
+              <Coins size={22} />
+            </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+
+        {/* Active Investments */}
+        <div className="bg-gradient-to-br from-cyan-600 via-sky-600 to-blue-700 p-6 rounded-2xl shadow-xl shadow-cyan-600/20 border border-cyan-400/20 text-white relative overflow-hidden">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Portfolio Avg ROI</p>
-              <p className="text-3xl font-bold text-green-500">+24%</p>
+              <p className="text-xs font-black uppercase tracking-wider text-cyan-100 mb-1">Active Investments</p>
+              <p className="text-3xl font-black text-white">4</p>
             </div>
-            <div className="p-2 bg-green-50 text-green-500 rounded-lg"><TrendingUp size={20}/></div>
+            <div className="p-2.5 bg-white/20 backdrop-blur-md text-white rounded-xl">
+              <Briefcase size={22} />
+            </div>
+          </div>
+        </div>
+
+        {/* Portfolio Avg ROI */}
+        <div className="bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-800 p-6 rounded-2xl shadow-xl shadow-emerald-600/20 border border-emerald-400/20 text-white relative overflow-hidden">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-xs font-black uppercase tracking-wider text-emerald-100 mb-1">Portfolio Avg ROI</p>
+              <p className="text-3xl font-black text-white">+24%</p>
+            </div>
+            <div className="p-2.5 bg-white/20 backdrop-blur-md text-white rounded-xl">
+              <TrendingUp size={22} />
+            </div>
           </div>
         </div>
       </div>

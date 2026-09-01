@@ -573,7 +573,7 @@ const MentorSessions: React.FC = () => {
                         <div className="ml-auto shrink-0">
                           <button
                             onClick={() => viewStartupOutput(b, navigate)}
-                            className="px-3.5 py-2 text-sm font-bold text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl transition-colors flex items-center gap-1.5"
+                            className="px-4 py-2 text-xs font-black text-white bg-gradient-to-r from-[#5B21B6] to-[#7C3AED] hover:from-[#4C1D95] hover:to-[#6D28D9] rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-1.5 cursor-pointer active:scale-95"
                           >
                             Review Startup <ArrowRight size={14} />
                           </button>

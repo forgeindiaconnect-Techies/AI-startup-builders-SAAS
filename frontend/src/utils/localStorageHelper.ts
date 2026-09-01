@@ -495,24 +495,49 @@ export const seedDemoNotifications = () => {
   return demoNotifs;
 };
 
+const getReadNotifIdsSet = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem('ai_startup_builder_read_notif_ids');
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+};
+
 export const getNotifications = async (userId?: string) => {
+  const readSet = getReadNotifIdsSet();
+  let list: any[] = [];
   try {
     const url = userId ? `${API_URL}/notifications?userId=${encodeURIComponent(userId)}` : `${API_URL}/notifications`;
     const res = await fetch(url);
     const data = await res.json();
-    if (data.success) return data.data;
+    if (data.success && Array.isArray(data.data)) {
+      list = data.data;
+    }
   } catch (e) {
     console.error('Error fetching notifications', e);
   }
-  // Fallback to localStorage
-  try {
-    const stored = localStorage.getItem('ai_startup_builder_notifications');
-    const parsed = stored ? JSON.parse(stored) : [];
-    if (parsed.length === 0) return seedDemoNotifications();
-    return parsed;
-  } catch (e) {
-    return [];
+
+  if (list.length === 0) {
+    try {
+      const stored = localStorage.getItem('ai_startup_builder_notifications');
+      const parsed = stored ? JSON.parse(stored) : [];
+      list = parsed.length === 0 ? seedDemoNotifications() : parsed;
+    } catch (e) {
+      list = [];
+    }
   }
+
+  // Merge read state overrides
+  return list.map((n: any) => {
+    const isAlreadyRead = readSet.has(String(n.id)) || readSet.has(String(n._id)) || Boolean(n.isRead || n.read);
+    return {
+      ...n,
+      isRead: isAlreadyRead,
+      read: isAlreadyRead,
+      unread: !isAlreadyRead
+    };
+  });
 };
 
 export const addNotification = async (notification: any) => {
@@ -576,6 +601,32 @@ export const getUsers = async (): Promise<any[]> => {
 };
 
 export const markNotificationRead = async (id: string) => {
+  if (!id) return;
+  // Store ID in read overrides set
+  try {
+    const readSet = getReadNotifIdsSet();
+    readSet.add(String(id));
+    localStorage.setItem('ai_startup_builder_read_notif_ids', JSON.stringify(Array.from(readSet)));
+  } catch {}
+
+  // Update local storage list if present
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_notifications');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const updated = parsed.map((n: any) => {
+        if (String(n.id) === String(id) || String(n._id) === String(id)) {
+          return { ...n, isRead: true, read: true, unread: false };
+        }
+        return n;
+      });
+      localStorage.setItem('ai_startup_builder_notifications', JSON.stringify(updated));
+    }
+  } catch {}
+
+  window.dispatchEvent(new Event('notifications_updated'));
+  window.dispatchEvent(new Event('storage'));
+
   try {
     const res = await fetch(`${API_URL}/notifications/${id}/read`, { method: 'PATCH' });
     const data = await res.json();
@@ -585,9 +636,37 @@ export const markNotificationRead = async (id: string) => {
   }
 };
 
-export const markAllNotificationsRead = async (userId: string) => {
+export const markAllNotificationsRead = async (userId?: string, notifIds?: string[], role?: string) => {
+  // Store all IDs in read overrides set
   try {
-    const res = await fetch(`${API_URL}/notifications/mark-all-read?userId=${encodeURIComponent(userId)}`, { method: 'PATCH' });
+    const readSet = getReadNotifIdsSet();
+    if (Array.isArray(notifIds)) {
+      notifIds.forEach(id => readSet.add(String(id)));
+    }
+    localStorage.setItem('ai_startup_builder_read_notif_ids', JSON.stringify(Array.from(readSet)));
+  } catch {}
+
+  // Update local storage list
+  try {
+    const stored = localStorage.getItem('ai_startup_builder_notifications');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const updated = parsed.map((n: any) => ({ ...n, isRead: true, read: true, unread: false }));
+      localStorage.setItem('ai_startup_builder_notifications', JSON.stringify(updated));
+    }
+  } catch {}
+
+  window.dispatchEvent(new Event('notifications_updated'));
+  window.dispatchEvent(new Event('storage'));
+
+  try {
+    let url = `${API_URL}/notifications/mark-all-read`;
+    const params = new URLSearchParams();
+    if (userId) params.append('userId', userId);
+    if (role) params.append('role', role);
+    if (params.toString()) url += `?${params.toString()}`;
+
+    const res = await fetch(url, { method: 'PATCH' });
     const data = await res.json();
     return data.success;
   } catch (e) {
@@ -1802,5 +1881,128 @@ export const regenerateModuleData = async (startupId: string, moduleType: 'ideaV
   const updated = await updateStartup(startupId, { aiGenerated: newAiGenerated });
   return updated || { ...startup, aiGenerated: newAiGenerated };
 };
+
+// ─── Founder & Admin Withdrawals API ─────────────────────────
+
+export const getFounderWithdrawalsApi = async (founderId: string) => {
+  try {
+    const res = await fetch(`${API_URL}/withdrawals/founder?founderId=${encodeURIComponent(founderId)}`);
+    const data = await res.json();
+    if (data.success && data.data) {
+      try {
+        localStorage.setItem(`founder_withdrawals_${founderId}`, JSON.stringify(data.data));
+      } catch {}
+      return data.data;
+    }
+  } catch (e) {}
+  try {
+    const stored = localStorage.getItem(`founder_withdrawals_${founderId}`);
+    return stored ? JSON.parse(stored) : { summary: null, withdrawals: [] };
+  } catch {
+    return { summary: null, withdrawals: [] };
+  }
+};
+
+export const submitFounderWithdrawalApi = async (payload: any) => {
+  let createdRecord: any = null;
+  let responseSummary: any = null;
+
+  try {
+    const res = await fetch(`${API_URL}/withdrawals/founder/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      createdRecord = data.data?.withdrawal || data.data;
+      responseSummary = data.data?.summary || null;
+    }
+  } catch (e: any) {
+    console.error('Backend submission offline, using local store:', e);
+  }
+
+  if (!createdRecord) {
+    createdRecord = {
+      _id: `wd_${Date.now()}`,
+      id: `wd_${Date.now()}`,
+      founderId: payload.founderId,
+      founderName: payload.founderName || 'Founder',
+      founderEmail: payload.founderEmail || '',
+      startupName: payload.startupName || '',
+      amount: Number(payload.amount || 0),
+      withdrawalMethod: payload.withdrawalMethod,
+      bankDetails: payload.bankDetails,
+      upiDetails: payload.upiDetails,
+      status: 'Pending',
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  // Sync to Admin LocalStorage store
+  try {
+    const storedAdmin = JSON.parse(localStorage.getItem('admin_founder_withdrawals') || '[]');
+    const filteredAdmin = storedAdmin.filter((w: any) => (w._id || w.id) !== (createdRecord._id || createdRecord.id));
+    const newAdminList = [createdRecord, ...filteredAdmin];
+    localStorage.setItem('admin_founder_withdrawals', JSON.stringify(newAdminList));
+
+    if (payload.founderId) {
+      const storedFounder = JSON.parse(localStorage.getItem(`founder_withdrawals_${payload.founderId}`) || '{"withdrawals":[]}');
+      const filteredFounder = (storedFounder.withdrawals || []).filter((w: any) => (w._id || w.id) !== (createdRecord._id || createdRecord.id));
+      const newFounderList = [createdRecord, ...filteredFounder];
+      localStorage.setItem(`founder_withdrawals_${payload.founderId}`, JSON.stringify({
+        summary: responseSummary || storedFounder.summary,
+        withdrawals: newFounderList,
+      }));
+    }
+  } catch (e) {}
+
+  window.dispatchEvent(new Event('founder_withdrawal_updated'));
+  window.dispatchEvent(new Event('admin_withdrawal_updated'));
+  window.dispatchEvent(new Event('funding_transactions_updated'));
+  window.dispatchEvent(new Event('storage'));
+
+  return { withdrawal: createdRecord, summary: responseSummary };
+};
+
+export const getAdminWithdrawalsApi = async () => {
+  try {
+    const res = await fetch(`${API_URL}/withdrawals/admin`);
+    const data = await res.json();
+    if (data.success) {
+      try {
+        localStorage.setItem('admin_founder_withdrawals', JSON.stringify(data.data));
+      } catch {}
+      return data.data;
+    }
+  } catch (e) {}
+  try {
+    const stored = localStorage.getItem('admin_founder_withdrawals');
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+export const updateWithdrawalStatusApi = async (id: string, payload: any) => {
+  try {
+    const res = await fetch(`${API_URL}/withdrawals/admin/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.dispatchEvent(new Event('admin_withdrawal_updated'));
+      return data.data;
+    } else {
+      throw new Error(data.message || 'Failed to update withdrawal status');
+    }
+  } catch (e: any) {
+    console.error('Error updating withdrawal status:', e);
+    throw e;
+  }
+};
+
 
 

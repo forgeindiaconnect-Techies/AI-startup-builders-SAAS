@@ -39,7 +39,7 @@ const defaultMentorProfile: MentorProfileData = {
   experienceYears: '',
   category: 'SaaS',
   availability: 'Available',
-  languages: '',
+  languages: 'English',
   verificationStatus: 'Pending',
   rating: 0,
   reviewsCount: 0,
@@ -116,6 +116,7 @@ const MentorProfile: React.FC = () => {
     // Prefer the signup/profile data stored on the backend User record
     // so whatever the mentor filled during signup shows up here.
     const resolvedStatus = (user?.approvalStatus === 'approved' || user?.approvalStatus === 'APPROVED') ? 'Verified' : 'Pending';
+    const userLang = (user as any)?.languages;
     const fromUser: Partial<MentorProfileData> = {
       id: myId,
       name: user?.fullName || '',
@@ -123,6 +124,7 @@ const MentorProfile: React.FC = () => {
       phone: user?.mobile || '',
       location: user?.location || '',
       expertise: user?.expertise || '',
+      languages: userLang || undefined,
       experienceYears: formatExperience(user?.experienceYears),
       linkedin: user?.linkedin || '',
       bio: user?.bio || '',
@@ -137,7 +139,13 @@ const MentorProfile: React.FC = () => {
         profiles = JSON.parse(stored);
       }
       const foundIdx = profiles.findIndex(p => p.id === myId || (p.name && p.name === user?.fullName));
-      const updatedProfile = { ...defaultMentorProfile, ...(foundIdx >= 0 ? profiles[foundIdx] : {}), ...fromUser };
+      const savedLanguages = userLang || (foundIdx >= 0 && profiles[foundIdx].languages ? profiles[foundIdx].languages : 'English');
+      const updatedProfile = { 
+        ...defaultMentorProfile, 
+        ...(foundIdx >= 0 ? profiles[foundIdx] : {}), 
+        ...fromUser,
+        languages: savedLanguages
+      };
       
       if (foundIdx >= 0) {
         profiles[foundIdx] = updatedProfile;
@@ -147,7 +155,7 @@ const MentorProfile: React.FC = () => {
       localStorage.setItem('ai_startup_builder_mentor_profiles', JSON.stringify(profiles));
       setForm(updatedProfile);
     } catch {
-      setForm({ ...defaultMentorProfile, ...fromUser });
+      setForm({ ...defaultMentorProfile, ...fromUser, languages: userLang || 'English' });
     }
   }, [user]);
 
@@ -158,6 +166,7 @@ const MentorProfile: React.FC = () => {
   const handleCancel = () => {
     const myId = user?.id || '';
     const resolvedStatus = (user?.approvalStatus === 'approved' || user?.approvalStatus === 'APPROVED') ? 'Verified' : 'Pending';
+    const userLang = (user as any)?.languages;
     const fromUser: Partial<MentorProfileData> = {
       id: myId,
       name: user?.fullName || '',
@@ -165,6 +174,7 @@ const MentorProfile: React.FC = () => {
       phone: user?.mobile || '',
       location: user?.location || '',
       expertise: user?.expertise || '',
+      languages: userLang || form.languages || 'English',
       experienceYears: formatExperience(user?.experienceYears),
       linkedin: user?.linkedin || '',
       bio: user?.bio || '',
@@ -179,7 +189,13 @@ const MentorProfile: React.FC = () => {
         profiles = JSON.parse(stored);
       }
       const foundIdx = profiles.findIndex(p => p.id === myId || (p.name && p.name === user?.fullName));
-      const updatedProfile = { ...defaultMentorProfile, ...(foundIdx >= 0 ? profiles[foundIdx] : {}), ...fromUser };
+      const savedLanguages = form.languages || userLang || (foundIdx >= 0 && profiles[foundIdx].languages ? profiles[foundIdx].languages : 'English');
+      const updatedProfile = { 
+        ...defaultMentorProfile, 
+        ...(foundIdx >= 0 ? profiles[foundIdx] : {}), 
+        ...fromUser,
+        languages: savedLanguages
+      };
       
       if (foundIdx >= 0) {
         profiles[foundIdx] = updatedProfile;
@@ -219,6 +235,7 @@ const MentorProfile: React.FC = () => {
             experienceYears: form.experienceYears,
             linkedin: form.linkedin,
             bio: form.bio,
+            languages: form.languages,
           }),
         });
         const json = await res.json();
@@ -240,6 +257,7 @@ const MentorProfile: React.FC = () => {
         phone: form.phone,
         location: form.location,
         expertise: form.expertise,
+        languages: form.languages,
         experienceYears: form.experienceYears,
         linkedin: form.linkedin,
         bio: form.bio,
@@ -366,6 +384,10 @@ const MentorProfile: React.FC = () => {
             <div className="flex justify-between items-center">
               <span className="text-gray-500 font-medium">Experience:</span>
               <span className="font-bold text-gray-900">{form.experienceYears || "10+ Years"}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500 font-medium">Languages:</span>
+              <span className="font-bold text-gray-900">{form.languages || "English"}</span>
             </div>
           </div>
         </div>

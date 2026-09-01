@@ -46,11 +46,6 @@ const FounderDocuments: React.FC = () => {
               : 'Generate and manage legal & compliance documents for your startup.'}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={refresh} className="px-3 py-1.5 text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center gap-1 transition-colors">
-            <RefreshCw size={12} /> Refresh
-          </button>
-        </div>
       </div>
 
       {allStartups.length === 0 ? (

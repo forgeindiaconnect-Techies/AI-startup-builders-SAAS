@@ -8,7 +8,7 @@ import {
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer } from '../../../context/FundingContext';
 import { useAuth } from '../../../context/AuthContext';
-import { updateFundingOffer, addNotification } from '../../../utils/localStorageHelper';
+import { updateFundingOffer, addNotification, getAdminWithdrawalsApi, updateWithdrawalStatusApi } from '../../../utils/localStorageHelper';
 
 const handleDownloadFile = (base64Data: string, filename: string) => {
   if (!base64Data) return;
@@ -27,7 +27,14 @@ const AdminInvestorFunding: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | 'approved' | 'pending' | 'completed' | 'rejected'>('All');
-  const [viewSection, setViewSection] = useState<'deals' | 'payments' | 'commissions'>('deals');
+  const [viewSection, setViewSection] = useState<'deals' | 'payments' | 'commissions' | 'withdrawals'>('deals');
+  
+  // Admin Finance Withdrawals State
+  const [adminWithdrawals, setAdminWithdrawals] = useState<any[]>([]);
+  const [selectedWithdrawal, setSelectedWithdrawal] = useState<any | null>(null);
+  const [payoutUtrInput, setPayoutUtrInput] = useState('');
+  const [payoutNotesInput, setPayoutNotesInput] = useState('');
+  const [payoutStatusInput, setPayoutStatusInput] = useState<'Pending' | 'Under Review' | 'Approved' | 'Processing' | 'Completed' | 'Rejected'>('Processing');
   
   // Selected transaction for details modal
   const [selectedTx, setSelectedTx] = useState<FundingOffer | null>(null);
@@ -85,6 +92,21 @@ const AdminInvestorFunding: React.FC = () => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
+
+  const loadAdminWithdrawals = async () => {
+    try {
+      const res = await getAdminWithdrawalsApi();
+      if (Array.isArray(res)) setAdminWithdrawals(res);
+    } catch (e) {
+      console.error('Error loading admin withdrawals', e);
+    }
+  };
+
+  useEffect(() => {
+    loadAdminWithdrawals();
+    window.addEventListener('admin_withdrawal_updated', loadAdminWithdrawals);
+    return () => window.removeEventListener('admin_withdrawal_updated', loadAdminWithdrawals);
+  }, []);
 
   // Quick inline status change from the dropdown badge
   const handleQuickStatusChange = async (offer: FundingOffer, newAgreementStatus: string) => {
@@ -750,7 +772,17 @@ const AdminInvestorFunding: React.FC = () => {
                 : 'text-gray-500 hover:text-gray-900'
             }`}
           >
-            Commission History
+            Platform Commissions
+          </button>
+          <button
+            onClick={() => setViewSection('withdrawals')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              viewSection === 'withdrawals'
+                ? 'bg-[#5B21B6] text-white shadow-xs'
+                : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            <Landmark size={14} /> Founder Withdrawals ({adminWithdrawals.length})
           </button>
         </div>
       </div>
@@ -1254,7 +1286,287 @@ const AdminInvestorFunding: React.FC = () => {
           </div>
         </div>
       )}
+
+      {viewSection === 'withdrawals' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden font-sans">
+            <div className="p-6 bg-gradient-to-br from-purple-50 via-white to-emerald-50/40 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#5B21B6] bg-purple-100/80 px-2.5 py-1 rounded-full">
+                  Admin Finance Payouts &amp; Withdrawals
+                </span>
+                <h3 className="text-lg font-black text-gray-900 mt-1">Founder Withdrawal Requests</h3>
+                <p className="text-xs text-gray-500">
+                  Review founder payout requests, advance status through pipeline, and record bank/UPI UTR transaction references.
+                </p>
+              </div>
+              <div className="flex gap-3 items-center bg-white p-3 rounded-2xl border border-purple-100 shadow-2xs">
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase block">Pending Payouts</span>
+                  <strong className="text-amber-600 text-base font-black">
+                    {adminWithdrawals.filter(w => ['Pending', 'Under Review', 'Approved', 'Processing'].includes(w.status)).length} Request(s)
+                  </strong>
+                </div>
+                <div className="h-8 w-px bg-gray-200" />
+                <div>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase block">Completed Payouts</span>
+                  <strong className="text-emerald-700 text-base font-black">
+                    {adminWithdrawals.filter(w => w.status === 'Completed').length} Paid
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left font-medium">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-4">Request ID</th>
+                    <th className="px-5 py-4">Founder &amp; Startup</th>
+                    <th className="px-5 py-4">Requested Amount</th>
+                    <th className="px-5 py-4">Method</th>
+                    <th className="px-5 py-4">Destination Details</th>
+                    <th className="px-5 py-4">Status Pipeline</th>
+                    <th className="px-5 py-4">UTR / Payout Ref</th>
+                    <th className="px-5 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {adminWithdrawals.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-12 text-center text-gray-400 font-medium">
+                        No founder withdrawal requests submitted yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    adminWithdrawals.map((w: any) => {
+                      const wId = w._id || w.id || `WD-${Date.now()}`;
+                      const isBank = w.withdrawalMethod === 'bank_account' || w.withdrawalMethod === 'bank';
+                      return (
+                        <tr key={wId} className="hover:bg-gray-50/80 transition-colors">
+                          <td className="px-5 py-4 font-mono font-bold text-[#5B21B6]">
+                            {`WD-${String(wId).slice(-6).toUpperCase()}`}
+                          </td>
+                          <td className="px-5 py-4">
+                            <p className="font-bold text-gray-900">{w.founderName}</p>
+                            <p className="text-[10px] text-gray-500 font-semibold">{w.startupName || w.founderEmail}</p>
+                          </td>
+                          <td className="px-5 py-4 font-black text-emerald-700 text-sm">
+                            ₹{Number(w.amount || 0).toLocaleString('en-IN')}
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className="px-2.5 py-0.5 bg-purple-50 text-[#5B21B6] border border-purple-100 rounded-lg font-bold uppercase text-[10px]">
+                              {isBank ? 'Bank Account' : 'UPI ID'}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 text-xs">
+                            {isBank ? (
+                              <div>
+                                <p className="font-bold text-gray-900">{w.bankDetails?.accountHolderName || w.accountHolderName || w.founderName}</p>
+                                <p className="text-[10px] text-gray-500 font-mono">
+                                  {w.bankDetails?.bankName || w.bankName} · A/C: {w.bankDetails?.accountNumber || w.accountNumber} · IFSC: {w.bankDetails?.ifscCode || w.ifscCode}
+                                </p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="font-bold text-gray-900 font-mono">{w.upiDetails?.upiId || w.upiId || '—'}</p>
+                                <p className="text-[10px] text-gray-400">Direct UPI</p>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-5 py-4">
+                            {(() => {
+                              const s = w.status || 'Pending';
+                              const map: Record<string, { label: string; cls: string }> = {
+                                Pending:        { label: '1. Pending', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
+                                'Under Review': { label: '2. Under Review', cls: 'bg-blue-50 text-blue-800 border-blue-200' },
+                                Approved:       { label: '3. Approved', cls: 'bg-purple-50 text-purple-800 border-purple-200' },
+                                Processing:     { label: '4. Processing', cls: 'bg-sky-50 text-sky-800 border-sky-200' },
+                                Completed:      { label: '5. Completed ✓', cls: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+                                Rejected:       { label: 'Rejected', cls: 'bg-red-50 text-red-800 border-red-200' },
+                              };
+                              const item = map[s] || { label: s, cls: 'bg-gray-50 text-gray-700 border-gray-200' };
+                              return <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${item.cls}`}>{item.label}</span>;
+                            })()}
+                          </td>
+                          <td className="px-5 py-4 font-mono font-bold text-gray-900">
+                            {w.utrNumber || w.payoutReference || '—'}
+                          </td>
+                          <td className="px-5 py-4 text-right whitespace-nowrap">
+                            <button
+                              onClick={() => {
+                                setSelectedWithdrawal(w);
+                                setPayoutStatusInput(w.status || 'Processing');
+                                setPayoutUtrInput(w.utrNumber || w.payoutReference || '');
+                                setPayoutNotesInput(w.adminNotes || '');
+                              }}
+                              className="px-3 py-1.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold rounded-lg text-xs shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                            >
+                              <Landmark size={12} /> Process Payout
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
+
+      {/* ADMIN WITHDRAWAL PAYOUT PROCESSING MODAL */}
+      {selectedWithdrawal && (
+        <div className="fixed inset-0 z-[160] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative text-left font-sans text-xs animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setSelectedWithdrawal(null)}
+              className="absolute top-5 right-5 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-3 bg-[#5B21B6] text-white rounded-2xl shadow-md">
+                <Landmark size={22} />
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-[#5B21B6] uppercase tracking-wider block">Admin Finance Payout</span>
+                <h3 className="text-base font-black text-gray-900">Process Founder Withdrawal</h3>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-purple-50 border border-purple-100 rounded-2xl space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-500 font-bold">Founder:</span>
+                  <strong className="text-gray-900">{selectedWithdrawal.founderName}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 font-bold">Requested Capital:</span>
+                  <strong className="text-emerald-700 text-base font-black">₹{Number(selectedWithdrawal.amount || 0).toLocaleString('en-IN')}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 font-bold">Payout Method:</span>
+                  <strong className="text-gray-900 capitalize">{selectedWithdrawal.withdrawalMethod === 'bank_account' ? 'Bank Transfer' : 'UPI ID'}</strong>
+                </div>
+              </div>
+
+              {/* Status Selector */}
+              <div>
+                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1.5">Update Status Step *</label>
+                <select
+                  value={payoutStatusInput}
+                  onChange={(e) => setPayoutStatusInput(e.target.value as any)}
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-bold text-gray-900 outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                >
+                  <option value="Pending">1. Pending</option>
+                  <option value="Under Review">2. Under Review</option>
+                  <option value="Approved">3. Approved</option>
+                  <option value="Processing">4. Processing</option>
+                  <option value="Completed">5. Completed (Mark Paid)</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+              </div>
+
+              {/* UTR Number */}
+              <div>
+                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Bank / UPI UTR Number / Reference *</label>
+                <input
+                  type="text"
+                  maxLength={18}
+                  value={payoutUtrInput}
+                  onChange={(e) => setPayoutUtrInput(e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase())}
+                  placeholder="e.g. 208912345678 or HDFCN2609011234"
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-mono text-xs font-bold uppercase tracking-wider outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                />
+                <p className="text-[10px] text-gray-400 mt-1 font-sans">
+                  Standard UTR must be 12 to 18 alphanumeric characters (e.g. 12-digit UPI UTR or NEFT/IMPS Ref).
+                </p>
+              </div>
+
+              {/* Admin Notes */}
+              <div>
+                <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Admin Finance Remarks / Notes</label>
+                <textarea
+                  rows={2}
+                  value={payoutNotesInput}
+                  onChange={(e) => setPayoutNotesInput(e.target.value)}
+                  placeholder="Payment dispatch remarks, bank reference details, or rejection reason..."
+                  className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedWithdrawal(null)}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const cleanUtr = payoutUtrInput.trim().toUpperCase();
+                    if (['Processing', 'Completed'].includes(payoutStatusInput)) {
+                      if (!cleanUtr) {
+                        showToast('Please enter a valid Bank / UPI UTR reference number.', 'error');
+                        return;
+                      }
+                      if (cleanUtr.length < 12 || cleanUtr.length > 18) {
+                        showToast('UTR number must be between 12 and 18 alphanumeric characters (e.g. 12-digit UPI UTR or NEFT/IMPS Ref).', 'error');
+                        return;
+                      }
+                    }
+
+                    setActionLoading(true);
+                    try {
+                      const wId = selectedWithdrawal._id || selectedWithdrawal.id;
+                      await updateWithdrawalStatusApi(wId, {
+                        status: payoutStatusInput,
+                        utrNumber: cleanUtr,
+                        payoutReference: cleanUtr,
+                        adminNotes: payoutNotesInput.trim(),
+                      });
+
+                      // Notify Founder
+                      if (selectedWithdrawal.founderId) {
+                        await addNotification({
+                          userId: selectedWithdrawal.founderId,
+                          title: `🏦 Withdrawal Status: ${payoutStatusInput}`,
+                          message: `Admin updated your withdrawal request of ₹${Number(selectedWithdrawal.amount || 0).toLocaleString('en-IN')} to: ${payoutStatusInput}.${cleanUtr ? ` (UTR: ${cleanUtr})` : ''}`,
+                          type: 'funding',
+                          actionUrl: '/dashboard/founder/funding-transactions',
+                          isRead: false,
+                          createdAt: new Date().toISOString(),
+                        });
+                      }
+
+                      showToast(`Withdrawal updated to "${payoutStatusInput}" ✓`);
+                      setSelectedWithdrawal(null);
+                      setPayoutUtrInput('');
+                      setPayoutNotesInput('');
+                      loadAdminWithdrawals();
+                      refreshOffers();
+                    } catch (e: any) {
+                      showToast(e.message || 'Update failed', 'error');
+                    } finally {
+                      setActionLoading(false);
+                    }
+                  }}
+                  disabled={actionLoading}
+                  className="px-5 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold rounded-xl shadow-md cursor-pointer transition-all"
+                >
+                  {actionLoading ? 'Updating...' : 'Save & Update Payout'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* DEAL DETAILS & AUDIT MODAL */}
       {selectedTx && (

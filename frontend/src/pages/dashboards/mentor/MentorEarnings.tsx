@@ -13,6 +13,7 @@ import {
   Send,
   AlertCircle,
   FileText,
+  Coins,
 } from 'lucide-react';
 import { getMentorEarnings, requestWithdrawal } from '../../../utils/mentorApi';
 
@@ -185,53 +186,69 @@ const MentorEarnings: React.FC = () => {
       {/* Top 5 Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         {/* Total Earnings */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2">Total Earnings</p>
-          <p className="text-2xl font-black text-gray-900">{formatCurrency(summary?.totalEarnings || 0)}</p>
-          <p className="text-[11px] text-gray-400 mt-1">All-time bookings</p>
+        <div className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900 p-5 rounded-2xl shadow-lg shadow-indigo-500/15 border border-indigo-400/20 text-white relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-black uppercase tracking-wider text-indigo-200">Total Earnings</p>
+            <div className="p-1.5 bg-white/20 backdrop-blur-md rounded-lg text-white">
+              <Coins size={16} />
+            </div>
+          </div>
+          <p className="text-2xl font-black text-white">{formatCurrency(summary?.totalEarnings || 0)}</p>
+          <p className="text-[11px] text-indigo-200 mt-1 font-medium">All-time bookings</p>
         </div>
 
         {/* This Month */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-gradient-to-br from-cyan-600 via-sky-600 to-blue-700 p-5 rounded-2xl shadow-lg shadow-cyan-500/15 border border-cyan-400/20 text-white relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">This Month</p>
-            <TrendingUp size={16} className="text-blue-500" />
+            <p className="text-[11px] font-black uppercase tracking-wider text-cyan-100">This Month</p>
+            <div className="p-1.5 bg-white/20 backdrop-blur-md rounded-lg text-white">
+              <TrendingUp size={16} />
+            </div>
           </div>
-          <p className="text-2xl font-black text-blue-600">{formatCurrency(summary?.thisMonthEarnings || 0)}</p>
+          <p className="text-2xl font-black text-white">{formatCurrency(summary?.thisMonthEarnings || 0)}</p>
+          <p className="text-[11px] text-cyan-100 mt-1 font-medium">Current cycle</p>
         </div>
 
         {/* Available to Withdraw */}
-        <div className="bg-gradient-to-br from-[#5B21B6] to-[#7C3AED] p-5 rounded-2xl shadow-lg text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-3 opacity-10">
+        <div className="bg-gradient-to-br from-[#5B21B6] via-[#7C3AED] to-[#4C1D95] p-5 rounded-2xl shadow-xl shadow-purple-600/25 border border-purple-400/30 text-white relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 right-0 p-3 opacity-15 pointer-events-none">
             <IndianRupee size={60} />
           </div>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-purple-200 mb-1">Available to Withdraw</p>
-          <p className="text-2xl font-black mb-3">{formatCurrency(availableBalance)}</p>
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-wider text-purple-200 mb-1">Available to Withdraw</p>
+            <p className="text-2xl font-black mb-3 text-white">{formatCurrency(availableBalance)}</p>
+          </div>
           <button
             onClick={openWithdrawModal}
             disabled={availableBalance <= 0}
-            className="w-full py-2 bg-white text-gray-900 rounded-xl text-xs font-bold shadow hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+            className="w-full py-2 bg-white hover:bg-purple-50 text-[#5B21B6] rounded-xl text-xs font-black shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
           >
             <ArrowUpRight size={14} /> Withdraw Earnings
           </button>
         </div>
 
         {/* Pending Withdrawal */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-gradient-to-br from-amber-500 via-orange-600 to-amber-700 p-5 rounded-2xl shadow-lg shadow-amber-500/15 border border-amber-400/20 text-white relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Pending Withdrawal</p>
-            <Clock size={16} className="text-amber-500" />
+            <p className="text-[11px] font-black uppercase tracking-wider text-amber-100">Pending Withdrawal</p>
+            <div className="p-1.5 bg-white/20 backdrop-blur-md rounded-lg text-white">
+              <Clock size={16} />
+            </div>
           </div>
-          <p className="text-2xl font-black text-amber-600">{formatCurrency(summary?.pendingWithdrawal || 0)}</p>
+          <p className="text-2xl font-black text-white">{formatCurrency(summary?.pendingWithdrawal || 0)}</p>
+          <p className="text-[11px] text-amber-100 mt-1 font-medium">Under admin review</p>
         </div>
 
         {/* Paid Out */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-800 p-5 rounded-2xl shadow-lg shadow-emerald-500/15 border border-emerald-400/20 text-white relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Paid Out</p>
-            <CheckCircle size={16} className="text-emerald-500" />
+            <p className="text-[11px] font-black uppercase tracking-wider text-emerald-100">Paid Out</p>
+            <div className="p-1.5 bg-white/20 backdrop-blur-md rounded-lg text-white">
+              <CheckCircle size={16} />
+            </div>
           </div>
-          <p className="text-2xl font-black text-emerald-600">{formatCurrency(summary?.paidOut || 0)}</p>
+          <p className="text-2xl font-black text-white">{formatCurrency(summary?.paidOut || 0)}</p>
+          <p className="text-[11px] text-emerald-100 mt-1 font-medium">Completed transfers</p>
         </div>
       </div>
 

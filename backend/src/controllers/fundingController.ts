@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import FundingOffer from '../models/FundingOffer.js';
 import InvestorConnectionRequest from '../models/InvestorConnectionRequest.js';
 import CommissionSettings from '../models/CommissionSettings.js';
+import { calculateFounderBalance } from './withdrawalController.js';
 
 // GET /api/funding - get all offers
 export const getAllOffers = async (req: Request, res: Response) => {
@@ -89,6 +90,10 @@ export const updateOffer = async (req: Request, res: Response) => {
           { ...updates, updatedAt: new Date() },
           { new: true }
         );
+
+        if (offer && offer.founderId && ['funded', 'completed'].includes(offer.status)) {
+          await calculateFounderBalance(offer.founderId);
+        }
       } catch (err) {
         console.error('Error updating offer:', err);
       }

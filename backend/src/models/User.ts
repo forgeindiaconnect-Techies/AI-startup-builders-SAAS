@@ -15,7 +15,9 @@ export interface IUser {
   industry?: string;
   agreedToTerms?: boolean;
   profileCompleted?: boolean;
+  withdrawableBalance?: number;
   location?: string;
+  languages?: string;
   expertise?: string;
   experienceYears?: string;
   linkedin?: string;
@@ -84,8 +86,10 @@ const userSchema = new Schema<IUser>({
   industry: { type: String },
   agreedToTerms: { type: Boolean, default: false },
   profileCompleted: { type: Boolean, default: false },
+  withdrawableBalance: { type: Number, default: 0 },
   // Mentor fields
   location: { type: String },
+  languages: { type: String },
   expertise: { type: String },
   experienceYears: { type: String },
   linkedin: { type: String },

@@ -826,7 +826,7 @@ export const updateMe = async (req: AuthRequest, res: Response) => {
       } catch {}
     }
 
-    const { fullName, email, mobile, location, expertise, experienceYears, linkedin, bio } = req.body;
+    const { fullName, email, mobile, location, expertise, experienceYears, linkedin, bio, languages } = req.body;
 
     if (user && typeof user.save === 'function') {
       if (typeof fullName === 'string' && fullName.trim().length >= 2) user.fullName = fullName.trim();
@@ -847,6 +847,7 @@ export const updateMe = async (req: AuthRequest, res: Response) => {
         if (typeof experienceYears === 'string') user.experienceYears = experienceYears;
         if (typeof linkedin === 'string') user.linkedin = linkedin.trim();
         if (typeof bio === 'string') user.bio = bio.trim();
+        if (typeof languages === 'string') user.languages = languages.trim();
       }
 
       try {

@@ -37,8 +37,8 @@ const FounderDashboard: React.FC = () => {
 
   // Compute real stats
   const totalStartups = startups.length;
-  const aiReportsGenerated = startups.filter(s => s.aiGenerated?.aiReport || s.status === 'generated').length;
-  const activeStartups = startups.filter(s => s.status === 'generated' || s.status === 'pending_analysis' || s.isSavedToMyStartups);
+  const aiReportsGenerated = startups.filter(s => s.aiGenerated?.aiReport || s.status === 'generated' || s.aiReport).length;
+  const activeStartups = startups; // Display all created / saved startup ideas
   const recentStartups = startups.slice(0, 5); // already sorted by createdAt desc
 
   const stats = [
@@ -121,40 +121,37 @@ const FounderDashboard: React.FC = () => {
               {activeStartups.length === 0 ? (
                 <div className="p-8 border border-dashed border-gray-200 rounded-xl text-center">
                   <Rocket size={36} className="mx-auto text-gray-300 mb-3" />
-                  <p className="text-gray-500 text-sm font-medium mb-3">No startups yet. Create your first idea!</p>
-                  <button
-                    onClick={() => navigate('/dashboard/founder/ai-builder')}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#5B21B6] text-white text-xs font-bold rounded-lg hover:bg-[#4c1d95] transition-colors"
-                  >
-                    <Sparkles size={14} /> Generate Your First Idea
-                  </button>
+                  <p className="text-gray-500 text-sm font-medium">No active startup ideas created yet.</p>
                 </div>
               ) : (
-                activeStartups.slice(0, 4).map((s, idx) => {
-                  const score = s.aiGenerated?.aiReport?.investmentReadinessScore || 0;
-                  const statusLabel = s.status === 'generated' ? 'AI Generated' : s.status === 'pending_analysis' ? 'Draft' : s.status;
+                activeStartups.slice(0, 5).map((s, idx) => {
+                  const score = s.aiGenerated?.aiReport?.investmentReadinessScore || s.aiReport?.investmentReadinessScore || 0;
+                  const statusLabel = s.status === 'generated' ? 'AI Generated' : s.status === 'pending_analysis' ? 'Draft' : (s.status || 'Active');
                   const statusColor = s.status === 'generated'
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-amber-50 text-amber-700 border-amber-200';
+                    : 'bg-purple-50 text-[#5B21B6] border-purple-200';
                   return (
                     <div
-                      key={s.startupId || s.id || idx}
-                      onClick={() => navigate(`/dashboard/founder/ai-builder?startupId=${s.startupId || s.id || s._id}`)}
-                      className="p-4 border border-gray-100 rounded-xl hover:border-purple-200 hover:shadow-sm transition-all cursor-pointer group"
+                      key={s.startupId || s.id || s._id || idx}
+                      onClick={() => navigate(`/dashboard/founder/startups`)}
+                      className="p-4 border border-gray-100 rounded-xl hover:border-purple-200 hover:shadow-sm transition-all cursor-pointer group bg-gray-50/50 hover:bg-white"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-bold text-gray-900 truncate">{s.startupName}</h3>
+                            <h3 className="font-bold text-gray-900 truncate">{s.startupName || 'Untitled Startup'}</h3>
                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusColor}`}>{statusLabel}</span>
                           </div>
-                          <p className="text-xs text-gray-500 truncate">{s.startupIdea}</p>
+                          <p className="text-xs text-gray-500 truncate">{s.startupIdea || s.problemStatement || s.description || 'No description added.'}</p>
+                          {s.createdAt && (
+                            <p className="text-[10px] text-gray-400 mt-1">Created: {formatDate(s.createdAt)}</p>
+                          )}
                         </div>
                         <div className="flex items-center gap-3 ml-4 shrink-0">
                           {score > 0 && (
-                            <div className="text-center">
-                              <p className="text-lg font-black text-purple-600">{score}</p>
-                              <p className="text-[9px] text-gray-400 font-medium uppercase">Score</p>
+                            <div className="text-center bg-purple-50 px-3 py-1 rounded-xl border border-purple-100">
+                              <p className="text-base font-black text-purple-700">{score}</p>
+                              <p className="text-[9px] text-purple-400 font-medium uppercase">Score</p>
                             </div>
                           )}
                           <ArrowRight size={16} className="text-gray-300 group-hover:text-purple-500 transition-colors" />

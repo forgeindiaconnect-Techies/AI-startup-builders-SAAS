@@ -3,12 +3,12 @@ import {
   Wallet, FileCheck, ShieldCheck, CheckCircle2,
   Clock, Plus, X, AlertCircle, TrendingUp, IndianRupee,
   Eye, Building2, Calendar, User, FileText,
-  ThumbsUp, ThumbsDown, MessageSquare, RefreshCw, Coins
+  ThumbsUp, ThumbsDown, MessageSquare, RefreshCw, Coins, Landmark
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { useFunding } from '../../../context/FundingContext';
 import type { FundingOffer } from '../../../context/FundingContext';
-import { getStartups, addNotification, updateFundingOffer } from '../../../utils/localStorageHelper';
+import { getStartups, addNotification, updateFundingOffer, getFounderWithdrawalsApi, submitFounderWithdrawalApi } from '../../../utils/localStorageHelper';
 import {
   getFundingTransactions, saveFundingTransaction
 } from '../../../utils/investorModuleStorage';
@@ -18,13 +18,30 @@ const FounderFundingTransactions: React.FC = () => {
   const { user } = useAuth();
   const { offers, loading, refreshOffers, respondToOffer } = useFunding();
 
-  const [activeTab, setActiveTab] = useState<'commitments' | 'deals'>('commitments');
+  const [activeTab, setActiveTab] = useState<'commitments' | 'deals' | 'withdrawals'>('commitments');
   const [localDeals, setLocalDeals] = useState<FundingTransaction[]>([]);
   const [startups, setStartups] = useState<any[]>([]);
+
+  // Founder Withdrawals from MongoDB
+  const [founderWithdrawals, setFounderWithdrawals] = useState<any[]>([]);
+  const [withdrawalSummary, setWithdrawalSummary] = useState<any>(null);
+
+  // Multi-step Withdrawal Wizard State
+  const [showWizardModal, setShowWizardModal] = useState(false);
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
+  const [wizardAmount, setWizardAmount] = useState('');
+  const [wizardMethod, setWizardMethod] = useState<'bank_account' | 'upi'>('bank_account');
+  const [wizardAccountHolder, setWizardAccountHolder] = useState(user?.fullName || '');
+  const [wizardBankName, setWizardBankName] = useState('');
+  const [wizardAccountNumber, setWizardAccountNumber] = useState('');
+  const [wizardIfscCode, setWizardIfscCode] = useState('');
+  const [wizardUpiId, setWizardUpiId] = useState('');
+  const [wizardStartupName, setWizardStartupName] = useState('');
 
   // Detail modals
   const [viewingOffer, setViewingOffer] = useState<FundingOffer | null>(null);
   const [viewingDeal, setViewingDeal] = useState<FundingTransaction | null>(null);
+  const [viewingWithdrawal, setViewingWithdrawal] = useState<any | null>(null);
   // Counter offer
   const [showCounterModal, setShowCounterModal] = useState<string | null>(null);
   const [counterData, setCounterData] = useState({ amount: '', equity: '', message: '' });
@@ -67,16 +84,34 @@ const FounderFundingTransactions: React.FC = () => {
     }
   };
 
+  const loadWithdrawals = async () => {
+    if (!user) return;
+    const fId = String(user.id || (user as any)._id || '');
+    if (!fId) return;
+    try {
+      const res = await getFounderWithdrawalsApi(fId);
+      if (res) {
+        if (Array.isArray(res.withdrawals)) setFounderWithdrawals(res.withdrawals);
+        if (res.summary) setWithdrawalSummary(res.summary);
+      }
+    } catch (e) {
+      console.error('Failed loading withdrawals', e);
+    }
+  };
+
   useEffect(() => {
     refreshOffers();
     loadLocalData();
+    loadWithdrawals();
     window.addEventListener('storage', loadLocalData);
     window.addEventListener('funding_transactions_updated', loadLocalData);
+    window.addEventListener('founder_withdrawal_updated', loadWithdrawals);
     return () => {
       window.removeEventListener('storage', loadLocalData);
       window.removeEventListener('funding_transactions_updated', loadLocalData);
+      window.removeEventListener('founder_withdrawal_updated', loadWithdrawals);
     };
-  }, []);
+  }, [user]);
 
   const founderOffers = useMemo(() => {
     if (!user) return offers;
@@ -116,6 +151,35 @@ const FounderFundingTransactions: React.FC = () => {
     });
     return { totalCommitted, pending, completed, awaitingAction, totalCommission, netCapital };
   }, [founderOffers]);
+
+  const calculatedAvailableBalance = useMemo(() => {
+    const withdrawalsTaken = founderWithdrawals.reduce((sum, w) =>
+      ['Pending', 'Under Review', 'Approved', 'Processing', 'Completed'].includes(w.status)
+        ? sum + Number(w.amount || 0)
+        : sum, 0
+    );
+    const localAvailable = Math.max(0, metrics.netCapital - withdrawalsTaken);
+    if (withdrawalSummary && typeof withdrawalSummary.availableBalance === 'number' && withdrawalSummary.availableBalance > 0) {
+      return Math.max(withdrawalSummary.availableBalance, localAvailable);
+    }
+    return localAvailable;
+  }, [withdrawalSummary, metrics.netCapital, founderWithdrawals]);
+
+  const openWithdrawalModal = () => {
+    setActiveTab('withdrawals');
+    setWizardStep(1);
+    setWizardAccountHolder(user?.fullName || '');
+    if (calculatedAvailableBalance > 0) {
+      setWizardAmount(String(calculatedAvailableBalance));
+    } else {
+      setWizardAmount('');
+    }
+    setShowWizardModal(true);
+    setTimeout(() => {
+      const el = document.getElementById('founder-withdrawals-tab-content');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
 
   const fmtAmt = (n: number) => `₹${n.toLocaleString('en-IN')}`;
   const fmtDate = (d: string) => {
@@ -331,7 +395,7 @@ const FounderFundingTransactions: React.FC = () => {
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Total Capital Committed</p>
           <p className="text-xl font-extrabold text-gray-900 mt-1">{fmtAmt(metrics.totalCommitted)}</p>
@@ -350,6 +414,20 @@ const FounderFundingTransactions: React.FC = () => {
           <p className="text-[10px] font-black text-purple-200 uppercase tracking-wider">Platform Fee (Admin Fixed)</p>
           <p className="text-xl font-extrabold mt-1">{fmtAmt(metrics.totalCommission)}</p>
           <p className="text-[10px] text-purple-200 mt-0.5">Admin Platform Fee</p>
+        </div>
+        <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl shadow-md p-5 text-white flex flex-col justify-between">
+          <div>
+            <p className="text-[10px] font-black text-emerald-100 uppercase tracking-wider">Withdrawable Balance</p>
+            <p className="text-xl font-black mt-1">
+              {fmtAmt(calculatedAvailableBalance)}
+            </p>
+          </div>
+          <button
+            onClick={openWithdrawalModal}
+            className="mt-2.5 px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-800 font-extrabold rounded-xl text-[11px] shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <Wallet size={13} /> Withdraw Funds
+          </button>
         </div>
       </div>
 
@@ -376,7 +454,7 @@ const FounderFundingTransactions: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200 mb-6">
+      <div className="flex gap-2 border-b border-gray-200 mb-6 flex-wrap">
         <button
           onClick={() => setActiveTab('commitments')}
           className={`py-3 px-5 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${activeTab === 'commitments' ? 'border-[#5B21B6] text-[#5B21B6]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
@@ -391,6 +469,12 @@ const FounderFundingTransactions: React.FC = () => {
           className={`py-3 px-5 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${activeTab === 'deals' ? 'border-[#5B21B6] text-[#5B21B6]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
         >
           <FileCheck size={15} /> Recorded Deals ({localDeals.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('withdrawals')}
+          className={`py-3 px-5 font-bold text-sm border-b-2 transition-all flex items-center gap-2 ${activeTab === 'withdrawals' ? 'border-[#5B21B6] text-[#5B21B6]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+        >
+          <Wallet size={15} /> Founder Withdrawals ({founderWithdrawals.length})
         </button>
       </div>
 
@@ -675,28 +759,8 @@ const FounderFundingTransactions: React.FC = () => {
                           );
                         }
 
-                        // Default: Show withdrawal release button
-                        return (
-                          <div className="mt-4 p-4 bg-purple-50/60 border border-purple-100 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div>
-                              <p className="font-extrabold text-gray-900 text-xs">Release / Withdraw Investment Capital</p>
-                              <p className="text-[10px] text-gray-500 mt-0.5 font-semibold">Your payment is verified. You can now request release/withdrawal of funds to your bank account.</p>
-                            </div>
-                            <button
-                              onClick={() => {
-                                setWithdrawalOfferModal(o);
-                                setWithdrawalAccountHolder(user?.fullName || '');
-                                setWithdrawalBankName('');
-                                setWithdrawalAccountNumber('');
-                                setWithdrawalIfscCode('');
-                                setWithdrawalUpiId('');
-                              }}
-                              className="px-4 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-[10px] rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1 shrink-0"
-                            >
-                              <Wallet size={12} /> Request Withdrawal
-                            </button>
-                          </div>
-                        );
+                        // Default: Withdrawals managed via Founder Withdrawals tab
+                        return null;
                       })()}
                     </div>
                   );
@@ -756,6 +820,126 @@ const FounderFundingTransactions: React.FC = () => {
               </div>
             </div>
           ) : null}
+        </div>
+      )}
+
+      {/* ── Founder Withdrawals Tab ── */}
+      {activeTab === 'withdrawals' && (
+        <div id="founder-withdrawals-tab-content" className="space-y-6">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="font-extrabold text-gray-900 text-sm flex items-center gap-2">
+                  <Wallet size={18} className="text-emerald-600" /> Founder Capital Withdrawal Requests
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">Track payout requests, verification steps, and bank/UPI UTR transfers.</p>
+              </div>
+              <button
+                onClick={openWithdrawalModal}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
+              >
+                + New Withdrawal Request
+              </button>
+            </div>
+
+            {founderWithdrawals.length === 0 ? (
+              <div className="p-14 text-center">
+                <Wallet size={40} className="mx-auto text-gray-300 mb-3" />
+                <h3 className="text-base font-bold text-gray-800">No Withdrawal Requests Yet</h3>
+                <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
+                  Submit a withdrawal request to transfer your net funded capital to your Bank Account or UPI ID.
+                </p>
+                <button
+                  onClick={openWithdrawalModal}
+                  className="mt-4 px-5 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold text-xs rounded-xl shadow-md transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  Request Funds Withdrawal
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left whitespace-nowrap text-xs font-medium">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100 text-gray-400 font-bold uppercase text-[10px] tracking-wider">
+                      <th className="px-5 py-3.5">Request ID</th>
+                      <th className="px-5 py-3.5">Requested Amount</th>
+                      <th className="px-5 py-3.5">Method</th>
+                      <th className="px-5 py-3.5">Destination Details</th>
+                      <th className="px-5 py-3.5">Status Flow</th>
+                      <th className="px-5 py-3.5">UTR / Payout Ref</th>
+                      <th className="px-5 py-3.5">Date</th>
+                      <th className="px-5 py-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 text-gray-700">
+                    {founderWithdrawals.map((w: any) => {
+                      const wId = w._id || w.id || `WD-${Date.now()}`;
+                      const isBank = w.withdrawalMethod === 'bank_account' || w.withdrawalMethod === 'bank';
+                      return (
+                        <tr key={wId} className="hover:bg-gray-50/80 transition-colors">
+                          <td className="px-5 py-4 font-mono font-bold text-[#5B21B6]">
+                            {`WD-${String(wId).slice(-6).toUpperCase()}`}
+                          </td>
+                          <td className="px-5 py-4 font-black text-emerald-700 text-sm">
+                            ₹{Number(w.amount || 0).toLocaleString('en-IN')}
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className="px-2.5 py-1 bg-purple-50 text-[#5B21B6] border border-purple-100 rounded-lg text-[10px] font-bold uppercase">
+                              {isBank ? 'Bank Account' : 'UPI ID'}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 text-xs">
+                            {isBank ? (
+                              <div>
+                                <p className="font-bold text-gray-900">{w.bankDetails?.accountHolderName || w.accountHolderName || user?.fullName}</p>
+                                <p className="text-[10px] text-gray-500 font-mono">
+                                  {w.bankDetails?.bankName || w.bankName} · A/C: {w.bankDetails?.accountNumber || w.accountNumber} · IFSC: {w.bankDetails?.ifscCode || w.ifscCode}
+                                </p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="font-bold text-gray-900 font-mono">{w.upiDetails?.upiId || w.upiId || '—'}</p>
+                                <p className="text-[10px] text-gray-400">Direct UPI Payout</p>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-5 py-4">
+                            {(() => {
+                              const s = w.status || 'Pending';
+                              const map: Record<string, { label: string; cls: string }> = {
+                                Pending:        { label: '1. Pending', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
+                                'Under Review': { label: '2. Under Review', cls: 'bg-blue-50 text-blue-800 border-blue-200' },
+                                Approved:       { label: '3. Approved', cls: 'bg-purple-50 text-purple-800 border-purple-200' },
+                                Processing:     { label: '4. Processing', cls: 'bg-sky-50 text-sky-800 border-sky-200' },
+                                Completed:      { label: '5. Completed ✓', cls: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+                                Rejected:       { label: 'Rejected', cls: 'bg-red-50 text-red-800 border-red-200' },
+                              };
+                              const item = map[s] || { label: s, cls: 'bg-gray-50 text-gray-700 border-gray-200' };
+                              return <span className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold border ${item.cls}`}>{item.label}</span>;
+                            })()}
+                          </td>
+                          <td className="px-5 py-4 font-mono font-bold text-xs text-gray-900">
+                            {w.utrNumber || w.payoutReference || '—'}
+                          </td>
+                          <td className="px-5 py-4 text-gray-500">
+                            {fmtDate(w.createdAt || new Date().toISOString())}
+                          </td>
+                          <td className="px-5 py-4 text-right">
+                            <button
+                              onClick={() => setViewingWithdrawal(w)}
+                              className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                            >
+                              <Eye size={12} /> View Details
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -961,29 +1145,8 @@ const FounderFundingTransactions: React.FC = () => {
                   );
                 }
 
-                // Default: Show withdrawal release button
-                return (
-                  <div className="p-4 bg-purple-50/60 border border-purple-100 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <p className="font-extrabold text-gray-900 text-xs">Release / Withdraw Capital</p>
-                      <p className="text-[10px] text-gray-500 mt-0.5 font-semibold">Your payment is verified. You can now request release/withdrawal of funds to your bank account.</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setWithdrawalOfferModal(viewingOffer);
-                        setWithdrawalAccountHolder(user?.fullName || '');
-                        setWithdrawalBankName('');
-                        setWithdrawalAccountNumber('');
-                        setWithdrawalIfscCode('');
-                        setWithdrawalUpiId('');
-                        setViewingOffer(null);
-                      }}
-                      className="px-4 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-[10px] rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1 shrink-0"
-                    >
-                      <Wallet size={12} /> Request Withdrawal
-                    </button>
-                  </div>
-                );
+                // Default: Withdrawals managed via Founder Withdrawals tab
+                return null;
               })()}
             </div>
             {/* Actions */}
@@ -1308,6 +1471,503 @@ const FounderFundingTransactions: React.FC = () => {
               >
                 {actionLoading ? 'Submitting...' : 'Submit Request'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── MULTI-STEP WITHDRAWAL WIZARD MODAL ─── */}
+      {showWizardModal && (
+        <div className="fixed inset-0 z-[170] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative text-left font-sans text-xs animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowWizardModal(false)}
+              className="absolute top-5 right-5 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Stepper Header */}
+            <div className="mb-6">
+              <span className="text-[10px] font-black text-[#5B21B6] uppercase tracking-wider block mb-1">Founder Payout Wizard</span>
+              <h2 className="text-lg font-black text-gray-900">Withdraw Capital Funds</h2>
+              <div className="grid grid-cols-4 gap-2 mt-4">
+                {[
+                  { step: 1, label: '1. Amount' },
+                  { step: 2, label: '2. Method' },
+                  { step: 3, label: '3. Review' },
+                  { step: 4, label: '4. Confirm' },
+                ].map((s) => (
+                  <div
+                    key={s.step}
+                    className={`py-2 px-1 text-center rounded-xl font-extrabold text-[10px] border transition-all ${
+                      wizardStep === s.step
+                        ? 'bg-[#5B21B6] text-white border-[#5B21B6]'
+                        : wizardStep > s.step
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                        : 'bg-gray-50 text-gray-400 border-gray-200'
+                    }`}
+                  >
+                    {s.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* STEP 1: AMOUNT ENTRY */}
+            {wizardStep === 1 && (
+              <div className="space-y-4">
+                <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl">
+                  <span className="text-[10px] font-bold text-emerald-800 uppercase block">Available Withdrawable Balance</span>
+                  <strong className="text-xl font-black text-emerald-700">
+                    ₹{calculatedAvailableBalance.toLocaleString('en-IN')}
+                  </strong>
+                </div>
+
+                <div>
+                  <label className="block font-extrabold text-gray-700 uppercase tracking-wider mb-1">Enter Withdrawal Amount (₹) *</label>
+                  <input
+                    type="number"
+                    value={wizardAmount}
+                    onChange={(e) => setWizardAmount(e.target.value)}
+                    placeholder="e.g. 500000"
+                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-[#5B21B6] focus:bg-white"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">Amount must not exceed available withdrawable balance.</p>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => setShowWizardModal(false)}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      const num = Number(wizardAmount);
+                      if (!num || num <= 0) {
+                        showToast('Please enter a valid amount', 'error');
+                        return;
+                      }
+                      if (calculatedAvailableBalance > 0 && num > calculatedAvailableBalance) {
+                        showToast(`Amount exceeds available balance ₹${calculatedAvailableBalance.toLocaleString('en-IN')}`, 'error');
+                        return;
+                      }
+                      setWizardStep(2);
+                    }}
+                    className="px-5 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold rounded-xl shadow-md cursor-pointer transition-all"
+                  >
+                    Next: Select Method →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 2: METHOD & DETAILS */}
+            {wizardStep === 2 && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">Withdrawal Payout Method</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setWizardMethod('bank_account')}
+                      className={`py-2.5 px-3 rounded-xl border font-bold text-xs cursor-pointer transition-all ${
+                        wizardMethod === 'bank_account'
+                          ? 'border-purple-600 bg-purple-50 text-purple-700'
+                          : 'border-gray-200 bg-gray-50 text-gray-600'
+                      }`}
+                    >
+                      Bank Transfer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setWizardMethod('upi')}
+                      className={`py-2.5 px-3 rounded-xl border font-bold text-xs cursor-pointer transition-all ${
+                        wizardMethod === 'upi'
+                          ? 'border-purple-600 bg-purple-50 text-purple-700'
+                          : 'border-gray-200 bg-gray-50 text-gray-600'
+                      }`}
+                    >
+                      UPI ID
+                    </button>
+                  </div>
+                </div>
+
+                {wizardMethod === 'bank_account' ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Account Holder Name *</label>
+                      <input
+                        type="text"
+                        value={wizardAccountHolder}
+                        onChange={(e) => setWizardAccountHolder(e.target.value)}
+                        placeholder="Name registered on bank account"
+                        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Bank Name *</label>
+                      <input
+                        type="text"
+                        value={wizardBankName}
+                        onChange={(e) => setWizardBankName(e.target.value)}
+                        placeholder="e.g. HDFC Bank, ICICI Bank"
+                        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">Account Number *</label>
+                        <input
+                          type="text"
+                          value={wizardAccountNumber}
+                          maxLength={18}
+                          onChange={(e) => setWizardAccountNumber(e.target.value.replace(/\D/g, ''))}
+                          placeholder="9-18 digit account number"
+                          className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">IFSC Code *</label>
+                        <input
+                          type="text"
+                          value={wizardIfscCode}
+                          maxLength={11}
+                          onChange={(e) => setWizardIfscCode(e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase())}
+                          placeholder="e.g. HDFC0000123"
+                          className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block font-bold text-gray-700 uppercase tracking-wider mb-1">UPI ID *</label>
+                    <input
+                      type="text"
+                      value={wizardUpiId}
+                      onChange={(e) => setWizardUpiId(e.target.value)}
+                      placeholder="e.g. founder@okaxis"
+                      className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-[#5B21B6]"
+                    />
+                  </div>
+                )}
+
+                <div className="flex justify-between pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => setWizardStep(1)}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (wizardMethod === 'bank_account') {
+                        if (!wizardAccountHolder.trim() || !wizardBankName.trim() || !wizardAccountNumber.trim() || !wizardIfscCode.trim()) {
+                          showToast('Please fill all bank details.', 'error');
+                          return;
+                        }
+                        if (wizardAccountNumber.trim().length < 9 || wizardAccountNumber.trim().length > 18) {
+                          showToast('Account number must be between 9 and 18 digits.', 'error');
+                          return;
+                        }
+                        if (wizardIfscCode.trim().length !== 11) {
+                          showToast('IFSC code must be exactly 11 characters.', 'error');
+                          return;
+                        }
+                      } else {
+                        if (!wizardUpiId.trim()) {
+                          showToast('Please enter a valid UPI ID.', 'error');
+                          return;
+                        }
+                      }
+                      setWizardStep(3);
+                    }}
+                    className="px-5 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold rounded-xl shadow-md"
+                  >
+                    Next: Review →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: REVIEW SUMMARY */}
+            {wizardStep === 3 && (
+              <div className="space-y-4">
+                <div className="p-4 bg-purple-50 border border-purple-100 rounded-2xl space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500 font-bold">Withdrawal Amount:</span>
+                    <strong className="text-purple-900 font-black text-base">₹{Number(wizardAmount).toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500 font-bold">Payout Method:</span>
+                    <strong className="text-gray-900 font-extrabold">{wizardMethod === 'bank_account' ? 'Bank Transfer' : 'UPI ID'}</strong>
+                  </div>
+                  {wizardMethod === 'bank_account' ? (
+                    <div className="text-[11px] text-gray-600 pt-2 border-t border-purple-100 space-y-1">
+                      <p><span className="text-gray-400">Account Holder:</span> <strong className="text-gray-900">{wizardAccountHolder}</strong></p>
+                      <p><span className="text-gray-400">Bank Name:</span> <strong className="text-gray-900">{wizardBankName}</strong></p>
+                      <p><span className="text-gray-400">Account Number:</span> <strong className="text-gray-900 font-mono">{wizardAccountNumber}</strong></p>
+                      <p><span className="text-gray-400">IFSC Code:</span> <strong className="text-gray-900 font-mono">{wizardIfscCode}</strong></p>
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-gray-600 pt-2 border-t border-purple-100">
+                      <p><span className="text-gray-400">UPI ID:</span> <strong className="text-gray-900 font-mono">{wizardUpiId}</strong></p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-[10px] text-amber-900">
+                  ℹ️ Status flow: <strong>Pending → Under Review → Approved → Processing → Completed</strong>. Admin finance will process the payout and record UTR transaction details.
+                </div>
+
+                <div className="flex justify-between pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => setWizardStep(2)}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    onClick={() => setWizardStep(4)}
+                    className="px-5 py-2 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-extrabold rounded-xl shadow-md"
+                  >
+                    Next: Confirm →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: CONFIRMATION & SUBMIT */}
+            {wizardStep === 4 && (
+              <div className="space-y-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                  <CheckCircle2 size={24} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-900">Confirm Payout Request</h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Are you sure you want to submit a withdrawal request of <strong>₹{Number(wizardAmount).toLocaleString('en-IN')}</strong> to your {wizardMethod === 'bank_account' ? 'Bank Account' : 'UPI ID'}?
+                  </p>
+                </div>
+
+                <div className="flex justify-center gap-3 pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() => setWizardStep(3)}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setActionLoading(true);
+                      try {
+                        const founderId = String(user?.id || (user as any)?._id || '');
+                        await submitFounderWithdrawalApi({
+                          founderId,
+                          founderName: user?.fullName || 'Founder',
+                          founderEmail: user?.email || '',
+                          startupName: wizardStartupName || (startups[0]?.startupName || ''),
+                          amount: Number(wizardAmount),
+                          withdrawalMethod: wizardMethod,
+                          bankDetails: wizardMethod === 'bank_account' ? {
+                            accountHolderName: wizardAccountHolder.trim(),
+                            bankName: wizardBankName.trim(),
+                            accountNumber: wizardAccountNumber.trim(),
+                            ifscCode: wizardIfscCode.trim().toUpperCase(),
+                          } : undefined,
+                          upiDetails: wizardMethod === 'upi' ? {
+                            upiId: wizardUpiId.trim(),
+                          } : undefined,
+                        });
+
+                        await addNotification({
+                          userId: 'admin',
+                          title: '🏦 New Founder Withdrawal Request',
+                          message: `Founder "${user?.fullName || 'Founder'}" requested withdrawal of ₹${Number(wizardAmount).toLocaleString('en-IN')}.`,
+                          type: 'funding',
+                          actionUrl: '/dashboard/admin/investor-funding',
+                          isRead: false,
+                          createdAt: new Date().toISOString(),
+                        });
+
+                        showToast('Withdrawal request submitted successfully ✓');
+                        setShowWizardModal(false);
+                        setWizardStep(1);
+                        setWizardAmount('');
+                        loadWithdrawals();
+                        refreshOffers();
+                      } catch (e: any) {
+                        showToast(e.message || 'Submission failed', 'error');
+                      } finally {
+                        setActionLoading(false);
+                      }
+                    }}
+                    disabled={actionLoading}
+                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-xl shadow-lg cursor-pointer"
+                  >
+                    {actionLoading ? 'Submitting...' : 'Confirm & Submit Request'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── FOUNDER WITHDRAWAL DETAIL MODAL ─── */}
+      {viewingWithdrawal && (
+        <div className="fixed inset-0 z-[180] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative text-left font-sans text-xs animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setViewingWithdrawal(null)}
+              className="absolute top-5 right-5 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-[#5B21B6] text-white rounded-2xl shadow-md">
+                <Wallet size={22} />
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-[#5B21B6] uppercase tracking-wider block">Capital Payout Record</span>
+                <h2 className="text-base font-black text-gray-900">Withdrawal Request Details</h2>
+                <p className="text-[11px] text-gray-400 font-mono mt-0.5">
+                  Ref ID: WD-{String(viewingWithdrawal._id || viewingWithdrawal.id || '').slice(-6).toUpperCase()}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* Summary Card */}
+              <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50/50 border border-emerald-100 rounded-2xl space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-extrabold uppercase text-emerald-800 tracking-wider">Withdrawal Amount</span>
+                  <span className="text-xl font-black text-emerald-700">
+                    ₹{Number(viewingWithdrawal.amount || 0).toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-emerald-100 flex justify-between items-center text-xs">
+                  <span className="text-gray-500 font-bold">Status Pipeline:</span>
+                  {(() => {
+                    const s = viewingWithdrawal.status || 'Pending';
+                    const map: Record<string, { label: string; cls: string }> = {
+                      Pending:        { label: '1. Pending', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
+                      'Under Review': { label: '2. Under Review', cls: 'bg-blue-50 text-blue-800 border-blue-200' },
+                      Approved:       { label: '3. Approved', cls: 'bg-purple-50 text-purple-800 border-purple-200' },
+                      Processing:     { label: '4. Processing', cls: 'bg-sky-50 text-sky-800 border-sky-200' },
+                      Completed:      { label: '5. Completed ✓', cls: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+                      Rejected:       { label: 'Rejected', cls: 'bg-red-50 text-red-800 border-red-200' },
+                    };
+                    const item = map[s] || { label: s, cls: 'bg-gray-50 text-gray-700 border-gray-200' };
+                    return <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${item.cls}`}>{item.label}</span>;
+                  })()}
+                </div>
+              </div>
+
+              {/* Founder & Startup Details */}
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-2">
+                <p className="text-[10px] font-black uppercase text-gray-400 tracking-wider mb-1">Founder &amp; Startup Info</p>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500 font-bold">Founder Name:</span>
+                  <strong className="text-gray-900">{viewingWithdrawal.founderName || user?.fullName}</strong>
+                </div>
+                {viewingWithdrawal.founderEmail && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500 font-bold">Founder Email:</span>
+                    <strong className="text-gray-900">{viewingWithdrawal.founderEmail}</strong>
+                  </div>
+                )}
+                {viewingWithdrawal.startupName && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500 font-bold">Startup Name:</span>
+                    <strong className="text-gray-900">{viewingWithdrawal.startupName}</strong>
+                  </div>
+                )}
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500 font-bold">Request Date:</span>
+                  <strong className="text-gray-900">{fmtDate(viewingWithdrawal.createdAt || new Date().toISOString())}</strong>
+                </div>
+              </div>
+
+              {/* Destination Payout Details */}
+              <div className="bg-purple-50/50 border border-purple-100 rounded-2xl p-4 space-y-2">
+                <p className="text-[10px] font-black uppercase text-[#5B21B6] tracking-wider mb-1 flex items-center gap-1">
+                  <Landmark size={12} /> Destination Payout Details
+                </p>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500 font-bold">Method:</span>
+                  <strong className="text-purple-900 font-extrabold uppercase">
+                    {(viewingWithdrawal.withdrawalMethod === 'bank_account' || viewingWithdrawal.withdrawalMethod === 'bank') ? 'Bank Account Transfer' : 'Direct UPI Payout'}
+                  </strong>
+                </div>
+
+                {(viewingWithdrawal.withdrawalMethod === 'bank_account' || viewingWithdrawal.withdrawalMethod === 'bank') ? (
+                  <div className="pt-2 border-t border-purple-100 space-y-1.5 text-xs text-gray-700">
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Account Holder:</span>
+                      <strong className="text-gray-900">{viewingWithdrawal.bankDetails?.accountHolderName || viewingWithdrawal.accountHolderName || user?.fullName}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Bank Name:</span>
+                      <strong className="text-gray-900">{viewingWithdrawal.bankDetails?.bankName || viewingWithdrawal.bankName}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Account Number:</span>
+                      <strong className="text-gray-900 font-mono">{viewingWithdrawal.bankDetails?.accountNumber || viewingWithdrawal.accountNumber}</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">IFSC Code:</span>
+                      <strong className="text-gray-900 font-mono">{viewingWithdrawal.bankDetails?.ifscCode || viewingWithdrawal.ifscCode}</strong>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-2 border-t border-purple-100 text-xs flex justify-between">
+                    <span className="text-gray-400">UPI ID:</span>
+                    <strong className="text-gray-900 font-mono">{viewingWithdrawal.upiDetails?.upiId || viewingWithdrawal.upiId || '—'}</strong>
+                  </div>
+                )}
+              </div>
+
+              {/* Admin Payout Details & UTR */}
+              <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-2">
+                <p className="text-[10px] font-black uppercase text-gray-500 tracking-wider mb-1 flex items-center gap-1">
+                  <ShieldCheck size={12} className="text-emerald-600" /> Admin Finance Payout Verification
+                </p>
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-500 font-bold">Bank/UPI UTR Ref:</span>
+                  <strong className="text-gray-900 font-mono font-bold">
+                    {viewingWithdrawal.utrNumber || viewingWithdrawal.payoutReference || 'Pending UTR Generation'}
+                  </strong>
+                </div>
+                {viewingWithdrawal.adminNotes && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase block mb-0.5">Admin Finance Remarks:</span>
+                    <p className="text-xs text-gray-700 italic bg-gray-50 p-2 rounded-xl border border-gray-100">
+                      "{viewingWithdrawal.adminNotes}"
+                    </p>
+                  </div>
+                )}
+                {viewingWithdrawal.processedBy && (
+                  <div className="flex justify-between text-[11px] text-gray-400 pt-1">
+                    <span>Processed By: <strong>{viewingWithdrawal.processedBy}</strong></span>
+                    {viewingWithdrawal.processedAt && <span>Date: {fmtDate(viewingWithdrawal.processedAt)}</span>}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex justify-end">
+                <button
+                  onClick={() => setViewingWithdrawal(null)}
+                  className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-extrabold rounded-xl transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

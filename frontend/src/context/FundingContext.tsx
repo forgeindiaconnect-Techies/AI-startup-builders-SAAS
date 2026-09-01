@@ -159,6 +159,36 @@ export interface FundingOffer {
   updatedAt: string;
 }
 
+export interface FounderWithdrawalRecord {
+  id?: string;
+  _id?: string;
+  founderId: string;
+  founderName: string;
+  founderEmail?: string;
+  startupId?: string;
+  startupName?: string;
+  amount: number;
+  withdrawalMethod: 'bank_account' | 'upi';
+  bankDetails?: {
+    accountHolderName?: string;
+    bankName?: string;
+    accountNumber?: string;
+    ifscCode?: string;
+  };
+  upiDetails?: {
+    upiId?: string;
+  };
+  status: 'Pending' | 'Under Review' | 'Approved' | 'Processing' | 'Completed' | 'Rejected';
+  utrNumber?: string;
+  payoutReference?: string;
+  payoutProof?: string;
+  adminNotes?: string;
+  processedBy?: string;
+  processedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 interface FundingContextType {
   offers: FundingOffer[];
   loading: boolean;

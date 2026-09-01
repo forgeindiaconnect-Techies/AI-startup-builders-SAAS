@@ -695,50 +695,92 @@ const InvestorTransactions: React.FC = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    <th className="px-6 py-4">Transaction ID</th>
-                    <th className="px-6 py-4">Funding Commitment ID</th>
-                    <th className="px-6 py-4">Startup</th>
-                    <th className="px-6 py-4">Founder</th>
-                    <th className="px-6 py-4">Amount</th>
-                    <th className="px-6 py-4">Payment Method</th>
-                    <th className="px-6 py-4">Transaction/UTR Reference</th>
-                    <th className="px-6 py-4">Transaction Date</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Action</th>
+                    <th className="px-5 py-4">Transaction ID</th>
+                    <th className="px-5 py-4">Startup</th>
+                    <th className="px-5 py-4">Amount</th>
+                    <th className="px-5 py-4">Investment Type</th>
+                    <th className="px-5 py-4">Date</th>
+                    <th className="px-5 py-4">Payment Status</th>
+                    <th className="px-5 py-4">Admin Verification</th>
+                    <th className="px-5 py-4">Funded Status</th>
+                    <th className="px-5 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
-                  {transactions.map(t => (
-                    <tr key={t.id || t._id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4 font-mono font-bold text-gray-600">
-                        {t.transactionId || `TXN-2026-${String(t.id || t._id || '0000').slice(-4).toUpperCase()}`}
-                      </td>
-                      <td className="px-6 py-4 font-mono font-bold text-gray-600">
-                        {t.commitmentId || `FC-2026-${String(t.id || t._id || '0000').slice(-4).toUpperCase()}`}
-                      </td>
-                      <td className="px-6 py-4 font-bold text-gray-900">{t.startupName}</td>
-                      <td className="px-6 py-4 font-semibold text-gray-700">{t.founderName}</td>
-                      <td className="px-6 py-4 font-extrabold text-[#5B21B6]">₹{t.offerAmount.toLocaleString()}</td>
-                      <td className="px-6 py-4">
-                        <span className="px-2 py-0.5 bg-gray-100 text-gray-800 rounded-lg text-xs font-semibold">
-                          {t.paymentMethod || 'Manual Transfer'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 font-mono text-xs text-gray-500 font-semibold">{t.paymentReference || '—'}</td>
-                      <td className="px-6 py-4 text-gray-500">
-                        {t.paymentDate ? new Date(t.paymentDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Pending'}
-                      </td>
-                      <td className="px-6 py-4">{getTransactionStatusBadge(t)}</td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => setSelectedTx(t)}
-                          className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] rounded-lg font-bold text-xs border border-purple-200 transition-colors flex items-center gap-1 shadow-sm"
-                        >
-                          <Eye size={12} /> View Transaction
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {transactions.map(t => {
+                    const isFullySigned = t.agreementStatus === 'Fully Signed';
+                    const isPendingPayment = !['payment_submitted', 'under_verification', 'funded', 'completed'].includes(t.status);
+
+                    return (
+                      <tr key={t.id || t._id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-5 py-4 font-mono font-bold text-gray-600">
+                          {t.transactionId || `TXN-2026-${String(t.id || t._id || '0000').slice(-4).toUpperCase()}`}
+                        </td>
+                        <td className="px-5 py-4">
+                          <p className="font-bold text-gray-900">{t.startupName}</p>
+                          <p className="text-[10px] text-gray-400 font-mono">Founder: {t.founderName}</p>
+                        </td>
+                        <td className="px-5 py-4 font-extrabold text-[#5B21B6]">₹{t.offerAmount.toLocaleString('en-IN')}</td>
+                        <td className="px-5 py-4">
+                          <span className="px-2 py-0.5 bg-purple-50 text-[#5B21B6] border border-purple-100 rounded-lg text-xs font-semibold">
+                            {t.instrument || 'SAFE'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-gray-500 text-xs">
+                          {t.paymentDate ? new Date(t.paymentDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : new Date(t.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold ${
+                            t.paymentStatus === 'Completed' || t.status === 'funded' || t.status === 'completed'
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                              : t.paymentStatus === 'Submitted' || t.status === 'payment_submitted' || t.status === 'under_verification'
+                              ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                              : 'bg-purple-50 text-purple-800 border border-purple-200'
+                          }`}>
+                            {t.paymentStatus || 'Pending'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold ${
+                            t.verificationStatus === 'Approved' || t.status === 'funded' || t.status === 'completed'
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                              : t.verificationStatus === 'Rejected' || t.status === 'rejected'
+                              ? 'bg-red-50 text-red-800 border border-red-200'
+                              : 'bg-blue-50 text-blue-800 border border-blue-200'
+                          }`}>
+                            {t.verificationStatus || (['funded', 'completed'].includes(t.status) ? 'Approved' : 'Under Verification')}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold ${
+                            t.status === 'funded' || t.status === 'completed'
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                          }`}>
+                            {['funded', 'completed'].includes(t.status) ? 'Funded ✓' : 'In Progress'}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={() => setSelectedTx(t)}
+                              className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] rounded-lg font-bold text-xs border border-purple-200 transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                            >
+                              <Eye size={12} /> View
+                            </button>
+                            {isPendingPayment && isFullySigned && (
+                              <button
+                                onClick={() => setPaymentOffer(t)}
+                                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
+                              >
+                                <IndianRupee size={12} /> Pay
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

@@ -17,12 +17,14 @@ import dataroomRoutes from './dataroomRoutes.js';
 import investorMessageRoutes from './investorMessageRoutes.js';
 import investorMeetingRoutes from './investorMeetingRoutes.js';
 import adminRoutes from './adminRoutes.js';
+import withdrawalRoutes from './withdrawalRoutes.js';
 
 const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/startups', startupRoutes);
 router.use('/funding', fundingRoutes);
+router.use('/withdrawals', withdrawalRoutes);
 router.use('/documents', documentRoutes);
 router.use('/ai-builder', aiBuilderRoutes);
 router.use('/notifications', notificationRoutes);

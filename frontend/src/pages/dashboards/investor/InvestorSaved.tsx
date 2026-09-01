@@ -104,33 +104,36 @@ const InvestorSaved: React.FC = () => {
       {/* Summary Metrics Bar */}
       {savedList.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-2xs flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-[#5B21B6] flex items-center justify-center font-bold">
-              <Heart size={20} className="fill-purple-500 text-purple-500" />
+          {/* Saved Startup Ideas */}
+          <div className="bg-gradient-to-br from-[#5B21B6] via-[#7C3AED] to-[#4C1D95] p-5 rounded-2xl shadow-lg shadow-purple-600/20 border border-purple-400/30 text-white flex items-center gap-4 relative overflow-hidden">
+            <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center shrink-0">
+              <Heart size={20} className="fill-white text-white" />
             </div>
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase block">Saved Startup Ideas</span>
-              <strong className="text-lg font-black text-gray-900">{savedList.length} Deals</strong>
+              <span className="text-[10px] font-black text-purple-200 uppercase tracking-wider block">Saved Startup Ideas</span>
+              <strong className="text-xl font-black text-white">{savedList.length} Deals</strong>
             </div>
           </div>
 
-          <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-2xs flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+          {/* Avg AI Readiness */}
+          <div className="bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-800 p-5 rounded-2xl shadow-lg shadow-emerald-600/20 border border-emerald-400/20 text-white flex items-center gap-4 relative overflow-hidden">
+            <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center shrink-0">
               <Cpu size={20} />
             </div>
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase block">Avg AI Readiness</span>
-              <strong className="text-lg font-black text-emerald-700">{avgScore}/100</strong>
+              <span className="text-[10px] font-black text-emerald-100 uppercase tracking-wider block">Avg AI Readiness</span>
+              <strong className="text-xl font-black text-white">{avgScore}/100</strong>
             </div>
           </div>
 
-          <div className="bg-white border border-gray-100 p-4 rounded-2xl shadow-2xs flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+          {/* Shortlisted Stage */}
+          <div className="bg-gradient-to-br from-cyan-600 via-sky-600 to-blue-700 p-5 rounded-2xl shadow-lg shadow-cyan-600/20 border border-cyan-400/20 text-white flex items-center gap-4 relative overflow-hidden">
+            <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center shrink-0">
               <Rocket size={20} />
             </div>
             <div>
-              <span className="text-[10px] font-bold text-gray-400 uppercase block">Shortlisted Stage</span>
-              <strong className="text-lg font-black text-gray-900">Seed & Pre-Seed</strong>
+              <span className="text-[10px] font-black text-cyan-100 uppercase tracking-wider block">Shortlisted Stage</span>
+              <strong className="text-xl font-black text-white">Seed & Pre-Seed</strong>
             </div>
           </div>
         </div>
