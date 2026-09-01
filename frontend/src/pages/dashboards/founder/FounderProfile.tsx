@@ -11,6 +11,10 @@ const FounderProfile: React.FC = () => {
     name: '',
     email: '',
     phone: '',
+    location: '',
+    startupName: '',
+    startupStage: '',
+    industry: '',
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -18,9 +22,13 @@ const FounderProfile: React.FC = () => {
   useEffect(() => {
     if (user) {
       setForm(prev => ({
-        name: user.fullName || user.name || prev.name,
-        email: user.email || prev.email,
-        phone: user.phone || user.mobile || user.phoneNumber || prev.phone,
+        name: user.fullName || user.name || prev.name || '',
+        email: user.email || prev.email || '',
+        phone: user.phone || (user as any).mobile || (user as any).phoneNumber || prev.phone || '',
+        location: (user as any).location || prev.location || '',
+        startupName: (user as any).startupName || prev.startupName || '',
+        startupStage: (user as any).startupStage || prev.startupStage || '',
+        industry: (user as any).industry || prev.industry || '',
       }));
     }
   }, [user]);
@@ -32,7 +40,11 @@ const FounderProfile: React.FC = () => {
       setForm({
         name: user.fullName || user.name || '',
         email: user.email || '',
-        phone: user.phone || user.mobile || user.phoneNumber || '',
+        phone: user.phone || (user as any).mobile || (user as any).phoneNumber || '',
+        location: (user as any).location || '',
+        startupName: (user as any).startupName || '',
+        startupStage: (user as any).startupStage || '',
+        industry: (user as any).industry || '',
       });
     }
     setIsEditing(false);
@@ -183,12 +195,16 @@ const FounderProfile: React.FC = () => {
                 { label: 'Full Name', key: 'name', type: 'text' },
                 { label: 'Email', key: 'email', type: 'email' },
                 { label: 'Mobile Number', key: 'phone', type: 'tel' },
+                { label: 'Location / Address', key: 'location', type: 'text' },
+                { label: 'Startup Name', key: 'startupName', type: 'text' },
+                { label: 'Startup Stage', key: 'startupStage', type: 'text' },
+                { label: 'Industry Sector', key: 'industry', type: 'text' },
               ].map(f => (
                 <div key={f.key}>
                   <label className="block text-sm font-bold text-gray-700 mb-1.5">{f.label}</label>
                   <input
                     type={f.type}
-                    value={form[f.key as keyof typeof form]}
+                    value={form[f.key as keyof typeof form] || ''}
                     onChange={e => {
                       let val = e.target.value;
                       if (f.key === 'phone') {

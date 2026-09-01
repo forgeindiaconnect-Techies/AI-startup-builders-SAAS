@@ -355,18 +355,18 @@ const SidebarInner: React.FC<{
         <div className="h-4" />
       </div>
 
-      {/* Sign Out */}
+      {/* Log Out */}
       <div className="flex-shrink-0 px-3 py-3 border-t border-white/8">
         <button
           onClick={onLogout}
-          title={isCollapsed ? 'Sign Out' : undefined}
+          title={isCollapsed ? 'Log Out' : undefined}
           className={`group relative flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-[13px] font-medium text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition-all ${isCollapsed ? 'justify-center' : ''}`}
         >
           <LogOut size={17} className="flex-shrink-0 group-hover:text-red-400 transition-colors" />
-          {!isCollapsed && 'Sign Out'}
+          {!isCollapsed && 'Log Out'}
           {isCollapsed && (
             <span className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1f2e] border border-white/10 text-white text-xs font-semibold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">
-              Sign Out
+              Log Out
             </span>
           )}
         </button>

@@ -1005,16 +1005,9 @@ const AdminInvestorFunding: React.FC = () => {
                           <td className="px-5 py-4 text-right whitespace-nowrap">
                             <div className="flex items-center justify-end gap-1.5">
                               <button
-                                onClick={() => openCommissionModal(o)}
-                                title="Fix Platform Commission & Payment Options"
-                                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
-                              >
-                                <Coins size={13} /> Fix Commission
-                              </button>
-                              <button
                                 onClick={() => setSelectedTx(o)}
                                 title="View Full Deal Audit & Payment Details"
-                                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                                className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
                               >
                                 <Eye size={13} /> View
                               </button>
@@ -1263,14 +1256,8 @@ const AdminInvestorFunding: React.FC = () => {
                           <td className="px-5 py-4 text-right whitespace-nowrap">
                             <div className="flex justify-end gap-1.5">
                               <button
-                                onClick={() => openCommissionModal(o)}
-                                className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
-                              >
-                                <Coins size={13} /> Fix Commission
-                              </button>
-                              <button
                                 onClick={() => setSelectedTx(o)}
-                                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
+                                className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] border border-purple-200 rounded-lg font-bold text-xs transition-colors cursor-pointer inline-flex items-center gap-1"
                               >
                                 <Eye size={13} /> View
                               </button>
@@ -1828,16 +1815,10 @@ const AdminInvestorFunding: React.FC = () => {
               )}
             </div>
 
-            <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-between items-center flex-shrink-0">
-              <button
-                onClick={() => openCommissionModal(selectedTx)}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
-              >
-                <Coins size={14} /> Fix Commission &amp; Payment Options
-              </button>
+            <div className="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-end items-center flex-shrink-0">
               <button
                 onClick={() => { setSelectedTx(null); setShowActionBox(null); setAdminNoteInput(''); }}
-                className="px-4 py-2 border border-gray-200 text-gray-700 hover:bg-gray-100 font-bold rounded-xl text-xs cursor-pointer"
+                className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 font-bold rounded-xl text-xs cursor-pointer transition-colors"
               >
                 Close
               </button>

@@ -400,20 +400,13 @@ const InvestorDashboard: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2 pt-3 border-t border-gray-100 mt-auto">
+                  <div className="pt-3 border-t border-gray-100 mt-auto">
                     <button 
                       onClick={() => setSelectedStartup(startup)}
-                      className="flex-1 py-2.5 bg-purple-50 hover:bg-purple-100 text-[#5B21B6] rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1 border border-purple-100 cursor-pointer"
+                      className="w-full py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl font-bold text-xs transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                      <ExternalLink size={13} />
+                      <ExternalLink size={14} />
                       View Pitch
-                    </button>
-                    <button 
-                      onClick={() => handleOpenOfferModal(sName, startup.founderName)}
-                      className="flex-1 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white rounded-xl font-bold text-xs transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer"
-                    >
-                      <Send size={13} />
-                      Send Offer
                     </button>
                   </div>
                 </div>

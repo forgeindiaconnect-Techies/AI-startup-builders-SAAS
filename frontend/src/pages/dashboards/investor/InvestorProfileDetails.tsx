@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, UserRound, ShieldCheck, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Save, UserRound, ShieldCheck, ShieldAlert, CheckCircle2, Pencil } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { saveUserProfileOverride } from '../../../utils/localStorageHelper';
 
@@ -34,6 +34,16 @@ const defaultProfile: InvestorProfileData = {
 const InvestorProfileDetails: React.FC = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<InvestorProfileData>(defaultProfile);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+    const inputEl = document.getElementById('investor-name-input');
+    if (inputEl) {
+      inputEl.focus();
+      inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
 
   useEffect(() => {
     try {
@@ -49,17 +59,26 @@ const InvestorProfileDetails: React.FC = () => {
           ? 'Rejected'
           : 'pending') as 'pending' | 'Verified' | 'Rejected';
 
+      const fromUser: Partial<InvestorProfileData> = {
+        investorName: (user as any)?.companyName || user?.fullName || user?.name || '',
+        email: user?.email || '',
+        phone: (user as any)?.mobile || user?.phone || '',
+        address: (user as any)?.location || '',
+        investorType: (user as any)?.investorType || 'Angel Investor',
+        typicalCheckSize: ((user as any)?.minInvestment && (user as any)?.maxInvestment)
+          ? `₹${(user as any).minInvestment} - ₹${(user as any).maxInvestment}`
+          : ((user as any)?.investmentRange || ''),
+        sectorsOfInterest: (user as any)?.preferredIndustry || (user as any)?.sectorsOfInterest || '',
+      };
+
       const foundIdx = profiles.findIndex(p => p.id === myId || p.id === user?.id || p.investorName === user?.fullName);
       if (foundIdx >= 0) {
-        const updated = { ...profiles[foundIdx], verificationStatus: resolvedStatus, id: myId };
+        const updated = { ...defaultProfile, ...fromUser, ...profiles[foundIdx], verificationStatus: resolvedStatus, id: myId };
         profiles[foundIdx] = updated;
         localStorage.setItem('ai_startup_builder_investor_profiles', JSON.stringify(profiles));
         setProfile(updated);
       } else {
-        // Initialize if not found
-        const initial = { ...defaultProfile, id: myId, verificationStatus: resolvedStatus };
-        if (user?.fullName) initial.investorName = user.fullName;
-        if (user?.email) initial.email = user.email;
+        const initial = { ...defaultProfile, ...fromUser, id: myId, verificationStatus: resolvedStatus };
         profiles.push(initial);
         localStorage.setItem('ai_startup_builder_investor_profiles', JSON.stringify(profiles));
         setProfile(initial);
@@ -141,15 +160,24 @@ const InvestorProfileDetails: React.FC = () => {
 
   return (
     <div className="animate-fade-in-up pb-4">
-      <div className="pb-6 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-          {getBadge()}
+      <div className="pb-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
+            {getBadge()}
+          </div>
+          <p className="text-gray-500 mt-1">Manage your investor profile, contact information, and verified KYC accreditation documents all in one place.</p>
         </div>
-        <p className="text-gray-500 mt-1">Manage your investor profile, contact information, and verified KYC accreditation documents all in one place.</p>
+
+        <button
+          onClick={handleEditClick}
+          className="px-5 py-2.5 bg-[#5B21B6] hover:bg-[#4C1D95] text-white font-bold rounded-xl text-xs transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 shrink-0 cursor-pointer w-fit"
+        >
+          <Pencil size={15} /> Edit Profile
+        </button>
       </div>
 
-      <div className="max-w-3xl">
+      <div className="max-w-3xl mt-6">
         {/* Basic Information Card */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 space-y-6">
           <h2 className="text-base font-bold text-gray-900 pb-3 border-b border-gray-100 flex items-center gap-2">
@@ -159,6 +187,7 @@ const InvestorProfileDetails: React.FC = () => {
           <div>
             <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Investor Name / Company Name</label>
             <input 
+              id="investor-name-input"
               type="text" 
               value={profile.investorName} 
               onChange={e => setProfile({ ...profile, investorName: e.target.value })}
@@ -199,6 +228,42 @@ const InvestorProfileDetails: React.FC = () => {
               onChange={e => setProfile({ ...profile, address: e.target.value })}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-gray-900"
               placeholder="Enter address"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Investor Type</label>
+              <select
+                value={profile.investorType}
+                onChange={e => setProfile({ ...profile, investorType: e.target.value as any })}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-gray-900 font-medium bg-white"
+              >
+                <option value="Angel Investor">Angel Investor</option>
+                <option value="VC Firm">VC Firm</option>
+                <option value="Institutional Investor">Institutional Investor</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Typical Check Size / Range</label>
+              <input 
+                type="text" 
+                value={profile.typicalCheckSize} 
+                onChange={e => setProfile({ ...profile, typicalCheckSize: e.target.value })}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-gray-900"
+                placeholder="e.g. ₹5,00,000 - ₹50,00,000"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-gray-700 uppercase mb-1.5">Sectors of Interest</label>
+            <input 
+              type="text" 
+              value={profile.sectorsOfInterest} 
+              onChange={e => setProfile({ ...profile, sectorsOfInterest: e.target.value })}
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#5B21B6] text-gray-900"
+              placeholder="e.g. SaaS, AI/ML, FinTech, HealthTech"
             />
           </div>
 
