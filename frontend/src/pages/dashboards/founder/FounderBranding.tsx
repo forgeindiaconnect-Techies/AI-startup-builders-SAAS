@@ -124,7 +124,17 @@ const DemoLogoCard: React.FC<DemoLogoCardProps> = ({
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────
 
 const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
-  const branding = startupData?.aiGenerated?.branding;
+  const defaultBranding = {
+    brandColorPalette: ['#5B21B6', '#7C3AED', '#D4AF37', '#1E293B'],
+    taglineSuggestions: [
+      `${startupData?.startupName || 'Startup'} — Quality, Value & Smart Choice`,
+      `Innovative ${startupData?.industry || 'Business'} Solutions`,
+      `Empowering Your Creative & Professional Needs`
+    ],
+    logoPrompt: `Minimalist, modern, vector logo for a business named "${startupData?.startupName || 'Stationary shop'}", professional corporate icon, clean lines, high resolution`
+  };
+
+  const branding = startupData?.aiGenerated?.branding || defaultBranding;
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [showDemoCards, setShowDemoCards] = useState(false);
@@ -165,16 +175,6 @@ const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
       }
     }
   }, [startupData?.startupId]);
-
-  if (!branding) {
-    return (
-      <div className="bg-purple-50 p-8 rounded-2xl border border-purple-100 text-center">
-        <Sparkles className="mx-auto text-[#5B21B6] mb-3" size={32} />
-        <p className="text-[#5B21B6] font-bold text-lg">Please generate a startup first.</p>
-        <p className="text-purple-600 text-sm mt-1">Go to the AI Idea Generator tab, select your startup, and click "Analyze & Generate with AI".</p>
-      </div>
-    );
-  }
 
   const colors = branding.brandColorPalette || [];
   const tagline = branding.taglineSuggestions?.[0] || 'Startup Tagline';

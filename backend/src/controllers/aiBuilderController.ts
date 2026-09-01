@@ -705,7 +705,7 @@ async function callLegalAI(startupName: string, startupIdea: string, location: s
 export const generateLogo = async (req: Request, res: Response) => {
   try {
     const { startupName, startupIdea, prompt, style, startupId } = req.body;
-    const stabilityKey = process.env.STABILITY_AI;
+    const stabilityKey = process.env.STABILITY_AI || process.env.STABILITY_AI_API_KEY;
 
     if (!stabilityKey) {
       return res.status(400).json({ success: false, message: 'STABILITY_AI API key is not configured.' });
