@@ -307,10 +307,16 @@ const Field: React.FC<{
   <div>
     <label className="block text-sm font-semibold text-gray-900 mb-1.5">{label}</label>
     <div className="relative">
-      {icon && <div className="absolute left-3 top-2.5 h-4 w-4 text-gray-400">{icon}</div>}
+      {icon && (
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <div className="w-8 h-8 rounded-xl bg-[#6C4CF1]/10 text-[#6C4CF1] flex items-center justify-center">
+            {icon}
+          </div>
+        </div>
+      )}
       {rows ? (
         <textarea
-          className={`block w-full ${icon ? 'pl-9' : 'pl-4'} px-4 py-3 border-2 ${error ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium resize-none ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className={`block w-full ${icon ? 'pl-14' : 'pl-4'} px-4 py-3 border-2 ${error ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium resize-none ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           placeholder={placeholder}
           value={value}
           onChange={e => onChange(e.target.value)}
@@ -320,7 +326,7 @@ const Field: React.FC<{
       ) : (
         <input
           type={type}
-          className={`block w-full ${icon ? 'pl-9' : 'pl-4'} px-4 py-3 border-2 ${error ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className={`block w-full ${icon ? 'pl-14' : 'pl-4'} px-4 py-3 border-2 ${error ? 'border-red-300' : 'border-gray-100'} rounded-xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
           placeholder={placeholder}
           value={value}
           onChange={e => {

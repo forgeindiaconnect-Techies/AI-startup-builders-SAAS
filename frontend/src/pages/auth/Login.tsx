@@ -187,12 +187,14 @@ const Login: React.FC = () => {
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-1.5">Email address</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <div className="w-8 h-8 rounded-xl bg-[#6C4CF1]/10 text-[#6C4CF1] flex items-center justify-center">
+                    <Mail className="h-4 w-4" />
+                  </div>
                 </div>
                 <input
                   type="email" required value={email} onChange={(e) => { setEmail(e.target.value); setError(''); }}
-                  className="block w-full pl-11 px-4 py-3.5 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
+                  className="block w-full pl-14 pr-4 py-3.5 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
                   placeholder="Enter your email" autoComplete="email"
                 />
               </div>
@@ -201,12 +203,14 @@ const Login: React.FC = () => {
             <div>
               <label className="block text-sm font-semibold text-gray-900 mb-1.5">Password</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <div className="w-8 h-8 rounded-xl bg-[#6C4CF1]/10 text-[#6C4CF1] flex items-center justify-center">
+                    <Lock className="h-4 w-4" />
+                  </div>
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'} required value={password} onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                  className="block w-full pl-11 pr-12 px-4 py-3.5 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
+                  className="block w-full pl-14 pr-12 py-3.5 border-2 border-gray-100 rounded-2xl focus:ring-0 focus:border-[#6C4CF1] bg-gray-50/50 hover:bg-white transition-all text-sm font-medium"
                   placeholder="••••••••" autoComplete="current-password"
                 />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
