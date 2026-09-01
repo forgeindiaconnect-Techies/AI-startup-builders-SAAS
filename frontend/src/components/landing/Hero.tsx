@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowRight, Play, CheckCircle2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import startupVideo from '../../assets/startup videos/I_want_to_real_humans_image_an.mp4';
 
 const Hero: React.FC = () => {
   const navigate = useNavigate();
@@ -34,14 +35,14 @@ const Hero: React.FC = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-4 mb-10">
-              <button onClick={() => navigate('/signup')} className="w-full sm:w-auto px-8 py-4 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-xl font-bold text-lg transition-all shadow-[0_4px_14px_0_rgba(91,33,182,0.39)] hover:shadow-[0_6px_20px_rgba(91,33,182,0.23)] hover:-translate-y-1 flex items-center justify-center">
+              <button onClick={() => navigate('/signup')} className="w-full sm:w-auto px-8 py-4 bg-[#5B21B6] hover:bg-[#7C3AED] text-white rounded-xl font-bold text-lg transition-all shadow-[0_4px_14px_0_rgba(91,33,182,0.39)] hover:shadow-[0_6px_20px_rgba(91,33,182,0.23)] hover:-translate-y-1 flex items-center justify-center cursor-pointer">
                 Sign up
                 <ArrowRight className="ml-2" size={20} />
               </button>
               
               <button
                 onClick={() => setIsVideoOpen(true)}
-                className="w-full sm:w-auto px-8 py-4 bg-white text-[#1F2937] border border-[#E5E7EB] hover:border-[#5B21B6] hover:bg-gray-50 rounded-xl font-bold text-lg transition-all flex items-center justify-center shadow-sm"
+                className="w-full sm:w-auto px-8 py-4 bg-white text-[#1F2937] border border-[#E5E7EB] hover:border-[#5B21B6] hover:bg-gray-50 rounded-xl font-bold text-lg transition-all flex items-center justify-center shadow-sm cursor-pointer"
               >
                 <Play className="mr-2 text-[#5B21B6] fill-[#5B21B6]" size={20} />
                 Watch Demo
@@ -60,18 +61,21 @@ const Hero: React.FC = () => {
             </div>
           </div>
           
-          {/* Right Column - Image Mockup */}
+          {/* Right Column - Video Player (Real Humans Building Startups) */}
           <div className="relative z-10 lg:ml-8 mt-10 lg:mt-0">
-            <div className="relative rounded-3xl bg-gradient-to-tr from-[#5B21B6]/10 to-[#FBBF24]/10 shadow-2xl p-1">
-              <div className="rounded-2xl overflow-hidden relative bg-white">
-                <img 
-                  src="/assets/ai_startup_illustration.png" 
-                  alt="AI Startup Builder Idea Transformation" 
-                  className="w-full h-auto object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = "https://placehold.co/800x600/111827/ffffff?text=AI+Startup+Transformation";
-                  }}
-                />
+            <div className="relative rounded-3xl bg-gradient-to-tr from-[#5B21B6]/20 via-[#7C3AED]/10 to-[#FBBF24]/20 shadow-2xl p-1.5 border border-purple-100">
+              <div className="rounded-2xl overflow-hidden relative bg-black shadow-inner">
+                <video 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline 
+                  controls 
+                  className="w-full h-auto max-h-[520px] object-cover rounded-2xl"
+                >
+                  <source src={startupVideo} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
               </div>
             </div>
           </div>
@@ -92,30 +96,31 @@ const Hero: React.FC = () => {
           <div className="relative w-full max-w-4xl bg-[#1F2937] rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-              <h3 className="text-white font-bold text-lg">How to Pitch Your Startup in 3 Minutes</h3>
+              <h3 className="text-white font-bold text-lg">AI Startup Builder — Real Founders & Teams Showcase</h3>
               <button
                 onClick={() => setIsVideoOpen(false)}
-                className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
+                className="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10 cursor-pointer"
               >
                 <X size={24} />
               </button>
             </div>
 
-            {/* Video Player */}
-            <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-              <iframe
-                className="absolute inset-0 w-full h-full"
-                src="https://www.youtube.com/embed/XWRtG_PDRik?autoplay=1&rel=0&modestbranding=1"
-                title="Startup Demo Video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+            {/* Video Player Container */}
+            <div className="relative w-full bg-black p-2 flex items-center justify-center">
+              <video 
+                autoPlay 
+                controls 
+                className="w-full max-h-[70vh] rounded-xl object-contain"
+              >
+                <source src={startupVideo} type="video/mp4" />
+                Your browser does not support video playback.
+              </video>
             </div>
 
             {/* Footer */}
             <div className="px-6 py-4 border-t border-white/10">
               <p className="text-gray-400 text-sm">
-                Learn how to structure a compelling 3-minute pitch for your startup idea.
+                Watch how real founders, mentors, and investors collaborate using AI Startup Builder.
               </p>
             </div>
           </div>
