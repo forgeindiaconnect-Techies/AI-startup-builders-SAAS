@@ -125,16 +125,52 @@ const DemoLogoCard: React.FC<DemoLogoCardProps> = ({
 
 const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
   const defaultBranding = {
-    brandColorPalette: ['#5B21B6', '#7C3AED', '#D4AF37', '#1E293B'],
+    brandColorPalette: ['#5B21B6 (Primary Purple)', '#7C3AED (Accent Purple)', '#D4AF37 (Gold Accent)', '#1E293B (Dark Slate)'],
+    brandNameSuggestions: [
+      startupData?.startupName || 'Stationary shop',
+      `${startupData?.startupName || 'Stationary shop'} Hub`,
+      `${startupData?.startupName || 'Stationary shop'} Express`
+    ],
     taglineSuggestions: [
-      `${startupData?.startupName || 'Startup'} — Quality, Value & Smart Choice`,
-      `Innovative ${startupData?.industry || 'Business'} Solutions`,
+      `${startupData?.startupName || 'Stationary shop'} — Quality, Value & Smart Choice`,
+      `Innovative Business Solutions`,
       `Empowering Your Creative & Professional Needs`
     ],
+    brandPersonality: 'Innovative, Professional, Reliable & Customer-centric',
+    fontStyleSuggestions: 'Inter & Outfit (Modern Clean Sans-Serif)',
+    logoStyle: 'Modern, Clean, Vector-based',
     logoPrompt: `Minimalist, modern, vector logo for a business named "${startupData?.startupName || 'Stationary shop'}", professional corporate icon, clean lines, high resolution`
   };
 
-  const branding = startupData?.aiGenerated?.branding || defaultBranding;
+  const rawBranding = startupData?.aiGenerated?.branding || {};
+
+  const colors = (rawBranding.brandColorPalette && rawBranding.brandColorPalette.length > 0)
+    ? rawBranding.brandColorPalette
+    : defaultBranding.brandColorPalette;
+
+  const fontStyleSuggestions = rawBranding.fontStyleSuggestions || defaultBranding.fontStyleSuggestions;
+  const logoStyle = rawBranding.logoStyle || defaultBranding.logoStyle;
+  const brandPersonality = rawBranding.brandPersonality || defaultBranding.brandPersonality;
+  const brandNames = (rawBranding.brandNameSuggestions && rawBranding.brandNameSuggestions.length > 0)
+    ? rawBranding.brandNameSuggestions
+    : defaultBranding.brandNameSuggestions;
+  const taglineSuggestions = (rawBranding.taglineSuggestions && rawBranding.taglineSuggestions.length > 0)
+    ? rawBranding.taglineSuggestions
+    : defaultBranding.taglineSuggestions;
+  const tagline = taglineSuggestions[0] || 'Startup Tagline';
+  const logoPrompt = rawBranding.logoPrompt || defaultBranding.logoPrompt;
+
+  const branding = {
+    ...defaultBranding,
+    ...rawBranding,
+    brandColorPalette: colors,
+    fontStyleSuggestions,
+    logoStyle,
+    brandPersonality,
+    brandNameSuggestions: brandNames,
+    taglineSuggestions,
+    logoPrompt
+  };
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [showDemoCards, setShowDemoCards] = useState(false);
@@ -166,7 +202,7 @@ const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
           startupName: startupData.startupName,
           logoImage: persistedLogo.imageUrl,
           logoMode: 'ai_generated',
-          tagline: br.taglineSuggestions?.[0] || 'Startup Tagline',
+          tagline: br.taglineSuggestions?.[0] || tagline,
           colors: (br.brandColorPalette || []).map((c: string) => parseColor(c)),
           createdAt: persistedLogo.createdAt || new Date().toISOString(),
           selected: true,
@@ -175,9 +211,6 @@ const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
       }
     }
   }, [startupData?.startupId]);
-
-  const colors = branding.brandColorPalette || [];
-  const tagline = branding.taglineSuggestions?.[0] || 'Startup Tagline';
 
   const handleGenerateLogo = async () => {
     setIsGenerating(true);
@@ -433,11 +466,11 @@ const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
             </div>
             <div>
               <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1"><PenTool size={13} /> Font Style</h4>
-              <p className="text-sm text-gray-700">{branding.fontStyleSuggestions}</p>
+              <p className="text-sm text-gray-800 font-medium">{branding.fontStyleSuggestions}</p>
             </div>
             <div>
               <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 flex items-center gap-1"><Star size={13} /> Logo Style</h4>
-              <p className="text-sm text-gray-700 font-medium">{branding.logoStyle || 'Modern, Clean, Vector-based'}</p>
+              <p className="text-sm text-gray-800 font-medium">{branding.logoStyle}</p>
             </div>
           </div>
         </div>
@@ -572,46 +605,6 @@ const FounderBranding: React.FC<FounderBrandingProps> = ({ startupData }) => {
           </div>
         </div>
       )}
-
-      {/* Application & Marketing */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-            <Sparkles className="text-blue-600" size={20} />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900">Application & Marketing</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="bg-gray-50 p-4 rounded-xl">
-            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-              <Layout size={13} /> Packaging / UI Style
-            </h4>
-            <p className="text-sm text-gray-700 leading-relaxed">{branding.packagingStyleSuggestions}</p>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-xl">
-            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-              <Layout size={13} /> Website Hero Copy
-            </h4>
-            <p className="text-sm font-semibold text-gray-900">{branding.websiteHero}</p>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-xl">
-            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-              <Share2 size={13} /> Social Media Strategy
-            </h4>
-            <p className="text-sm text-gray-700 leading-relaxed">{branding.socialMediaIdeas}</p>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-xl">
-            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-              <Hash size={13} /> Marketing Captions
-            </h4>
-            <ul className="space-y-1.5">
-              {branding.marketingCaptions?.map((caption: string, i: number) => (
-                <li key={i} className="text-sm text-gray-700 border-l-2 border-blue-400 pl-2">{caption}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
 
     </div>
   );
