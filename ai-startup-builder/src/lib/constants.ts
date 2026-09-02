@@ -84,9 +84,55 @@ export const FOUNDER_PLANS: PlanDetails[] = [
   },
 ];
 
+export const MENTOR_PLANS: PlanDetails[] = [
+  {
+    id: "monthly",
+    name: "Monthly Pro Mentor",
+    price: 29,
+    period: "month",
+    highlighted: true,
+    features: [
+      { text: "Founder requests access", included: true },
+      { text: "Session scheduling tools", included: true },
+      { text: "Earnings analytics", included: true },
+      { text: "Direct messaging", included: true },
+      { text: "Featured mentor badge", included: true },
+      { text: "0% platform commission", included: true },
+    ],
+  },
+  {
+    id: "yearly",
+    name: "Yearly Pro Mentor",
+    price: 249,
+    period: "year",
+    badge: "Save 28%",
+    features: [
+      { text: "Founder requests access", included: true },
+      { text: "Session scheduling tools", included: true },
+      { text: "Earnings analytics", included: true },
+      { text: "Direct messaging", included: true },
+      { text: "Featured mentor badge", included: true },
+      { text: "0% platform commission", included: true },
+    ],
+  },
+];
 
-  
-
+export const INVESTOR_PLANS: PlanDetails[] = [
+  {
+    id: "monthly",
+    name: "Monthly Investor",
+    price: 39,
+    period: "month",
+    highlighted: true,
+    features: [
+      { text: "Startup discovery feed", included: true },
+      { text: "Founder connections", included: true },
+      { text: "Investment tracking", included: true },
+      { text: "Portfolio management", included: true },
+      { text: "Notifications", included: true },
+      { text: "Deal flow analytics", included: true },
+    ],
+  },
   {
     id: "yearly",
     name: "Yearly Plan",

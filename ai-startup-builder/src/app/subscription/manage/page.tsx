@@ -26,7 +26,7 @@ export default function ManageSubscriptionPage() {
 
   if (!user || !subscription) return null;
 
-  const formatDate = (d: string | null) => {
+  const formatDate = (d?: string | null) => {
     if (!d) return "N/A";
     return new Date(d).toLocaleDateString("en-US", {
       year: "numeric",
@@ -42,7 +42,7 @@ export default function ManageSubscriptionPage() {
 
         {/* Current Plan */}
         <div className={`p-6 sm:p-8 rounded-2xl border-2 ${
-          isSubscriptionActive
+          subscription.status === "active"
             ? "border-emerald-200 bg-emerald-50/50"
             : isTrialActive
             ? "border-amber-200 bg-amber-50/50"
@@ -62,13 +62,13 @@ export default function ManageSubscriptionPage() {
               </h2>
             </div>
             <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
-              isSubscriptionActive
+              subscription.status === "active"
                 ? "bg-emerald-100 text-emerald-700"
                 : isTrialActive
                 ? "bg-amber-100 text-amber-700"
                 : "bg-red-100 text-red-700"
             }`}>
-              {isSubscriptionActive ? (
+              {subscription.status === "active" ? (
                 <><CheckCircle className="w-4 h-4" /> Active</>
               ) : isTrialActive ? (
                 <><Clock className="w-4 h-4" /> Trial Active</>

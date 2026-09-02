@@ -15,22 +15,22 @@ const Hero: React.FC = () => {
         <div className="absolute bottom-[20%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#FBBF24]/10 blur-[100px] animate-pulse-glow delay-1000"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-center">
           
           {/* Left Column - Content */}
-          <div className="text-center lg:text-left z-10 animate-slide-in-left">
+          <div className="lg:col-span-5 text-center lg:text-left z-10 animate-slide-in-left">
             <div className="inline-flex items-center px-3 py-1 rounded-full bg-[#7C3AED]/10 text-[#5B21B6] font-semibold text-sm mb-6 border border-[#7C3AED]/20">
               <span className="flex h-2 w-2 rounded-full bg-[#5B21B6] mr-2 animate-ping"></span>
               AI-Powered Startup Ecosystem
             </div>
             
-            <h1 className="text-5xl lg:text-6xl font-extrabold text-[#1F2937] leading-tight mb-6 tracking-tight">
-              Transform Your Idea Into an <br className="hidden lg:block" />
+            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold text-[#1F2937] leading-tight mb-6 tracking-tight">
+              Transform Your Idea Into an <br className="hidden xl:block" />
               <span className="gradient-text">Investment-Ready</span> Business
             </h1>
             
-            <p className="text-xl text-[#6B7280] mb-8 max-w-2xl mx-auto lg:mx-0">
+            <p className="text-lg xl:text-xl text-[#6B7280] mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
               Stop guessing. Let our AI analyze your startup idea, generate detailed business insights, match you with expert mentors, and connect you directly with eager investors.
             </p>
             
@@ -61,21 +61,27 @@ const Hero: React.FC = () => {
             </div>
           </div>
           
-          {/* Right Column - Video Player (Real Humans Building Startups) */}
-          <div className="relative z-10 lg:ml-8 mt-10 lg:mt-0">
-            <div className="relative rounded-3xl bg-gradient-to-tr from-[#5B21B6]/20 via-[#7C3AED]/10 to-[#FBBF24]/20 shadow-2xl p-1.5 border border-purple-100">
-              <div className="rounded-2xl overflow-hidden relative bg-black shadow-inner">
-                <video 
-                  autoPlay 
-                  loop 
-                  muted 
-                  playsInline 
-                  controls 
-                  className="w-full h-auto max-h-[520px] object-cover rounded-2xl"
-                >
-                  <source src={startupVideo} type="video/mp4" />
-                  Your browser does not support the video tag.
-                </video>
+          {/* Right Column - Enriched Prominent Video Player */}
+          <div className="lg:col-span-7 relative z-10 mt-8 lg:mt-0 flex justify-center lg:justify-end w-full">
+            <div className="relative w-full max-w-full lg:max-w-[660px] xl:max-w-[720px] group">
+              {/* Background ambient purple glow */}
+              <div className="absolute -inset-1.5 bg-gradient-to-r from-[#7C3AED]/40 via-[#5B21B6]/30 to-[#FBBF24]/30 rounded-[2.5rem] blur-xl opacity-75 group-hover:opacity-100 transition duration-500 -z-10" />
+
+              {/* Main Outer Video Container */}
+              <div className="relative rounded-[2rem] bg-gradient-to-tr from-[#5B21B6]/30 via-[#7C3AED]/20 to-[#FBBF24]/20 p-2 sm:p-3 border border-[#7C3AED]/30 shadow-[0_15px_40px_-10px_rgba(91,33,182,0.3)] transition-all duration-300 hover:border-[#7C3AED]/60">
+                <div className="rounded-2xl overflow-hidden relative bg-black shadow-2xl border border-white/10">
+                  <video 
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline 
+                    controls 
+                    className="w-full h-[260px] sm:h-[360px] md:h-[400px] lg:h-[420px] xl:h-[450px] object-cover rounded-2xl"
+                  >
+                    <source src={startupVideo} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
               </div>
             </div>
           </div>
