@@ -39,8 +39,9 @@ export const upload = multer({
 
 // ─── Gemini embedding client ───────────────────────────────────────────────────
 let gemini: GoogleGenAI | null = null;
-if (process.env.GEMINI_API_KEY) {
-  gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const rawGeminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+if (rawGeminiKey) {
+  gemini = new GoogleGenAI({ apiKey: rawGeminiKey });
 }
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

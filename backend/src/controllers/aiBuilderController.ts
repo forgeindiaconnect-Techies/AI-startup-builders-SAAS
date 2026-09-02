@@ -8,9 +8,10 @@ import MentorBooking from '../models/MentorBooking.js';
 
 
 let aiClient: GoogleGenAI | null = null;
+const rawGeminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
 try {
-  if (process.env.GEMINI_API_KEY) {
-    aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  if (rawGeminiKey) {
+    aiClient = new GoogleGenAI({ apiKey: rawGeminiKey });
   } else {
     console.warn("⚠️ GEMINI_API_KEY is not set in environment variables.");
   }
@@ -347,44 +348,59 @@ function parseJsonResponse(text: string): any {
 
 async function callLLMJson(prompt: string): Promise<any> {
   const retries = 3;
+  const geminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+  const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
 
   for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      if (!aiClient) throw new Error('Gemini AI client not configured');
-      const response = await aiClient.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json"
-        }
-      });
-      const text = response.text?.trim();
-      if (!text) throw new Error("AI returned empty response");
-      return parseJsonResponse(text);
-    } catch (err: any) {
-      const isRate = err.status === 'RESOURCE_EXHAUSTED' ||
-                     err.message?.includes('429') ||
-                     err.message?.includes('Quota exceeded') ||
-                     err.message?.includes('RESOURCE_EXHAUSTED') ||
-                     err.message?.includes('UNAVAILABLE') ||
-                     err.message?.includes('high demand');
+    const modelToUse = models[(attempt - 1) % models.length];
 
-      if (isRate) {
-        console.warn(`⚠️ Gemini JSON API quota/availability error (attempt ${attempt}/${retries}). Retrying...`);
-        if (attempt < retries) {
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          continue;
-        }
-      } else {
-        console.error(`❌ Gemini JSON generation error (attempt ${attempt}):`, err?.message || err);
-        if (attempt < retries) continue;
+    // 1. Try SDK client with valid Developer API model
+    try {
+      if (aiClient) {
+        const response = await aiClient.models.generateContent({
+          model: modelToUse,
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json"
+          }
+        });
+        const text = response.text?.trim();
+        if (text) return parseJsonResponse(text);
       }
+    } catch (err: any) {
+      console.warn(`⚠️ Gemini SDK JSON attempt ${attempt} (${modelToUse}) error:`, err?.message || err);
+    }
+
+    // 2. Direct REST API Fallback for Gemini
+    if (geminiKey) {
+      try {
+        const restRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: "application/json" }
+          })
+        });
+        const restData: any = await restRes.json();
+        const text = restData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (text) {
+          console.log(`✅ Gemini REST API JSON response generated successfully with ${modelToUse}!`);
+          return parseJsonResponse(text);
+        }
+      } catch (restErr: any) {
+        console.warn(`⚠️ Gemini REST JSON fallback attempt ${attempt} error:`, restErr?.message || restErr);
+      }
+    }
+
+    if (attempt < retries) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
   }
 
-  // Automatic Failover to Groq API (JSON mode)
+  // 3. Automatic Failover to Groq API (JSON mode)
   console.log('🔄 Failing over to Groq API (llama-3.3-70b-versatile) for JSON generation...');
-  const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_API_kEY;
+  const groqKey = (process.env.GROQ_API_KEY || process.env.GROQ_API_kEY || '').trim().replace(/^["']|["']$/g, '');
   if (groqKey) {
     try {
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -849,44 +865,55 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
 
 async function generateLLMResponse(prompt: string): Promise<string> {
   const retries = 3;
+  const geminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+  const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
 
   for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      if (!aiClient) throw new Error('Gemini AI client not configured');
-      const response = await aiClient.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt
-      });
-      const text = response.text?.trim();
-      if (text) return text;
-    } catch (err: any) {
-      const is429 = err.status === 'RESOURCE_EXHAUSTED' || 
-                    err.message?.includes('429') || 
-                    err.message?.includes('Quota exceeded') ||
-                    err.message?.includes('RESOURCE_EXHAUSTED');
+    const modelToUse = models[(attempt - 1) % models.length];
 
-      if (is429) {
-        let waitMs = attempt === 1 ? 5000 : attempt === 2 ? 15000 : 35000;
-        const match = err.message?.match(/retry in ([0-9.]+)s/i);
-        if (match && match[1]) {
-          waitMs = Math.ceil(parseFloat(match[1]) * 1000) + 1000;
-        }
-        console.warn(`⚠️ Gemini Chat API 429 quota error (attempt ${attempt}/${retries}). Retrying in ${Math.round(waitMs / 1000)}s...`);
-        
-        if (attempt < retries) {
-          await new Promise(resolve => setTimeout(resolve, Math.min(waitMs, 5000)));
-          continue;
-        }
-      } else {
-        console.error(`❌ Gemini generation error (attempt ${attempt}):`, err?.message || err);
-        if (attempt < retries) continue;
+    // 1. Try SDK client with valid Developer API model
+    try {
+      if (aiClient) {
+        const response = await aiClient.models.generateContent({
+          model: modelToUse,
+          contents: prompt
+        });
+        const text = response.text?.trim();
+        if (text) return text;
       }
+    } catch (err: any) {
+      console.warn(`⚠️ Gemini Chat SDK attempt ${attempt} (${modelToUse}) error:`, err?.message || err);
+    }
+
+    // 2. Direct REST API Fallback for Gemini
+    if (geminiKey) {
+      try {
+        const restRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+          })
+        });
+        const restData: any = await restRes.json();
+        const text = restData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (text) {
+          console.log(`✅ Gemini REST API Chat response generated successfully with ${modelToUse}!`);
+          return text;
+        }
+      } catch (restErr: any) {
+        console.warn(`⚠️ Gemini REST Chat fallback attempt ${attempt} error:`, restErr?.message || restErr);
+      }
+    }
+
+    if (attempt < retries) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
   }
 
-  // Automatic Failover to Groq API
+  // 3. Automatic Failover to Groq API
   console.log('🔄 Failing over to Groq API (llama-3.3-70b-versatile)...');
-  const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_API_kEY;
+  const groqKey = (process.env.GROQ_API_KEY || process.env.GROQ_API_kEY || '').trim().replace(/^["']|["']$/g, '');
   if (groqKey) {
     try {
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -903,10 +930,7 @@ async function generateLLMResponse(prompt: string): Promise<string> {
       });
       const data: any = await response.json();
       const groqText = data?.choices?.[0]?.message?.content?.trim();
-      if (groqText) {
-        console.log('✅ Groq API response successfully generated!');
-        return groqText;
-      }
+      if (groqText) return groqText;
     } catch (groqErr: any) {
       console.error('❌ Groq API failover error:', groqErr?.message || groqErr);
     }
