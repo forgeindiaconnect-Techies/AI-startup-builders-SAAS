@@ -90,7 +90,7 @@ const initialSubscriptions: Subscription[] = [
     userName: 'Rahul Sharma',
     email: 'founder@test.com',
     plan: 'Pro',
-    amount: '₹2,499/mo',
+    amount: '₹999/mo',
     started: 'Jul 14, 2026',
     nextBilling: 'Aug 14, 2026',
     status: 'Active',

@@ -14,7 +14,7 @@ const PLAN_DB_TO_DISPLAY: Record<string, string> = {
 
 const PLAN_PRICES: Record<string, string> = {
   'Free Trial': '₹0',
-  'Pro Plan': '₹2,499/mo',
+  'Pro Plan': '₹999/mo',
   'Premium Startup Builder': '₹14,999/yr'
 };
 
@@ -162,7 +162,7 @@ const AdminDashboard: React.FC = () => {
             userName: u.fullName || u.name || (uEmail.includes('renugopal') ? 'Renugopal' : 'Subscriber'),
             userEmail: u.email || 'renugopal603@gmail.com',
             plan: displayPlan || 'Pro Plan',
-            amount: PLAN_PRICES[displayPlan || 'Pro Plan'] || '₹2,499/mo',
+            amount: PLAN_PRICES[displayPlan || 'Pro Plan'] || '₹999/mo',
             date: formatDate(u.subscriptionStartDate || u.createdAt || u.signupDate),
             timestamp: new Date(u.subscriptionStartDate || u.createdAt || Date.now()).getTime(),
           });
@@ -175,7 +175,7 @@ const AdminDashboard: React.FC = () => {
           userName: 'Renugopal',
           userEmail: 'renugopal603@gmail.com',
           plan: 'Pro Plan',
-          amount: '₹2,499/mo',
+          amount: '₹999/mo',
           date: formatDate('2026-08-29T10:00:00.000Z'),
           timestamp: new Date('2026-08-29T10:00:00.000Z').getTime(),
         });

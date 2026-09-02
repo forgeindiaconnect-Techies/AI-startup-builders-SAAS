@@ -17,7 +17,7 @@ const PLAN_FEATURES: Record<string, string[]> = {
 
 const PLAN_PRICES: Record<string, string> = {
   'Free Trial': '₹0',
-  'Pro Plan': '₹2,499/mo',
+  'Pro Plan': '₹999/mo',
   'Premium Startup Builder': '₹14,999/yr'
 };
 
@@ -366,7 +366,7 @@ const AdminSubManagement: React.FC = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-xl text-xs font-bold text-gray-800 bg-white focus:ring-2 focus:ring-purple-600 focus:outline-none"
                     >
                       <option value="Free Trial">Free Trial Plan (₹0)</option>
-                      <option value="Pro Plan">Pro Plan (₹2,499/mo)</option>
+                      <option value="Pro Plan">Pro Plan (₹999/mo)</option>
                       <option value="Premium Startup Builder">Premium Startup Builder (₹14,999/yr)</option>
                     </select>
                   </div>
