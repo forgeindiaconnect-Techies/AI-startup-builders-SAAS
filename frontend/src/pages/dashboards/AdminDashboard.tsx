@@ -85,11 +85,8 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const loadDashboardData = async () => {
-    loadMentors();
-    loadStartups();
-
-    // 1. Fetch real Users list from MongoDB database API + auth context
+  // Heavy function: fetches users from API — called once on mount, then every 60s
+  const loadUsersFromAPI = async () => {
     let allUsers: any[] = [];
     try {
       const dbUsers = await getUsers();
@@ -99,27 +96,29 @@ const AdminDashboard: React.FC = () => {
       if (localUsersStr) {
         try { localUsers = JSON.parse(localUsersStr); } catch (e) {}
       }
-
       const combinedMap = new Map<string, any>();
       [...uList, ...(Array.isArray(dbUsers) ? dbUsers : []), ...localUsers].forEach(u => {
         const key = (u.email || u.id || u._id || '').toLowerCase();
-        if (key && !combinedMap.has(key)) {
-          combinedMap.set(key, u);
-        }
+        if (key && !combinedMap.has(key)) combinedMap.set(key, u);
       });
       if (user) {
         const key = (user.email || user.id || user._id || '').toLowerCase();
-        if (key && !combinedMap.has(key)) {
-          combinedMap.set(key, user);
-        }
+        if (key && !combinedMap.has(key)) combinedMap.set(key, user);
       }
       allUsers = Array.from(combinedMap.values());
       setUsersList(allUsers);
     } catch (e) {
       setUsersList([]);
     }
+    return allUsers;
+  };
 
-    // 2. Startups list
+  // Light function: refreshes startups/payments from local state — safe to poll every 10s
+  const loadDashboardData = async () => {
+    loadMentors();
+    loadStartups();
+
+    // Startups list
     try {
       const fetchedStartups = await getStartups();
       const localKeys = Object.keys(localStorage);
@@ -137,26 +136,23 @@ const AdminDashboard: React.FC = () => {
       const combined = [...fetchedStartups];
       localStartups.forEach(ls => {
         const id = ls.startupId || ls.id || ls._id;
-        if (!combined.some(s => (s.startupId || s.id || s._id) === id)) {
-          combined.push(ls);
-        }
+        if (!combined.some(s => (s.startupId || s.id || s._id) === id)) combined.push(ls);
       });
       setAllStartups(combined);
     } catch (e) {
       setAllStartups([]);
     }
 
-    // 3. Payments / Subscription Upgrades list (Exact 1-to-1 sync with Subscriptions & Payments page)
+    // Payments / Subscription Upgrades — built from current usersList state
     try {
       const activeUpgrades: any[] = [];
-
-      allUsers.forEach(u => {
+      const uList = getAllUsers() || [];
+      uList.forEach(u => {
         const uEmail = (u.email || '').toLowerCase();
         const rawPlan = (u.plan || '').toLowerCase();
         const displayPlan = PLAN_DB_TO_DISPLAY[rawPlan] || (rawPlan.includes('pro') ? 'Pro Plan' : rawPlan.includes('premium') ? 'Premium Startup Builder' : null);
         const rawStatus = (u.subscriptionStatus || u.status || '').toLowerCase();
         const isPaidOrActive = rawStatus === 'active' || rawStatus === 'approved' || displayPlan === 'Pro Plan' || displayPlan === 'Premium Startup Builder' || u.paymentStatus === 'approved' || uEmail.includes('renugopal');
-
         if (isPaidOrActive) {
           activeUpgrades.push({
             userName: u.fullName || u.name || (uEmail.includes('renugopal') ? 'Renugopal' : 'Subscriber'),
@@ -168,8 +164,6 @@ const AdminDashboard: React.FC = () => {
           });
         }
       });
-
-      // Guarantee Renugopal (renugopal603@gmail.com) paid record is always listed
       if (!activeUpgrades.some(x => (x.userEmail || '').toLowerCase().includes('renugopal603') || (x.userName || '').toLowerCase().includes('renugopal'))) {
         activeUpgrades.unshift({
           userName: 'Renugopal',
@@ -180,10 +174,7 @@ const AdminDashboard: React.FC = () => {
           timestamp: new Date('2026-08-29T10:00:00.000Z').getTime(),
         });
       }
-
-      // Sort by newest upgrade date
       activeUpgrades.sort((a, b) => b.timestamp - a.timestamp);
-
       setPaymentsList(activeUpgrades);
     } catch (e) {
       setPaymentsList([]);
@@ -192,12 +183,16 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     if (refreshUsers) refreshUsers();
+    // Load users from API once on mount, then every 60s
+    loadUsersFromAPI();
     loadDashboardData();
-    const interval = setInterval(loadDashboardData, 3000);
+    const slowInterval = setInterval(loadUsersFromAPI, 60000); // API call every 60s
+    const fastInterval = setInterval(loadDashboardData, 10000); // local refresh every 10s
     window.addEventListener('storage', loadDashboardData);
     window.addEventListener('mentor_profile_updated', loadDashboardData);
     return () => {
-      clearInterval(interval);
+      clearInterval(slowInterval);
+      clearInterval(fastInterval);
       window.removeEventListener('storage', loadDashboardData);
       window.removeEventListener('mentor_profile_updated', loadDashboardData);
     };

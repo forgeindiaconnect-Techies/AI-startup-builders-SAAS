@@ -590,7 +590,7 @@ export const getUserProfileOverrides = (): Record<string, any> => {
 
 export const getUsers = async (): Promise<any[]> => {
   try {
-    const res = await fetch(`${API_URL}/auth/users`, { headers: authHeaders() });
+    const res = await fetch(`${API_URL}/auth/admin/users`, { headers: authHeaders() });
     const data = await res.json();
     if (data.success && Array.isArray(data.data)) return data.data;
     if (Array.isArray(data)) return data;
