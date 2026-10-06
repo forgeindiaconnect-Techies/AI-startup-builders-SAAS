@@ -1,0 +1,22 @@
+{
+  "name": "ai-startup-builders-saas",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install && npm run build",
+    "start": "cd backend && node dist/server.js"
+  },
+  "dependencies": {
+    "nodemailer": "^9.0.3"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.1",
+    "concurrently": "^9.2.4"
+  },
+  "engines": {
+    "node": "24.x"
+  }
+}
