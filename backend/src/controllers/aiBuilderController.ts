@@ -347,11 +347,11 @@ function parseJsonResponse(text: string): any {
 }
 
 async function callLLMJson(prompt: string): Promise<any> {
-  const groqKey = (process.env.GROQ_API_KEY || process.env.GROQ_API_kEY || '').trim().replace(/^["']|["']$/g, '');
+  const groqKey = (process.env.GROQ_API_KEY || process.env.GROQ_API_kEY || (process.env as any).groq_api_key || '').trim().replace(/^["']|["']$/g, '');
 
   // 1. Try Groq API FIRST (primary provider)
   if (groqKey) {
-    const groqModels = ['qwen/qwen3.8-27b', 'openai/gpt-oss-20b', 'allam-2-7b'];
+    const groqModels = ['openai/gpt-oss-20b', 'openai/gpt-oss-120b', 'allam-2-7b', 'qwen/qwen3.8-27b'];
     for (const groqModel of groqModels) {
       try {
         console.log(`🚀 Trying Groq API (${groqModel}) for JSON generation...`);
@@ -365,6 +365,7 @@ async function callLLMJson(prompt: string): Promise<any> {
             model: groqModel,
             messages: [{ role: 'user', content: prompt }],
             response_format: { type: 'json_object' },
+            max_tokens: 6000,
             temperature: 0.5
           })
         });
@@ -861,11 +862,11 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
 // ─── LLM Generation Helper with Retry + Groq Failover ──────────────────────────
 
 async function generateLLMResponse(prompt: string): Promise<string> {
-  const groqKey = (process.env.GROQ_API_KEY || process.env.GROQ_API_kEY || '').trim().replace(/^["']|["']$/g, '');
+  const groqKey = (process.env.GROQ_API_KEY || process.env.GROQ_API_kEY || (process.env as any).groq_api_key || '').trim().replace(/^["']|["']$/g, '');
 
   // 1. Try Groq API FIRST (primary provider)
   if (groqKey) {
-    const groqModels = ['qwen/qwen3.8-27b', 'openai/gpt-oss-20b', 'allam-2-7b'];
+    const groqModels = ['openai/gpt-oss-20b', 'openai/gpt-oss-120b', 'allam-2-7b', 'qwen/qwen3.8-27b'];
     for (const groqModel of groqModels) {
       try {
         console.log(`🚀 Trying Groq API (${groqModel}) for chat response...`);
@@ -878,6 +879,7 @@ async function generateLLMResponse(prompt: string): Promise<string> {
           body: JSON.stringify({
             model: groqModel,
             messages: [{ role: 'user', content: prompt }],
+            max_tokens: 4096,
             temperature: 0.7
           })
         });
