@@ -347,54 +347,22 @@ function parseJsonResponse(text: string): any {
 }
 
 async function callLLMJson(prompt: string): Promise<any> {
-  const groqKey = (process.env.GROQ_API_KEY || process.env.GROQ_API_kEY || (process.env as any).groq_api_key || '').trim().replace(/^["']|["']$/g, '');
-
-  // 1. Try Groq API FIRST (primary provider)
-  if (groqKey) {
-    const groqModels = ['openai/gpt-oss-20b', 'openai/gpt-oss-120b', 'allam-2-7b', 'qwen/qwen3.8-27b'];
-    for (const groqModel of groqModels) {
-      try {
-        console.log(`🚀 Trying Groq API (${groqModel}) for JSON generation...`);
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${groqKey}`
-          },
-          body: JSON.stringify({
-            model: groqModel,
-            messages: [{ role: 'user', content: prompt }],
-            response_format: { type: 'json_object' },
-            max_tokens: 6000,
-            temperature: 0.5
-          })
-        });
-        const data: any = await response.json();
-        const groqText = data?.choices?.[0]?.message?.content?.trim();
-        if (groqText) {
-          console.log(`✅ Groq API JSON response generated successfully with ${groqModel}!`);
-          return parseJsonResponse(groqText);
-        }
-        if (data?.error) console.warn(`⚠️ Groq model ${groqModel} error:`, data.error.message);
-      } catch (groqErr: any) {
-        console.warn(`⚠️ Groq model ${groqModel} failed:`, groqErr?.message || groqErr);
-      }
-    }
-  }
-
-  // 2. Fallback to Gemini if Groq unavailable
+  const retries = 3;
   const geminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
   const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
 
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
     const modelToUse = models[(attempt - 1) % models.length];
 
+    // 1. Try SDK client with valid Developer API model
     try {
       if (aiClient) {
         const response = await aiClient.models.generateContent({
           model: modelToUse,
           contents: prompt,
-          config: { responseMimeType: "application/json" }
+          config: {
+            responseMimeType: "application/json"
+          }
         });
         const text = response.text?.trim();
         if (text) return parseJsonResponse(text);
@@ -403,6 +371,7 @@ async function callLLMJson(prompt: string): Promise<any> {
       console.warn(`⚠️ Gemini SDK JSON attempt ${attempt} (${modelToUse}) error:`, err?.message || err);
     }
 
+    // 2. Direct REST API Fallback for Gemini
     if (geminiKey) {
       try {
         const restRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${geminiKey}`, {
@@ -416,16 +385,49 @@ async function callLLMJson(prompt: string): Promise<any> {
         const restData: any = await restRes.json();
         const text = restData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
         if (text) {
-          console.log(`✅ Gemini REST API JSON response generated with ${modelToUse}!`);
+          console.log(`✅ Gemini REST API JSON response generated successfully with ${modelToUse}!`);
           return parseJsonResponse(text);
         }
       } catch (restErr: any) {
         console.warn(`⚠️ Gemini REST JSON fallback attempt ${attempt} error:`, restErr?.message || restErr);
       }
     }
+
+    if (attempt < retries) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
   }
 
-  throw new Error('AI generation failed. Please try again in a moment.');
+  // 3. Automatic Failover to Groq API (JSON mode)
+  console.log('🔄 Failing over to Groq API (llama-3.3-70b-versatile) for JSON generation...');
+  const groqKey = (process.env.GROQ_API_KEY || process.env.GROQ_API_kEY || '').trim().replace(/^["']|["']$/g, '');
+  if (groqKey) {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.5
+        })
+      });
+      const data: any = await response.json();
+      const groqText = data?.choices?.[0]?.message?.content?.trim();
+      if (groqText) {
+        console.log('✅ Groq API JSON response generated successfully!');
+        return parseJsonResponse(groqText);
+      }
+    } catch (groqErr: any) {
+      console.error('❌ Groq API failover error:', groqErr?.message || groqErr);
+    }
+  }
+
+  throw new Error('AI usage limit reached. Please wait a moment and try again.');
 }
 
 async function callAI(startupName: string, startupIdea: string) {
@@ -862,47 +864,14 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
 // ─── LLM Generation Helper with Retry + Groq Failover ──────────────────────────
 
 async function generateLLMResponse(prompt: string): Promise<string> {
-  const groqKey = (process.env.GROQ_API_KEY || process.env.GROQ_API_kEY || (process.env as any).groq_api_key || '').trim().replace(/^["']|["']$/g, '');
-
-  // 1. Try Groq API FIRST (primary provider)
-  if (groqKey) {
-    const groqModels = ['openai/gpt-oss-20b', 'openai/gpt-oss-120b', 'allam-2-7b', 'qwen/qwen3.8-27b'];
-    for (const groqModel of groqModels) {
-      try {
-        console.log(`🚀 Trying Groq API (${groqModel}) for chat response...`);
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${groqKey}`
-          },
-          body: JSON.stringify({
-            model: groqModel,
-            messages: [{ role: 'user', content: prompt }],
-            max_tokens: 4096,
-            temperature: 0.7
-          })
-        });
-        const data: any = await response.json();
-        const groqText = data?.choices?.[0]?.message?.content?.trim();
-        if (groqText) {
-          console.log(`✅ Groq API chat response generated successfully with ${groqModel}!`);
-          return groqText;
-        }
-        if (data?.error) console.warn(`⚠️ Groq model ${groqModel} error:`, data.error.message);
-      } catch (groqErr: any) {
-        console.warn(`⚠️ Groq model ${groqModel} failed:`, groqErr?.message || groqErr);
-      }
-    }
-  }
-
-  // 2. Fallback to Gemini
+  const retries = 3;
   const geminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
   const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
 
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
     const modelToUse = models[(attempt - 1) % models.length];
 
+    // 1. Try SDK client with valid Developer API model
     try {
       if (aiClient) {
         const response = await aiClient.models.generateContent({
@@ -916,26 +885,58 @@ async function generateLLMResponse(prompt: string): Promise<string> {
       console.warn(`⚠️ Gemini Chat SDK attempt ${attempt} (${modelToUse}) error:`, err?.message || err);
     }
 
+    // 2. Direct REST API Fallback for Gemini
     if (geminiKey) {
       try {
         const restRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${geminiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+          })
         });
         const restData: any = await restRes.json();
         const text = restData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
         if (text) {
-          console.log(`✅ Gemini REST API Chat response generated with ${modelToUse}!`);
+          console.log(`✅ Gemini REST API Chat response generated successfully with ${modelToUse}!`);
           return text;
         }
       } catch (restErr: any) {
         console.warn(`⚠️ Gemini REST Chat fallback attempt ${attempt} error:`, restErr?.message || restErr);
       }
     }
+
+    if (attempt < retries) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
   }
 
-  throw new Error('AI generation failed. Please try again in a moment.');
+  // 3. Automatic Failover to Groq API
+  console.log('🔄 Failing over to Groq API (llama-3.3-70b-versatile)...');
+  const groqKey = (process.env.GROQ_API_KEY || process.env.GROQ_API_kEY || '').trim().replace(/^["']|["']$/g, '');
+  if (groqKey) {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7
+        })
+      });
+      const data: any = await response.json();
+      const groqText = data?.choices?.[0]?.message?.content?.trim();
+      if (groqText) return groqText;
+    } catch (groqErr: any) {
+      console.error('❌ Groq API failover error:', groqErr?.message || groqErr);
+    }
+  }
+
+  throw new Error('AI usage limit reached. Please wait a moment and try again.');
 }
 
 export const chatStartup = async (req: Request, res: Response) => {

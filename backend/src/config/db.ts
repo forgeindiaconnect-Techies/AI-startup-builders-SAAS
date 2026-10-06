@@ -23,10 +23,9 @@ export const connectDB = async () => {
     console.log('');
   } catch (error) {
     console.error('');
-    console.error('⚠️ MongoDB Connection Failed:', (error as Error).message);
-    console.error('⚠️ Server will continue running. AI features (Groq) will work; DB-dependent features will be unavailable.');
+    console.error('✖ MongoDB Connection Failed:', (error as Error).message);
     console.error('');
-    // Do NOT exit — allow server to start so Groq AI generation still works
+    process.exit(1);
   }
 };
 
