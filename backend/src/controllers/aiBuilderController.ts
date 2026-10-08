@@ -10,7 +10,7 @@ import MentorBooking from '../models/MentorBooking.js';
 let aiClient: GoogleGenAI | null = null;
 function getAiClient(): GoogleGenAI | null {
   if (!aiClient) {
-    const rawGeminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+    const rawGeminiKey = (process.env.GEMINI_API_KEY || process.env.GEMINI_API_kEY || process.env.GEMINI_KEY || '').trim().replace(/^["']|["']$/g, '');
     if (rawGeminiKey) {
       try {
         aiClient = new GoogleGenAI({ apiKey: rawGeminiKey });
@@ -356,7 +356,7 @@ function parseJsonResponse(text: string): any {
 
 async function callLLMJson(prompt: string): Promise<any> {
   const retries = 3;
-  const geminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+  const geminiKey = (process.env.GEMINI_API_KEY || process.env.GEMINI_API_kEY || process.env.GEMINI_KEY || '').trim().replace(/^["']|["']$/g, '');
   const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
 
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -874,7 +874,7 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
 
 async function generateLLMResponse(prompt: string): Promise<string> {
   const retries = 3;
-  const geminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+  const geminiKey = (process.env.GEMINI_API_KEY || process.env.GEMINI_API_kEY || process.env.GEMINI_KEY || '').trim().replace(/^["']|["']$/g, '');
   const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
 
   for (let attempt = 1; attempt <= retries; attempt++) {
