@@ -42,11 +42,14 @@ router.use('/', investorMessageRoutes);
 
 // Health check endpoint
 router.get('/health', (_req: Request, res: Response) => {
+  const hasGemini = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim());
   res.json({
     status: 'ok',
     message: 'AI Startup Builder API is running',
     timestamp: new Date().toISOString(),
-    version: '1.0.0',
+    version: '1.0.1',
+    geminiConfigured: hasGemini,
+    modelsSupported: ['gemini-2.5-flash']
   });
 });
 
