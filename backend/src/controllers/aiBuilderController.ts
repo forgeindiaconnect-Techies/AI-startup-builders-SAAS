@@ -8,15 +8,23 @@ import MentorBooking from '../models/MentorBooking.js';
 
 
 let aiClient: GoogleGenAI | null = null;
-const rawGeminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
-try {
-  if (rawGeminiKey) {
-    aiClient = new GoogleGenAI({ apiKey: rawGeminiKey });
-  } else {
-    console.warn("⚠️ GEMINI_API_KEY is not set in environment variables.");
+function getAiClient(): GoogleGenAI | null {
+  if (!aiClient) {
+    const rawGeminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+    if (rawGeminiKey) {
+      try {
+        aiClient = new GoogleGenAI({ apiKey: rawGeminiKey });
+      } catch (e) {
+        console.error("Failed to initialize Google Generative AI", e);
+      }
+    }
   }
-} catch (e) {
-  console.error("Failed to initialize Google Generative AI", e);
+  return aiClient;
+}
+
+getAiClient();
+if (!aiClient) {
+  console.warn("⚠️ GEMINI_API_KEY is not set in environment variables.");
 }
 
 // ─── Cloudinary setup ────────────────────────────────────────────────────────
@@ -349,15 +357,16 @@ function parseJsonResponse(text: string): any {
 async function callLLMJson(prompt: string): Promise<any> {
   const retries = 3;
   const geminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
-  const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     const modelToUse = models[(attempt - 1) % models.length];
 
     // 1. Try SDK client with valid Developer API model
     try {
-      if (aiClient) {
-        const response = await aiClient.models.generateContent({
+      const client = getAiClient();
+      if (client) {
+        const response = await client.models.generateContent({
           model: modelToUse,
           contents: prompt,
           config: {
@@ -866,15 +875,16 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
 async function generateLLMResponse(prompt: string): Promise<string> {
   const retries = 3;
   const geminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
-  const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     const modelToUse = models[(attempt - 1) % models.length];
 
     // 1. Try SDK client with valid Developer API model
     try {
-      if (aiClient) {
-        const response = await aiClient.models.generateContent({
+      const client = getAiClient();
+      if (client) {
+        const response = await client.models.generateContent({
           model: modelToUse,
           contents: prompt
         });

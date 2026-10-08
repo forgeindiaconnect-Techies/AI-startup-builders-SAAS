@@ -39,19 +39,25 @@ export const upload = multer({
 
 // ─── Gemini embedding client ───────────────────────────────────────────────────
 let gemini: GoogleGenAI | null = null;
-const rawGeminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
-if (rawGeminiKey) {
-  gemini = new GoogleGenAI({ apiKey: rawGeminiKey });
+function getGeminiClient(): GoogleGenAI {
+  if (!gemini) {
+    const rawGeminiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+    if (rawGeminiKey) {
+      gemini = new GoogleGenAI({ apiKey: rawGeminiKey });
+    }
+  }
+  if (!gemini) throw new Error('GEMINI_API_KEY not set');
+  return gemini;
 }
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function getEmbedding(text: string, retries = 5, delay = 2000): Promise<number[]> {
-  if (!gemini) throw new Error('GEMINI_API_KEY not set');
+  const client = getGeminiClient();
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const res = await gemini.models.embedContent({
+      const res = await client.models.embedContent({
         model: 'gemini-embedding-001',
         contents: text,
       });
@@ -75,7 +81,7 @@ async function getEmbedding(text: string, retries = 5, delay = 2000): Promise<nu
 
       if (attempt === retries) {
         try {
-          const res = await gemini.models.embedContent({
+          const res = await client.models.embedContent({
             model: 'gemini-embedding-2',
             contents: text,
           });
