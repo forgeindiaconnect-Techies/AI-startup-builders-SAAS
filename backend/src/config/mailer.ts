@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-import nodemailer from 'nodemailer';
 dotenv.config();
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
@@ -23,36 +22,6 @@ export const sendEmail = async ({
     console.warn(`[BREVO API KEY MISSING] Would have sent to ${to}: ${subject}`);
     return null;
   }
-
-  // If key starts with xsmtpsib, use SMTP via Nodemailer
-  if (BREVO_API_KEY.startsWith('xsmtpsib-')) {
-    try {
-      const transporter = nodemailer.createTransport({
-        host: 'smtp-relay.brevo.com',
-        port: 587,
-        secure: false,
-        auth: {
-          user: BREVO_SENDER_EMAIL,
-          pass: BREVO_API_KEY,
-        },
-      });
-
-      const info = await transporter.sendMail({
-        from: `"${BREVO_SENDER_NAME}" <${BREVO_SENDER_EMAIL}>`,
-        to,
-        subject,
-        html,
-      });
-
-      console.log(`Email sent via Brevo SMTP to ${to}: ${info.messageId}`);
-      return info;
-    } catch (smtpErr) {
-      console.error(`Failed to send email to ${to} via Brevo SMTP:`, smtpErr);
-      throw smtpErr;
-    }
-  }
-
-  // Otherwise default to Brevo REST API v3
   try {
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
@@ -80,4 +49,3 @@ export const sendEmail = async ({
     throw error;
   }
 };
-
