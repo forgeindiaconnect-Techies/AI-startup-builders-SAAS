@@ -154,6 +154,46 @@ const PAGE_REGISTRY: Record<string, Record<string, React.ElementType>> = {
   },
 };
 
+// ─── Fast Component Resolver (resolves direct, normalized, alternate, and parameterized routes) ───
+const resolveComponent = (role: string, targetPath: string): React.ElementType | null => {
+  const registry = PAGE_REGISTRY[role] || {};
+
+  // 1. Direct match
+  if (registry[targetPath]) return registry[targetPath];
+
+  // 2. Normalized match
+  const norm = targetPath
+    .replace('/ai_builder', '/ai-builder')
+    .replace('/originality_check', '/originality-check')
+    .replace('/plagiarism', '/originality-check');
+  if (registry[norm]) return registry[norm];
+
+  // 3. Alternate prefix (/founder/ <-> /dashboard/founder/)
+  const alt = targetPath.startsWith('/dashboard/')
+    ? targetPath.replace('/dashboard/', '/')
+    : targetPath.replace('/', '/dashboard/');
+  if (registry[alt]) return registry[alt];
+
+  // 4. Parameterized routes (e.g. /dashboard/founder/investors/:investorId)
+  for (const [routePattern, Component] of Object.entries(registry)) {
+    if (routePattern.includes(':')) {
+      const regexPattern = '^' + routePattern.replace(/:[^\s/]+/g, '[^/]+') + '$';
+      if (new RegExp(regexPattern).test(targetPath) || new RegExp(regexPattern).test(norm) || new RegExp(regexPattern).test(alt)) {
+        return Component;
+      }
+    }
+  }
+
+  // 5. Prefix match for nested sub-routes
+  for (const [routePattern, Component] of Object.entries(registry)) {
+    if (targetPath.startsWith(routePattern + '/') || norm.startsWith(routePattern + '/')) {
+      return Component;
+    }
+  }
+
+  return null;
+};
+
 // ─── Types ──────────────────────────────────────────────────────
 type NavItem = { name: string; icon: React.ElementType; path: string; plans?: string[] };
 type SidebarSection = { items: NavItem[] };
@@ -326,9 +366,10 @@ const SidebarInner: React.FC<{
                 return (
                   <button
                     key={item.path}
+                    type="button"
                     onClick={() => { onNavigate(item.path); onLinkClick(); }}
                     title={isCollapsed ? item.name : undefined}
-                    className={`relative group flex items-center gap-3 w-full px-3.5 py-3 rounded-2xl text-sm font-bold transition-all duration-200 ${
+                    className={`relative group flex items-center gap-3 w-full px-3.5 py-3 rounded-2xl text-sm font-bold transition-all duration-150 cursor-pointer ${
                       isActive
                         ? 'bg-[#6C4CF1] text-white shadow-lg shadow-purple-900/40'
                         : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
@@ -383,27 +424,35 @@ const DashboardLayout: React.FC = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
+  // Immediate active path state - updates synchronously in user's click tick (0ms latency!)
+  const [activePathState, setActivePathState] = useState<string>(() => location.pathname);
+
+  // Keep state in sync with location (handles browser back/forward and deep linking)
+  useEffect(() => {
+    setActivePathState(location.pathname);
+  }, [location.pathname]);
+
   const rawRole = (user?.role ?? '').toLowerCase();
   const role = (rawRole === 'user' || !rawRole) ? 'founder' : rawRole;
   const trialExpired = checkTrialExpired(role, user);
 
   // Preserve the founder subscription gate that ProtectedRoute applies on route change
   const resolveAllowed = (path: string): string => {
+    if (role === 'founder' && trialExpired && !path.includes('/billing')) {
+      return '/dashboard/founder/billing';
+    }
     return path;
   };
 
-  // Derive active path and active component directly from React Router's location.pathname
-  const currentPath = location.pathname;
-  const normPath = currentPath.includes('/ai_builder') ? currentPath.replace('/ai_builder', '/ai-builder') : currentPath;
-  const matchedPath = (PAGE_REGISTRY[role] ?? {})[currentPath]
-    ? currentPath
-    : ((PAGE_REGISTRY[role] ?? {})[normPath] ? normPath : '');
-
-  const activePath = matchedPath ? resolveAllowed(matchedPath) : resolveAllowed(currentPath);
+  const activePath = resolveAllowed(activePathState || location.pathname);
 
   const handleNavigate = (targetPath: string) => {
     const allowed = resolveAllowed(targetPath);
+    // 1. Immediately switch the state right now on the user's click tick (0ms!)
+    setActivePathState(allowed);
+    // 2. Instruct router to navigate and update URL without blocking the view
     navigate(allowed);
+    // 3. Instant scroll reset
     const mainElem = document.querySelector('main');
     if (mainElem) mainElem.scrollTop = 0;
     window.scrollTo(0, 0);
@@ -424,7 +473,7 @@ const DashboardLayout: React.FC = () => {
     trialExpired,
   };
 
-  const ActivePage = (PAGE_REGISTRY[role] ?? {})[activePath] as React.ElementType | undefined;
+  const ActivePage = resolveComponent(role, activePath);
 
   return (
     <div className="h-screen flex overflow-hidden bg-gray-50">
@@ -488,7 +537,7 @@ const DashboardLayout: React.FC = () => {
         {/* Page content */}
         <main className="flex-1 overflow-y-auto focus:outline-none">
           <div className="p-5 sm:p-7 lg:p-8">
-            {ActivePage ? <ActivePage /> : <Outlet />}
+            {ActivePage ? <ActivePage key={activePath} /> : <Outlet />}
           </div>
         </main>
       </div>

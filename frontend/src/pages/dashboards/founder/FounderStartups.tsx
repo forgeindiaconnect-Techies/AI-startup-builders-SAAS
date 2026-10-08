@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, LayoutGrid, List, X, Rocket, Sparkles, RefreshCw, Trash2, Eye, ShieldCheck } from 'lucide-react';
-import { createStartupDraft, getStartups, addNotification } from '../../../utils/localStorageHelper';
+import { createStartupDraft, getStartups, getCachedStartupsSync, addNotification } from '../../../utils/localStorageHelper';
 import { useAuth } from '../../../context/AuthContext';
 import { getStartupVisibilityMap, setStartupInvestorVisibility } from '../../../utils/investorModuleStorage';
 
@@ -20,6 +20,18 @@ type Startup = {
 };
 
 const initialStartups: Startup[] = [];
+
+const mapRawStartups = (rawList: any[]): Startup[] => {
+  return rawList.map((data: any, index: number) => ({
+    id: data.startupId || data.id || data._id,
+    name: data.startupName || 'Untitled Startup',
+    description: data.startupIdea || data.problemStatement || data.description || 'No description provided.',
+    status: data.status === 'pending_analysis' ? 'Draft' : (data.status || 'active'),
+    score: data.aiGenerated?.aiReport?.investmentReadinessScore || data.aiReport?.investmentReadinessScore || 7,
+    stage: 'Idea Phase',
+    color: getGradientBg(index)
+  }));
+};
 
 const statusStyles: Record<string, string> = {
   'Approved': 'text-emerald-700 bg-emerald-50 border-emerald-200 font-extrabold shadow-2xs',
@@ -43,7 +55,16 @@ const getGradientBg = (idx: number) => {
 };
 
 const FounderStartups: React.FC = () => {
-  const [startups, setStartups] = useState<Startup[]>(initialStartups);
+  // Synchronous initial state (0ms render on tab click)
+  const [startups, setStartups] = useState<Startup[]>(() => {
+    try {
+      const cached = getCachedStartupsSync();
+      if (cached && cached.length > 0) {
+        return mapRawStartups(cached);
+      }
+    } catch {}
+    return initialStartups;
+  });
   const [search, setSearch] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   
@@ -65,25 +86,22 @@ const FounderStartups: React.FC = () => {
   const [visibilityMap, setVisibilityMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    // Load startups from backend on mount
+    // Load startups from backend / cache on mount
     const loadLocalStartups = async () => {
-      const deletedDummies = JSON.parse(localStorage.getItem('deleted_dummies') || '[]');
-      const filteredInitial = initialStartups.filter(s => !deletedDummies.includes(s.id));
-
       const localData = await getStartups();
-      const mappedStartups = localData.map((data: any, index: number) => ({
-        id: data.startupId || data.id || data._id,
-        name: data.startupName || 'Untitled Startup',
-        description: data.startupIdea || data.problemStatement || data.description || 'No description provided.',
-        status: data.status === 'pending_analysis' ? 'Draft' : (data.status || 'active'),
-        score: data.aiGenerated?.aiReport?.investmentReadinessScore || data.aiReport?.investmentReadinessScore || 7,
-        stage: 'Idea Phase',
-        color: getGradientBg(index)
-      }));
-      setStartups([...filteredInitial, ...mappedStartups]);
+      if (Array.isArray(localData) && localData.length > 0) {
+        setStartups(mapRawStartups(localData));
+      }
       setVisibilityMap(getStartupVisibilityMap());
     };
     loadLocalStartups();
+
+    const handleUpdate = () => {
+      const cached = getCachedStartupsSync();
+      if (cached.length > 0) setStartups(mapRawStartups(cached));
+    };
+    window.addEventListener('startups_updated', handleUpdate);
+    return () => window.removeEventListener('startups_updated', handleUpdate);
   }, []);
 
   const handleAddStartup = async (e: React.FormEvent) => {

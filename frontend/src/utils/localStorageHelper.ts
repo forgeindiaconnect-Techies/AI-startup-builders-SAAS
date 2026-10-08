@@ -344,34 +344,109 @@ export const sanitizeStartupId = (raw: string | null | undefined): string | null
   return raw && raw !== 'undefined' && raw !== 'null' ? raw : null;
 };
 
-export const getStartups = async () => {
-  try {
-    const res = await fetch(`${API_URL}/startups`, { headers: authHeaders() });
-    const data = await res.json();
-    if (data.success) {
-      return (Array.isArray(data.data) ? data.data : []).map(normalizeStartup);
-    }
-  } catch (e) {
-    console.error('Error fetching startups', e);
+const STARTUPS_CACHE_KEY = 'ai_startup_builder_startups_cache';
+let startupsMemoryCache: any[] | null = null;
+let isFetchingStartups = false;
+
+// Synchronously returns cached startups for instantaneous UI render (0ms latency)
+export const getCachedStartupsSync = (): any[] => {
+  if (startupsMemoryCache && startupsMemoryCache.length > 0) {
+    return startupsMemoryCache;
   }
+  try {
+    const raw = localStorage.getItem(STARTUPS_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        startupsMemoryCache = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
   return [];
 };
 
+// Set cache in memory & localStorage and broadcast event
+export const setCachedStartups = (list: any[]) => {
+  startupsMemoryCache = list;
+  try {
+    localStorage.setItem(STARTUPS_CACHE_KEY, JSON.stringify(list));
+  } catch {}
+  window.dispatchEvent(new Event('startups_updated'));
+};
+
+const refreshStartupsInBackground = async () => {
+  if (isFetchingStartups) return;
+  isFetchingStartups = true;
+  try {
+    const res = await fetch(`${API_URL}/startups`, { headers: authHeaders() });
+    const data = await res.json();
+    if (data.success && Array.isArray(data.data)) {
+      const list = data.data.map(normalizeStartup);
+      startupsMemoryCache = list;
+      try {
+        localStorage.setItem(STARTUPS_CACHE_KEY, JSON.stringify(list));
+      } catch {}
+      window.dispatchEvent(new Event('startups_updated'));
+    }
+  } catch (e) {
+    // Background fetch fails silently
+  } finally {
+    isFetchingStartups = false;
+  }
+};
+
+export const getStartups = async (forceRefresh = false): Promise<any[]> => {
+  const cached = getCachedStartupsSync();
+  if (cached.length > 0 && !forceRefresh) {
+    // Non-blocking background revalidation
+    refreshStartupsInBackground();
+    return cached;
+  }
+  try {
+    isFetchingStartups = true;
+    const res = await fetch(`${API_URL}/startups`, { headers: authHeaders() });
+    const data = await res.json();
+    if (data.success && Array.isArray(data.data)) {
+      const list = data.data.map(normalizeStartup);
+      setCachedStartups(list);
+      return list;
+    }
+  } catch (e) {
+    console.error('Error fetching startups', e);
+  } finally {
+    isFetchingStartups = false;
+  }
+  return cached.length > 0 ? cached : [];
+};
+
 export const saveStartups = async (startups: any[]) => {
-  // Not heavily used, typically we update individual startups
-  console.warn('saveStartups array helper is deprecated, update individual startups via API');
+  if (Array.isArray(startups)) {
+    setCachedStartups(startups.map(normalizeStartup));
+  }
 };
 
 export const getStartupById = async (startupId: string) => {
   if (!sanitizeStartupId(startupId)) return null;
+  // Check instant cache first
+  const cachedList = getCachedStartupsSync();
+  const cachedItem = cachedList.find((s: any) => String(s.startupId || s.id || s._id) === String(startupId));
+  if (cachedItem) {
+    return cachedItem;
+  }
   try {
     const res = await fetch(`${API_URL}/startups/${startupId}`, { headers: authHeaders() });
     const data = await res.json();
-    if (data.success) return normalizeStartup(data.data);
+    if (data.success && data.data) {
+      const item = normalizeStartup(data.data);
+      const updatedList = [item, ...cachedList.filter((s: any) => String(s.startupId || s.id || s._id) !== String(startupId))];
+      setCachedStartups(updatedList);
+      return item;
+    }
   } catch (e) {
     console.error('Error fetching startup by id', e);
   }
-  return null;
+  return cachedItem || null;
 };
 
 export const createStartupDraft = async (startupName: string, startupIdea: string, founderId?: string) => {
@@ -383,7 +458,11 @@ export const createStartupDraft = async (startupName: string, startupIdea: strin
     });
     const data = await res.json();
     if (data.success) {
-      return { id: data.data.startupId, ...data.data };
+      const item = normalizeStartup({ id: data.data.startupId, ...data.data });
+      const currentList = getCachedStartupsSync();
+      const updated = [item, ...currentList.filter(s => (s.id || s.startupId) !== (item.id || item.startupId))];
+      setCachedStartups(updated);
+      return item;
     }
   } catch (e) {
     console.error('Error creating startup draft', e);
@@ -400,7 +479,13 @@ export const updateStartup = async (startupId: string, updatedData: any) => {
       body: JSON.stringify(updatedData)
     });
     const data = await res.json();
-    if (data.success) return normalizeStartup(data.data);
+    if (data.success) {
+      const item = normalizeStartup(data.data);
+      const currentList = getCachedStartupsSync();
+      const updated = currentList.map(s => (s.id || s.startupId) === (item.id || item.startupId) ? item : s);
+      setCachedStartups(updated);
+      return item;
+    }
   } catch (e) {
     console.error('Error updating startup', e);
   }
@@ -588,16 +673,76 @@ export const getUserProfileOverrides = (): Record<string, any> => {
   }
 };
 
-export const getUsers = async (): Promise<any[]> => {
+const USERS_CACHE_KEY = 'ai_startup_builder_users_cache';
+let usersMemoryCache: any[] | null = null;
+let isFetchingUsers = false;
+
+export const getCachedUsersSync = (): any[] => {
+  if (usersMemoryCache && usersMemoryCache.length > 0) return usersMemoryCache;
+  try {
+    const raw = localStorage.getItem(USERS_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        usersMemoryCache = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
+  return [];
+};
+
+export const setCachedUsers = (list: any[]) => {
+  usersMemoryCache = list;
+  try {
+    localStorage.setItem(USERS_CACHE_KEY, JSON.stringify(list));
+  } catch {}
+  window.dispatchEvent(new Event('users_updated'));
+};
+
+const refreshUsersInBackground = async () => {
+  if (isFetchingUsers) return;
+  isFetchingUsers = true;
   try {
     const res = await fetch(`${API_URL}/auth/admin/users`, { headers: authHeaders() });
     const data = await res.json();
-    if (data.success && Array.isArray(data.data)) return data.data;
-    if (Array.isArray(data)) return data;
+    let list: any[] = [];
+    if (data.success && Array.isArray(data.data)) list = data.data;
+    else if (data.success && Array.isArray(data.users)) list = data.users;
+    else if (Array.isArray(data)) list = data;
+    if (list.length > 0) {
+      setCachedUsers(list);
+    }
+  } catch (e) {
+  } finally {
+    isFetchingUsers = false;
+  }
+};
+
+export const getUsers = async (forceRefresh = false): Promise<any[]> => {
+  const cached = getCachedUsersSync();
+  if (cached.length > 0 && !forceRefresh) {
+    refreshUsersInBackground();
+    return cached;
+  }
+  try {
+    isFetchingUsers = true;
+    const res = await fetch(`${API_URL}/auth/admin/users`, { headers: authHeaders() });
+    const data = await res.json();
+    let list: any[] = [];
+    if (data.success && Array.isArray(data.data)) list = data.data;
+    else if (data.success && Array.isArray(data.users)) list = data.users;
+    else if (Array.isArray(data)) list = data;
+    if (list.length > 0) {
+      setCachedUsers(list);
+      return list;
+    }
   } catch (e) {
     console.error('Error fetching users', e);
+  } finally {
+    isFetchingUsers = false;
   }
-  return [];
+  return cached.length > 0 ? cached : [];
 };
 
 export const markNotificationRead = async (id: string) => {
@@ -1190,7 +1335,58 @@ export const generateRoadmapAndTasks = (startup: any) => {
   return { roadmap, tasks };
 };
 
-export const getDocuments = async (startupId?: string, userId?: string) => {
+const DOCS_CACHE_KEY = 'ai_startup_builder_docs_cache';
+let docsMemoryCache: Record<string, any[]> = {};
+let isFetchingDocs: Record<string, boolean> = {};
+
+export const getCachedDocumentsSync = (startupId?: string, userId?: string): any[] => {
+  const cacheKey = `${startupId || 'all'}_${userId || 'all'}`;
+  if (docsMemoryCache[cacheKey] && docsMemoryCache[cacheKey].length > 0) {
+    return docsMemoryCache[cacheKey];
+  }
+  try {
+    const raw = localStorage.getItem(`${DOCS_CACHE_KEY}_${cacheKey}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        docsMemoryCache[cacheKey] = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
+  return [];
+};
+
+export const setCachedDocuments = (list: any[], startupId?: string, userId?: string) => {
+  const cacheKey = `${startupId || 'all'}_${userId || 'all'}`;
+  docsMemoryCache[cacheKey] = list;
+  try {
+    localStorage.setItem(`${DOCS_CACHE_KEY}_${cacheKey}`, JSON.stringify(list));
+  } catch {}
+  window.dispatchEvent(new Event('documents_updated'));
+};
+
+export const getDocuments = async (startupId?: string, userId?: string, forceRefresh = false) => {
+  const cacheKey = `${startupId || 'all'}_${userId || 'all'}`;
+  const cached = getCachedDocumentsSync(startupId, userId);
+  if (cached.length > 0 && !forceRefresh) {
+    // Non-blocking background revalidation
+    if (!isFetchingDocs[cacheKey]) {
+      isFetchingDocs[cacheKey] = true;
+      (async () => {
+        try {
+          const fresh = await getDocuments(startupId, userId, true);
+          if (Array.isArray(fresh) && fresh.length > 0) {
+            setCachedDocuments(fresh, startupId, userId);
+          }
+        } finally {
+          isFetchingDocs[cacheKey] = false;
+        }
+      })();
+    }
+    return cached;
+  }
+
   try {
     let url = `${API_URL}/documents`;
     const params = new URLSearchParams();
@@ -1365,6 +1561,9 @@ export const getDocuments = async (startupId?: string, userId?: string) => {
       }
     }
 
+    if (Array.isArray(docs) && docs.length > 0) {
+      setCachedDocuments(docs, startupId, userId);
+    }
     return docs;
   } catch (e) {
     console.error('Error fetching documents', e);
@@ -1372,8 +1571,12 @@ export const getDocuments = async (startupId?: string, userId?: string) => {
   // Fallback to localStorage
   try {
     const stored = localStorage.getItem('ai_startup_builder_documents');
-    return stored ? JSON.parse(stored) : [];
-  } catch (e) { return []; }
+    const parsed = stored ? JSON.parse(stored) : [];
+    if (parsed.length > 0) {
+      setCachedDocuments(parsed, startupId, userId);
+    }
+    return parsed;
+  } catch (e) { return cached.length > 0 ? cached : []; }
 };
 
 export const migrateDocumentApplyLinks = async () => {

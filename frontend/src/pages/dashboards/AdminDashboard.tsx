@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getStartups, getUsers } from '../../utils/localStorageHelper';
+import { getStartups, getUsers, getCachedStartupsSync, getCachedUsersSync } from '../../utils/localStorageHelper';
 import { Rocket, IndianRupee, Check, X, Users, Cpu, ShieldCheck, Building2, Trash2, Mail, Calendar, LogIn, Award, Sparkles, TrendingUp, UserCheck, Briefcase } from 'lucide-react';
 
 const PLAN_DB_TO_DISPLAY: Record<string, string> = {
@@ -39,8 +39,12 @@ const AdminDashboard: React.FC = () => {
 
   const [pendingMentors, setPendingMentors] = useState<any[]>([]);
   const [pendingStartups, setPendingStartups] = useState<any[]>([]);
-  const [allStartups, setAllStartups] = useState<any[]>([]);
-  const [usersList, setUsersList] = useState<any[]>([]);
+  const [allStartups, setAllStartups] = useState<any[]>(() => {
+    try { return getCachedStartupsSync(); } catch { return []; }
+  });
+  const [usersList, setUsersList] = useState<any[]>(() => {
+    try { return getCachedUsersSync(); } catch { return []; }
+  });
   const [paymentsList, setPaymentsList] = useState<any[]>([]);
 
   const loadMentors = () => {

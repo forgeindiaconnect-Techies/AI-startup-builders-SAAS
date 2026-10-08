@@ -1,20 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getStartups } from '../../utils/localStorageHelper';
+import { getStartups, getCachedStartupsSync } from '../../utils/localStorageHelper';
 import { Lightbulb, TrendingUp, IndianRupee, Clock, Mail, Calendar, LogIn, ShieldCheck, Rocket, ArrowRight, Sparkles } from 'lucide-react';
 
 const FounderDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [startups, setStartups] = useState<any[]>([]);
+  // Instant synchronous startup state (0ms frame-0 render)
+  const [startups, setStartups] = useState<any[]>(() => {
+    try {
+      return getCachedStartupsSync();
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => {
     const fetchStartups = async () => {
       const localData = await getStartups();
-      setStartups(localData);
+      if (Array.isArray(localData) && localData.length > 0) {
+        setStartups(localData);
+      }
     };
     fetchStartups();
+
+    const handleUpdate = () => {
+      const updated = getCachedStartupsSync();
+      if (updated.length > 0) setStartups(updated);
+    };
+    window.addEventListener('startups_updated', handleUpdate);
+    return () => window.removeEventListener('startups_updated', handleUpdate);
   }, []);
 
   const formatDate = (dateStr: string | null | undefined) => {

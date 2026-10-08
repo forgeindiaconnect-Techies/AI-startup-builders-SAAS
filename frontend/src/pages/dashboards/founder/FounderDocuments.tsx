@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FileText, Building2, RefreshCw, Scale } from 'lucide-react';
 import {
-  getStartups, getStartupById, sanitizeStartupId,
+  getStartups, getStartupById, sanitizeStartupId, getCachedStartupsSync,
 } from '../../../utils/localStorageHelper';
 import FounderLegalDocs from './FounderLegalDocs';
 
@@ -11,13 +11,20 @@ const FounderDocuments: React.FC = () => {
   const navigate = useNavigate();
   const startupId = sanitizeStartupId(searchParams.get('id') || searchParams.get('startupId'));
 
-  const [allStartups, setAllStartups] = useState<any[]>([]);
-  const [selectedStartup, setSelectedStartup] = useState<any>(null);
+  const [allStartups, setAllStartups] = useState<any[]>(() => {
+    try { return getCachedStartupsSync(); } catch { return []; }
+  });
+  const [selectedStartup, setSelectedStartup] = useState<any>(() => {
+    try {
+      const list = getCachedStartupsSync();
+      return startupId ? list.find((s: any) => String(s.startupId || s.id || s._id) === String(startupId)) : (list[0] || null);
+    } catch { return null; }
+  });
 
   const refresh = useCallback(async () => {
     const allStartupsList = await getStartups() || [];
     setAllStartups(allStartupsList);
-    const info = startupId ? await getStartupById(startupId) : null;
+    const info = startupId ? await getStartupById(startupId) : (allStartupsList[0] || null);
     setSelectedStartup(info);
   }, [startupId]);
 

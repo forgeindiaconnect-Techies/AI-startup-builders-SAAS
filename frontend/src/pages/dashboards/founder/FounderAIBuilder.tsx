@@ -17,6 +17,7 @@ import FounderLegalDocs from './FounderLegalDocs';
 import PlanGate, { usePlanAccess } from '../../../components/shared/PlanGate';
 import { 
   getStartups, 
+  getCachedStartupsSync,
   getStartupById, 
   updateStartup, 
   generateStartupFromBackend, 
@@ -53,17 +54,26 @@ const tabs = [
 ];
 
 const FounderAIBuilder: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const startupId = sanitizeStartupId(searchParams.get('id') || searchParams.get('startupId'));
+  const { canAccess } = usePlanAccess();
+
   const [active, setActive] = useState('idea');
-  const [startupData, setStartupData] = useState<any>(null);
-  const [allStartups, setAllStartups] = useState<any[]>([]);
+  const [startupData, setStartupData] = useState<any>(() => {
+    try {
+      const locals = getCachedStartupsSync();
+      if (!startupId) return locals[0] || null;
+      return locals.find((s: any) => String(s.startupId || s._id || s.id) === String(startupId)) || (locals[0] || null);
+    } catch { return null; }
+  });
+  const [allStartups, setAllStartups] = useState<any[]>(() => {
+    try { return getCachedStartupsSync(); } catch { return []; }
+  });
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [error, setError] = useState('');
-  const [searchParams, setSearchParams] = useSearchParams();
-  const startupId = sanitizeStartupId(searchParams.get('id') || searchParams.get('startupId'));
-  const { canAccess } = usePlanAccess();
 
   const activeTab = tabs.find(t => t.id === active)!;
   const ActiveComponent = activeTab.component;

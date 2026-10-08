@@ -18,11 +18,69 @@ const handleResponse = async (res: Response) => {
   return data;
 };
 
+const MENTORS_CACHE_KEY = 'ai_startup_builder_mentors_cache';
+let mentorsMemoryCache: any[] | null = null;
+let isFetchingMentors = false;
+
+export const getCachedMentorsSync = (): any[] => {
+  if (mentorsMemoryCache && mentorsMemoryCache.length > 0) return mentorsMemoryCache;
+  try {
+    const raw = localStorage.getItem(MENTORS_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        mentorsMemoryCache = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
+  return [];
+};
+
+export const setCachedMentors = (list: any[]) => {
+  mentorsMemoryCache = list;
+  try {
+    localStorage.setItem(MENTORS_CACHE_KEY, JSON.stringify(list));
+  } catch {}
+  window.dispatchEvent(new Event('mentors_updated'));
+};
+
+const refreshMentorsInBackground = async () => {
+  if (isFetchingMentors) return;
+  isFetchingMentors = true;
+  try {
+    const res = await fetch(`${API_URL}/mentors`, { headers: authHeaders(false) });
+    const data = await handleResponse(res);
+    if (Array.isArray(data.data) && data.data.length > 0) {
+      setCachedMentors(data.data);
+    }
+  } catch {}
+  finally {
+    isFetchingMentors = false;
+  }
+};
+
 // GET /api/mentors
-export const getMentors = async (): Promise<any[]> => {
-  const res = await fetch(`${API_URL}/mentors`, { headers: authHeaders(false) });
-  const data = await handleResponse(res);
-  return data.data || [];
+export const getMentors = async (forceRefresh = false): Promise<any[]> => {
+  const cached = getCachedMentorsSync();
+  if (cached.length > 0 && !forceRefresh) {
+    refreshMentorsInBackground();
+    return cached;
+  }
+  try {
+    isFetchingMentors = true;
+    const res = await fetch(`${API_URL}/mentors`, { headers: authHeaders(false) });
+    const data = await handleResponse(res);
+    const list = data.data || [];
+    if (list.length > 0) {
+      setCachedMentors(list);
+    }
+    return list;
+  } catch (err) {
+    return cached.length > 0 ? cached : [];
+  } finally {
+    isFetchingMentors = false;
+  }
 };
 
 // GET /api/mentors/:id
